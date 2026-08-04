@@ -17,6 +17,16 @@
 
 `config.js` 已被 `.gitignore` 排除，不会提交到仓库——每个部署者用自己的 Supabase 项目，互不影响。
 
+## 部署到 Vercel
+
+仓库里的 `vercel.json` + `build.js` 会在构建时用环境变量自动生成 `config.js`，不需要手动传文件：
+
+1. Vercel 项目 → **Import Git Repository**，选这个仓库，Framework Preset 选 **Other**
+2. 项目 **Settings → Environment Variables**，添加两个变量：
+   - `SUPABASE_URL` — 你的 Supabase Project URL
+   - `SUPABASE_ANON_KEY` — 你的 Supabase anon/publishable key
+3. 触发一次部署（push 到主分支即可自动部署）
+
 ## 安全说明
 
 - `config.js` 里的 anon/publishable key 设计上就是可以公开的（Supabase 官方文档也是这么说的），真正的访问控制由数据库的 Row Level Security（RLS）策略负责，不是靠隐藏这个 key。
