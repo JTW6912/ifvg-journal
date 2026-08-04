@@ -159,6 +159,7 @@ let analysisPrefsError = null;
 let breakdownPickerOpen = false;
 let comboEditingId = null;   // 哪个组合的条件编辑器展开着
 let activeComboId = null;    // 记录页顶部「正在查看组合」横幅
+let preComboFilters = null;  // 跳到组合前的筛选快照，「还原筛选」用它原样恢复
 let comboConfirmDeleteId = null;
 
 /* ============================================================
@@ -230,13 +231,26 @@ function normalizeAnalysisPrefs(raw) {
 }
 function normalizeCombo(c) {
   if (!c || typeof c !== "object" || !c.id) return null;
+  let conditions = Array.isArray(c.conditions) ? c.conditions.map((f) => ({ ...newFilterRow(), ...f })) : [];
+  // 老数据迁移：以前"只算Taken/排除人为错误"是组合自带的隐藏开关，现在改成用户自己在下面加条件。
+  // 只在旧数据明确是 true（不是新组合缺这个字段）时才转成一条显式条件，避免升级后旧组合口径突然变宽
+  if (c.scopeTaken === true) {
+    const takenF = roleField("taken");
+    if (takenF && !conditions.some((f) => f.fieldId === takenF.id)) {
+      conditions = [{ ...newFilterRow(takenF.id), values: ["Taken"] }, ...conditions];
+    }
+  }
+  if (c.scopeHE === true) {
+    const heF = roleField("human_error");
+    if (heF && !conditions.some((f) => f.fieldId === heF.id)) {
+      conditions = [{ ...newFilterRow(heF.id), values: ["yes"], negate: true }, ...conditions];
+    }
+  }
   return {
     id: String(c.id),
     name: typeof c.name === "string" ? c.name : "未命名组合",
     tag: c.tag === "do" || c.tag === "avoid" ? c.tag : "",
-    scopeTaken: c.scopeTaken !== false,
-    scopeHE: c.scopeHE !== false,
-    conditions: Array.isArray(c.conditions) ? c.conditions.map((f) => ({ ...newFilterRow(), ...f })) : [],
+    conditions,
   };
 }
 function newComboId() { return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -411,20 +425,10 @@ function computeBreakdowns(list) {
   }).filter((b) => b.rows.length > 0);
 }
 /* ---------- 组合 ---------- */
-// 组合的完整筛选条件 = 两条口径条件（可关）+ 用户自己加的条件。
+// 组合的完整筛选条件 = 用户自己加的条件（想只算 Taken / 排除人为错误，自己在下面加一行）。
 // 组合卡片的统计和「跳到记录页」都走这一个函数，两边数字才能保证一模一样。
 function comboFilterRows(combo) {
-  const rows = [];
-  if (combo.scopeTaken) {
-    const f = roleField("taken");
-    if (f) rows.push({ ...newFilterRow(f.id), values: ["Taken"] });
-  }
-  if (combo.scopeHE) {
-    const f = roleField("human_error");
-    if (f) rows.push({ ...newFilterRow(f.id), values: ["yes"], negate: true });
-  }
-  (combo.conditions || []).forEach((f) => rows.push({ ...f, values: [...(f.values || [])] }));
-  return rows;
+  return (combo.conditions || []).map((f) => ({ ...f, values: [...(f.values || [])] }));
 }
 function comboMatchedTrades(combo) {
   const rows = comboFilterRows(combo);
@@ -460,8 +464,6 @@ function comboIssues(combo) {
 // 卡片上那行人话版的条件描述
 function comboConditionsText(combo) {
   const parts = [];
-  if (combo.scopeTaken && roleField("taken")) parts.push("只算 Taken");
-  if (combo.scopeHE && roleField("human_error")) parts.push("排除人为错误");
   (combo.conditions || []).forEach((f) => {
     const field = schema.find((x) => x.id === f.fieldId);
     if (!field) { parts.push("⚠ 字段已删除"); return; }
@@ -907,7 +909,10 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;width:100%;">`;
     activeFilters.forEach((f, idx) => { html += filterConditionRowHtml(f, idx, ""); });
     html += `</div>
-    <button class="btn" data-action="add-filter" style="margin-top:12px;">${ICONS.plus} 添加筛选条件</button>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn" data-action="add-filter">${ICONS.plus} 添加筛选条件</button>
+      ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">一键清空已选</button>` : ""}
+    </div>
     <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>`;
   }
   html += `</div>`;
@@ -932,7 +937,7 @@ function renderGrid() {
     <span style="font-size:13px;color:var(--accent);">${ICONS.filter} 正在查看组合 <b>${esc(activeCombo.name)}</b> 的交易</span>
     <span style="display:flex;gap:8px;">
       <button class="btn" data-action="back-to-combo">回到分析页</button>
-      <button class="btn" data-action="clear-combo-filters">清空筛选</button>
+      <button class="btn" data-action="restore-pre-combo-filters">还原筛选</button>
     </span>
   </div>` : "";
   html += renderFilterPanel(filtered.length, filtered);
@@ -1096,7 +1101,7 @@ function renderStatScopeBar() {
         ${(modelF.options || []).map((o) => `<option value="${esc(o)}" ${analysisPrefs.modelFilter === o ? "selected" : ""}>${esc(o)}</option>`).join("")}
       </select>
     </label>` : ""}
-    <span style="color:var(--mutedDark);font-size:11px;">这些开关同时作用于上面的总览和下面的字段拆解，不影响组合（组合各自带自己的口径）</span>
+    <span style="color:var(--mutedDark);font-size:11px;">这些开关只影响上面的总览和下面的字段拆解，不影响组合分析（组合用的是自己单独添加的筛选条件）</span>
   </div>`;
 }
 
@@ -1120,21 +1125,13 @@ function renderComboEditor(combo) {
         <option value="avoid" ${combo.tag === "avoid" ? "selected" : ""}>要避免</option>
       </select>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted);">
-      ${roleField("taken") ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-        <input type="checkbox" data-action="toggle-combo-scope-taken" data-combo-id="${esc(combo.id)}" ${combo.scopeTaken ? "checked" : ""} style="width:13px;height:13px;" />只算 Taken
-      </label>` : ""}
-      ${roleField("human_error") ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-        <input type="checkbox" data-action="toggle-combo-scope-he" data-combo-id="${esc(combo.id)}" ${combo.scopeHE ? "checked" : ""} style="width:13px;height:13px;" />排除人为错误
-      </label>` : ""}
-      <span style="color:var(--mutedDark);font-size:11px;">关掉的话，跳到记录页看到的数字也会跟着变，两边始终一致</span>
-    </div>
-    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR</div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
       ${(combo.conditions || []).map((f, idx) => filterConditionRowHtml(f, idx, combo.id)).join("")}
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn" data-action="add-filter" data-combo-id="${esc(combo.id)}">${ICONS.plus} 添加条件</button>
+      ${(combo.conditions || []).length ? `<button class="btn" data-action="clear-all-filter-values" data-combo-id="${esc(combo.id)}">一键清空已选</button>` : ""}
       <button class="btn btn-primary" data-action="close-combo-editor">完成</button>
     </div>
   </div>`;
@@ -1244,14 +1241,14 @@ function renderAnalytics() {
     </div></div>`;
   }
 
-  const countLabel = scope.takenOnly && takenF ? "TAKEN" : "交易数";
+  const countLabel = scope.takenOnly && takenF ? "已入场" : "交易数";
   let html = prefsNotice + renderStatScopeBar() + `<div class="statRow">
     <div class="statBox"><div class="statLabel">${countLabel}</div><div class="statValue">${stats.totalTaken}</div></div>
-    <div class="statBox"><div class="statLabel">WIN RATE</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
-    <div class="statBox"><div class="statLabel">SETUP QUALITY</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
-    ${stats.hasR ? `<div class="statBox"><div class="statLabel">TOTAL R</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
+    <div class="statBox"><div class="statLabel">胜率</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
+    <div class="statBox"><div class="statLabel">设置质量</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
+    ${stats.hasR ? `<div class="statBox"><div class="statLabel">总R</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">EV / 笔</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
-    ${stats.hasR ? `<div class="statBox" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${stats.pfSample} 笔"><div class="statLabel">PROFIT FACTOR</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">基于填了 R 的 ${stats.pfSample} 笔</div>` : ""}</div>` : ""}
+    ${stats.hasR ? `<div class="statBox" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${stats.pfSample} 笔"><div class="statLabel">盈亏比</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">基于填了 R 的 ${stats.pfSample} 笔</div>` : ""}</div>` : ""}
     ${stats.captureRate !== null ? `<div class="statBox"><div class="statLabel">R 捕获率</div><div class="statValue">${fmtPct(stats.captureRate)}</div></div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
@@ -1262,7 +1259,7 @@ function renderAnalytics() {
   html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
   if (stats.byModel.length && !analysisPrefs.modelFilter) {
-    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ BY MODEL ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
+    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ 按模型 ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
   }
 
   html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
@@ -2037,6 +2034,8 @@ document.addEventListener("click", async (e) => {
   else if (action === "open-combo-in-grid") {
     const c = findCombo(el.dataset.comboId);
     if (!c) return;
+    // 记住跳转前用户手调的筛选，这样「还原筛选」才能把它原样找回来，而不是丢掉
+    preComboFilters = JSON.parse(JSON.stringify(activeFilters));
     // 和组合卡片上的数字走的是同一个 comboFilterRows()，所以两边统计必然一致
     activeFilters = comboFilterRows(c);
     activeComboId = c.id;
@@ -2045,22 +2044,18 @@ document.addEventListener("click", async (e) => {
     render(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
   else if (action === "back-to-combo") { tab = "analytics"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  else if (action === "clear-combo-filters") {
-    // 只把每一行的选中值清空，字段本身还留着——不是把筛选条件行整个删掉
-    activeFilters = activeFilters.map((f) => newFilterRow(f.fieldId));
+  else if (action === "restore-pre-combo-filters") {
+    // 还原成点「查看这N笔交易」之前的筛选状态（字段和选中值都原样恢复），不是清空成空值
+    activeFilters = preComboFilters || [];
+    preComboFilters = null;
     activeComboId = null;
     saveActiveFilters(); gridPage = 1; render();
   }
   else if (action === "save-filters-as-combo") {
     if (viewingUserId) return;
-    const takenF = roleField("taken"), heF = roleField("human_error");
-    // 筛选里如果已经手动加了 taken / 人为错误 的条件，就别再让组合的口径开关重复加一遍
-    const usedTaken = takenF && activeFilters.some((f) => f.fieldId === takenF.id);
-    const usedHE = heF && activeFilters.some((f) => f.fieldId === heF.id);
     const c = normalizeCombo({
       id: newComboId(),
       name: "来自筛选 " + new Date().toLocaleDateString("zh-CN"),
-      scopeTaken: !usedTaken, scopeHE: !usedHE,
       conditions: activeFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
     });
     analysisPrefs.combos.push(c);
@@ -2077,14 +2072,18 @@ document.addEventListener("click", async (e) => {
     const c = normalizeCombo({
       id: newComboId(),
       name: `${field.label} = ${val}`,
-      scopeTaken: analysisPrefs.statScope.takenOnly,
-      scopeHE: analysisPrefs.statScope.excludeHumanError,
       conditions: [{ ...newFilterRow(fieldId), values: [val] }],
     });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
     await saveAnalysisPrefsNow(); render();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "clear-all-filter-values") {
+    // 一键清空：只清每一行已选的值，字段行本身还留着，不删行
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    for (let i = 0; i < ctx.arr.length; i++) ctx.arr[i] = newFilterRow(ctx.arr[i].fieldId);
+    afterFilterChange(ctx);
   }
   else if (action === "toggle-breakdown-picker") { breakdownPickerOpen = !breakdownPickerOpen; render(); }
   else if (action === "hide-breakdown-field") {
@@ -2331,14 +2330,6 @@ document.addEventListener("change", async (e) => {
   else if (e.target.dataset.bind === "analysis-model-filter") {
     if (viewingUserId) return;
     analysisPrefs.modelFilter = e.target.value;
-    queueSaveAnalysisPrefs(); render();
-  }
-  else if (e.target.dataset.action === "toggle-combo-scope-taken" || e.target.dataset.action === "toggle-combo-scope-he") {
-    if (viewingUserId) return;
-    const c = findCombo(e.target.dataset.comboId);
-    if (!c) return;
-    if (e.target.dataset.action === "toggle-combo-scope-taken") c.scopeTaken = e.target.checked;
-    else c.scopeHE = e.target.checked;
     queueSaveAnalysisPrefs(); render();
   }
   else if (e.target.dataset.action === "toggle-breakdown-field") {
