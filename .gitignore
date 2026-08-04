@@ -3,3 +3,6 @@ index (7).html
 .DS_Store
 node_modules/
 .claude/settings.local.json
+
+.vercel
+.env*

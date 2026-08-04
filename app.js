@@ -154,6 +154,12 @@ let passwordSuccess = "";
 let passwordBusy = false;
 let lightboxUrl = null;
 let defaultFiltersSeeded = false;
+let analysisPrefs = defaultAnalysisPrefs();
+let analysisPrefsError = null;
+let breakdownPickerOpen = false;
+let comboEditingId = null;   // 哪个组合的条件编辑器展开着
+let activeComboId = null;    // 记录页顶部「正在查看组合」横幅
+let comboConfirmDeleteId = null;
 
 /* ============================================================
    HELPERS
@@ -195,13 +201,132 @@ function resultColor(v) {
 }
 
 /* ============================================================
+   ANALYSIS PREFS —— 分析页的口径开关 / 拆解显示配置 / 组合
+   全部存在 journal_schema.analysis_prefs (jsonb) 这一列里
+   ============================================================ */
+function defaultAnalysisPrefs() {
+  return {
+    statScope: { excludeHumanError: true, takenOnly: true },
+    modelFilter: "",        // ""=全部模型；只影响总览+拆解，不影响组合
+    breakdownHidden: [],   // 存「隐藏哪些」，新加的字段自动出现
+    breakdownOrder: [],    // 只存用户排过序的，没排到的按 schema 顺序接在后面
+    combos: [],
+  };
+}
+function normalizeAnalysisPrefs(raw) {
+  const d = defaultAnalysisPrefs();
+  if (!raw || typeof raw !== "object") return d;
+  const scope = raw.statScope && typeof raw.statScope === "object" ? raw.statScope : {};
+  return {
+    statScope: {
+      excludeHumanError: scope.excludeHumanError !== false,
+      takenOnly: scope.takenOnly !== false,
+    },
+    modelFilter: typeof raw.modelFilter === "string" ? raw.modelFilter : "",
+    breakdownHidden: Array.isArray(raw.breakdownHidden) ? raw.breakdownHidden.filter((x) => typeof x === "string") : [],
+    breakdownOrder: Array.isArray(raw.breakdownOrder) ? raw.breakdownOrder.filter((x) => typeof x === "string") : [],
+    combos: Array.isArray(raw.combos) ? raw.combos.map(normalizeCombo).filter(Boolean) : [],
+  };
+}
+function normalizeCombo(c) {
+  if (!c || typeof c !== "object" || !c.id) return null;
+  return {
+    id: String(c.id),
+    name: typeof c.name === "string" ? c.name : "未命名组合",
+    tag: c.tag === "do" || c.tag === "avoid" ? c.tag : "",
+    scopeTaken: c.scopeTaken !== false,
+    scopeHE: c.scopeHE !== false,
+    conditions: Array.isArray(c.conditions) ? c.conditions.map((f) => ({ ...newFilterRow(), ...f })) : [],
+  };
+}
+function newComboId() { return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function findCombo(id) { return analysisPrefs.combos.find((c) => c.id === id) || null; }
+
+let analysisPrefsSaveTimer = null;
+async function writeAnalysisPrefs() {
+  analysisPrefsSaveTimer = null;
+  if (viewingUserId || !sb || !session) return;
+  const { error } = await sb.from("journal_schema").update({ analysis_prefs: analysisPrefs }).eq("user_id", session.user.id);
+  if (error) {
+    console.error(error);
+    // 42703 = undefined_column，PGRST204 = PostgREST 缓存里没这一列，都说明那条 alter table 还没跑
+    const missingColumn = error.code === "42703" || error.code === "PGRST204" || /analysis_prefs/.test(error.message || "");
+    analysisPrefsError = missingColumn
+      ? "分析设置没能保存到数据库——journal_schema 表还缺 analysis_prefs 这一列，去 Supabase SQL Editor 跑一次：alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;"
+      : "分析设置保存失败：" + error.message;
+    render();
+  } else if (analysisPrefsError) {
+    analysisPrefsError = null;
+    render();
+  }
+}
+// 编辑组合时点一下选项就写一次库太吵，本地立刻生效、写库合并成 800ms 一次
+function queueSaveAnalysisPrefs() {
+  if (viewingUserId) return;
+  if (analysisPrefsSaveTimer) clearTimeout(analysisPrefsSaveTimer);
+  analysisPrefsSaveTimer = setTimeout(writeAnalysisPrefs, 800);
+}
+function flushAnalysisPrefs() {
+  if (!analysisPrefsSaveTimer) return;
+  clearTimeout(analysisPrefsSaveTimer);
+  writeAnalysisPrefs();
+}
+async function saveAnalysisPrefsNow() {
+  if (analysisPrefsSaveTimer) { clearTimeout(analysisPrefsSaveTimer); analysisPrefsSaveTimer = null; }
+  await writeAnalysisPrefs();
+}
+
+/* ============================================================
    ANALYTICS ENGINE
    ============================================================ */
+// 模型筛选（不选=全部）也算总览/拆解的口径之一，跟另外两个开关一样不影响组合
+function analysisBaseTrades() {
+  const modelF = roleField("model");
+  if (modelF && analysisPrefs.modelFilter) return trades.filter((t) => t[modelF.id] === analysisPrefs.modelFilter);
+  return trades;
+}
+// 当前口径下参与统计的交易集（顶部数字和字段拆解共用同一批）
+function scopedTrades() {
+  const heF = roleField("human_error"), takenF = roleField("taken");
+  const scope = analysisPrefs.statScope;
+  let list = analysisBaseTrades();
+  if (scope.excludeHumanError && heF) list = list.filter((t) => t[heF.id] !== "yes");
+  if (scope.takenOnly && takenF) list = list.filter((t) => t[takenF.id] === "Taken");
+  return list;
+}
+// Profit Factor：正R之和 ÷ |负R之和|。只统计真的填了 R 的那些交易，n 一并返回好让 UI 标注口径。
+function profitFactorOf(list, rF) {
+  if (!rF) return { pf: null, n: 0 };
+  let gross = 0, loss = 0, n = 0;
+  list.forEach((t) => {
+    const raw = t[rF.id];
+    if (raw === undefined || raw === null || raw === "") return;
+    const v = parseFloat(raw);
+    if (isNaN(v)) return;
+    n++;
+    if (v > 0) gross += v; else if (v < 0) loss += -v;
+  });
+  if (!n) return { pf: null, n: 0 };
+  if (loss === 0) return { pf: gross > 0 ? Infinity : null, n };
+  return { pf: gross / loss, n };
+}
+function fmtPF(pf) {
+  if (pf === null || pf === undefined) return "—";
+  if (pf === Infinity) return "∞";
+  return pf.toFixed(2);
+}
+function pfColor(pf) {
+  if (pf === null || pf === undefined) return "var(--muted)";
+  if (pf === Infinity) return "var(--pos)";
+  return pf >= 1 ? "var(--pos)" : "var(--neg)";
+}
 function computeStats() {
   const resultF = roleField("result"), takenF = roleField("taken"), heF = roleField("human_error"),
         rF = roleField("r_multiple"), maxRrF = roleField("max_rr");
-  const clean = trades.filter((t) => !heF || t[heF.id] !== "yes");
-  const taken = clean.filter((t) => !takenF || t[takenF.id] === "Taken");
+  const scope = analysisPrefs.statScope;
+  const base = analysisBaseTrades();
+  const clean = scope.excludeHumanError && heF ? base.filter((t) => t[heF.id] !== "yes") : base;
+  const taken = scopedTrades();
   const faded = clean.filter((t) => takenF && t[takenF.id] === "Faded");
   const isW = (t) => resultF && t[resultF.id] === "W";
   const isL = (t) => resultF && t[resultF.id] === "L";
@@ -222,27 +347,141 @@ function computeStats() {
     captureRate = sumMax ? (sumR / sumMax) * 100 : null;
   }
   const fadedW = faded.filter(isW).length, fadedL = faded.filter(isL).length;
-  const breakdowns = schema
-    .filter((f) => (f.type === "select" || f.type === "multiselect") && !["result", "taken", "human_error"].includes(f.role))
-    .map((f) => {
-      const map = {};
-      taken.forEach((t) => {
-        let vals = t[f.id];
-        if (vals === undefined || vals === null || vals === "") return;
-        if (!Array.isArray(vals)) vals = [vals];
-        const win = isW(t), loss = isL(t);
-        vals.forEach((v) => { if (!map[v]) map[v] = { w: 0, l: 0 }; if (win) map[v].w++; if (loss) map[v].l++; });
-      });
-      const rows = Object.entries(map)
-        .map(([value, c]) => ({ value, w: c.w, l: c.l, n: c.w + c.l, wr: c.w + c.l ? (c.w / (c.w + c.l)) * 100 : null }))
-        .filter((r) => r.n > 0).sort((a, b) => b.n - a.n);
-      return { field: f, rows };
-    }).filter((b) => b.rows.length > 0);
+  const pfInfo = profitFactorOf(taken, rF);
+  const breakdowns = computeBreakdowns(taken);
   const modelF = roleField("model");
   let byModel = [];
   if (modelF) { const found = breakdowns.find((b) => b.field.id === modelF.id); if (found) byModel = found.rows; }
-  return { totalTaken: taken.length, totalFaded: faded.length, w, l, be, bew, bel, wr, sq, totalR, ev, captureRate, fadedW, fadedL, breakdowns, byModel, hasResult: !!resultF, hasR: !!rF };
+  return { totalTaken: taken.length, totalFaded: faded.length, w, l, be, bew, bel, wr, sq, totalR, ev, captureRate,
+           pf: pfInfo.pf, pfSample: pfInfo.n, fadedW, fadedL, breakdowns, byModel, hasResult: !!resultF, hasR: !!rF };
 }
+
+/* ---------- 字段拆解 ---------- */
+// 能拆解的字段：所有 select/multiselect，只排掉「结果」角色（按 result 拆是自我循环，W 那行必然 100%）
+function breakdownCandidateFields() {
+  const all = schema.filter((f) => (f.type === "select" || f.type === "multiselect") && f.role !== "result");
+  const order = analysisPrefs.breakdownOrder || [];
+  const ranked = [], rest = [];
+  all.forEach((f) => (order.includes(f.id) ? ranked : rest).push(f));
+  ranked.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  // 用户没排过的：taken / 人为错误 这两个信息量低，默认沉到最后
+  const lowSignal = (f) => (f.role === "taken" || f.role === "human_error" ? 1 : 0);
+  rest.sort((a, b) => lowSignal(a) - lowSignal(b));
+  return ranked.concat(rest);
+}
+function visibleBreakdownFields() {
+  const hidden = analysisPrefs.breakdownHidden || [];
+  return breakdownCandidateFields().filter((f) => !hidden.includes(f.id));
+}
+// 一个选项值下面那批交易的统计。n 是全部笔数（含 BE 系列），胜率分母只算 W 和 L。
+function breakdownRowStats(value, list, resultF, rF) {
+  const res = (t) => (resultF ? t[resultF.id] : "");
+  const w = list.filter((t) => res(t) === "W").length;
+  const l = list.filter((t) => res(t) === "L").length;
+  const be = list.filter((t) => { const v = res(t); return v === "BE" || v === "BE -> W" || v === "BE -> L"; }).length;
+  const wr = w + l ? (w / (w + l)) * 100 : null;
+  let totalR = null, ev = null, hasR = false;
+  if (rF) {
+    totalR = list.reduce((s, t) => {
+      const raw = t[rF.id];
+      if (raw === undefined || raw === null || raw === "") return s;
+      hasR = true;
+      return s + (parseFloat(raw) || 0);
+    }, 0);
+    ev = list.length ? totalR / list.length : null;
+  }
+  const pfInfo = profitFactorOf(list, rF);
+  return { value, w, l, be, n: list.length, wr, totalR, ev, hasR, pf: pfInfo.pf };
+}
+function computeBreakdowns(list) {
+  const resultF = roleField("result"), rF = roleField("r_multiple");
+  return visibleBreakdownFields().map((f) => {
+    const map = {};
+    list.forEach((t) => {
+      let vals = t[f.id];
+      if (vals === undefined || vals === null || vals === "") return;
+      if (!Array.isArray(vals)) vals = [vals];
+      // 多选字段一笔交易会落进多行，所以各行 n 之和可能大于总笔数，这是预期行为
+      vals.forEach((v) => { if (v === "" || v === null || v === undefined) return; if (!map[v]) map[v] = []; map[v].push(t); });
+    });
+    const rows = Object.entries(map)
+      .map(([value, sub]) => breakdownRowStats(value, sub, resultF, rF))
+      .sort((a, b) => b.n - a.n);
+    return { field: f, rows };
+  }).filter((b) => b.rows.length > 0);
+}
+/* ---------- 组合 ---------- */
+// 组合的完整筛选条件 = 两条口径条件（可关）+ 用户自己加的条件。
+// 组合卡片的统计和「跳到记录页」都走这一个函数，两边数字才能保证一模一样。
+function comboFilterRows(combo) {
+  const rows = [];
+  if (combo.scopeTaken) {
+    const f = roleField("taken");
+    if (f) rows.push({ ...newFilterRow(f.id), values: ["Taken"] });
+  }
+  if (combo.scopeHE) {
+    const f = roleField("human_error");
+    if (f) rows.push({ ...newFilterRow(f.id), values: ["yes"], negate: true });
+  }
+  (combo.conditions || []).forEach((f) => rows.push({ ...f, values: [...(f.values || [])] }));
+  return rows;
+}
+function comboMatchedTrades(combo) {
+  const rows = comboFilterRows(combo);
+  return trades.filter((t) => rows.every((f) => tradeMatchesFilter(t, f)));
+}
+function comboStats(combo) {
+  const list = comboMatchedTrades(combo);
+  const resultF = roleField("result"), rF = roleField("r_multiple");
+  return breakdownRowStats(combo.name, list, resultF, rF);
+}
+// tradeMatchesFilter 找不到字段时会 return true，也就是删掉字段后组合会悄悄变成「匹配全部交易」，
+// 数字突然变好看却毫无提示。所以渲染前先把这类失效条件挑出来。
+function comboIssues(combo) {
+  const hard = [], soft = [];
+  (combo.conditions || []).forEach((f, i) => {
+    const no = i + 1;
+    if (!f.fieldId) { soft.push(`第 ${no} 条还没选字段（不会起任何过滤作用）`); return; }
+    const field = schema.find((x) => x.id === f.fieldId);
+    if (!field) { hard.push(`第 ${no} 条引用的字段已被删除，这条会失效并放行全部交易`); return; }
+    if (field.type === "select" || field.type === "multiselect") {
+      const opts = field.options || [];
+      const missing = (f.values || []).filter((v) => !opts.includes(v));
+      if (missing.length) hard.push(`「${field.label}」的选项 ${missing.join("、")} 已不存在，永远匹配不到`);
+      if (!(f.values || []).length) soft.push(`「${field.label}」没选任何值（不会起任何过滤作用）`);
+    } else if (field.type === "date" || field.type === "time") {
+      if (!f.rangeStart && !f.rangeEnd) soft.push(`「${field.label}」没填区间（不会起任何过滤作用）`);
+    } else if (!f.textValue) {
+      soft.push(`「${field.label}」没填内容（不会起任何过滤作用）`);
+    }
+  });
+  return { hard, soft };
+}
+// 卡片上那行人话版的条件描述
+function comboConditionsText(combo) {
+  const parts = [];
+  if (combo.scopeTaken && roleField("taken")) parts.push("只算 Taken");
+  if (combo.scopeHE && roleField("human_error")) parts.push("排除人为错误");
+  (combo.conditions || []).forEach((f) => {
+    const field = schema.find((x) => x.id === f.fieldId);
+    if (!field) { parts.push("⚠ 字段已删除"); return; }
+    if (field.type === "select" || field.type === "multiselect") {
+      if (!(f.values || []).length) return;
+      const join = f.matchMode === "and" ? " 且 " : " / ";
+      parts.push(`${field.label} ${f.negate ? "≠" : "="} ${f.values.join(join)}`);
+    } else if (field.type === "date" || field.type === "time") {
+      if (!f.rangeStart && !f.rangeEnd) return;
+      parts.push(`${field.label} ${f.rangeStart || "…"}~${f.rangeEnd || "…"}`);
+    } else if (f.textValue) {
+      parts.push(`${field.label} 含「${f.textValue}」`);
+    }
+  });
+  return parts.length ? parts.join(" · ") : "没有任何条件（= 全部交易）";
+}
+const COMBO_SMALL_SAMPLE = 10;
+const COMBO_TAGS = { do: { label: "可以做", color: "var(--pos)", soft: "var(--posSoft)" },
+                     avoid: { label: "要避免", color: "var(--neg)", soft: "var(--negSoft)" } };
+
 function computeMonthCoverageForYear(year) {
   const dateF = roleField("date");
   const monthsData = {};
@@ -314,6 +553,7 @@ async function loadAll() {
       schema = schemaRow.fields;
     }
     cardFields = (schemaRow && Array.isArray(schemaRow.card_fields)) ? schemaRow.card_fields : [];
+    analysisPrefs = normalizeAnalysisPrefs(schemaRow && schemaRow.analysis_prefs);
     const { data: tradeRows, error: e2 } = await sb.from("trades").select("*")
       .eq("user_id", uid).eq("mode", recordMode).order("created_at", { ascending: true });
     if (e2) throw e2;
@@ -493,6 +733,24 @@ async function changeOwnPassword(currentPw, newPw, confirmPw) {
 function newFilterRow(fieldId) {
   return { fieldId: fieldId || "", values: [], negate: false, matchMode: "or", rangeStart: "", rangeEnd: "", textValue: "" };
 }
+// 记录页的 activeFilters 和分析页某个组合的 conditions 共用同一套 DOM 结构和事件处理，
+// 元素上有没有 data-combo-id 决定改的是哪个数组
+function filterCtxOf(el) {
+  const comboId = el.dataset.comboId || "";
+  if (!comboId) return { arr: activeFilters, comboId: "" };
+  const c = findCombo(comboId);
+  return c ? { arr: c.conditions, comboId } : null;
+}
+function afterFilterChange(ctx) {
+  if (ctx.comboId) {
+    queueSaveAnalysisPrefs();
+  } else {
+    activeComboId = null; // 手动改过筛选，就不再算是「正在看某个组合」了
+    saveActiveFilters();
+    gridPage = 1;
+  }
+  render();
+}
 const FILTERS_KEY = "journal_active_filters";
 function saveActiveFilters() {
   if (viewingUserId) return;
@@ -528,29 +786,63 @@ function tradeMatchesFilter(t, f) {
   const tv = t[field.id];
   return String(tv === undefined || tv === null ? "" : tv).toLowerCase().includes(String(f.textValue).toLowerCase());
 }
-function filterRowValuesHtml(field, idx, f) {
+// comboId 为空 = 记录页的 activeFilters；有值 = 分析页某个组合的条件。
+// 两边共用同一套 DOM 结构和事件处理，靠 data-combo-id 区分改哪个数组。
+function filterRowValuesHtml(field, idx, f, comboId) {
+  const cid = comboId ? ` data-combo-id="${esc(comboId)}"` : "";
   if (field.type === "select" || field.type === "multiselect") {
     const vals = f.values || [];
+    const opts = field.options || [];
+    // 选项被删掉但条件里还留着的，也列出来并标红，否则用户根本看不见问题在哪
+    const ghosts = vals.filter((v) => !opts.includes(v));
     return `<div class="chipGroup" style="margin-top:8px;">
-      ${(field.options || []).map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}
+      ${opts.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
+      ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="这个选项已经不存在了，点一下移除" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
     </div>`;
   }
   if (field.type === "date") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-      <input type="date" class="select" data-filter-range="${idx}" data-bound="start" value="${esc(f.rangeStart || "")}" />
+      <input type="date" class="select" data-filter-range="${idx}" data-bound="start"${cid} value="${esc(f.rangeStart || "")}" />
       <span style="color:var(--mutedDark);font-size:12px;">到</span>
-      <input type="date" class="select" data-filter-range="${idx}" data-bound="end" value="${esc(f.rangeEnd || "")}" />
+      <input type="date" class="select" data-filter-range="${idx}" data-bound="end"${cid} value="${esc(f.rangeEnd || "")}" />
     </div>`;
   }
   if (field.type === "time") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="start" data-time-input value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="start" data-time-input${cid} value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
       <span style="color:var(--mutedDark);font-size:12px;">到</span>
-      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="end" data-time-input value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="end" data-time-input${cid} value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
     </div>
     <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">24小时制，直接输入数字如 0930 会自动格式化为 09:30</div>`;
   }
-  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}" value="${esc(f.textValue || "")}" placeholder="包含…" /></div>`;
+  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}"${cid} value="${esc(f.textValue || "")}" placeholder="包含…" /></div>`;
+}
+// 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页和组合编辑器共用
+function filterConditionRowHtml(f, idx, comboId) {
+  const cid = comboId ? ` data-combo-id="${esc(comboId)}"` : "";
+  const field = schema.find((x) => x.id === f.fieldId);
+  const missing = f.fieldId && !field;
+  const showNegate = field && (field.type === "select" || field.type === "multiselect");
+  const showAndToggle = field && field.type === "multiselect";
+  const dragAttrs = comboId ? "" : ` draggable="true" data-filter-idx="${idx}"`;
+  return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${comboId ? "" : "cursor:grab;"}">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      ${comboId ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>`}
+      <select class="select" data-filter-field="${idx}"${cid}>
+        <option value="">选字段…</option>
+        ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
+      </select>
+      ${showAndToggle ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
+        <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />要求同时满足选中的全部
+      </label>` : ""}
+      ${showNegate ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
+        <input type="checkbox" data-action="toggle-filter-negate" data-idx="${idx}"${cid} ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />不是以下任何一个
+      </label>` : ""}
+      <button class="tinyBtn" data-action="remove-filter" data-idx="${idx}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
+    </div>
+    ${missing ? `<div style="font-size:11.5px;color:var(--neg);margin-top:8px;">⚠ 这个字段已经被删掉了，这条条件不起作用，请重选或删掉</div>` : ""}
+    ${field ? filterRowValuesHtml(field, idx, f, comboId) : ""}
+  </div>`;
 }
 function filteredSummaryStats(list) {
   const rF = roleField("r_multiple"), resultF = roleField("result");
@@ -566,7 +858,8 @@ function filteredSummaryStats(list) {
     totalR = clean.reduce((s, t) => { if (t[rF.id] !== undefined && t[rF.id] !== "") { hasR = true; return s + (parseFloat(t[rF.id]) || 0); } return s; }, 0);
     ev = clean.length ? totalR / clean.length : null;
   }
-  return { n: clean.length, w, l, be, bew, bel, wr, totalR, ev, hasR };
+  const pfInfo = profitFactorOf(clean, rF);
+  return { n: clean.length, w, l, be, bew, bel, wr, totalR, ev, hasR, pf: pfInfo.pf, pfSample: pfInfo.n };
 }
 function renderFilterSummary(filtered) {
   const s = filteredSummaryStats(filtered);
@@ -575,6 +868,8 @@ function renderFilterSummary(filtered) {
     <span class="mono" style="color:var(--accent);font-weight:600;">胜率 ${fmtPct(s.wr)}</span>
     <span>W ${s.w} · L ${s.l} · BE ${s.be} · BE→W ${s.bew} · BE→L ${s.bel}</span>
     ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">总 ${fmtNum(s.totalR)}R · EV ${fmtNum(s.ev, 3)}</span>` : ""}
+    ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${s.pfSample} 笔">PF ${fmtPF(s.pf)}</span>` : ""}
+    ${!viewingUserId ? `<button class="tinyBtn" data-action="save-filters-as-combo" style="margin-left:auto;color:var(--accent);font-size:12px;">${ICONS.plus} 把当前筛选存为组合</button>` : ""}
   </div>`;
 }
 const CARD_SIZES = { compact: 190, standard: 260, large: 360, huge: 500 };
@@ -610,28 +905,7 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
   if (filterPanelOpen) {
     html += `<div style="font-size:11.5px;color:var(--mutedDark);margin-top:8px;">条件之间 AND，同一条件内多选是 OR</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;width:100%;">`;
-    activeFilters.forEach((f, idx) => {
-      const field = schema.find((x) => x.id === f.fieldId);
-      const showNegate = field && (field.type === "select" || field.type === "multiselect");
-      const showAndToggle = field && field.type === "multiselect";
-      html += `<div class="filterRow" draggable="true" data-filter-idx="${idx}" style="padding:10px 12px;border:1px solid var(--border);border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;cursor:grab;">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>
-          <select class="select" data-filter-field="${idx}">
-            <option value="">选字段…</option>
-            ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
-          </select>
-          ${showAndToggle ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-            <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}" ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />要求同时满足选中的全部
-          </label>` : ""}
-          ${showNegate ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-            <input type="checkbox" data-action="toggle-filter-negate" data-idx="${idx}" ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />不是以下任何一个
-          </label>` : ""}
-          <button class="tinyBtn" data-action="remove-filter" data-idx="${idx}" style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
-        </div>
-        ${field ? filterRowValuesHtml(field, idx, f) : ""}
-      </div>`;
-    });
+    activeFilters.forEach((f, idx) => { html += filterConditionRowHtml(f, idx, ""); });
     html += `</div>
     <button class="btn" data-action="add-filter" style="margin-top:12px;">${ICONS.plus} 添加筛选条件</button>
     <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>`;
@@ -653,7 +927,15 @@ function renderGrid() {
     return sortDir === "desc" ? -cmp : cmp;
   });
 
-  let html = renderFilterPanel(filtered.length, filtered);
+  const activeCombo = activeComboId ? findCombo(activeComboId) : null;
+  let html = activeCombo ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;">
+    <span style="font-size:13px;color:var(--accent);">${ICONS.filter} 正在查看组合 <b>${esc(activeCombo.name)}</b> 的交易</span>
+    <span style="display:flex;gap:8px;">
+      <button class="btn" data-action="back-to-combo">回到分析页</button>
+      <button class="btn" data-action="clear-combo-filters">清空筛选</button>
+    </span>
+  </div>` : "";
+  html += renderFilterPanel(filtered.length, filtered);
 
   // sort controls
   html += `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;">
@@ -775,13 +1057,172 @@ function renderGrid() {
 /* ============================================================
    RENDER — ANALYTICS VIEW
    ============================================================ */
-function barRow(row) {
+function barRow(row, fieldId) {
   const width = row.wr === null ? 0 : row.wr;
   const color = row.wr === null ? "var(--mutedDark)" : row.wr >= 60 ? "var(--pos)" : row.wr >= 45 ? "var(--accent)" : "var(--neg)";
+  const rPart = row.hasR
+    ? ` · <span style="color:${row.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(row.totalR)}R</span> · EV ${fmtNum(row.ev, 2)} · PF <span style="color:${pfColor(row.pf)}">${fmtPF(row.pf)}</span>`
+    : "";
   return `<div class="barRow">
-    <div class="barTop"><span style="color:var(--text)">${esc(row.value)}</span>
-    <span class="mono" style="color:var(--muted)">n=${row.n} · W${row.w} L${row.l} · ${fmtPct(row.wr)}</span></div>
-    <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div></div>`;
+    <div class="barTop">
+      <span style="color:var(--text)">${esc(row.value)}</span>
+      <span class="mono" style="color:var(--muted)">n=${row.n} · ${fmtPct(row.wr)}</span>
+    </div>
+    <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div>
+    <div class="barMeta">
+      <span class="mono">W${row.w} L${row.l}${row.be ? " BE" + row.be : ""}${rPart}</span>
+      ${fieldId && !viewingUserId ? `<button class="tinyBtn" data-action="combo-from-breakdown" data-field="${esc(fieldId)}" data-val="${esc(row.value)}" title="用这一条直接建一个组合">${ICONS.plus}组合</button>` : ""}
+    </div>
+  </div>`;
+}
+
+/* ---------- 分析页：口径开关 ---------- */
+function renderStatScopeBar() {
+  const scope = analysisPrefs.statScope;
+  const takenF = roleField("taken"), heF = roleField("human_error"), modelF = roleField("model");
+  if (!takenF && !heF && !modelF) return "";
+  return `<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
+    <span style="color:var(--mutedDark);">统计口径</span>
+    ${takenF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" data-action="toggle-scope-taken" ${scope.takenOnly ? "checked" : ""} style="width:13px;height:13px;" />只算已入场（Taken）的交易
+    </label>` : ""}
+    ${heF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+      <input type="checkbox" data-action="toggle-scope-he" ${scope.excludeHumanError ? "checked" : ""} style="width:13px;height:13px;" />排除标记为人为错误的交易
+    </label>` : ""}
+    ${modelF ? `<label style="display:flex;align-items:center;gap:6px;">
+      <span>模型</span>
+      <select class="select" data-bind="analysis-model-filter" style="padding:4px 8px;font-size:12px;" ${viewingUserId ? "disabled" : ""}>
+        <option value="" ${!analysisPrefs.modelFilter ? "selected" : ""}>全部</option>
+        ${(modelF.options || []).map((o) => `<option value="${esc(o)}" ${analysisPrefs.modelFilter === o ? "selected" : ""}>${esc(o)}</option>`).join("")}
+      </select>
+    </label>` : ""}
+    <span style="color:var(--mutedDark);font-size:11px;">这些开关同时作用于上面的总览和下面的字段拆解，不影响组合（组合各自带自己的口径）</span>
+  </div>`;
+}
+
+/* ---------- 分析页：组合 ---------- */
+function comboBaseline(combo) {
+  return comboStats({ ...combo, conditions: [] });
+}
+function deltaText(v, base, unit, digits) {
+  if (v === null || v === undefined || base === null || base === undefined) return "";
+  const d = v - base;
+  const color = d > 0 ? "var(--pos)" : d < 0 ? "var(--neg)" : "var(--mutedDark)";
+  return `<span style="color:${color};font-size:11px;">(${d >= 0 ? "+" : ""}${d.toFixed(digits)}${unit})</span>`;
+}
+function renderComboEditor(combo) {
+  return `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="组合名字…" style="flex:1 1 220px;" />
+      <select class="select" data-combo-tag="${esc(combo.id)}">
+        <option value="" ${combo.tag === "" ? "selected" : ""}>不标记</option>
+        <option value="do" ${combo.tag === "do" ? "selected" : ""}>可以做</option>
+        <option value="avoid" ${combo.tag === "avoid" ? "selected" : ""}>要避免</option>
+      </select>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted);">
+      ${roleField("taken") ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" data-action="toggle-combo-scope-taken" data-combo-id="${esc(combo.id)}" ${combo.scopeTaken ? "checked" : ""} style="width:13px;height:13px;" />只算 Taken
+      </label>` : ""}
+      ${roleField("human_error") ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" data-action="toggle-combo-scope-he" data-combo-id="${esc(combo.id)}" ${combo.scopeHE ? "checked" : ""} style="width:13px;height:13px;" />排除人为错误
+      </label>` : ""}
+      <span style="color:var(--mutedDark);font-size:11px;">关掉的话，跳到记录页看到的数字也会跟着变，两边始终一致</span>
+    </div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
+      ${(combo.conditions || []).map((f, idx) => filterConditionRowHtml(f, idx, combo.id)).join("")}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn" data-action="add-filter" data-combo-id="${esc(combo.id)}">${ICONS.plus} 添加条件</button>
+      <button class="btn btn-primary" data-action="close-combo-editor">完成</button>
+    </div>
+  </div>`;
+}
+function renderComboCard(combo, idx) {
+  const issues = comboIssues(combo);
+  const broken = issues.hard.length > 0;
+  const s = comboStats(combo);
+  const base = comboBaseline(combo);
+  const tag = COMBO_TAGS[combo.tag];
+  const editing = comboEditingId === combo.id;
+  const small = !broken && s.n > 0 && s.n < COMBO_SMALL_SAMPLE;
+  const deleting = comboConfirmDeleteId === combo.id;
+
+  let stats;
+  if (broken) {
+    stats = `<div style="font-size:12.5px;color:var(--neg);margin:2px 0 8px;">条件失效，数字不可信，先修好再看</div>`;
+  } else {
+    stats = `<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin:2px 0 8px;font-size:12.5px;color:var(--muted);">
+      <span class="mono" style="font-size:17px;font-weight:600;color:var(--accent);">${fmtPct(s.wr)}</span>
+      ${deltaText(s.wr, base.wr, "pp", 1)}
+      <span class="mono">n=${s.n}</span>
+      <span class="mono">W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</span>
+      ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span>` : ""}
+      ${s.hasR ? `<span class="mono">EV ${fmtNum(s.ev, 3)} ${deltaText(s.ev, base.ev, "", 3)}</span>` : ""}
+      ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}">PF ${fmtPF(s.pf)}</span>` : ""}
+    </div>`;
+  }
+
+  return `<div class="comboCard ${combo.tag ? "tag-" + combo.tag : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-idx="${idx}"`}>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>`}
+      <span style="font-size:14px;color:var(--text);font-weight:500;">${esc(combo.name)}</span>
+      ${tag ? `<span class="pill" style="background:${tag.soft};color:${tag.color};">${tag.label}</span>` : ""}
+      ${small ? `<span class="pill" style="background:var(--surface2);color:var(--mutedDark);" title="样本太少，胜率的随机波动会很大，别急着下结论">样本仅 ${s.n} 笔</span>` : ""}
+      ${!viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
+        <button class="tinyBtn" data-action="edit-combo" data-combo-id="${esc(combo.id)}">${editing ? "收起" : "编辑"}</button>
+        <button class="tinyBtn" data-action="ask-delete-combo" data-combo-id="${esc(combo.id)}" style="color:var(--neg);">删除</button>
+      </span>` : ""}
+    </div>
+    ${stats}
+    ${issues.hard.length ? `<div style="font-size:11.5px;color:var(--neg);margin-bottom:8px;line-height:1.6;">${issues.hard.map((x) => "⚠ " + esc(x)).join("<br>")}</div>` : ""}
+    ${issues.soft.length ? `<div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;line-height:1.6;">${issues.soft.map((x) => "· " + esc(x)).join("<br>")}</div>` : ""}
+    <div style="font-size:11.5px;color:var(--mutedDark);line-height:1.6;">${esc(comboConditionsText(combo))}</div>
+    ${deleting ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--neg);">
+      确定删掉「${esc(combo.name)}」？
+      <button class="btn btn-danger" data-action="confirm-delete-combo" data-combo-id="${esc(combo.id)}" style="padding:4px 10px;font-size:12px;">删除</button>
+      <button class="btn" data-action="cancel-delete-combo" style="padding:4px 10px;font-size:12px;">取消</button>
+    </div>` : ""}
+    ${broken ? "" : `<button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" style="margin-top:10px;padding:5px 10px;font-size:12px;">查看这 ${s.n} 笔交易 →</button>`}
+    ${editing ? renderComboEditor(combo) : ""}
+  </div>`;
+}
+function renderCombosSection() {
+  const combos = analysisPrefs.combos || [];
+  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <div class="sectionLabel" style="margin:0;">⟦ 组合分析 ⟧</div>
+    ${!viewingUserId ? `<button class="btn" data-action="add-combo" style="padding:4px 10px;font-size:12px;">${ICONS.plus} 新建组合</button>` : ""}
+  </div>`;
+  if (!combos.length) {
+    html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
+      还没有组合。组合就是一组固定的筛选条件（比如「模型=A 且 目标类型含 BSL」），存下来之后这里会实时显示它的胜率、EV、PF，点一下就能跳到记录页看是哪些交易。<br>
+      三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。
+    </div>`;
+    return html;
+  }
+  html += `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>`;
+  return html;
+}
+
+/* ---------- 分析页：拆解显示配置 ---------- */
+function renderBreakdownPicker() {
+  const hidden = analysisPrefs.breakdownHidden || [];
+  const fields = breakdownCandidateFields();
+  return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">取消勾选就不显示，拖动 ⠿ 调整顺序。以后新加的字段会自动出现在最后面。</div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      ${fields.map((f, idx) => `<div class="bdRow" draggable="true" data-bd-idx="${idx}">
+        <span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;">
+          <input type="checkbox" data-action="toggle-breakdown-field" data-id="${esc(f.id)}" ${hidden.includes(f.id) ? "" : "checked"} style="width:13px;height:13px;" />
+          <span style="font-size:12.5px;color:var(--text);">${esc(f.label)}</span>
+          <span style="font-size:11px;color:var(--mutedDark);">${f.type === "multiselect" ? "多选" : "单选"}${f.role ? " · " + esc(f.role) : ""}</span>
+        </label>
+      </div>`).join("")}
+    </div>
+    <button class="tinyBtn" data-action="reset-breakdown-prefs" style="margin-top:10px;color:var(--mutedDark);">恢复默认（全显示 + 默认顺序）</button>
+  </div>`;
 }
 function renderAnalytics() {
   const stats = computeStats();
@@ -789,36 +1230,61 @@ function renderAnalytics() {
     return `<div class="notice">${ICONS.alert}<span>当前没有字段被标记为『结果』角色 — 去设置页给某个字段打上『结果 W/L/BE』角色标签，分析才能算出来。</span></div>`;
   }
   const takenF = roleField("taken"), resultF = roleField("result");
+  const scope = analysisPrefs.statScope;
+  const prefsNotice = analysisPrefsError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(analysisPrefsError)}</span></div>` : "";
+
   if (stats.totalTaken === 0) {
-    const total = trades.length;
-    const withTaken = takenF ? trades.filter((t) => t[takenF.id] === "Taken").length : total;
-    const withResult = resultF ? trades.filter((t) => t[resultF.id] === "W" || t[resultF.id] === "L").length : 0;
-    return `<div class="notice">${ICONS.alert}<div>
-      <div style="color:var(--text);margin-bottom:6px;">暂时算不出统计——数据库里共 ${total} 笔交易，但符合条件（taken=Taken）的有 ${withTaken} 笔，其中 result 填了 W/L 的有 ${withResult} 笔。</div>
-      <div>新建交易时记得点选 taken=Taken、result 也要选一个具体值（不能留空），这两个字段决定了能不能被计入统计。</div>
+    const baseList = analysisBaseTrades();
+    const total = baseList.length;
+    const withTaken = takenF ? baseList.filter((t) => t[takenF.id] === "Taken").length : total;
+    const withResult = resultF ? baseList.filter((t) => t[resultF.id] === "W" || t[resultF.id] === "L").length : 0;
+    return prefsNotice + renderStatScopeBar() + `<div class="notice">${ICONS.alert}<div>
+      <div style="color:var(--text);margin-bottom:6px;">当前口径下没有可统计的交易——${analysisPrefs.modelFilter ? "选中的模型" : "数据库里"}共 ${total} 笔，其中 taken=Taken 的有 ${withTaken} 笔，result 填了 W/L 的有 ${withResult} 笔。</div>
+      <div>要么放宽上面的统计口径，要么新建交易时记得点选 taken=Taken、result 也选一个具体值（不能留空）。</div>
     </div></div>`;
   }
-  let html = `<div class="statRow">
-    <div class="statBox"><div class="statLabel">TAKEN</div><div class="statValue">${stats.totalTaken}</div></div>
+
+  const countLabel = scope.takenOnly && takenF ? "TAKEN" : "交易数";
+  let html = prefsNotice + renderStatScopeBar() + `<div class="statRow">
+    <div class="statBox"><div class="statLabel">${countLabel}</div><div class="statValue">${stats.totalTaken}</div></div>
     <div class="statBox"><div class="statLabel">WIN RATE</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
     <div class="statBox"><div class="statLabel">SETUP QUALITY</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">TOTAL R</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">EV / 笔</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${stats.pfSample} 笔"><div class="statLabel">PROFIT FACTOR</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">基于填了 R 的 ${stats.pfSample} 笔</div>` : ""}</div>` : ""}
     ${stats.captureRate !== null ? `<div class="statBox"><div class="statLabel">R 捕获率</div><div class="statValue">${fmtPct(stats.captureRate)}</div></div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>
-    <span>· Faded ${stats.totalFaded}（本应做的 W ${stats.fadedW} / 本应避开的 L ${stats.fadedL}）</span>
+    ${takenF ? `<span>· Faded ${stats.totalFaded}（本应做的 W ${stats.fadedW} / 本应避开的 L ${stats.fadedL}）</span>` : ""}
   </div>`;
-  if (stats.byModel.length) {
-    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ BY MODEL ⟧</div><div class="breakdownCard">${stats.byModel.map(barRow).join("")}</div></div>`;
+
+  html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
+
+  if (stats.byModel.length && !analysisPrefs.modelFilter) {
+    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ BY MODEL ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
   }
+
+  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <div class="sectionLabel" style="margin:0;">⟦ 全部字段拆解 ⟧</div>
+    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} 显示设置</button>` : ""}
+  </div>`;
+  if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
   if (stats.breakdowns.length) {
-    html += `<div class="sectionLabel">⟦ 全部字段拆解 ⟧</div><div class="breakdownGrid">`;
+    html += `<div class="breakdownGrid">`;
     stats.breakdowns.forEach((b) => {
-      html += `<div class="breakdownCard"><div class="breakdownTitle">${esc(b.field.label)}</div>${b.rows.map(barRow).join("")}</div>`;
+      const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
+      html += `<div class="breakdownCard"${draggable}>
+        <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="拖动排序">⠿</span> ` : ""}${esc(b.field.label)}</span>
+          ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="不显示这个字段的拆解（想找回去上面『显示设置』里重新勾选）">${ICONS.x}</button>` : ""}
+        </div>
+        ${b.rows.map((r) => barRow(r, b.field.id)).join("")}
+      </div>`;
     });
     html += `</div>`;
+  } else {
+    html += `<div style="font-size:12.5px;color:var(--mutedDark);">没有可拆解的字段（全被隐藏了，或者当前口径下这些字段都没填过值）。</div>`;
   }
   return html;
 }
@@ -1387,7 +1853,7 @@ document.addEventListener("click", async (e) => {
   }
   const action = el.dataset.action;
 
-  if (action === "switch-tab") { tab = el.dataset.tab; confirmDeleteId = null; render(); }
+  if (action === "switch-tab") { flushAnalysisPrefs(); tab = el.dataset.tab; confirmDeleteId = null; comboConfirmDeleteId = null; render(); }
   else if (action === "toggle-theme") {
     const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
     if (next === "light") document.documentElement.dataset.theme = "light"; else delete document.documentElement.dataset.theme;
@@ -1445,16 +1911,23 @@ document.addEventListener("click", async (e) => {
     renderModal(); render();
   }
   else if (action === "ask-delete") { if (viewingUserId) return; confirmDeleteId = el.dataset.id; render(); }
-  else if (action === "add-filter") { activeFilters.push(newFilterRow()); saveActiveFilters(); gridPage = 1; render(); }
-  else if (action === "remove-filter") { activeFilters.splice(parseInt(el.dataset.idx, 10), 1); saveActiveFilters(); gridPage = 1; render(); }
+  else if (action === "add-filter") {
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    ctx.arr.push(newFilterRow());
+    afterFilterChange(ctx);
+  }
+  else if (action === "remove-filter") {
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    ctx.arr.splice(parseInt(el.dataset.idx, 10), 1);
+    afterFilterChange(ctx);
+  }
   else if (action === "toggle-filter-value") {
-    const idx = parseInt(el.dataset.idx, 10), val = el.dataset.val;
-    const row = activeFilters[idx];
-    const vals = row.values || [];
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    const row = ctx.arr[parseInt(el.dataset.idx, 10)];
+    if (!row) return;
+    const val = el.dataset.val, vals = row.values || [];
     row.values = vals.includes(val) ? vals.filter((v) => v !== val) : [...vals, val];
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    afterFilterChange(ctx);
   }
   else if (action === "calendar-prev-year") { calendarYear--; render(); }
   else if (action === "calendar-next-year") { calendarYear++; render(); }
@@ -1535,6 +2008,97 @@ document.addEventListener("click", async (e) => {
     await persistCardFields(next);
   }
   else if (action === "reset-card-fields") { await persistCardFields([]); }
+  /* ---------- 分析页：组合 ---------- */
+  else if (action === "add-combo") {
+    if (viewingUserId) return;
+    const c = normalizeCombo({ id: newComboId(), name: "新组合 " + (analysisPrefs.combos.length + 1), conditions: [newFilterRow()] });
+    analysisPrefs.combos.push(c);
+    comboEditingId = c.id;
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (action === "edit-combo") {
+    const id = el.dataset.comboId;
+    comboEditingId = comboEditingId === id ? null : id;
+    comboConfirmDeleteId = null;
+    render();
+  }
+  else if (action === "close-combo-editor") { comboEditingId = null; flushAnalysisPrefs(); render(); }
+  else if (action === "ask-delete-combo") { comboConfirmDeleteId = el.dataset.comboId; render(); }
+  else if (action === "cancel-delete-combo") { comboConfirmDeleteId = null; render(); }
+  else if (action === "confirm-delete-combo") {
+    if (viewingUserId) return;
+    const id = el.dataset.comboId;
+    analysisPrefs.combos = analysisPrefs.combos.filter((c) => c.id !== id);
+    if (comboEditingId === id) comboEditingId = null;
+    if (activeComboId === id) activeComboId = null;
+    comboConfirmDeleteId = null;
+    await saveAnalysisPrefsNow(); render();
+  }
+  else if (action === "open-combo-in-grid") {
+    const c = findCombo(el.dataset.comboId);
+    if (!c) return;
+    // 和组合卡片上的数字走的是同一个 comboFilterRows()，所以两边统计必然一致
+    activeFilters = comboFilterRows(c);
+    activeComboId = c.id;
+    saveActiveFilters();
+    gridPage = 1; tab = "grid"; filterPanelOpen = true;
+    render(); window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "back-to-combo") { tab = "analytics"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  else if (action === "clear-combo-filters") {
+    // 只把每一行的选中值清空，字段本身还留着——不是把筛选条件行整个删掉
+    activeFilters = activeFilters.map((f) => newFilterRow(f.fieldId));
+    activeComboId = null;
+    saveActiveFilters(); gridPage = 1; render();
+  }
+  else if (action === "save-filters-as-combo") {
+    if (viewingUserId) return;
+    const takenF = roleField("taken"), heF = roleField("human_error");
+    // 筛选里如果已经手动加了 taken / 人为错误 的条件，就别再让组合的口径开关重复加一遍
+    const usedTaken = takenF && activeFilters.some((f) => f.fieldId === takenF.id);
+    const usedHE = heF && activeFilters.some((f) => f.fieldId === heF.id);
+    const c = normalizeCombo({
+      id: newComboId(),
+      name: "来自筛选 " + new Date().toLocaleDateString("zh-CN"),
+      scopeTaken: !usedTaken, scopeHE: !usedHE,
+      conditions: activeFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
+    });
+    analysisPrefs.combos.push(c);
+    comboEditingId = c.id;
+    tab = "analytics";
+    await saveAnalysisPrefsNow(); render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "combo-from-breakdown") {
+    if (viewingUserId) return;
+    const fieldId = el.dataset.field, val = el.dataset.val;
+    const field = schema.find((f) => f.id === fieldId);
+    if (!field) return;
+    const c = normalizeCombo({
+      id: newComboId(),
+      name: `${field.label} = ${val}`,
+      scopeTaken: analysisPrefs.statScope.takenOnly,
+      scopeHE: analysisPrefs.statScope.excludeHumanError,
+      conditions: [{ ...newFilterRow(fieldId), values: [val] }],
+    });
+    analysisPrefs.combos.push(c);
+    comboEditingId = c.id;
+    await saveAnalysisPrefsNow(); render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "toggle-breakdown-picker") { breakdownPickerOpen = !breakdownPickerOpen; render(); }
+  else if (action === "hide-breakdown-field") {
+    if (viewingUserId) return;
+    const id = el.dataset.id;
+    if (!analysisPrefs.breakdownHidden.includes(id)) analysisPrefs.breakdownHidden = [...analysisPrefs.breakdownHidden, id];
+    await saveAnalysisPrefsNow(); render();
+  }
+  else if (action === "reset-breakdown-prefs") {
+    if (viewingUserId) return;
+    analysisPrefs.breakdownHidden = [];
+    analysisPrefs.breakdownOrder = [];
+    await saveAnalysisPrefsNow(); render();
+  }
   else if (action === "add-changelog") {
     const ta = document.getElementById("changelogDraft");
     await addChangelogEntry(ta.value);
@@ -1603,6 +2167,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "toggle-user-active") { await setUserActive(el.dataset.id, el.dataset.next === "true"); }
   else if (action === "toggle-user-role") { await setUserRole(el.dataset.id, el.dataset.next); }
   else if (action === "view-user-data") {
+    flushAnalysisPrefs(); // 切进只读模式后就写不了库了，先把没保存的分析设置落盘
     ownStateSnapshot = {
       activeFilters: JSON.parse(JSON.stringify(activeFilters)),
       gridPage, sortBy, sortDir, recordMode, tab,
@@ -1610,6 +2175,7 @@ document.addEventListener("click", async (e) => {
     viewingUserId = el.dataset.id;
     viewingUserEmail = el.dataset.email;
     activeFilters = [];
+    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
     gridPage = 1;
     tab = "grid";
     await loadAll();
@@ -1627,6 +2193,7 @@ document.addEventListener("click", async (e) => {
       tab = ownStateSnapshot.tab;
       ownStateSnapshot = null;
     }
+    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null;
     await loadAll();
     render();
   }
@@ -1718,41 +2285,82 @@ document.addEventListener("change", async (e) => {
     render();
   }
   else if (e.target.dataset.filterField !== undefined) {
-    const idx = parseInt(e.target.dataset.filterField, 10);
-    activeFilters[idx] = newFilterRow(e.target.value);
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    ctx.arr[parseInt(e.target.dataset.filterField, 10)] = newFilterRow(e.target.value);
+    afterFilterChange(ctx);
   }
   else if (e.target.dataset.filterRange !== undefined) {
-    const idx = parseInt(e.target.dataset.filterRange, 10), bound = e.target.dataset.bound;
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    const row = ctx.arr[parseInt(e.target.dataset.filterRange, 10)];
+    if (!row) return;
     const val = e.target.dataset.timeInput !== undefined ? normalizeTimeValue(e.target.value) : e.target.value;
-    if (bound === "start") activeFilters[idx].rangeStart = val;
-    else activeFilters[idx].rangeEnd = val;
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    if (e.target.dataset.bound === "start") row.rangeStart = val; else row.rangeEnd = val;
+    afterFilterChange(ctx);
   }
   else if (e.target.dataset.filterText !== undefined) {
-    const idx = parseInt(e.target.dataset.filterText, 10);
-    activeFilters[idx].textValue = e.target.value;
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    const row = ctx.arr[parseInt(e.target.dataset.filterText, 10)];
+    if (!row) return;
+    row.textValue = e.target.value;
+    afterFilterChange(ctx);
   }
   else if (e.target.dataset.action === "toggle-filter-negate") {
-    const idx = parseInt(e.target.dataset.idx, 10);
-    activeFilters[idx].negate = e.target.checked;
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    const row = ctx.arr[parseInt(e.target.dataset.idx, 10)];
+    if (!row) return;
+    row.negate = e.target.checked;
+    afterFilterChange(ctx);
   }
   else if (e.target.dataset.action === "toggle-filter-and") {
-    const idx = parseInt(e.target.dataset.idx, 10);
-    activeFilters[idx].matchMode = e.target.checked ? "and" : "or";
-    saveActiveFilters();
-    gridPage = 1;
-    render();
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    const row = ctx.arr[parseInt(e.target.dataset.idx, 10)];
+    if (!row) return;
+    row.matchMode = e.target.checked ? "and" : "or";
+    afterFilterChange(ctx);
+  }
+  else if (e.target.dataset.action === "toggle-scope-taken") {
+    if (viewingUserId) return;
+    analysisPrefs.statScope.takenOnly = e.target.checked;
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.action === "toggle-scope-he") {
+    if (viewingUserId) return;
+    analysisPrefs.statScope.excludeHumanError = e.target.checked;
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.bind === "analysis-model-filter") {
+    if (viewingUserId) return;
+    analysisPrefs.modelFilter = e.target.value;
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.action === "toggle-combo-scope-taken" || e.target.dataset.action === "toggle-combo-scope-he") {
+    if (viewingUserId) return;
+    const c = findCombo(e.target.dataset.comboId);
+    if (!c) return;
+    if (e.target.dataset.action === "toggle-combo-scope-taken") c.scopeTaken = e.target.checked;
+    else c.scopeHE = e.target.checked;
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.action === "toggle-breakdown-field") {
+    if (viewingUserId) return;
+    const id = e.target.dataset.id;
+    const hidden = analysisPrefs.breakdownHidden;
+    analysisPrefs.breakdownHidden = e.target.checked ? hidden.filter((x) => x !== id) : [...hidden, id];
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.comboName !== undefined) {
+    if (viewingUserId) return;
+    const c = findCombo(e.target.dataset.comboName);
+    if (!c) return;
+    c.name = e.target.value.trim() || "未命名组合";
+    queueSaveAnalysisPrefs(); render();
+  }
+  else if (e.target.dataset.comboTag !== undefined) {
+    if (viewingUserId) return;
+    const c = findCombo(e.target.dataset.comboTag);
+    if (!c) return;
+    c.tag = e.target.value;
+    queueSaveAnalysisPrefs(); render();
   }
   else if (e.target.dataset.fieldEdit) {
     const id = e.target.dataset.id, key = e.target.dataset.fieldEdit, val = e.target.value;
@@ -1765,7 +2373,11 @@ document.addEventListener("change", async (e) => {
 let dragFilterIdx = null;
 let dragOptField = null;
 let dragOptIdx = null;
+let dragComboIdx = null;
+let dragBdIdx = null;
+let dragBdCardId = null;
 let dragOverEl = null;
+const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"]';
 
 function clearDragOverHighlight() {
   if (dragOverEl) { dragOverEl.classList.remove("dragOverTarget"); dragOverEl = null; }
@@ -1785,19 +2397,36 @@ document.addEventListener("dragstart", (e) => {
     dragOptIdx = parseInt(chip.dataset.optIdx, 10);
     e.dataTransfer.effectAllowed = "move";
     chip.style.opacity = "0.4";
+    return;
+  }
+  const combo = e.target.closest('.comboCard[draggable="true"]');
+  if (combo) {
+    dragComboIdx = parseInt(combo.dataset.comboIdx, 10);
+    e.dataTransfer.effectAllowed = "move";
+    combo.style.opacity = "0.4";
+    return;
+  }
+  const bd = e.target.closest('.bdRow[draggable="true"]');
+  if (bd) {
+    dragBdIdx = parseInt(bd.dataset.bdIdx, 10);
+    e.dataTransfer.effectAllowed = "move";
+    bd.style.opacity = "0.4";
+    return;
+  }
+  const bdCard = e.target.closest('.breakdownCard[draggable="true"]');
+  if (bdCard) {
+    dragBdCardId = bdCard.dataset.bdCardId;
+    e.dataTransfer.effectAllowed = "move";
+    bdCard.style.opacity = "0.4";
   }
 });
 document.addEventListener("dragend", (e) => {
-  const row = e.target.closest('.filterRow[draggable="true"]');
-  if (row) row.style.opacity = "";
-  const chip = e.target.closest('.tagChip[draggable="true"]');
-  if (chip) chip.style.opacity = "";
+  const dragged = e.target.closest(DRAGGABLES);
+  if (dragged) dragged.style.opacity = "";
   clearDragOverHighlight();
 });
 document.addEventListener("dragover", (e) => {
-  const row = e.target.closest('.filterRow[draggable="true"]');
-  const chip = e.target.closest('.tagChip[draggable="true"]');
-  const target = row || chip;
+  const target = e.target.closest(DRAGGABLES);
   if (target) {
     e.preventDefault();
     if (dragOverEl && dragOverEl !== target) dragOverEl.classList.remove("dragOverTarget");
@@ -1837,8 +2466,59 @@ document.addEventListener("drop", (e) => {
       }
     }
     dragOptField = null; dragOptIdx = null;
+    return;
+  }
+  const combo = e.target.closest('.comboCard[draggable="true"]');
+  if (combo && dragComboIdx !== null) {
+    e.preventDefault();
+    const targetIdx = parseInt(combo.dataset.comboIdx, 10);
+    if (targetIdx !== dragComboIdx) {
+      const [moved] = analysisPrefs.combos.splice(dragComboIdx, 1);
+      analysisPrefs.combos.splice(targetIdx, 0, moved);
+      saveAnalysisPrefsNow();
+      render();
+    }
+    dragComboIdx = null;
+    return;
+  }
+  const bd = e.target.closest('.bdRow[draggable="true"]');
+  if (bd && dragBdIdx !== null) {
+    e.preventDefault();
+    const targetIdx = parseInt(bd.dataset.bdIdx, 10);
+    if (targetIdx !== dragBdIdx) {
+      // 拖过一次就把当前完整顺序落成 breakdownOrder，之后新加的字段仍然会接在尾部
+      const ids = breakdownCandidateFields().map((f) => f.id);
+      const [moved] = ids.splice(dragBdIdx, 1);
+      ids.splice(targetIdx, 0, moved);
+      analysisPrefs.breakdownOrder = ids;
+      saveAnalysisPrefsNow();
+      render();
+    }
+    dragBdIdx = null;
+    return;
+  }
+  const bdCard = e.target.closest('.breakdownCard[draggable="true"]');
+  if (bdCard && dragBdCardId !== null) {
+    e.preventDefault();
+    const targetId = bdCard.dataset.bdCardId;
+    if (targetId !== dragBdCardId) {
+      // 卡片区只显示未隐藏的字段，是完整候选列表的子集，所以按 id 定位、
+      // 而不是按卡片在这个子集里的下标——下标和 breakdownOrder 里的下标含义不一样
+      const ids = breakdownCandidateFields().map((f) => f.id);
+      const fromIdx = ids.indexOf(dragBdCardId), toIdx = ids.indexOf(targetId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const [moved] = ids.splice(fromIdx, 1);
+        ids.splice(toIdx, 0, moved);
+        analysisPrefs.breakdownOrder = ids;
+        saveAnalysisPrefsNow();
+        render();
+      }
+    }
+    dragBdCardId = null;
   }
 });
+// 800ms 的 debounce 还没到就关页面的话，把没写完的分析设置补上
+window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); });
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
@@ -1874,6 +2554,8 @@ async function bootstrapAuth() {
     } else {
       currentProfile = null; trades = []; schema = DEFAULT_SCHEMA; adminUsers = null;
       defaultFiltersSeeded = false; activeFilters = [];
+      analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
+      activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
     }
     render();
   });
