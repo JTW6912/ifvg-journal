@@ -535,13 +535,20 @@ function filterRowValuesHtml(field, idx, f) {
       ${(field.options || []).map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}">${esc(o)}</button>`).join("")}
     </div>`;
   }
-  if (field.type === "date" || field.type === "time") {
+  if (field.type === "date") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-      <input type="${field.type}" class="select" data-filter-range="${idx}" data-bound="start" value="${esc(f.rangeStart || "")}" />
+      <input type="date" class="select" data-filter-range="${idx}" data-bound="start" value="${esc(f.rangeStart || "")}" />
       <span style="color:var(--mutedDark);font-size:12px;">到</span>
-      <input type="${field.type}" class="select" data-filter-range="${idx}" data-bound="end" value="${esc(f.rangeEnd || "")}" />
+      <input type="date" class="select" data-filter-range="${idx}" data-bound="end" value="${esc(f.rangeEnd || "")}" />
+    </div>`;
+  }
+  if (field.type === "time") {
+    return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="start" data-time-input value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
+      <span style="color:var(--mutedDark);font-size:12px;">到</span>
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="end" data-time-input value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
     </div>
-    ${field.type === "time" ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">注意：12小时制里 12:00 AM = 午夜，12:00 PM = 中午，选反了会导致筛不出结果</div>` : ""}`;
+    <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">24小时制，直接输入数字如 0930 会自动格式化为 09:30</div>`;
   }
   return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}" value="${esc(f.textValue || "")}" placeholder="包含…" /></div>`;
 }
@@ -736,9 +743,10 @@ function renderGrid() {
       bodyHtml += cardFields.map((fid) => {
         const f = schema.find((x) => x.id === fid);
         if (!f) return "";
-        return `<div style="margin-top:8px;font-size:11.5px;">
-          <div style="color:var(--mutedDark);margin-bottom:2px;">${esc(f.label)}</div>
-          <div style="color:var(--text);white-space:normal;word-break:break-word;line-height:1.5;">${esc(formatFieldValueShort(f, t[fid]))}</div>
+        const isLongText = f.type === "textarea";
+        return `<div style="margin-top:8px;font-size:${isLongText ? "13px" : "11.5px"};">
+          <div style="color:var(--mutedDark);margin-bottom:2px;${isLongText ? "font-size:11.5px;" : ""}">${esc(f.label)}</div>
+          <div style="color:var(--text);white-space:normal;word-break:break-word;line-height:1.6;">${esc(formatFieldValueShort(f, t[fid]))}</div>
         </div>`;
       }).join("");
     }
@@ -1098,6 +1106,29 @@ window.__updateUrlPreview = function (fieldId, val) {
   const box = document.getElementById("urlpreview-" + fieldId);
   if (box) box.innerHTML = urlPreviewHtml(val);
 };
+function timeDigitsToDisplay(digits) {
+  digits = digits.slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return digits.slice(0, digits.length - 2) + ":" + digits.slice(-2);
+}
+window.__formatTimeInput = function (el) {
+  const pos = el.selectionStart;
+  const before = el.value.length;
+  const digits = el.value.replace(/\D/g, "").slice(0, 4);
+  el.value = timeDigitsToDisplay(digits);
+  const after = el.value.length;
+  const newPos = Math.max(0, (pos || after) + (after - before));
+  try { el.setSelectionRange(newPos, newPos); } catch (e) {}
+};
+function normalizeTimeValue(raw) {
+  const digits = String(raw || "").replace(/\D/g, "").slice(0, 4);
+  if (!digits) return "";
+  const h = digits.length <= 2 ? digits : digits.slice(0, digits.length - 2);
+  const m = digits.length <= 2 ? "0" : digits.slice(-2);
+  const hn = Math.min(23, parseInt(h, 10) || 0);
+  const mn = Math.min(59, parseInt(m, 10) || 0);
+  return String(hn).padStart(2, "0") + ":" + String(mn).padStart(2, "0");
+}
 window.__imgFallback = function (imgEl) {
   const url = imgEl.dataset.fallbackUrl || "";
   const wrap = document.createElement("div");
@@ -1695,8 +1726,9 @@ document.addEventListener("change", async (e) => {
   }
   else if (e.target.dataset.filterRange !== undefined) {
     const idx = parseInt(e.target.dataset.filterRange, 10), bound = e.target.dataset.bound;
-    if (bound === "start") activeFilters[idx].rangeStart = e.target.value;
-    else activeFilters[idx].rangeEnd = e.target.value;
+    const val = e.target.dataset.timeInput !== undefined ? normalizeTimeValue(e.target.value) : e.target.value;
+    if (bound === "start") activeFilters[idx].rangeStart = val;
+    else activeFilters[idx].rangeEnd = val;
     saveActiveFilters();
     gridPage = 1;
     render();
