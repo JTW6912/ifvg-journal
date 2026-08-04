@@ -2,8 +2,10 @@
 // 本地开发不需要跑这个，直接复制 config.example.js 为 config.js 手动填值即可。
 const fs = require("fs");
 
-const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_ANON_KEY;
+// .trim() 顺手去掉 Vercel 环境变量里可能被粘贴带进来的 BOM/空白字符
+// （BOM 是 JS 字符串 whitespace 判定的一部分，trim() 能连它一起去掉）
+const url = (process.env.SUPABASE_URL || "").trim();
+const key = (process.env.SUPABASE_ANON_KEY || "").trim();
 
 if (!url || !key) {
   console.error("Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variable.");
