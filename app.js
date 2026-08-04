@@ -144,6 +144,8 @@ let authBusy = false;
 let authLoading = true;
 let recordMode = (function () { try { return localStorage.getItem("journal_record_mode") || "backtest"; } catch (e) { return "backtest"; } })();
 let adminUsers = null;
+let adminUsersSortBy = "created_at";
+let adminUsersSortDir = "desc";
 let userMenuOpen = false;
 let profileModalOpen = false;
 let profileError = "";
@@ -691,6 +693,16 @@ async function loadAdminUsers() {
       adminUsers = adminUsers.map((u) => ({ ...u, tradeCount: counts[u.id] || 0 }));
     }
   } catch (e) { console.error(e); }
+}
+function sortAdminUsers(list) {
+  const key = adminUsersSortBy;
+  const dir = adminUsersSortDir === "asc" ? 1 : -1;
+  return [...list].sort((a, b) => {
+    let av = a[key], bv = b[key];
+    if (key === "tradeCount") { av = av || 0; bv = bv || 0; }
+    else { av = av ? new Date(av).getTime() : 0; bv = bv ? new Date(bv).getTime() : 0; }
+    return (av - bv) * dir;
+  });
 }
 async function setUserActive(userId, active) {
   const { error } = await sb.from("profiles").update({ active }).eq("id", userId);
@@ -1445,8 +1457,13 @@ function renderAdminPanel() {
       <div class="settingsRowBody ${openSettingsRow === "__admin_users__" ? "open" : ""}">
         ${adminUsers === null
           ? `<div style="font-size:12px;color:var(--mutedDark);">展开时自动加载…</div>`
-          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>邮箱</th><th>名称</th><th>角色</th><th>状态</th><th>交易数</th><th>上次在线</th><th>注册时间</th><th></th></tr></thead><tbody>
-              ${adminUsers.map((u) => `<tr>
+          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>邮箱</th><th>名称</th><th>角色</th><th>状态</th>${["tradeCount", "last_seen_at", "created_at"].map((key, i) => {
+                const label = ["交易数", "上次在线", "注册时间"][i];
+                const active = adminUsersSortBy === key;
+                const arrow = active ? (adminUsersSortDir === "asc" ? " ▲" : " ▼") : "";
+                return `<th data-action="sort-admin-users" data-key="${key}" style="cursor:pointer;user-select:none;${active ? "color:var(--accent);" : ""}">${label}${arrow}</th>`;
+              }).join("")}<th></th></tr></thead><tbody>
+              ${sortAdminUsers(adminUsers).map((u) => `<tr>
                 <td>${esc(u.email)}</td>
                 <td>${esc(u.display_name || "—")}</td>
                 <td><span class="pill ${u.role === "admin" ? "on" : ""}">${esc(u.role)}</span></td>
@@ -2162,6 +2179,12 @@ document.addEventListener("click", async (e) => {
       calendarMonth = now.getMonth() + 1;
     }
     await loadAll(); render();
+  }
+  else if (action === "sort-admin-users") {
+    const key = el.dataset.key;
+    if (adminUsersSortBy === key) { adminUsersSortDir = adminUsersSortDir === "asc" ? "desc" : "asc"; }
+    else { adminUsersSortBy = key; adminUsersSortDir = "desc"; }
+    render();
   }
   else if (action === "toggle-user-active") { await setUserActive(el.dataset.id, el.dataset.next === "true"); }
   else if (action === "toggle-user-role") { await setUserRole(el.dataset.id, el.dataset.next); }
