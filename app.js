@@ -70,6 +70,7 @@ const ICONS = {
   chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M6 9l6 6 6-6"/></svg>',
   chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 15l-6-6-6 6"/></svg>',
   filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
 };
 
 /* ============================================================
@@ -118,6 +119,7 @@ let editingTrade = null;
 let confirmDeleteId = null;
 let exportMenuOpen = false;
 let activeFilters = []; // [{fieldId, value}]
+let searchQuery = "";
 let openSettingsRow = null;
 let loadError = null;
 let calendarYear = new Date().getFullYear();
@@ -778,6 +780,15 @@ function loadSavedFilters() {
     return Array.isArray(parsed) ? parsed : null;
   } catch (e) { return null; }
 }
+function tradeMatchesSearch(t, query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return schema.some((f) => {
+    if (!["text", "textarea", "url"].includes(f.type)) return false;
+    const v = t[f.id];
+    return typeof v === "string" && v.toLowerCase().includes(q);
+  });
+}
 function tradeMatchesFilter(t, f) {
   const field = schema.find((x) => x.id === f.fieldId);
   if (!field) return true;
@@ -933,7 +944,7 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
 function renderGrid() {
   const modelF = roleField("model"), resultF = roleField("result"), dateF = roleField("date"), rF = roleField("r_multiple"), shotF = roleField("screenshot");
 
-  let filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)));
+  let filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)) && tradeMatchesSearch(t, searchQuery));
   const sortVal = (t) => {
     if (sortBy === "created_at") return t._created_at || "";
     if (sortBy === "updated_at") return t._updated_at || t._created_at || "";
@@ -952,6 +963,10 @@ function renderGrid() {
       <button class="btn" data-action="restore-pre-combo-filters">还原筛选</button>
     </span>
   </div>` : "";
+  html += `<div style="position:relative;margin-bottom:12px;max-width:340px;">
+    <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mutedDark);pointer-events:none;">${ICONS.search}</span>
+    <input type="text" class="input" data-action="search-input" placeholder="搜索 note 等文本字段…" value="${esc(searchQuery)}" style="padding-left:34px;" />
+  </div>`;
   html += renderFilterPanel(filtered.length, filtered);
 
   // sort controls
@@ -1503,12 +1518,9 @@ function renderSettings() {
     字段的增删改在这里管理，改动会立即同步到录入表单和分析页。「分析角色」决定这个字段在统计里扮演什么。</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
-    html += `<div class="settingsRow">
+    html += `<div class="settingsRow" draggable="${open ? "false" : "true"}" data-field-idx="${i}">
       <div class="settingsRowHead" data-action="toggle-settings-row" data-id="${esc(f.id)}">
-        <div class="reorderCol">
-          <button class="tinyBtn" data-action="move-field" data-id="${esc(f.id)}" data-dir="-1" ${i === 0 ? "disabled style='opacity:.25'" : ""}>${ICONS.up}</button>
-          <button class="tinyBtn" data-action="move-field" data-id="${esc(f.id)}" data-dir="1" ${i === schema.length - 1 ? "disabled style='opacity:.25'" : ""}>${ICONS.down}</button>
-        </div>
+        <span class="dragHandle" title="拖动排序">⠿</span>
         <div style="flex:1;">
           <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
           <span class="fieldTypeTag">${esc(FIELD_TYPES.find((t) => t.value === f.type)?.label || f.type)}</span>
@@ -2257,15 +2269,6 @@ document.addEventListener("click", async (e) => {
     render();
     if (openSettingsRow === "__admin_users__" && adminUsers === null) { await loadAdminUsers(); render(); }
   }
-  else if (action === "move-field") {
-    const id = el.dataset.id, dir = parseInt(el.dataset.dir, 10);
-    const idx = schema.findIndex((f) => f.id === id);
-    const swap = idx + dir;
-    if (swap < 0 || swap >= schema.length) return;
-    const next = [...schema];
-    [next[idx], next[swap]] = [next[swap], next[idx]];
-    await persistSchema(next);
-  }
   else if (action === "delete-field") {
     if (!confirm("删除这个字段？已有交易里这个字段的数据会保留但不再显示。")) return;
     await persistSchema(schema.filter((f) => f.id !== el.dataset.id));
@@ -2297,6 +2300,14 @@ document.addEventListener("input", (e) => {
   if (e.target.dataset.formField !== undefined && editingTrade && editingTrade._isNew) {
     formDraft[e.target.dataset.formField] = e.target.value;
     saveDraft();
+  }
+  else if (e.target.dataset.action === "search-input") {
+    searchQuery = e.target.value;
+    gridPage = 1;
+    const caret = e.target.selectionStart;
+    render();
+    const el = document.querySelector('[data-action="search-input"]');
+    if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (err) {} }
   }
 });
 document.addEventListener("change", async (e) => {
@@ -2390,8 +2401,9 @@ let dragOptIdx = null;
 let dragComboIdx = null;
 let dragBdIdx = null;
 let dragBdCardId = null;
+let dragSettingsIdx = null;
 let dragOverEl = null;
-const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"]';
+const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"]';
 
 function clearDragOverHighlight() {
   if (dragOverEl) { dragOverEl.classList.remove("dragOverTarget"); dragOverEl = null; }
@@ -2432,6 +2444,13 @@ document.addEventListener("dragstart", (e) => {
     dragBdCardId = bdCard.dataset.bdCardId;
     e.dataTransfer.effectAllowed = "move";
     bdCard.style.opacity = "0.4";
+    return;
+  }
+  const settingsRow = e.target.closest('.settingsRow[draggable="true"]');
+  if (settingsRow) {
+    dragSettingsIdx = parseInt(settingsRow.dataset.fieldIdx, 10);
+    e.dataTransfer.effectAllowed = "move";
+    settingsRow.style.opacity = "0.4";
   }
 });
 document.addEventListener("dragend", (e) => {
@@ -2529,6 +2548,19 @@ document.addEventListener("drop", (e) => {
       }
     }
     dragBdCardId = null;
+    return;
+  }
+  const settingsRow = e.target.closest('.settingsRow[draggable="true"]');
+  if (settingsRow && dragSettingsIdx !== null) {
+    e.preventDefault();
+    const targetIdx = parseInt(settingsRow.dataset.fieldIdx, 10);
+    if (targetIdx !== dragSettingsIdx) {
+      const next = [...schema];
+      const [moved] = next.splice(dragSettingsIdx, 1);
+      next.splice(targetIdx, 0, moved);
+      persistSchema(next);
+    }
+    dragSettingsIdx = null;
   }
 });
 // 800ms 的 debounce 还没到就关页面的话，把没写完的分析设置补上

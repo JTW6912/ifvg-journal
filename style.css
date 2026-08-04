@@ -185,9 +185,11 @@ textarea.input{resize:vertical;}
 .thumbWrap .thumbFallback{height:100%;width:100%;margin-top:0;border:none;}
 .thumbFallback{height:120px;border-radius:8px;border:1px solid var(--border);display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:5px;color:var(--mutedDark);font-size:11px;margin-top:8px;}
-.settingsRow{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--surface);}
+.settingsRow{border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--surface);transition:border-color .12s,box-shadow .12s;}
+.settingsRow[draggable="true"]{cursor:grab;}
+.settingsRow[draggable="true"].dragOverTarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft) inset;}
 .settingsRowHead{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;}
-.settingsRowHead .reorderCol{display:flex;flex-direction:column;gap:1px;}
+.settingsRowHead .dragHandle{color:var(--mutedDark);font-size:13px;cursor:grab;}
 .tinyBtn{background:transparent;border:none;color:var(--mutedDark);cursor:pointer;padding:0;font-size:11px;}
 .settingsRowBody{padding:4px 14px 16px;border-top:1px solid var(--border);display:none;}
 .settingsRowBody.open{display:block;}
