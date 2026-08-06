@@ -165,6 +165,39 @@ let comboEditingId = null;   // 哪个组合的条件编辑器展开着
 let activeComboId = null;    // 记录页顶部「正在查看组合」横幅
 let preComboFilters = null;  // 跳到组合前的筛选快照，「还原筛选」用它原样恢复
 let comboConfirmDeleteId = null;
+let comboGroupConfirmDeleteId = null;
+let comboGroupModal = null; // { mode: "root"|"sub"|"rename", parentId, groupId, name } —— 新建/新建二级/改名分组的弹窗
+// 哪些分组被收起了——纯本地"这次怎么看"状态，不跨设备同步，跟 statScope/modelFilters 一个套路。
+// "__ungrouped__" 这个 key 代表页面最下面那个"未分组"桶
+let collapsedComboGroups = (function () {
+  try {
+    const raw = JSON.parse(localStorage.getItem("journal_collapsed_combo_groups") || "[]");
+    return new Set(Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : []);
+  } catch (e) { return new Set(); }
+})();
+function saveCollapsedComboGroups() {
+  try { localStorage.setItem("journal_collapsed_combo_groups", JSON.stringify([...collapsedComboGroups])); } catch (e) {}
+}
+let dragGroupOverId = null;  // 组合卡片正拖在哪个分组头上方（高亮用），"" 代表"未分组"那个投放区
+// 统计口径开关 + 模型筛选：纯本地"这次怎么看"设置，不跨设备同步，只存 localStorage
+let statScope = (function () {
+  try {
+    const raw = JSON.parse(localStorage.getItem("journal_stat_scope") || "null");
+    if (raw && typeof raw === "object") return { excludeHumanError: raw.excludeHumanError !== false, takenOnly: raw.takenOnly !== false };
+  } catch (e) {}
+  return { excludeHumanError: true, takenOnly: true };
+})();
+// 模型筛选是多选（空数组=全部），不是反选——想排除一个就把其余的都勾上，更灵活
+let modelFilters = (function () {
+  try {
+    const raw = JSON.parse(localStorage.getItem("journal_model_filters") || "[]");
+    return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
+  } catch (e) { return []; }
+})();
+function saveStatScope() { try { localStorage.setItem("journal_stat_scope", JSON.stringify(statScope)); } catch (e) {} }
+function saveModelFilters() {
+  try { localStorage.setItem("journal_model_filters", JSON.stringify(modelFilters)); } catch (e) {}
+}
 
 /* ============================================================
    HELPERS
@@ -206,31 +239,33 @@ function resultColor(v) {
 }
 
 /* ============================================================
-   ANALYSIS PREFS —— 分析页的口径开关 / 拆解显示配置 / 组合
-   全部存在 journal_schema.analysis_prefs (jsonb) 这一列里
+   ANALYSIS PREFS —— 分析页的拆解显示配置 / 组合 / 组合分组
+   存在 journal_schema.analysis_prefs (jsonb) 这一列里，跨设备同步。
+   统计口径开关(statScope)和模型筛选(modelFilters)不在这里——那两个是
+   纯本地的"这次怎么看"设置，只存 localStorage，见下面 STAT SCOPE 那一段。
    ============================================================ */
 function defaultAnalysisPrefs() {
   return {
-    statScope: { excludeHumanError: true, takenOnly: true },
-    modelFilter: "",        // ""=全部模型；只影响总览+拆解，不影响组合
     breakdownHidden: [],   // 存「隐藏哪些」，新加的字段自动出现
     breakdownOrder: [],    // 只存用户排过序的，没排到的按 schema 顺序接在后面
     combos: [],
+    comboGroups: [],        // {id, name, parentId} 扁平列表，parentId=null 是顶层分组，最多两层
   };
 }
 function normalizeAnalysisPrefs(raw) {
   const d = defaultAnalysisPrefs();
   if (!raw || typeof raw !== "object") return d;
-  const scope = raw.statScope && typeof raw.statScope === "object" ? raw.statScope : {};
+  const groups = Array.isArray(raw.comboGroups) ? raw.comboGroups : [];
+  const rootIds = new Set(groups.filter((g) => g && g.id && !g.parentId).map((g) => g.id));
+  const comboGroups = groups
+    .filter((g) => g && typeof g === "object" && g.id && typeof g.name === "string")
+    // parentId 只能指向一个"没有父级"的分组，否则会出现三层，直接把它降级成顶层分组
+    .map((g) => ({ id: String(g.id), name: g.name, parentId: g.parentId && rootIds.has(g.parentId) && g.parentId !== g.id ? g.parentId : null }));
   return {
-    statScope: {
-      excludeHumanError: scope.excludeHumanError !== false,
-      takenOnly: scope.takenOnly !== false,
-    },
-    modelFilter: typeof raw.modelFilter === "string" ? raw.modelFilter : "",
     breakdownHidden: Array.isArray(raw.breakdownHidden) ? raw.breakdownHidden.filter((x) => typeof x === "string") : [],
     breakdownOrder: Array.isArray(raw.breakdownOrder) ? raw.breakdownOrder.filter((x) => typeof x === "string") : [],
     combos: Array.isArray(raw.combos) ? raw.combos.map(normalizeCombo).filter(Boolean) : [],
+    comboGroups,
   };
 }
 function normalizeCombo(c) {
@@ -253,12 +288,72 @@ function normalizeCombo(c) {
   return {
     id: String(c.id),
     name: typeof c.name === "string" ? c.name : "未命名组合",
+    // tag 是旧版"可以做/要避免"标签留下的字段，功能已经被自定义分组取代，不再读它、不再给 UI 用，
+    // 但也不主动清掉——老数据里如果还有值，原样保留，不强行丢用户的东西
     tag: c.tag === "do" || c.tag === "avoid" ? c.tag : "",
+    // 指向 analysisPrefs.comboGroups 里的某个分组（顶层或二级都行）；""=未分组。
+    // 这里不校验分组是否真的存在——分组被删掉后引用会变成"悬空"，渲染时按未分组处理，不会导致组合丢失
+    groupId: typeof c.groupId === "string" ? c.groupId : "",
     conditions,
   };
 }
 function newComboId() { return "c_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function findCombo(id) { return analysisPrefs.combos.find((c) => c.id === id) || null; }
+
+/* ---------- 组合分组：扁平列表 {id, name, parentId}，parentId=null 是顶层，最多两层 ---------- */
+function newGroupId() { return "g_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function findComboGroup(id) { return (analysisPrefs.comboGroups || []).find((g) => g.id === id) || null; }
+function comboGroupRoots() { return (analysisPrefs.comboGroups || []).filter((g) => !g.parentId); }
+function comboGroupChildren(parentId) { return (analysisPrefs.comboGroups || []).filter((g) => g.parentId === parentId); }
+// 组合实际归到哪：groupId 指向不存在的分组（比如分组被删了）一律按未分组处理，组合不会因此凭空消失
+function comboEffectiveGroupId(combo) {
+  return combo.groupId && findComboGroup(combo.groupId) ? combo.groupId : "";
+}
+// 删一个分组会连带删掉：它自己、它下面的二级分组、以及归在这些分组里的全部组合
+function comboGroupCascadePreview(groupId) {
+  const children = comboGroupChildren(groupId);
+  const groupIds = new Set([groupId, ...children.map((g) => g.id)]);
+  const combos = (analysisPrefs.combos || []).filter((c) => groupIds.has(comboEffectiveGroupId(c)));
+  return { subgroupCount: children.length, comboCount: combos.length, comboIds: combos.map((c) => c.id) };
+}
+// 把顶层分组按 rootIdsInOrder 的顺序重建整个 comboGroups 数组，每个顶层后面紧跟着它自己的二级分组（保持各自原有相对顺序）
+function rebuildComboGroupsOrder(rootIdsInOrder) {
+  const next = [];
+  rootIdsInOrder.forEach((rid) => {
+    const root = findComboGroup(rid);
+    if (root) next.push(root);
+    comboGroupChildren(rid).forEach((sub) => next.push(sub));
+  });
+  analysisPrefs.comboGroups = next;
+}
+// 拖一个分组标题到另一个上：只处理"同级"重排（两个都是顶层，或两个都在同一个顶层下面）；
+// 跨级/换父不支持，直接忽略——不想因为拖拽手滑就把二级分组挪到别的顶层下面
+function moveComboGroup(draggedId, targetId) {
+  const dragged = findComboGroup(draggedId), target = findComboGroup(targetId);
+  if (!dragged || !target || dragged.parentId !== target.parentId) return;
+  const parentId = dragged.parentId;
+  if (parentId === null) {
+    const order = comboGroupRoots().map((g) => g.id);
+    const fromIdx = order.indexOf(draggedId), toIdx = order.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    const [moved] = order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, moved);
+    rebuildComboGroupsOrder(order);
+  } else {
+    const siblingIds = comboGroupChildren(parentId).map((g) => g.id);
+    const fromIdx = siblingIds.indexOf(draggedId), toIdx = siblingIds.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+    const [moved] = siblingIds.splice(fromIdx, 1);
+    siblingIds.splice(toIdx, 0, moved);
+    const next = [];
+    comboGroupRoots().forEach((root) => {
+      next.push(root);
+      if (root.id === parentId) siblingIds.forEach((sid) => { const s = findComboGroup(sid); if (s) next.push(s); });
+      else comboGroupChildren(root.id).forEach((s) => next.push(s));
+    });
+    analysisPrefs.comboGroups = next;
+  }
+}
 
 let analysisPrefsSaveTimer = null;
 async function writeAnalysisPrefs() {
@@ -297,16 +392,16 @@ async function saveAnalysisPrefsNow() {
 /* ============================================================
    ANALYTICS ENGINE
    ============================================================ */
-// 模型筛选（不选=全部）也算总览/拆解的口径之一，跟另外两个开关一样不影响组合
+// 模型筛选（多选，空=全部）也算总览/拆解的口径之一，跟另外两个开关一样不影响组合
 function analysisBaseTrades() {
   const modelF = roleField("model");
-  if (modelF && analysisPrefs.modelFilter) return trades.filter((t) => t[modelF.id] === analysisPrefs.modelFilter);
-  return trades;
+  if (!modelF || !modelFilters.length) return trades;
+  return trades.filter((t) => modelFilters.includes(t[modelF.id]));
 }
 // 当前口径下参与统计的交易集（顶部数字和字段拆解共用同一批）
 function scopedTrades() {
   const heF = roleField("human_error"), takenF = roleField("taken");
-  const scope = analysisPrefs.statScope;
+  const scope = statScope;
   let list = analysisBaseTrades();
   if (scope.excludeHumanError && heF) list = list.filter((t) => t[heF.id] !== "yes");
   if (scope.takenOnly && takenF) list = list.filter((t) => t[takenF.id] === "Taken");
@@ -341,7 +436,7 @@ function pfColor(pf) {
 function computeStats() {
   const resultF = roleField("result"), takenF = roleField("taken"), heF = roleField("human_error"),
         rF = roleField("r_multiple"), maxRrF = roleField("max_rr");
-  const scope = analysisPrefs.statScope;
+  const scope = statScope;
   const base = analysisBaseTrades();
   const clean = scope.excludeHumanError && heF ? base.filter((t) => t[heF.id] !== "yes") : base;
   const taken = scopedTrades();
@@ -485,8 +580,6 @@ function comboConditionsText(combo) {
   return parts.length ? parts.join(" · ") : "没有任何条件（= 全部交易）";
 }
 const COMBO_SMALL_SAMPLE = 10;
-const COMBO_TAGS = { do: { label: "可以做", color: "var(--pos)", soft: "var(--posSoft)" },
-                     avoid: { label: "要避免", color: "var(--neg)", soft: "var(--negSoft)" } };
 
 function computeMonthCoverageForYear(year) {
   const dateF = roleField("date");
@@ -1110,7 +1203,7 @@ function barRow(row, fieldId) {
 
 /* ---------- 分析页：口径开关 ---------- */
 function renderStatScopeBar() {
-  const scope = analysisPrefs.statScope;
+  const scope = statScope;
   const takenF = roleField("taken"), heF = roleField("human_error"), modelF = roleField("model");
   if (!takenF && !heF && !modelF) return "";
   return `<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
@@ -1121,14 +1214,14 @@ function renderStatScopeBar() {
     ${heF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
       <input type="checkbox" data-action="toggle-scope-he" ${scope.excludeHumanError ? "checked" : ""} style="width:13px;height:13px;" />排除标记为人为错误的交易
     </label>` : ""}
-    ${modelF ? `<label style="display:flex;align-items:center;gap:6px;">
+    ${modelF ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span>模型</span>
-      <select class="select" data-bind="analysis-model-filter" style="padding:4px 8px;font-size:12px;" ${viewingUserId ? "disabled" : ""}>
-        <option value="" ${!analysisPrefs.modelFilter ? "selected" : ""}>全部</option>
-        ${(modelF.options || []).map((o) => `<option value="${esc(o)}" ${analysisPrefs.modelFilter === o ? "selected" : ""}>${esc(o)}</option>`).join("")}
-      </select>
-    </label>` : ""}
-    <span style="color:var(--mutedDark);font-size:11px;">这些开关只影响上面的总览和下面的字段拆解，不影响组合分析（组合用的是自己单独添加的筛选条件）</span>
+      <div class="chipGroup" style="margin:0;">
+        ${(modelF.options || []).map((o) => `<button type="button" class="chip ${modelFilters.includes(o) ? "active" : ""}" data-action="toggle-model-filter-value" data-val="${esc(o)}">${esc(o)}</button>`).join("")}
+      </div>
+      ${modelFilters.length ? `<button class="tinyBtn" data-action="clear-model-filters" style="color:var(--mutedDark);">清空（=全部）</button>` : `<span style="color:var(--mutedDark);font-size:11px;">不选=全部</span>`}
+    </div>` : ""}
+    <span style="color:var(--mutedDark);font-size:11px;">这些是本地设置，只存在这台设备上，不会同步给其他登录设备；只影响上面的总览和下面的字段拆解，不影响组合分析（组合用的是自己单独添加的筛选条件）</span>
   </div>`;
 }
 
@@ -1146,13 +1239,8 @@ function renderComboEditor(combo) {
   return `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
       <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="组合名字…" style="flex:1 1 220px;" />
-      <select class="select" data-combo-tag="${esc(combo.id)}">
-        <option value="" ${combo.tag === "" ? "selected" : ""}>不标记</option>
-        <option value="do" ${combo.tag === "do" ? "selected" : ""}>可以做</option>
-        <option value="avoid" ${combo.tag === "avoid" ? "selected" : ""}>要避免</option>
-      </select>
     </div>
-    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行</div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行。归到哪个分组，收起编辑器后拖卡片到分组标题上就行</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
       ${(combo.conditions || []).map((f, idx) => filterConditionRowHtml(f, idx, combo.id)).join("")}
     </div>
@@ -1163,22 +1251,23 @@ function renderComboEditor(combo) {
     </div>
   </div>`;
 }
-function renderComboCard(combo, idx) {
+function renderComboCard(combo) {
   const issues = comboIssues(combo);
   const broken = issues.hard.length > 0;
   const s = comboStats(combo);
   const base = comboBaseline(combo);
-  const tag = COMBO_TAGS[combo.tag];
   const editing = comboEditingId === combo.id;
   const small = !broken && s.n > 0 && s.n < COMBO_SMALL_SAMPLE;
   const deleting = comboConfirmDeleteId === combo.id;
 
+  // 胜率 >60 绿，其余红——固定两档，一眼看出这个组合整体是不是打得过
+  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pos)" : "var(--neg)";
   let stats;
   if (broken) {
     stats = `<div style="font-size:12.5px;color:var(--neg);margin:2px 0 8px;">条件失效，数字不可信，先修好再看</div>`;
   } else {
     stats = `<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin:2px 0 8px;font-size:12.5px;color:var(--muted);">
-      <span class="mono" style="font-size:17px;font-weight:600;color:var(--accent);">${fmtPct(s.wr)}</span>
+      <span class="mono" style="font-size:17px;font-weight:600;color:${wrColor};">${fmtPct(s.wr)}</span>
       ${deltaText(s.wr, base.wr, "pp", 1)}
       <span class="mono">n=${s.n}</span>
       <span class="mono">W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</span>
@@ -1188,17 +1277,16 @@ function renderComboCard(combo, idx) {
     </div>`;
   }
 
-  return `<div class="comboCard ${combo.tag ? "tag-" + combo.tag : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-idx="${idx}"`}>
+  return `<div class="comboCard" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>`}
+      ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序，或拖到分组标题上归类">⠿</span>`}
       <span style="font-size:14px;color:var(--text);font-weight:500;">${esc(combo.name)}</span>
-      ${tag ? `<span class="pill" style="background:${tag.soft};color:${tag.color};">${tag.label}</span>` : ""}
-      ${small ? `<span class="pill" style="background:var(--surface2);color:var(--mutedDark);" title="样本太少，胜率的随机波动会很大，别急着下结论">样本仅 ${s.n} 笔</span>` : ""}
       ${!viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
         <button class="tinyBtn" data-action="edit-combo" data-combo-id="${esc(combo.id)}">${editing ? "收起" : "编辑"}</button>
         <button class="tinyBtn" data-action="ask-delete-combo" data-combo-id="${esc(combo.id)}" style="color:var(--neg);">删除</button>
       </span>` : ""}
     </div>
+    ${small ? `<div class="comboSmallSampleBadge" title="样本太少，胜率的随机波动会很大，别急着下结论">${ICONS.alert} 样本仅 ${s.n} 笔，参考意义有限</div>` : ""}
     ${stats}
     ${issues.hard.length ? `<div style="font-size:11.5px;color:var(--neg);margin-bottom:8px;line-height:1.6;">${issues.hard.map((x) => "⚠ " + esc(x)).join("<br>")}</div>` : ""}
     ${issues.soft.length ? `<div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;line-height:1.6;">${issues.soft.map((x) => "· " + esc(x)).join("<br>")}</div>` : ""}
@@ -1212,20 +1300,119 @@ function renderComboCard(combo, idx) {
     ${editing ? renderComboEditor(combo) : ""}
   </div>`;
 }
+function renderComboGroupDeleteConfirm(groupId, kind) {
+  if (comboGroupConfirmDeleteId !== groupId) return "";
+  const g = findComboGroup(groupId);
+  if (!g) return "";
+  const preview = comboGroupCascadePreview(groupId);
+  const parts = [];
+  if (preview.subgroupCount) parts.push(`${preview.subgroupCount} 个二级分组`);
+  if (preview.comboCount) parts.push(`${preview.comboCount} 个组合`);
+  const warn = parts.length ? `，里面的${parts.join("和")}会一起被删掉，这个操作不可撤销` : "（里面是空的）";
+  return `<div style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:12px;color:var(--neg);flex-wrap:wrap;">
+    确定删除${kind}「${esc(g.name)}」？${warn}
+    <button class="btn btn-danger" data-action="confirm-delete-combo-group" data-group-id="${esc(groupId)}" style="padding:4px 10px;font-size:12px;">删除</button>
+    <button class="btn" data-action="cancel-delete-combo-group" style="padding:4px 10px;font-size:12px;">取消</button>
+  </div>`;
+}
+function renderComboGroupHeader(id, extraAttrs, nameHtml, count, extraButtons) {
+  const collapsed = collapsedComboGroups.has(id);
+  return `<div class="comboGroupHeader" data-action="toggle-combo-group-collapse" data-group-id="${esc(id)}" ${extraAttrs}>
+    <span style="color:var(--mutedDark);display:flex;">${collapsed ? ICONS.chevDown : ICONS.chevUp}</span>
+    ${nameHtml}
+    <span style="color:var(--mutedDark);font-size:11.5px;">${count} 个组合</span>
+    ${extraButtons || ""}
+  </div>`;
+}
+function renderComboSubgroupSection(sub, combos) {
+  const collapsed = collapsedComboGroups.has(sub.id);
+  const dragAttrs = viewingUserId ? "" : `draggable="true" data-group-id="${esc(sub.id)}" data-parent-id="${esc(sub.parentId)}"`;
+  const header = renderComboGroupHeader(
+    sub.id, dragAttrs,
+    `<span style="font-weight:500;">${esc(sub.name)}</span>`,
+    combos.length,
+    !viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
+      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(sub.id)}">改名</button>
+      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(sub.id)}" style="color:var(--neg);">删除</button>
+    </span>` : ""
+  );
+  return `<div class="comboSubgroupSection" data-group-drop="${esc(sub.id)}">
+    ${header}
+    ${renderComboGroupDeleteConfirm(sub.id, "二级分组")}
+    ${collapsed ? "" : (combos.length ? `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">把组合卡片拖到这个标题上，就能归到这个二级分组</div>`)}
+  </div>`;
+}
+function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
+  const collapsed = collapsedComboGroups.has(root.id);
+  const dragAttrs = viewingUserId ? "" : `draggable="true" data-group-id="${esc(root.id)}"`;
+  const header = renderComboGroupHeader(
+    root.id, dragAttrs,
+    `<span style="font-weight:600;font-size:14px;">${esc(root.name)}</span>`,
+    directCombos.length + subgroups.reduce((s, sub) => s + (byGroup[sub.id] || []).length, 0),
+    !viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
+      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(root.id)}">改名</button>
+      <button class="tinyBtn" data-action="add-combo-subgroup" data-parent-id="${esc(root.id)}">${ICONS.plus}二级分组</button>
+      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(root.id)}" style="color:var(--neg);">删除</button>
+    </span>` : ""
+  );
+  let body = "";
+  if (!collapsed) {
+    // 二级分组（有结构的内容）在前；直接挂在顶层、没进二级分组的组合是兜底杂项，挪到最后，
+    // 套上跟"未分组"同款的虚线框，不再是裸露孤零零一张卡片
+    body += subgroups.map((sub) => renderComboSubgroupSection(sub, byGroup[sub.id] || [])).join("");
+    if (directCombos.length) {
+      body += `<div class="comboSubgroupSection" data-group-drop="${esc(root.id)}">
+        <div class="comboSubgroupHeader" style="cursor:default;">
+          <span style="font-weight:500;color:var(--mutedDark);">未归入二级分组</span>
+          <span style="color:var(--mutedDark);font-size:11.5px;">${directCombos.length} 个组合</span>
+        </div>
+        <div class="comboGrid">${directCombos.map(renderComboCard).join("")}</div>
+      </div>`;
+    } else if (!subgroups.length) {
+      body += `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">把组合卡片拖到这个标题上，就能归到这个分组</div>`;
+    }
+  }
+  return `<div class="comboGroupSection" data-group-drop="${esc(root.id)}">${header}${renderComboGroupDeleteConfirm(root.id, "分组")}${body}</div>`;
+}
 function renderCombosSection() {
   const combos = analysisPrefs.combos || [];
-  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+  const groups = analysisPrefs.comboGroups || [];
+  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
     <div class="sectionLabel" style="margin:0;">⟦ 组合分析 ⟧</div>
-    ${!viewingUserId ? `<button class="btn" data-action="add-combo" style="padding:4px 10px;font-size:12px;">${ICONS.plus} 新建组合</button>` : ""}
+    ${!viewingUserId ? `<span style="margin-left:auto;display:flex;align-items:center;gap:16px;">
+      <button class="tinyBtn" data-action="add-combo-group" style="color:var(--mutedDark);">${ICONS.plus} 新建分组</button>
+      <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} 新建组合</button>
+    </span>` : ""}
   </div>`;
   if (!combos.length) {
     html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
       还没有组合。组合就是一组固定的筛选条件（比如「模型=A 且 目标类型含 BSL」），存下来之后这里会实时显示它的胜率、EV、PF，点一下就能跳到记录页看是哪些交易。<br>
-      三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。
+      三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。<br>
+      组合多了以后可以用「新建分组」把它们归类，比如「IFVG」下面再分「能做」「不能做」两个二级分组——不想分组的话完全不用管这个，就是个平铺列表。
     </div>`;
     return html;
   }
-  html += `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>`;
+  // 没建过任何分组时，跟以前一样是个平铺列表，不额外显示"未分组"这种空标题
+  if (!groups.length) {
+    html += `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>`;
+    return html;
+  }
+  const byGroup = {};
+  combos.forEach((c) => { const gid = comboEffectiveGroupId(c); (byGroup[gid] = byGroup[gid] || []).push(c); });
+  comboGroupRoots().forEach((root) => {
+    html += renderComboGroupSection(root, byGroup[root.id] || [], comboGroupChildren(root.id), byGroup);
+  });
+  const ungrouped = byGroup[""] || [];
+  const ungroupedCollapsed = collapsedComboGroups.has("__ungrouped__");
+  const ungroupedHeader = renderComboGroupHeader(
+    "__ungrouped__", `style="cursor:pointer;"`,
+    `<span style="font-weight:500;color:var(--mutedDark);">未分组</span>`,
+    ungrouped.length, ""
+  );
+  html += `<div class="comboUngroupedSection" data-group-drop="__ungrouped__">
+    ${ungroupedHeader}
+    ${ungroupedCollapsed ? "" : (ungrouped.length ? `<div class="comboGrid">${ungrouped.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">拖到这里可以把组合从分组里移出来</div>`)}
+  </div>`;
   return html;
 }
 
@@ -1254,7 +1441,7 @@ function renderAnalytics() {
     return `<div class="notice">${ICONS.alert}<span>当前没有字段被标记为『结果』角色 — 去设置页给某个字段打上『结果 W/L/BE』角色标签，分析才能算出来。</span></div>`;
   }
   const takenF = roleField("taken"), resultF = roleField("result");
-  const scope = analysisPrefs.statScope;
+  const scope = statScope;
   const prefsNotice = analysisPrefsError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(analysisPrefsError)}</span></div>` : "";
 
   if (stats.totalTaken === 0) {
@@ -1263,7 +1450,7 @@ function renderAnalytics() {
     const withTaken = takenF ? baseList.filter((t) => t[takenF.id] === "Taken").length : total;
     const withResult = resultF ? baseList.filter((t) => t[resultF.id] === "W" || t[resultF.id] === "L").length : 0;
     return prefsNotice + renderStatScopeBar() + `<div class="notice">${ICONS.alert}<div>
-      <div style="color:var(--text);margin-bottom:6px;">当前口径下没有可统计的交易——${analysisPrefs.modelFilter ? "选中的模型" : "数据库里"}共 ${total} 笔，其中 taken=Taken 的有 ${withTaken} 笔，result 填了 W/L 的有 ${withResult} 笔。</div>
+      <div style="color:var(--text);margin-bottom:6px;">当前口径下没有可统计的交易——${modelFilters.length ? "选中的模型" : "数据库里"}共 ${total} 笔，其中 taken=Taken 的有 ${withTaken} 笔，result 填了 W/L 的有 ${withResult} 笔。</div>
       <div>要么放宽上面的统计口径，要么新建交易时记得点选 taken=Taken、result 也选一个具体值（不能留空）。</div>
     </div></div>`;
   }
@@ -1285,7 +1472,7 @@ function renderAnalytics() {
 
   html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
-  if (stats.byModel.length && !analysisPrefs.modelFilter) {
+  if (stats.byModel.length && !modelFilters.length) {
     html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ 按模型 ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
   }
 
@@ -1775,14 +1962,37 @@ function dayDetailModalHtml() {
     </div>
   </div>`;
 }
+function comboGroupModalHtml() {
+  const m = comboGroupModal;
+  const title = m.mode === "root" ? "新建分组" : m.mode === "sub" ? "新建二级分组" : "改名";
+  return `<div class="overlay" data-action="dismiss-combo-group-overlay">
+    <div class="modal" style="max-width:420px;">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${esc(title)}</div>
+        <button class="iconBtn" data-action="close-combo-group-modal">${ICONS.x}</button>
+      </div>
+      <div class="modalBody">
+        <div class="field" style="margin-bottom:0;">
+          <div class="fieldLabel">分组名字</div>
+          <input type="text" class="input" id="comboGroupNameInput" value="${esc(m.name)}" placeholder="比如「IFVG」「能做」" maxlength="40" autofocus />
+        </div>
+      </div>
+      <div class="modalFoot">
+        <button class="btn" data-action="close-combo-group-modal">取消</button>
+        <button class="btn btn-primary" data-action="save-combo-group-modal">保存</button>
+      </div>
+    </div>
+  </div>`;
+}
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (dayDetailDate ? "daydetail" : null));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : null)));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
   else if (want === "lightbox") root.innerHTML = lightboxHtml();
+  else if (want === "combogroup") root.innerHTML = comboGroupModalHtml();
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else root.innerHTML = "";
 }
@@ -2060,6 +2270,68 @@ document.addEventListener("click", async (e) => {
     comboConfirmDeleteId = null;
     await saveAnalysisPrefsNow(); render();
   }
+  /* ---------- 分析页：组合分组 ---------- */
+  else if (action === "add-combo-group") {
+    if (viewingUserId) return;
+    comboGroupModal = { mode: "root", parentId: null, groupId: null, name: "" };
+    render();
+  }
+  else if (action === "add-combo-subgroup") {
+    if (viewingUserId) return;
+    const parentId = el.dataset.parentId;
+    if (!findComboGroup(parentId)) return;
+    comboGroupModal = { mode: "sub", parentId, groupId: null, name: "" };
+    render();
+  }
+  else if (action === "rename-combo-group") {
+    if (viewingUserId) return;
+    const g = findComboGroup(el.dataset.groupId);
+    if (!g) return;
+    comboGroupModal = { mode: "rename", parentId: null, groupId: g.id, name: g.name };
+    render();
+  }
+  else if (action === "close-combo-group-modal") { comboGroupModal = null; render(); }
+  else if (action === "dismiss-combo-group-overlay") {
+    // 只有真的点在遮罩背景本身（不是弹窗内部冒泡上来的）才关，避免点弹窗里的空白文字区域也被误关
+    if (e.target !== el) return;
+    comboGroupModal = null; render();
+  }
+  else if (action === "save-combo-group-modal") {
+    if (viewingUserId || !comboGroupModal) return;
+    const input = document.getElementById("comboGroupNameInput");
+    const name = (input ? input.value : "").trim();
+    if (!name) return;
+    if (comboGroupModal.mode === "root") {
+      analysisPrefs.comboGroups.push({ id: newGroupId(), name, parentId: null });
+    } else if (comboGroupModal.mode === "sub") {
+      analysisPrefs.comboGroups.push({ id: newGroupId(), name, parentId: comboGroupModal.parentId });
+    } else if (comboGroupModal.mode === "rename") {
+      const g = findComboGroup(comboGroupModal.groupId);
+      if (g) g.name = name;
+    }
+    comboGroupModal = null;
+    await saveAnalysisPrefsNow(); render();
+  }
+  else if (action === "toggle-combo-group-collapse") {
+    const id = el.dataset.groupId;
+    if (collapsedComboGroups.has(id)) collapsedComboGroups.delete(id); else collapsedComboGroups.add(id);
+    saveCollapsedComboGroups(); render();
+  }
+  else if (action === "ask-delete-combo-group") { comboGroupConfirmDeleteId = el.dataset.groupId; render(); }
+  else if (action === "cancel-delete-combo-group") { comboGroupConfirmDeleteId = null; render(); }
+  else if (action === "confirm-delete-combo-group") {
+    if (viewingUserId) return;
+    const groupId = el.dataset.groupId;
+    const preview = comboGroupCascadePreview(groupId);
+    const doomedGroupIds = new Set([groupId, ...comboGroupChildren(groupId).map((g) => g.id)]);
+    const doomedComboIds = new Set(preview.comboIds);
+    analysisPrefs.comboGroups = analysisPrefs.comboGroups.filter((g) => !doomedGroupIds.has(g.id));
+    analysisPrefs.combos = analysisPrefs.combos.filter((c) => !doomedComboIds.has(c.id));
+    if (doomedComboIds.has(comboEditingId)) comboEditingId = null;
+    if (doomedComboIds.has(activeComboId)) activeComboId = null;
+    comboGroupConfirmDeleteId = null;
+    await saveAnalysisPrefsNow(); render();
+  }
   else if (action === "open-combo-in-grid") {
     const c = findCombo(el.dataset.comboId);
     if (!c) return;
@@ -2114,6 +2386,12 @@ document.addEventListener("click", async (e) => {
     for (let i = 0; i < ctx.arr.length; i++) ctx.arr[i] = newFilterRow(ctx.arr[i].fieldId);
     afterFilterChange(ctx);
   }
+  else if (action === "toggle-model-filter-value") {
+    const val = el.dataset.val;
+    modelFilters = modelFilters.includes(val) ? modelFilters.filter((v) => v !== val) : [...modelFilters, val];
+    saveModelFilters(); render();
+  }
+  else if (action === "clear-model-filters") { modelFilters = []; saveModelFilters(); render(); }
   else if (action === "toggle-breakdown-picker") { breakdownPickerOpen = !breakdownPickerOpen; render(); }
   else if (action === "hide-breakdown-field") {
     if (viewingUserId) return;
@@ -2209,7 +2487,7 @@ document.addEventListener("click", async (e) => {
     viewingUserId = el.dataset.id;
     viewingUserEmail = el.dataset.email;
     activeFilters = [];
-    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
+    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     gridPage = 1;
     tab = "grid";
     await loadAll();
@@ -2227,7 +2505,7 @@ document.addEventListener("click", async (e) => {
       tab = ownStateSnapshot.tab;
       ownStateSnapshot = null;
     }
-    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null;
+    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     await loadAll();
     render();
   }
@@ -2352,19 +2630,13 @@ document.addEventListener("change", async (e) => {
     afterFilterChange(ctx);
   }
   else if (e.target.dataset.action === "toggle-scope-taken") {
-    if (viewingUserId) return;
-    analysisPrefs.statScope.takenOnly = e.target.checked;
-    queueSaveAnalysisPrefs(); render();
+    // 纯本地设置，admin 只读查看别人数据时也能随便调，不影响被查看用户的数据
+    statScope.takenOnly = e.target.checked;
+    saveStatScope(); render();
   }
   else if (e.target.dataset.action === "toggle-scope-he") {
-    if (viewingUserId) return;
-    analysisPrefs.statScope.excludeHumanError = e.target.checked;
-    queueSaveAnalysisPrefs(); render();
-  }
-  else if (e.target.dataset.bind === "analysis-model-filter") {
-    if (viewingUserId) return;
-    analysisPrefs.modelFilter = e.target.value;
-    queueSaveAnalysisPrefs(); render();
+    statScope.excludeHumanError = e.target.checked;
+    saveStatScope(); render();
   }
   else if (e.target.dataset.action === "toggle-breakdown-field") {
     if (viewingUserId) return;
@@ -2380,13 +2652,6 @@ document.addEventListener("change", async (e) => {
     c.name = e.target.value.trim() || "未命名组合";
     queueSaveAnalysisPrefs(); render();
   }
-  else if (e.target.dataset.comboTag !== undefined) {
-    if (viewingUserId) return;
-    const c = findCombo(e.target.dataset.comboTag);
-    if (!c) return;
-    c.tag = e.target.value;
-    queueSaveAnalysisPrefs(); render();
-  }
   else if (e.target.dataset.fieldEdit) {
     const id = e.target.dataset.id, key = e.target.dataset.fieldEdit, val = e.target.value;
     let next = schema.map((f) => f.id === id ? { ...f, [key]: val } : f);
@@ -2398,15 +2663,41 @@ document.addEventListener("change", async (e) => {
 let dragFilterIdx = null;
 let dragOptField = null;
 let dragOptIdx = null;
-let dragComboIdx = null;
+let dragComboId = null;
+let dragGroupId = null;
 let dragBdIdx = null;
 let dragBdCardId = null;
 let dragSettingsIdx = null;
 let dragOverEl = null;
-const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"]';
+const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"], .comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]';
 
 function clearDragOverHighlight() {
   if (dragOverEl) { dragOverEl.classList.remove("dragOverTarget"); dragOverEl = null; }
+}
+
+// 原生拖拽在靠近视口边缘时，浏览器自带的自动滚动很不可靠（不同浏览器表现不一致，长页面尤其明显）。
+// 这里自己接管：拖拽过程中鼠标离顶部/底部多近就用 JS 持续滚，松手/拖出这个区域就停。
+// 挂在最外层，不专属于任何一种可拖拽列表——筛选卡片、字段拆解卡片、组合、设置页字段全部一起受益。
+let autoScrollRAF = null;
+let autoScrollClientY = null;
+const AUTOSCROLL_EDGE = 70;
+const AUTOSCROLL_MAX_SPEED = 16;
+function autoScrollTick() {
+  if (autoScrollClientY === null) { autoScrollRAF = null; return; }
+  const h = window.innerHeight;
+  let speed = 0;
+  if (autoScrollClientY < AUTOSCROLL_EDGE) speed = -AUTOSCROLL_MAX_SPEED * (1 - autoScrollClientY / AUTOSCROLL_EDGE);
+  else if (autoScrollClientY > h - AUTOSCROLL_EDGE) speed = AUTOSCROLL_MAX_SPEED * (1 - (h - autoScrollClientY) / AUTOSCROLL_EDGE);
+  if (speed !== 0) window.scrollBy(0, speed);
+  autoScrollRAF = requestAnimationFrame(autoScrollTick);
+}
+function updateAutoScroll(clientY) {
+  autoScrollClientY = clientY;
+  if (!autoScrollRAF) autoScrollRAF = requestAnimationFrame(autoScrollTick);
+}
+function stopAutoScroll() {
+  autoScrollClientY = null;
+  if (autoScrollRAF) { cancelAnimationFrame(autoScrollRAF); autoScrollRAF = null; }
 }
 
 document.addEventListener("dragstart", (e) => {
@@ -2427,9 +2718,16 @@ document.addEventListener("dragstart", (e) => {
   }
   const combo = e.target.closest('.comboCard[draggable="true"]');
   if (combo) {
-    dragComboIdx = parseInt(combo.dataset.comboIdx, 10);
+    dragComboId = combo.dataset.comboId;
     e.dataTransfer.effectAllowed = "move";
     combo.style.opacity = "0.4";
+    return;
+  }
+  const groupHeader = e.target.closest('.comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]');
+  if (groupHeader) {
+    dragGroupId = groupHeader.dataset.groupId;
+    e.dataTransfer.effectAllowed = "move";
+    groupHeader.style.opacity = "0.4";
     return;
   }
   const bd = e.target.closest('.bdRow[draggable="true"]');
@@ -2457,9 +2755,13 @@ document.addEventListener("dragend", (e) => {
   const dragged = e.target.closest(DRAGGABLES);
   if (dragged) dragged.style.opacity = "";
   clearDragOverHighlight();
+  stopAutoScroll();
 });
 document.addEventListener("dragover", (e) => {
-  const target = e.target.closest(DRAGGABLES);
+  updateAutoScroll(e.clientY);
+  let target = e.target.closest(DRAGGABLES);
+  // 正在拖组合卡片时，分组/二级分组/未分组区域本身（不只是卡片）也是合法投放目标
+  if (!target && dragComboId !== null) target = e.target.closest('[data-group-drop]');
   if (target) {
     e.preventDefault();
     if (dragOverEl && dragOverEl !== target) dragOverEl.classList.remove("dragOverTarget");
@@ -2471,6 +2773,7 @@ document.addEventListener("dragover", (e) => {
 });
 document.addEventListener("drop", (e) => {
   clearDragOverHighlight();
+  stopAutoScroll();
   const row = e.target.closest('.filterRow[draggable="true"]');
   if (row && dragFilterIdx !== null) {
     e.preventDefault();
@@ -2501,17 +2804,43 @@ document.addEventListener("drop", (e) => {
     dragOptField = null; dragOptIdx = null;
     return;
   }
-  const combo = e.target.closest('.comboCard[draggable="true"]');
-  if (combo && dragComboIdx !== null) {
-    e.preventDefault();
-    const targetIdx = parseInt(combo.dataset.comboIdx, 10);
-    if (targetIdx !== dragComboIdx) {
-      const [moved] = analysisPrefs.combos.splice(dragComboIdx, 1);
-      analysisPrefs.combos.splice(targetIdx, 0, moved);
-      saveAnalysisPrefsNow();
-      render();
+  if (dragComboId !== null) {
+    // 优先判断是不是拖到了另一张卡片上：同桶内重排（两张卡片本来就在同一个分组区块里才够得着）
+    const targetCard = e.target.closest('.comboCard[draggable="true"]');
+    if (targetCard && targetCard.dataset.comboId !== dragComboId) {
+      e.preventDefault();
+      const list = analysisPrefs.combos;
+      const fromIdx = list.findIndex((c) => c.id === dragComboId);
+      const toIdx = list.findIndex((c) => c.id === targetCard.dataset.comboId);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const [moved] = list.splice(fromIdx, 1);
+        list.splice(toIdx, 0, moved);
+        saveAnalysisPrefsNow(); render();
+      }
+      dragComboId = null;
+      return;
     }
-    dragComboIdx = null;
+    // 没落在别的卡片上，落在了某个分组/二级分组/未分组区域里：改归属
+    const dropZone = e.target.closest('[data-group-drop]');
+    if (dropZone) {
+      e.preventDefault();
+      const c = findCombo(dragComboId);
+      if (c) {
+        c.groupId = dropZone.dataset.groupDrop === "__ungrouped__" ? "" : dropZone.dataset.groupDrop;
+        saveAnalysisPrefsNow(); render();
+      }
+    }
+    dragComboId = null;
+    return;
+  }
+  if (dragGroupId !== null) {
+    const targetHeader = e.target.closest('.comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]');
+    if (targetHeader && targetHeader.dataset.groupId !== dragGroupId) {
+      e.preventDefault();
+      moveComboGroup(dragGroupId, targetHeader.dataset.groupId);
+      saveAnalysisPrefsNow(); render();
+    }
+    dragGroupId = null;
     return;
   }
   const bd = e.target.closest('.bdRow[draggable="true"]');
@@ -2569,6 +2898,7 @@ window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); });
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (lightboxUrl) { lightboxUrl = null; render(); return; }
+  if (comboGroupModal) { comboGroupModal = null; render(); return; }
   if (profileModalOpen) { profileModalOpen = false; render(); return; }
   if (editingTrade) {
     editingTrade = null;
@@ -2602,6 +2932,7 @@ async function bootstrapAuth() {
       defaultFiltersSeeded = false; activeFilters = [];
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
       activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
+      comboGroupModal = null; comboGroupConfirmDeleteId = null;
     }
     render();
   });
