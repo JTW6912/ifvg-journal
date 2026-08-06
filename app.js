@@ -1288,7 +1288,7 @@ function deltaText(v, base, unit, digits) {
 function renderComboEditor(combo) {
   return `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
-      <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="组合名字…" style="flex:1 1 220px;" />
+      <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="组合名字…" style="flex:1 1 220px;max-width:420px;" />
     </div>
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行。归到哪个分组，收起编辑器后拖卡片到分组标题上就行</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
@@ -1327,7 +1327,9 @@ function renderComboCard(combo) {
     </div>`;
   }
 
-  return `<div class="comboCard" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
+  // 编辑器展开时卡片独占一整行（.comboCard.editing）：网格列只有 340px，
+  // 编辑器里的下拉和条件行塞不下会顶出卡片边框，看着像布局坏了
+  return `<div class="comboCard${editing ? " editing" : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序，或拖到分组标题上归类">⠿</span>`}
       <span style="font-size:14px;color:var(--text);font-weight:500;">${esc(combo.name)}</span>
@@ -1442,7 +1444,9 @@ function renderCombosSection() {
       <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} 新建组合</button>
     </span>` : ""}
   </div>`;
-  if (!combos.length) {
+  // 一个组合都没有、也没建过分组，才是真正的空状态；只要建过分组就得把分组画出来，
+  // 否则新用户先建分组、还没建组合，会以为分组没存上
+  if (!combos.length && !groups.length) {
     html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
       还没有组合。组合就是一组固定的筛选条件（比如「模型=A 且 目标类型含 BSL」），存下来之后这里会实时显示它的胜率、EV、PF，点一下就能跳到记录页看是哪些交易。<br>
       三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。<br>
@@ -1450,11 +1454,13 @@ function renderCombosSection() {
     </div>`;
     return html;
   }
-  // 没建过任何分组时，跟以前一样是个平铺列表，不额外显示"未分组"这种空标题
-  if (!groups.length) {
-    html += `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>`;
-    return html;
+  if (!combos.length && !viewingUserId) {
+    html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;">
+      分组建好了，但还没有组合。点右上角「新建组合」手搭一个，或者在记录页调好筛选后点「把当前筛选存为组合」；建好之后把卡片拖到下面的分组标题上就能归类。
+    </div>`;
   }
+  // 「未分组」这个框现在始终显示（哪怕一个分组都没建过），跟建了分组之后视觉上保持一致，
+  // 不会一建分组就突然"多"出一个框来
   const byGroup = {};
   combos.forEach((c) => { const gid = comboEffectiveGroupId(c); (byGroup[gid] = byGroup[gid] || []).push(c); });
   comboGroupRoots().forEach((root) => {

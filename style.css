@@ -104,6 +104,11 @@ a{color:var(--accent);}
 .barMeta .tinyBtn:hover{color:var(--accent);}
 .comboGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;}
 .comboCard{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:10px;padding:14px 16px;}
+/* 独占一整行是为了不被 340px 的列宽挤到条件行溢出卡片，但网格本身跟着 2200px 的页面拉到很宽，
+   不封顶的话，编辑中的卡片是这一行唯一元素时会被 stretch 撑到接近页面全宽——加个上限，多出来的空间就留白 */
+.comboCard.editing{grid-column:1/-1;max-width:920px;}
+/* select 宽度是跟着最长选项撑的，卡片窄的时候会顶出边框，这里兜一下 */
+.comboCard .select{max-width:100%;min-width:0;}
 .comboSmallSampleBadge{display:flex;align-items:center;gap:6px;width:fit-content;padding:4px 9px;margin:2px 0 8px;border-radius:6px;background:var(--accentSoft);border:1px solid var(--accent);color:var(--accent);font-size:11.5px;font-weight:600;}
 .comboSmallSampleBadge svg{width:13px;height:13px;flex-shrink:0;}
 .comboCard.dragOverTarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft) inset;}
