@@ -110,10 +110,10 @@ a{color:var(--accent);}
 .comboGroupSection{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px;}
 .comboGroupSection.dragOverTarget,.comboSubgroupSection.dragOverTarget,.comboUngroupedSection.dragOverTarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft) inset;}
 .comboGroupHeader{display:flex;align-items:center;gap:8px;padding:4px 6px;margin-bottom:10px;border:1px solid transparent;border-radius:7px;cursor:grab;flex-wrap:wrap;}
-.comboGroupHeader.dragOverTarget,.comboSubgroupHeader.dragOverTarget{border-color:var(--accent);background:var(--accentSoft);}
+.comboGroupHeader.dragOverTarget{border-color:var(--accent);background:var(--accentSoft);}
 .comboSubgroupSection{border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin:12px 0 0 18px;}
 .comboSubgroupSection .comboGrid{margin-top:10px;}
-.comboSubgroupHeader{display:flex;align-items:center;gap:8px;padding:4px 6px;border:1px solid transparent;border-radius:7px;cursor:grab;font-size:12.5px;flex-wrap:wrap;}
+.comboSubgroupSection .comboGroupHeader{font-size:12.5px;margin-bottom:8px;}
 .comboUngroupedSection{border:1px dashed var(--border);border-radius:10px;padding:12px 14px;}
 .comboUngroupedSection .comboGrid{margin-top:10px;}
 .bdRow{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid transparent;border-radius:7px;cursor:grab;}

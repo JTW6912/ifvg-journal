@@ -260,7 +260,14 @@ function normalizeAnalysisPrefs(raw) {
   const comboGroups = groups
     .filter((g) => g && typeof g === "object" && g.id && typeof g.name === "string")
     // parentId 只能指向一个"没有父级"的分组，否则会出现三层，直接把它降级成顶层分组
-    .map((g) => ({ id: String(g.id), name: g.name, parentId: g.parentId && rootIds.has(g.parentId) && g.parentId !== g.id ? g.parentId : null }));
+    .map((g) => ({
+      id: String(g.id), name: g.name,
+      parentId: g.parentId && rootIds.has(g.parentId) && g.parentId !== g.id ? g.parentId : null,
+      // 只有顶层分组会用到：它下面"未归入二级分组"的组合桶排在第几个位置（0=最前）。
+      // 用下标而不是"挂在哪个二级分组前面"，是因为"前面"这种指针式定位天然够不到"最后一个"这个位置
+      // （没有任何二级分组可以代表"我后面"）。下标越界（比如二级分组变少了）渲染时会自动夹到合法范围
+      directOrder: typeof g.directOrder === "number" ? g.directOrder : null,
+    }));
   return {
     breakdownHidden: Array.isArray(raw.breakdownHidden) ? raw.breakdownHidden.filter((x) => typeof x === "string") : [],
     breakdownOrder: Array.isArray(raw.breakdownOrder) ? raw.breakdownOrder.filter((x) => typeof x === "string") : [],
@@ -326,32 +333,75 @@ function rebuildComboGroupsOrder(rootIdsInOrder) {
   });
   analysisPrefs.comboGroups = next;
 }
-// 拖一个分组标题到另一个上：只处理"同级"重排（两个都是顶层，或两个都在同一个顶层下面）；
-// 跨级/换父不支持，直接忽略——不想因为拖拽手滑就把二级分组挪到别的顶层下面
+// 数组内两个元素换位置：把 draggedId 移到 targetId 原来所在的下标。
+// 这个 splice 手法能够拖到"最后一个"——先把 dragged 移出数组会让它后面的元素整体前移一位，
+// 这时再插入到 target 原始下标，如果 target 恰好是最后一个、dragged 排在它前面，就会正好落在数组末尾。
+// （早期版本用的是"把 dragged 插到 target 前面"这种指针式模型，天生够不到最后一个位置，因为
+//  没有任何东西能代表"排在最后一个的后面"——这就是这次要修的 bug 的根因）
+function spliceReorder(ids, draggedId, targetId) {
+  const fromIdx = ids.indexOf(draggedId), toIdx = ids.indexOf(targetId);
+  if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return null;
+  const next = [...ids];
+  const [moved] = next.splice(fromIdx, 1);
+  next.splice(toIdx, 0, moved);
+  return next;
+}
+// "未归入二级分组"那个组合桶不是真的分组，没有自己的 id，用这个规律拼一个虚拟 key，
+// 拖拽/收起状态复用跟真分组一样的机制（drag、collapsedComboGroups 都按普通字符串 key 处理）
+const DIRECT_SUFFIX = "::direct";
+function directGroupKey(rootId) { return rootId + DIRECT_SUFFIX; }
+function parseDirectGroupKey(key) { return typeof key === "string" && key.endsWith(DIRECT_SUFFIX) ? key.slice(0, -DIRECT_SUFFIX.length) : null; }
+function comboHasDirectCombos(rootId) { return (analysisPrefs.combos || []).some((c) => comboEffectiveGroupId(c) === rootId); }
+// 某个顶层分组下"二级分组 + 未归入二级分组桶"的完整展示顺序，用一个 id 数组统一表示
+// （虚拟桶用 directGroupKey 那个 key 代表自己），这样可以直接复用同一套 splice 重排逻辑
+function comboSubgroupSlotIds(root, subgroups) {
+  const ids = subgroups.map((s) => s.id);
+  if (comboHasDirectCombos(root.id)) {
+    let idx = root.directOrder;
+    if (typeof idx !== "number" || idx < 0 || idx > ids.length) idx = ids.length;
+    ids.splice(idx, 0, directGroupKey(root.id));
+  }
+  return ids;
+}
+// 某个顶层分组下，二级分组和虚拟桶之间的重排：统一走 spliceReorder，再拆回真实的二级分组顺序 + directOrder
+function reorderComboSubgroupSlots(parentId, draggedId, targetId) {
+  const root = findComboGroup(parentId);
+  if (!root) return;
+  const subgroups = comboGroupChildren(parentId);
+  const next = spliceReorder(comboSubgroupSlotIds(root, subgroups), draggedId, targetId);
+  if (!next) return;
+  const dKey = directGroupKey(parentId);
+  const newDirectIdx = next.indexOf(dKey);
+  if (newDirectIdx !== -1) root.directOrder = newDirectIdx;
+  const newSubIds = next.filter((id) => id !== dKey);
+  const nextGroups = [];
+  comboGroupRoots().forEach((r) => {
+    nextGroups.push(r);
+    if (r.id === parentId) newSubIds.forEach((sid) => { const s = findComboGroup(sid); if (s) nextGroups.push(s); });
+    else comboGroupChildren(r.id).forEach((s) => nextGroups.push(s));
+  });
+  analysisPrefs.comboGroups = nextGroups;
+}
+// 拖一个分组标题到另一个上：只处理"同级"重排（两个都是顶层，或两个都在同一个顶层下面，
+// 包括"未归入二级分组"这个虚拟桶）；跨级/换父不支持，直接忽略——不想因为拖拽手滑就把
+// 二级分组挪到别的顶层下面
 function moveComboGroup(draggedId, targetId) {
+  const draggedRootId = parseDirectGroupKey(draggedId), targetRootId = parseDirectGroupKey(targetId);
+  if (draggedRootId || targetRootId) {
+    const dragged = findComboGroup(draggedId), target = findComboGroup(targetId);
+    const parentId = draggedRootId || (dragged ? dragged.parentId : null);
+    const targetParentId = targetRootId || (target ? target.parentId : null);
+    if (!parentId || parentId !== targetParentId) return;
+    reorderComboSubgroupSlots(parentId, draggedId, targetId);
+    return;
+  }
   const dragged = findComboGroup(draggedId), target = findComboGroup(targetId);
   if (!dragged || !target || dragged.parentId !== target.parentId) return;
-  const parentId = dragged.parentId;
-  if (parentId === null) {
-    const order = comboGroupRoots().map((g) => g.id);
-    const fromIdx = order.indexOf(draggedId), toIdx = order.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-    const [moved] = order.splice(fromIdx, 1);
-    order.splice(toIdx, 0, moved);
-    rebuildComboGroupsOrder(order);
+  if (dragged.parentId === null) {
+    const order = spliceReorder(comboGroupRoots().map((g) => g.id), draggedId, targetId);
+    if (order) rebuildComboGroupsOrder(order);
   } else {
-    const siblingIds = comboGroupChildren(parentId).map((g) => g.id);
-    const fromIdx = siblingIds.indexOf(draggedId), toIdx = siblingIds.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-    const [moved] = siblingIds.splice(fromIdx, 1);
-    siblingIds.splice(toIdx, 0, moved);
-    const next = [];
-    comboGroupRoots().forEach((root) => {
-      next.push(root);
-      if (root.id === parentId) siblingIds.forEach((sid) => { const s = findComboGroup(sid); if (s) next.push(s); });
-      else comboGroupChildren(root.id).forEach((s) => next.push(s));
-    });
-    analysisPrefs.comboGroups = next;
+    reorderComboSubgroupSlots(dragged.parentId, draggedId, targetId);
   }
 }
 
@@ -1357,18 +1407,26 @@ function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
   );
   let body = "";
   if (!collapsed) {
-    // 二级分组（有结构的内容）在前；直接挂在顶层、没进二级分组的组合是兜底杂项，挪到最后，
-    // 套上跟"未分组"同款的虚线框，不再是裸露孤零零一张卡片
-    body += subgroups.map((sub) => renderComboSubgroupSection(sub, byGroup[sub.id] || [])).join("");
-    if (directCombos.length) {
-      body += `<div class="comboSubgroupSection" data-group-drop="${esc(root.id)}">
-        <div class="comboSubgroupHeader" style="cursor:default;">
-          <span style="font-weight:500;color:var(--mutedDark);">未归入二级分组</span>
-          <span style="color:var(--mutedDark);font-size:11.5px;">${directCombos.length} 个组合</span>
-        </div>
-        <div class="comboGrid">${directCombos.map(renderComboCard).join("")}</div>
-      </div>`;
-    } else if (!subgroups.length) {
+    if (directCombos.length || subgroups.length) {
+      // "未归入二级分组"现在跟真的二级分组一样：能拖、能收起，默认排最后，
+      // 拖到任意位置都会记下来（root.directOrder），下次照这个位置摆——顺序统一由 comboSubgroupSlotIds 决定
+      const dKey = directGroupKey(root.id);
+      const htmlById = {};
+      subgroups.forEach((sub) => { htmlById[sub.id] = renderComboSubgroupSection(sub, byGroup[sub.id] || []); });
+      if (directCombos.length) {
+        const directCollapsed = collapsedComboGroups.has(dKey);
+        const directHeader = renderComboGroupHeader(
+          dKey, viewingUserId ? "" : `draggable="true" data-group-id="${esc(dKey)}"`,
+          `<span style="font-weight:500;color:var(--mutedDark);">未归入二级分组</span>`,
+          directCombos.length, ""
+        );
+        htmlById[dKey] = `<div class="comboSubgroupSection" data-group-drop="${esc(root.id)}">
+          ${directHeader}
+          ${directCollapsed ? "" : `<div class="comboGrid">${directCombos.map(renderComboCard).join("")}</div>`}
+        </div>`;
+      }
+      body += comboSubgroupSlotIds(root, subgroups).map((id) => htmlById[id] || "").join("");
+    } else {
       body += `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">把组合卡片拖到这个标题上，就能归到这个分组</div>`;
     }
   }
@@ -2250,6 +2308,8 @@ document.addEventListener("click", async (e) => {
     const c = normalizeCombo({ id: newComboId(), name: "新组合 " + (analysisPrefs.combos.length + 1), conditions: [newFilterRow()] });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
+    // 新组合默认落在"未分组"桶里，那个桶要是被收起了，新建的东西会悄悄不可见——顺手展开
+    collapsedComboGroups.delete("__ungrouped__"); saveCollapsedComboGroups();
     queueSaveAnalysisPrefs(); render();
   }
   else if (action === "edit-combo") {
@@ -2362,6 +2422,8 @@ document.addEventListener("click", async (e) => {
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
     tab = "analytics";
+    // 新组合默认落在"未分组"桶里，那个桶要是被收起了，新建的东西会悄悄不可见——顺手展开
+    collapsedComboGroups.delete("__ungrouped__"); saveCollapsedComboGroups();
     await saveAnalysisPrefsNow(); render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2377,6 +2439,7 @@ document.addEventListener("click", async (e) => {
     });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
+    collapsedComboGroups.delete("__ungrouped__"); saveCollapsedComboGroups();
     await saveAnalysisPrefsNow(); render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2669,7 +2732,7 @@ let dragBdIdx = null;
 let dragBdCardId = null;
 let dragSettingsIdx = null;
 let dragOverEl = null;
-const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"], .comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]';
+const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"], .comboGroupHeader[draggable="true"]';
 
 function clearDragOverHighlight() {
   if (dragOverEl) { dragOverEl.classList.remove("dragOverTarget"); dragOverEl = null; }
@@ -2723,7 +2786,7 @@ document.addEventListener("dragstart", (e) => {
     combo.style.opacity = "0.4";
     return;
   }
-  const groupHeader = e.target.closest('.comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]');
+  const groupHeader = e.target.closest('.comboGroupHeader[draggable="true"]');
   if (groupHeader) {
     dragGroupId = groupHeader.dataset.groupId;
     e.dataTransfer.effectAllowed = "move";
@@ -2834,7 +2897,7 @@ document.addEventListener("drop", (e) => {
     return;
   }
   if (dragGroupId !== null) {
-    const targetHeader = e.target.closest('.comboGroupHeader[draggable="true"], .comboSubgroupHeader[draggable="true"]');
+    const targetHeader = e.target.closest('.comboGroupHeader[draggable="true"]');
     if (targetHeader && targetHeader.dataset.groupId !== dragGroupId) {
       e.preventDefault();
       moveComboGroup(dragGroupId, targetHeader.dataset.groupId);
