@@ -2009,26 +2009,28 @@ function renderModal(force) {
 function renderAuthScreen() {
   const isRegister = authScreenMode === "register";
   return `
-  <div style="max-width:380px;margin:80px auto;padding:0 16px;">
-    <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
-      <div style="display:flex;gap:6px;margin-bottom:18px;">
-        <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${T("auth.login")}</button>
-        <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${T("auth.register")}</button>
+  <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px 16px;">
+    <div style="max-width:380px;width:100%;">
+      <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
+        <div style="display:flex;gap:6px;margin-bottom:18px;">
+          <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${T("auth.login")}</button>
+          <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${T("auth.register")}</button>
+        </div>
+        <div class="field"><div class="fieldLabel">${T("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
+        <div class="field"><div class="fieldLabel">${T("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
+        ${!isRegister ? `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${T("auth.rememberMe")}
+        </label>` : ""}
+        ${isRegister ? `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:12px;line-height:1.6;">${T("auth.newAccountLangHint")}</div>` : ""}
+        ${authError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:12px;line-height:1.6;">${esc(authError)}</div>` : ""}
+        ${authSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:12px;line-height:1.6;">${esc(authSuccess)}</div>` : ""}
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" data-action="auth-submit" ${authBusy ? "disabled" : ""}>
+          ${authBusy ? T("common.processing") : isRegister ? T("auth.register") : T("auth.login")}
+        </button>
       </div>
-      <div class="field"><div class="fieldLabel">${T("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
-      <div class="field"><div class="fieldLabel">${T("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
-      ${!isRegister ? `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer;">
-        <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${T("auth.rememberMe")}
-      </label>` : ""}
-      ${isRegister ? `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:12px;line-height:1.6;">${T("auth.newAccountLangHint")}</div>` : ""}
-      ${authError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:12px;line-height:1.6;">${esc(authError)}</div>` : ""}
-      ${authSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:12px;line-height:1.6;">${esc(authSuccess)}</div>` : ""}
-      <button class="btn btn-primary" style="width:100%;justify-content:center;" data-action="auth-submit" ${authBusy ? "disabled" : ""}>
-        ${authBusy ? T("common.processing") : isRegister ? T("auth.register") : T("auth.login")}
-      </button>
+      <div style="display:flex;justify-content:center;margin-top:20px;">${langToggleHtml()}</div>
     </div>
-    <div style="display:flex;justify-content:center;margin-top:20px;">${langToggleHtml()}</div>
   </div>`;
 }
 /* 语言切换控件：登录页和个人设置弹窗共用同一段 HTML */
@@ -2038,9 +2040,11 @@ function langToggleHtml() {
   </div>`;
 }
 function renderDisabledScreen() {
-  return `<div style="max-width:380px;margin:100px auto;text-align:center;">
-    <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>${T("auth.disabled")}</span></div>
-    <button class="btn" style="margin-top:16px;" data-action="logout">${T("auth.logout")}</button>
+  return `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px 16px;">
+    <div style="max-width:380px;width:100%;text-align:center;">
+      <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>${T("auth.disabled")}</span></div>
+      <button class="btn" style="margin-top:16px;" data-action="logout">${T("auth.logout")}</button>
+    </div>
   </div>`;
 }
 function profileModalHtml() {
