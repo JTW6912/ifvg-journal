@@ -782,7 +782,7 @@ async function loadAll() {
     }
   } catch (err) {
     console.error(err);
-    loadError = "读取数据失败，请稍后刷新重试。如果一直这样，联系管理员检查一下数据库设置。";
+    loadError = T("error.loadData");
     schema = defaultSchema(); trades = [];
   }
 }
@@ -809,7 +809,7 @@ async function persistTrade(trade) {
   delete clean._created_at; delete clean._updated_at;
   if (!sb || !session) return;
   const { error } = await sb.from("trades").upsert({ id, user_id: session.user.id, mode: recordMode, data: clean, updated_at: new Date().toISOString() });
-  if (error) { console.error(error); alert("保存失败: " + error.message); return; }
+  if (error) { console.error(error); alert(T("error.saveTrade", { msg: error.message })); return; }
   await loadAll(); render();
 }
 async function removeTrade(id) {
@@ -838,7 +838,7 @@ function clearDraft() {
 async function addChangelogEntry(text) {
   if (!sb || !text.trim()) return;
   const { error } = await sb.from("changelog").insert({ entry: text.trim() });
-  if (error) { alert("发布失败：" + error.message); return; }
+  if (error) { alert(T("error.publish", { msg: error.message })); return; }
   await loadAll(); render();
 }
 async function removeChangelogEntry(id) {
@@ -905,12 +905,12 @@ function sortAdminUsers(list) {
 }
 async function setUserActive(userId, active) {
   const { error } = await sb.from("profiles").update({ active }).eq("id", userId);
-  if (error) { alert("操作失败：" + error.message); return; }
+  if (error) { alert(T("error.action", { msg: error.message })); return; }
   await loadAdminUsers(); render();
 }
 async function setUserRole(userId, role) {
   const { error } = await sb.from("profiles").update({ role }).eq("id", userId);
-  if (error) { alert("操作失败：" + error.message); return; }
+  if (error) { alert(T("error.action", { msg: error.message })); return; }
   await loadAdminUsers(); render();
 }
 
@@ -918,25 +918,25 @@ async function updateOwnProfile(displayName, gender) {
   profileBusy = true; profileError = ""; profileSuccess = ""; render(); renderSecondaryModals(true);
   const { error } = await sb.rpc("update_own_profile", { new_display_name: displayName, new_gender: gender || null });
   profileBusy = false;
-  if (error) { profileError = "保存失败，请稍后再试。"; render(); renderSecondaryModals(true); return; }
+  if (error) { profileError = T("profile.saveFailed"); render(); renderSecondaryModals(true); return; }
   await loadProfile();
-  profileSuccess = "已保存。";
+  profileSuccess = T("profile.saved");
   render(); renderSecondaryModals(true);
 }
 async function changeOwnPassword(currentPw, newPw, confirmPw) {
   passwordError = ""; passwordSuccess = "";
-  if (!currentPw || !newPw || !confirmPw) { passwordError = "三个都要填。"; render(); renderSecondaryModals(true); return; }
-  if (newPw.length < 6) { passwordError = "新密码至少 6 位。"; render(); renderSecondaryModals(true); return; }
-  if (newPw !== confirmPw) { passwordError = "两次新密码不一致。"; render(); renderSecondaryModals(true); return; }
+  if (!currentPw || !newPw || !confirmPw) { passwordError = T("password.allRequired"); render(); renderSecondaryModals(true); return; }
+  if (newPw.length < 6) { passwordError = T("password.tooShort"); render(); renderSecondaryModals(true); return; }
+  if (newPw !== confirmPw) { passwordError = T("password.mismatch"); render(); renderSecondaryModals(true); return; }
   passwordBusy = true; render(); renderSecondaryModals(true);
   const { error: verifyErr } = await sb.auth.signInWithPassword({ email: session.user.email, password: currentPw });
   if (verifyErr) {
-    passwordBusy = false; passwordError = "当前密码不对。"; render(); renderSecondaryModals(true); return;
+    passwordBusy = false; passwordError = T("password.currentWrong"); render(); renderSecondaryModals(true); return;
   }
   const { error: updateErr } = await sb.auth.updateUser({ password: newPw });
   passwordBusy = false;
-  if (updateErr) { passwordError = "修改失败：" + updateErr.message; render(); renderSecondaryModals(true); return; }
-  passwordSuccess = "密码已修改。";
+  if (updateErr) { passwordError = T("password.changeFailed", { msg: updateErr.message }); render(); renderSecondaryModals(true); return; }
+  passwordSuccess = T("password.changed");
   render(); renderSecondaryModals(true);
 }
 
@@ -1622,17 +1622,17 @@ function renderAnalytics() {
 function renderChangelog() {
   const isAdmin = currentProfile && currentProfile.role === "admin";
   let html = isAdmin ? `<div class="field">
-    <div class="fieldLabel">发布一条更新</div>
-    <textarea class="input" id="changelogDraft" rows="3" placeholder="这次更新了什么…"></textarea>
-    <button class="btn btn-primary" data-action="add-changelog" style="margin-top:8px;">${ICONS.plus} 发布</button>
+    <div class="fieldLabel">${T("changelog.publishLabel")}</div>
+    <textarea class="input" id="changelogDraft" rows="3" placeholder="${esc(T("changelog.placeholder"))}"></textarea>
+    <button class="btn btn-primary" data-action="add-changelog" style="margin-top:8px;">${ICONS.plus} ${T("changelog.publish")}</button>
   </div>
-  <div style="margin:22px 0 14px;"><div class="sectionLabel">⟦ 历史更新 ⟧</div></div>` : "";
+  <div style="margin:22px 0 14px;"><div class="sectionLabel">⟦ ${esc(T("changelog.history"))} ⟧</div></div>` : "";
   if (!changelog.length) {
-    html += `<div class="notice">${ICONS.alert}<span>还没有更新记录。</span></div>`;
+    html += `<div class="notice">${ICONS.alert}<span>${T("changelog.empty")}</span></div>`;
   } else {
     changelog.forEach((c) => {
       const d = new Date(c.created_at);
-      const dateStr = isNaN(d.getTime()) ? "" : d.toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+      const dateStr = isNaN(d.getTime()) ? "" : d.toLocaleString(localeTag(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
       html += `<div class="changelogEntry">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div class="changelogDate">${esc(dateStr)}</div>
@@ -1651,7 +1651,7 @@ function renderChangelog() {
 function renderMonthBar() {
   let html = `<div class="calendarPanel">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ 月度概览 ⟧</div>
+    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ ${esc(T("calendar.monthOverview"))} ⟧</div>
     <div style="display:flex;align-items:center;gap:14px;">
       <button class="tinyBtn" data-action="calendar-prev-year" style="font-size:20px;line-height:1;">‹</button>
       <div class="monthYear" style="margin-bottom:0;">${calendarYear}</div>
@@ -1666,8 +1666,8 @@ function renderMonthBar() {
     ytdCount += stats.count;
     const tone = stats.count > 0 ? stats.tone : "";
     html += `<button class="monthBarCell ${tone} ${calendarMonth === m ? "current" : ""}" data-action="jump-to-month" data-month="${m}">
-      <div class="monthBarLabel">${m}月</div>
-      ${stats.count > 0 ? `<div class="monthBarValue">${stats.hasR ? fmtNum(stats.rSum) + "R" : stats.w + "胜" + stats.l + "负"}</div>` : ""}
+      <div class="monthBarLabel">${esc(new Date(2000, m - 1, 1).toLocaleString(localeTag(), { month: "short" }))}</div>
+      ${stats.count > 0 ? `<div class="monthBarValue">${stats.hasR ? fmtNum(stats.rSum) + "R" : T("calendar.winLoss", { w: stats.w, l: stats.l })}</div>` : ""}
     </button>`;
   }
   const ytdTone = ytdHasR ? (ytdR > 0.0001 ? "pos" : ytdR < -0.0001 ? "neg" : "neutral") : "";
@@ -1702,38 +1702,38 @@ function renderDayCalendar() {
       const tone = stats.count > 0 ? stats.tone : "";
       return `<div class="dayCell ${tone}" data-action="open-day-detail" data-date="${c.dateStr}">
         <div class="dayCellNum">${c.day}</div>
-        ${stats.count > 0 ? `<div class="dayCellInfo">${stats.count} 笔${stats.hasR ? `<br>${fmtNum(stats.rSum)}R` : ""}</div>` : ""}
+        ${stats.count > 0 ? `<div class="dayCellInfo">${esc(T("dayDetail.summary", { n: stats.count }))}${stats.hasR ? `<br>${fmtNum(stats.rSum)}R` : ""}</div>` : ""}
       </div>`;
     }).join("");
     const weekStats = aggregateTradeStats(weekCells.flatMap((c) => tradesOnDate(c.dateStr)));
     const weekTone = weekStats.count > 0 ? weekStats.tone : "";
     weeksHtml += `<div class="weekCell ${weekTone}">
-      ${weekStats.count > 0 ? `<div class="weekCellInfo">${weekStats.hasR ? fmtNum(weekStats.rSum) + "R" : weekStats.w + "胜" + weekStats.l + "负"}</div>` : `<div class="weekCellInfo muted">—</div>`}
+      ${weekStats.count > 0 ? `<div class="weekCellInfo">${weekStats.hasR ? fmtNum(weekStats.rSum) + "R" : T("calendar.winLoss", { w: weekStats.w, l: weekStats.l })}</div>` : `<div class="weekCellInfo muted">—</div>`}
     </div>`;
   }
 
   let html = `<div class="calendarPanel" id="day-calendar-top">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ 每日明细 ⟧</div>
+    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ ${esc(T("calendar.dayDetail"))} ⟧</div>
     <div style="display:flex;align-items:center;gap:14px;">
       <button class="tinyBtn" data-action="cal-prev-month" style="font-size:20px;line-height:1;">‹</button>
-      <div class="monthYear" style="margin-bottom:0;">${year} 年 ${month} 月</div>
+      <div class="monthYear" style="margin-bottom:0;">${esc(new Date(year, month - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" }))}</div>
       <button class="tinyBtn" data-action="cal-next-month" style="font-size:20px;line-height:1;">›</button>
     </div>
   </div>
   <div class="dayGrid">
-    ${["一", "二", "三", "四", "五", "六", "日"].map((d) => `<div class="dayGridHead">周${d}</div>`).join("")}<div class="dayGridHead">本周</div>
+    ${["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => `<div class="dayGridHead">${esc(T("calendar.week" + d))}</div>`).join("")}<div class="dayGridHead">${esc(T("calendar.thisWeek"))}</div>
     ${weeksHtml}
   </div></div>`;
   return html;
 }
 function renderHistoryCoverage() {
-  const statusLabel = { complete: "已完成", partial: "部分", empty: "未开始" };
+  const statusLabel = { complete: T("coverage.complete"), partial: T("coverage.partial"), empty: T("coverage.empty") };
   const curYear = new Date().getFullYear();
   let html = `<div class="calendarPanel" style="margin-top:20px;">
-  <div class="sectionLabel" style="margin:0 0 12px;padding:0;border:none;">⟦ 历史回测覆盖 2020–${curYear} ⟧</div>
+  <div class="sectionLabel" style="margin:0 0 12px;padding:0;border:none;">⟦ ${esc(T("coverage.title", { year: curYear }))} ⟧</div>
   <div style="font-size:12.5px;color:var(--muted);margin-bottom:20px;line-height:1.7;">
-    规则：当月 1–10 号与 20 号至月底 <b style="color:var(--text)">各至少一笔记录</b> 才算「已完成」；只满足一半算「部分」。</div>`;
+    ${T("coverage.rule")}</div>`;
   for (let y = curYear; y >= 2020; y--) {
     const monthsData = computeMonthCoverageForYear(y);
     html += `<div class="monthYear">${y}</div><div class="monthGrid">`;
@@ -1750,7 +1750,7 @@ function renderHistoryCoverage() {
 }
 function renderCalendar() {
   const dateF = roleField("date");
-  if (!dateF) return `<div class="notice">${ICONS.alert}<span>当前没有字段被标记为『日期』角色 — 去设置页给某个字段打上『日期』角色标签。</span></div>`;
+  if (!dateF) return `<div class="notice">${ICONS.alert}<span>${T("calendar.noDateRole")}</span></div>`;
   const filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)));
   let html = `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
@@ -1766,31 +1766,31 @@ function renderAdminPanel() {
   const usingStored = !!getStoredApiConfig();
   let html = `<div class="settingsRow" style="border-color:var(--accent);">
       <div class="settingsRowHead" style="cursor:default;">
-        <div style="flex:1;"><span class="mono" style="font-size:13.5px;color:var(--accent);">Supabase 连接设置</span>
-        <span class="fieldTypeTag">${usingStored ? "使用本地保存的配置" : "使用文件内默认值"}</span></div>
+        <div style="flex:1;"><span class="mono" style="font-size:13.5px;color:var(--accent);">${T("admin.supabaseTitle")}</span>
+        <span class="fieldTypeTag">${esc(usingStored ? T("admin.usingStored") : T("admin.usingFile"))}</span></div>
       </div>
       <div class="settingsRowBody open">
         <div class="field"><div class="fieldLabel">Project URL</div><input class="input" id="apiUrlInput" placeholder="https://xxxx.supabase.co" value="${esc(cfg.url)}" /></div>
         <div class="field"><div class="fieldLabel">Publishable / anon key</div><input class="input" id="apiKeyInput" placeholder="sb_publishable_..." value="${esc(cfg.key)}" /></div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" data-action="save-api-config">保存并重连</button>
-          ${usingStored ? `<button class="btn" data-action="reset-api-config">恢复文件默认值</button>` : ""}
+          <button class="btn btn-primary" data-action="save-api-config">${T("admin.saveReconnect")}</button>
+          ${usingStored ? `<button class="btn" data-action="reset-api-config">${T("admin.resetApi")}</button>` : ""}
         </div>
-        <div style="font-size:11px;color:var(--mutedDark);margin-top:8px;">保存在这台设备的浏览器里，不会改动 index.html 源文件本身。</div>
+        <div style="font-size:11px;color:var(--mutedDark);margin-top:8px;">${T("admin.apiHint")}</div>
       </div>
     </div>
 
     <div class="settingsRow" style="border-color:var(--accent);">
       <div class="settingsRowHead" data-action="toggle-settings-row" data-id="__admin_users__">
-        <div style="flex:1;"><span class="mono" style="font-size:13.5px;color:var(--accent);">用户管理</span>
-        <span class="fieldTypeTag">${adminUsers === null ? "点击加载" : adminUsers.length + " 个用户"}</span></div>
+        <div style="flex:1;"><span class="mono" style="font-size:13.5px;color:var(--accent);">${T("admin.usersTitle")}</span>
+        <span class="fieldTypeTag">${esc(adminUsers === null ? T("admin.clickToLoad") : T("admin.userCount", { n: adminUsers.length }))}</span></div>
         ${openSettingsRow === "__admin_users__" ? ICONS.chevUp : ICONS.chevDown}
       </div>
       <div class="settingsRowBody ${openSettingsRow === "__admin_users__" ? "open" : ""}">
         ${adminUsers === null
-          ? `<div style="font-size:12px;color:var(--mutedDark);">展开时自动加载…</div>`
-          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>邮箱</th><th>名称</th><th>角色</th><th>状态</th>${["tradeCount", "last_seen_at", "created_at"].map((key, i) => {
-                const label = ["交易数", "上次在线", "注册时间"][i];
+          ? `<div style="font-size:12px;color:var(--mutedDark);">${T("admin.autoLoad")}</div>`
+          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>${esc(T("admin.colEmail"))}</th><th>${esc(T("admin.colName"))}</th><th>${esc(T("admin.colRole"))}</th><th>${esc(T("admin.colStatus"))}</th>${["tradeCount", "last_seen_at", "created_at"].map((key, i) => {
+                const label = [T("admin.colTrades"), T("admin.colLastSeen"), T("admin.colCreated")][i];
                 const active = adminUsersSortBy === key;
                 const arrow = active ? (adminUsersSortDir === "asc" ? " ▲" : " ▼") : "";
                 return `<th data-action="sort-admin-users" data-key="${key}" style="cursor:pointer;user-select:none;${active ? "color:var(--accent);" : ""}">${label}${arrow}</th>`;
@@ -1799,18 +1799,18 @@ function renderAdminPanel() {
                 <td>${esc(u.email)}</td>
                 <td>${esc(u.display_name || "—")}</td>
                 <td><span class="pill ${u.role === "admin" ? "on" : ""}">${esc(u.role)}</span></td>
-                <td><span class="pill ${u.active ? "on" : "off"}">${u.active ? "正常" : "已禁用"}</span></td>
+                <td><span class="pill ${u.active ? "on" : "off"}">${esc(u.active ? T("admin.active") : T("admin.disabled"))}</span></td>
                 <td class="mono">${u.tradeCount !== undefined ? u.tradeCount : "—"}</td>
-                <td class="mono" style="font-size:11px;color:var(--mutedDark);">${u.last_seen_at ? esc(new Date(u.last_seen_at).toLocaleString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })) : "从未登录"}</td>
+                <td class="mono" style="font-size:11px;color:var(--mutedDark);">${u.last_seen_at ? esc(new Date(u.last_seen_at).toLocaleString(localeTag(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })) : esc(T("admin.neverLoggedIn"))}</td>
                 <td class="mono" style="font-size:11px;color:var(--mutedDark);">${esc(String(u.created_at || "").slice(0, 10))}</td>
                 <td style="white-space:nowrap;">
-                  <button class="tinyBtn" data-action="toggle-user-active" data-id="${esc(u.id)}" data-next="${!u.active}" style="color:${u.active ? "var(--neg)" : "var(--pos)"};margin-right:10px;">${u.active ? "禁用" : "启用"}</button>
-                  <button class="tinyBtn" data-action="toggle-user-role" data-id="${esc(u.id)}" data-next="${u.role === "admin" ? "user" : "admin"}" style="color:var(--accent);margin-right:10px;">${u.role === "admin" ? "取消admin" : "设为admin"}</button>
-                  ${u.id !== session.user.id ? `<button class="tinyBtn" data-action="view-user-data" data-id="${esc(u.id)}" data-email="${esc(u.email)}" style="color:var(--accent);">${ICONS.expand} 查看数据</button>` : ""}
+                  <button class="tinyBtn" data-action="toggle-user-active" data-id="${esc(u.id)}" data-next="${!u.active}" style="color:${u.active ? "var(--neg)" : "var(--pos)"};margin-right:10px;">${esc(u.active ? T("admin.disable") : T("admin.enable"))}</button>
+                  <button class="tinyBtn" data-action="toggle-user-role" data-id="${esc(u.id)}" data-next="${u.role === "admin" ? "user" : "admin"}" style="color:var(--accent);margin-right:10px;">${esc(u.role === "admin" ? T("admin.removeAdmin") : T("admin.makeAdmin"))}</button>
+                  ${u.id !== session.user.id ? `<button class="tinyBtn" data-action="view-user-data" data-id="${esc(u.id)}" data-email="${esc(u.email)}" style="color:var(--accent);">${ICONS.expand} ${T("admin.viewData")}</button>` : ""}
                 </td>
               </tr>`).join("")}
             </tbody></table></div>
-            <div style="font-size:11px;color:var(--mutedDark);margin-top:10px;">"禁用"会立刻阻止该账号登录使用，但不会删除 Supabase 里的账号本体（前端安全限制，无法真正删号）。</div>`
+            <div style="font-size:11px;color:var(--mutedDark);margin-top:10px;">${T("admin.disableHint")}</div>`
         }
       </div>
     </div>`;
@@ -1819,7 +1819,7 @@ function renderAdminPanel() {
 function renderSettings() {
   if (viewingUserId) {
     return `<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
-      只读查看 ${esc(viewingUserEmail)} 的字段配置，不能编辑。</div>
+      ${esc(T("settings.readOnlyNote", { email: viewingUserEmail }))}</div>
       ${schema.map((f) => `<div class="settingsRow" style="cursor:default;">
         <div class="settingsRowHead" style="cursor:default;">
           <div style="flex:1;">
@@ -1835,7 +1835,7 @@ function renderSettings() {
     <div style="margin-bottom:10px;">${langToggleHtml()}</div>
     <div style="font-size:12px;color:var(--mutedDark);margin-bottom:22px;line-height:1.7;">${esc(T("lang.hint"))}</div>
     <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
-    字段的增删改在这里管理，改动会立即同步到录入表单和分析页。「分析角色」决定这个字段在统计里扮演什么。</div>`;
+    ${T("settings.fieldsHint")}</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
     html += `<div class="settingsRow" draggable="${open ? "false" : "true"}" data-field-idx="${i}">
@@ -1849,32 +1849,32 @@ function renderSettings() {
         ${open ? ICONS.chevUp : ICONS.chevDown}
       </div>
       <div class="settingsRowBody ${open ? "open" : ""}">
-        <div class="field"><div class="fieldLabel">字段名</div><input class="input" data-field-edit="label" data-id="${esc(f.id)}" value="${esc(f.label)}" /></div>
-        <div class="field"><div class="fieldLabel">类型</div>
+        <div class="field"><div class="fieldLabel">${T("settings.fieldName")}</div><input class="input" data-field-edit="label" data-id="${esc(f.id)}" value="${esc(f.label)}" /></div>
+        <div class="field"><div class="fieldLabel">${T("settings.type")}</div>
           <select class="input" data-field-edit="type" data-id="${esc(f.id)}">
             ${fieldTypes().map((ft) => `<option value="${ft.value}" ${f.type === ft.value ? "selected" : ""}>${esc(ft.label)}</option>`).join("")}
           </select></div>
-        <div class="field"><div class="fieldLabel">分析角色</div>
+        <div class="field"><div class="fieldLabel">${T("settings.role")}</div>
           <select class="input" data-field-edit="role" data-id="${esc(f.id)}">
             ${roleOptions().map((r) => `<option value="${r.value}" ${(f.role || "") === r.value ? "selected" : ""}>${esc(r.label)}</option>`).join("")}
           </select></div>
         ${(f.type === "select" || f.type === "multiselect") ? `
-        <div class="field"><div class="fieldLabel">选项池（可拖动排序）</div>
+        <div class="field"><div class="fieldLabel">${T("settings.optionPool")}</div>
           <div id="optpool-${esc(f.id)}">${(f.options || []).map((o, oi) => `<span class="tagChip" draggable="true" data-opt-field="${esc(f.id)}" data-opt-idx="${oi}" style="cursor:grab;">⠿ ${esc(o)}<span data-action="remove-option" data-id="${esc(f.id)}" data-opt="${esc(o)}">${ICONS.x}</span></span>`).join("")}</div>
-          <div class="addOptRow"><input class="input" id="optdraft-${esc(f.id)}" placeholder="新选项…" />
-          <button class="btn" data-action="add-option" data-id="${esc(f.id)}">加</button></div>
+          <div class="addOptRow"><input class="input" id="optdraft-${esc(f.id)}" placeholder="${esc(T("settings.newOptionPlaceholder"))}" />
+          <button class="btn" data-action="add-option" data-id="${esc(f.id)}">${T("common.add")}</button></div>
         </div>` : ""}
-        <button class="btn btn-danger" data-action="delete-field" data-id="${esc(f.id)}">${ICONS.trash} 删除字段</button>
+        <button class="btn btn-danger" data-action="delete-field" data-id="${esc(f.id)}">${ICONS.trash} ${T("settings.deleteField")}</button>
       </div>
     </div>`;
   });
   html += `<div class="addFieldBox">
-    <div class="dashLabel">+ 新增字段</div>
-    <div class="field"><div class="fieldLabel">字段名</div><input class="input" id="newFieldLabel" placeholder="例如：mentor_confirm" /></div>
-    <div class="field"><div class="fieldLabel">类型</div>
+    <div class="dashLabel">${esc(T("settings.addFieldTitle"))}</div>
+    <div class="field"><div class="fieldLabel">${T("settings.fieldName")}</div><input class="input" id="newFieldLabel" placeholder="${esc(T("settings.newFieldPlaceholder"))}" /></div>
+    <div class="field"><div class="fieldLabel">${T("settings.type")}</div>
       <select class="input" id="newFieldType">${fieldTypes().map((ft) => `<option value="${ft.value}">${esc(ft.label)}</option>`).join("")}</select></div>
-    <div class="field"><div class="fieldLabel">初始选项（逗号分隔，仅单选/多选需要）</div><input class="input" id="newFieldOpts" placeholder="yes, no, maybe" /></div>
-    <button class="btn btn-primary" data-action="add-field">${ICONS.plus} 添加字段</button>
+    <div class="field"><div class="fieldLabel">${T("settings.initialOptions")}</div><input class="input" id="newFieldOpts" placeholder="yes, no, maybe" /></div>
+    <button class="btn btn-primary" data-action="add-field">${ICONS.plus} ${T("settings.addField")}</button>
   </div>`;
   return html;
 }
@@ -2033,29 +2033,29 @@ function profileModalHtml() {
   profileGenderDraft = p.gender || null;
   return `<div class="overlay">
     <div class="modal" style="max-width:420px;">
-      <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">个人设置</div>
+      <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${T("header.profile")}</div>
         <button class="iconBtn" data-action="close-profile-modal">${ICONS.x}</button></div>
       <div class="modalBody">
-        <div class="field"><div class="fieldLabel">显示名称</div>
-          <input class="input" id="profileNameInput" value="${esc(p.display_name || "")}" placeholder="例如：Timmy" /></div>
-        <div class="field"><div class="fieldLabel">性别</div>
+        <div class="field"><div class="fieldLabel">${T("profile.displayName")}</div>
+          <input class="input" id="profileNameInput" value="${esc(p.display_name || "")}" placeholder="${esc(T("profile.namePlaceholder"))}" /></div>
+        <div class="field"><div class="fieldLabel">${T("profile.gender")}</div>
           <div class="chipGroup">
-            <button type="button" class="chip ${p.gender === "男" ? "active" : ""}" data-action="set-gender-draft" data-val="男">男</button>
-            <button type="button" class="chip ${p.gender === "女" ? "active" : ""}" data-action="set-gender-draft" data-val="女">女</button>
+            <button type="button" class="chip ${p.gender === "男" ? "active" : ""}" data-action="set-gender-draft" data-val="男">${esc(T("profile.male"))}</button>
+            <button type="button" class="chip ${p.gender === "女" ? "active" : ""}" data-action="set-gender-draft" data-val="女">${esc(T("profile.female"))}</button>
           </div>
         </div>
         ${profileError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:10px;">${esc(profileError)}</div>` : ""}
         ${profileSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:10px;">${esc(profileSuccess)}</div>` : ""}
-        <button class="btn btn-primary" data-action="save-profile" ${profileBusy ? "disabled" : ""}>${profileBusy ? "保存中…" : "保存"}</button>
+        <button class="btn btn-primary" data-action="save-profile" ${profileBusy ? "disabled" : ""}>${profileBusy ? T("common.saving") : T("common.save")}</button>
 
         <div style="border-top:1px solid var(--border);margin:22px 0 16px;"></div>
-        <div class="sectionLabel">⟦ 修改密码 ⟧</div>
-        <div class="field"><div class="fieldLabel">当前密码</div><input class="input" type="password" id="pwCurrentInput" autocomplete="current-password" /></div>
-        <div class="field"><div class="fieldLabel">新密码</div><input class="input" type="password" id="pwNewInput" autocomplete="new-password" /></div>
-        <div class="field"><div class="fieldLabel">确认新密码</div><input class="input" type="password" id="pwConfirmInput" autocomplete="new-password" /></div>
+        <div class="sectionLabel">⟦ ${esc(T("password.title"))} ⟧</div>
+        <div class="field"><div class="fieldLabel">${T("password.current")}</div><input class="input" type="password" id="pwCurrentInput" autocomplete="current-password" /></div>
+        <div class="field"><div class="fieldLabel">${T("password.new")}</div><input class="input" type="password" id="pwNewInput" autocomplete="new-password" /></div>
+        <div class="field"><div class="fieldLabel">${T("password.confirm")}</div><input class="input" type="password" id="pwConfirmInput" autocomplete="new-password" /></div>
         ${passwordError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:10px;">${esc(passwordError)}</div>` : ""}
         ${passwordSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:10px;">${esc(passwordSuccess)}</div>` : ""}
-        <button class="btn btn-primary" data-action="save-password" ${passwordBusy ? "disabled" : ""}>${passwordBusy ? "处理中…" : "修改密码"}</button>
+        <button class="btn btn-primary" data-action="save-password" ${passwordBusy ? "disabled" : ""}>${passwordBusy ? T("common.processing") : T("password.title")}</button>
       </div>
     </div>
   </div>`;
@@ -2077,8 +2077,8 @@ function dayDetailModalHtml() {
       <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${esc(dayDetailDate)}</div>
         <button class="iconBtn" data-action="close-day-detail">${ICONS.x}</button></div>
       <div class="modalBody">
-        <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">${stats.count} 笔${stats.hasR ? ` · 合计 ${fmtNum(stats.rSum)}R` : ""}</div>
-        ${list.length === 0 ? `<div style="color:var(--mutedDark);font-size:13px;margin-bottom:14px;">这天还没有记录</div>` : ""}
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:14px;">${esc(stats.hasR ? T("dayDetail.summaryWithR", { n: stats.count, r: fmtNum(stats.rSum) }) : T("dayDetail.summary", { n: stats.count }))}</div>
+        ${list.length === 0 ? `<div style="color:var(--mutedDark);font-size:13px;margin-bottom:14px;">${T("dayDetail.empty")}</div>` : ""}
         ${list.map((t) => {
           const result = resultF ? t[resultF.id] : null;
           const rc = resultColor(result);
@@ -2098,14 +2098,14 @@ function dayDetailModalHtml() {
               : `<span style="display:flex;gap:6px;flex-shrink:0;margin-left:8px;"><button class="tinyBtn" data-action="confirm-delete-day-trade" data-id="${esc(t.id)}" style="color:var(--neg);">✓</button><button class="tinyBtn" data-action="cancel-delete-day-trade">${ICONS.x}</button></span>`)}
           </div>`;
         }).join("")}
-        ${viewingUserId ? "" : `<button class="btn btn-primary" data-action="new-trade-for-day" style="margin-top:14px;width:100%;justify-content:center;">${ICONS.plus} 新建这天的交易</button>`}
+        ${viewingUserId ? "" : `<button class="btn btn-primary" data-action="new-trade-for-day" style="margin-top:14px;width:100%;justify-content:center;">${ICONS.plus} ${T("dayDetail.newTrade")}</button>`}
       </div>
     </div>
   </div>`;
 }
 function comboGroupModalHtml() {
   const m = comboGroupModal;
-  const title = m.mode === "root" ? "新建分组" : m.mode === "sub" ? "新建二级分组" : "改名";
+  const title = m.mode === "root" ? T("comboGroup.modalNewRoot") : m.mode === "sub" ? T("comboGroup.modalNewSub") : T("comboGroup.modalRename");
   return `<div class="overlay" data-action="dismiss-combo-group-overlay">
     <div class="modal" style="max-width:420px;">
       <div class="modalHead">
@@ -2114,13 +2114,13 @@ function comboGroupModalHtml() {
       </div>
       <div class="modalBody">
         <div class="field" style="margin-bottom:0;">
-          <div class="fieldLabel">分组名字</div>
-          <input type="text" class="input" id="comboGroupNameInput" value="${esc(m.name)}" placeholder="比如「IFVG」「能做」" maxlength="40" autofocus />
+          <div class="fieldLabel">${T("comboGroup.nameLabel")}</div>
+          <input type="text" class="input" id="comboGroupNameInput" value="${esc(m.name)}" placeholder="${esc(T("comboGroup.namePlaceholder"))}" maxlength="40" autofocus />
         </div>
       </div>
       <div class="modalFoot">
-        <button class="btn" data-action="close-combo-group-modal">取消</button>
-        <button class="btn btn-primary" data-action="save-combo-group-modal">保存</button>
+        <button class="btn" data-action="close-combo-group-modal">${T("common.cancel")}</button>
+        <button class="btn btn-primary" data-action="save-combo-group-modal">${T("common.save")}</button>
       </div>
     </div>
   </div>`;
@@ -2389,7 +2389,7 @@ document.addEventListener("click", async (e) => {
   /* ---------- 分析页：组合 ---------- */
   else if (action === "add-combo") {
     if (viewingUserId) return;
-    const c = normalizeCombo({ id: newComboId(), name: "新组合 " + (analysisPrefs.combos.length + 1), conditions: [newFilterRow()] });
+    const c = normalizeCombo({ id: newComboId(), name: T("combo.newName", { n: analysisPrefs.combos.length + 1 }), conditions: [newFilterRow()] });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
     // 新组合默认落在"未分组"桶里，那个桶要是被收起了，新建的东西会悄悄不可见——顺手展开
@@ -2500,7 +2500,7 @@ document.addEventListener("click", async (e) => {
     if (viewingUserId) return;
     const c = normalizeCombo({
       id: newComboId(),
-      name: "来自筛选 " + new Date().toLocaleDateString("zh-CN"),
+      name: T("combo.fromFilters", { date: new Date().toLocaleDateString(localeTag()) }),
       conditions: activeFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
     });
     analysisPrefs.combos.push(c);
@@ -2557,15 +2557,15 @@ document.addEventListener("click", async (e) => {
     await addChangelogEntry(ta.value);
   }
   else if (action === "delete-changelog") {
-    if (!confirm("删除这条更新记录？")) return;
+    if (!confirm(T("changelog.confirmDelete"))) return;
     await removeChangelogEntry(el.dataset.id);
   }
   else if (action === "auth-mode") { authScreenMode = el.dataset.mode; authError = ""; authSuccess = ""; render(); }
   else if (action === "auth-submit") {
-    if (!sb) { authError = "连不上数据库，联系管理员检查一下。"; render(); return; }
+    if (!sb) { authError = T("auth.noDb"); render(); return; }
     const email = document.getElementById("authEmail").value.trim();
     const password = document.getElementById("authPassword").value;
-    if (!email || !password) { authError = "邮箱和密码都要填"; authSuccess = ""; render(); return; }
+    if (!email || !password) { authError = T("auth.emailPasswordRequired"); authSuccess = ""; render(); return; }
     if (authScreenMode === "register") await doRegister(email, password);
     else {
       const remember = document.getElementById("rememberMeCheck")?.checked ?? true;
@@ -2695,7 +2695,7 @@ document.addEventListener("click", async (e) => {
     if (openSettingsRow === "__admin_users__" && adminUsers === null) { await loadAdminUsers(); render(); }
   }
   else if (action === "delete-field") {
-    if (!confirm("删除这个字段？已有交易里这个字段的数据会保留但不再显示。")) return;
+    if (!confirm(T("settings.confirmDeleteField"))) return;
     await persistSchema(schema.filter((f) => f.id !== el.dataset.id));
   }
   else if (action === "remove-option") {
@@ -2796,7 +2796,7 @@ document.addEventListener("change", async (e) => {
     if (viewingUserId) return;
     const c = findCombo(e.target.dataset.comboName);
     if (!c) return;
-    c.name = e.target.value.trim() || "未命名组合";
+    c.name = e.target.value.trim() || T("combo.untitled");
     queueSaveAnalysisPrefs(); render();
   }
   else if (e.target.dataset.fieldEdit) {
