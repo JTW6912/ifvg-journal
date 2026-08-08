@@ -1831,10 +1831,7 @@ function renderSettings() {
         ${(f.options && f.options.length) ? `<div class="settingsRowBody open"><div class="chipGroup">${f.options.map((o) => `<span class="chip">${esc(o)}</span>`).join("")}</div></div>` : ""}
       </div>`).join("")}`;
   }
-  let html = `<div class="sectionLabel">⟦ ${esc(T("lang.label"))} ⟧</div>
-    <div style="margin-bottom:10px;">${langToggleHtml()}</div>
-    <div style="font-size:12px;color:var(--mutedDark);margin-bottom:22px;line-height:1.7;">${esc(T("lang.hint"))}</div>
-    <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+  let html = `<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
     ${T("settings.fieldsHint")}</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
@@ -2016,10 +2013,12 @@ function renderAuthScreen() {
     </div>
   </div>`;
 }
-/* 语言切换控件：登录页和设置页共用同一段 HTML */
-function langToggleHtml() {
+/* 语言切换控件：登录页和右上角账号菜单共用同一段 HTML。
+   compact 是给账号菜单用的窄版——下拉只有 220px 宽，登录页那个尺寸会撑破。 */
+function langToggleHtml(compact) {
+  const btnStyle = compact ? ` style="padding:5px 12px;font-size:12px;flex:1;"` : "";
   return `<div class="modeToggle" title="${esc(T("lang.switchTitle"))}">
-    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}" data-action="set-lang" data-lang="${L}">${esc(T("lang." + L))}</button>`).join("")}
+    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}"${btnStyle} data-action="set-lang" data-lang="${L}">${esc(T("lang." + L))}</button>`).join("")}
   </div>`;
 }
 function renderDisabledScreen() {
@@ -2198,6 +2197,11 @@ function render() {
             </div>
             <button data-action="open-profile-modal">${T("header.profile")}</button>
             <button data-action="logout">${T("auth.logout")}</button>
+            <div style="padding:9px 12px;border-top:1px solid var(--border);">
+              <div style="font-size:11px;color:var(--mutedDark);margin-bottom:6px;">${esc(T("lang.label"))}</div>
+              ${langToggleHtml(true)}
+              <div style="font-size:10.5px;color:var(--mutedDark);margin-top:6px;line-height:1.5;">${esc(T("lang.hintShort"))}</div>
+            </div>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ const I18N = {
     "lang.zh": "中文",
     "lang.en": "English",
     "lang.switchTitle": "切换语言",
-    "lang.hint": "语言跟随账号，换设备登录后也会保持。已经建好的字段名不会被翻译——那是你自己的数据，可以在下面手动改。",
+    "lang.hintShort": "已建好的字段名不会被翻译，那是你自己的数据。",
 
     /* ---------- 登录 / 注册 ---------- */
     "auth.login": "登录",
@@ -386,7 +386,7 @@ const I18N = {
     "lang.zh": "中文",
     "lang.en": "English",
     "lang.switchTitle": "Switch language",
-    "lang.hint": "Language follows your account, so it carries over to other devices. Field names you already have are left alone — they're your data, and you can rename them below.",
+    "lang.hintShort": "Field names you already have stay as they are — those are your data.",
 
     /* ---------- Sign in / Sign up ---------- */
     "auth.login": "Sign in",

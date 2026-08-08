@@ -168,8 +168,8 @@ verification, custom display name (used in the page title) and gender.
 
 ### Language
 
-English and Chinese, switchable from the top of the Settings tab **and** from the sign-in
-screen (so you can pick a language before you have an account). First visit picks a language
+English and Chinese, switchable from the account menu in the top-right **and** from the
+sign-in screen (so you can pick a language before you have an account). First visit picks it
 from `navigator.language`; after that the choice is stored on your profile, so signing in on
 another device gets the same language.
 
