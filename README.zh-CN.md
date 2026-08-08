@@ -148,6 +148,22 @@
 邮箱注册 / 登录，可选「下次自动登录」（在 `localStorage` 和 `sessionStorage` 之间切换会话
 存储），修改密码需要验证当前密码，可设置显示名（会用在页面标题上）和性别。
 
+### 界面语言
+
+支持中文和英文，在设置页顶部切换，**登录页上也有一个**，所以还没有账号时就能先选语言。第一次
+访问按 `navigator.language` 自动判断；之后语言存在账号上，换台设备登录还是同一种语言。
+
+有两样东西**刻意不翻译**：
+
+- **你的字段名。** 新账号的默认字段按注册时的界面语言生成一次 —— 英文是 `Date` / `Session` /
+  `Entry Time`，中文是 `日期` / `交易时段` / `入场时间`。生成之后它们就是你自己的数据了，
+  切换语言只会换掉周围的界面，不会回头改写你可能已经改过的字段名。想改就去设置页改。
+- **选项值**（`London`、`Taken`、`W`/`L`/`BE` 等）。这些存在数据库里、两种语言共用，
+  这样不管交易是用哪种语言录入的，统计口径都是一致的、可比的。
+
+语言跨设备同步需要跑一次迁移，见 [docs/i18n-migration.sql](docs/i18n-migration.sql)。
+不跑也能用，只是语言只记在当前浏览器里，不会跟着账号走。
+
 ### 管理后台 *(仅 admin 可见)*
 
 <!-- 截图 —— 管理后台用户表 → docs/screenshots/admin.png
@@ -171,7 +187,7 @@
 
 | 层 | 选型 |
 | --- | --- |
-| 前端 | 纯静态文件 —— `index.html` + `style.css` + `app.js`。无框架、无打包器、无构建步骤。 |
+| 前端 | 纯静态文件 —— `index.html` + `style.css` + `i18n.js` + `app.js`。无框架、无打包器、无构建步骤。 |
 | 后端 | [Supabase](https://supabase.com)（Postgres + Auth），浏览器通过 `supabase-js` 直接调用。 |
 | 部署 | 任意静态托管均可，仓库里附带了 Vercel 用的 `vercel.json` + `build.js`。 |
 
@@ -188,14 +204,14 @@
 
 | 表 | 作用 |
 | --- | --- |
-| `profiles` | 一个用户一行 —— 邮箱、角色（`user`/`admin`）、启用状态、显示名、性别、上次在线。注册触发器自动创建。 |
+| `profiles` | 一个用户一行 —— 邮箱、角色（`user`/`admin`）、启用状态、显示名、性别、界面语言、上次在线。注册触发器自动创建。 |
 | `trades` | 一笔交易一行 —— `mode`（`backtest`/`live`）加一个以字段 id 为 key 的 `jsonb` 数据块，所以新增字段永远不需要迁移。 |
 | `journal_schema` | 每用户的配置 —— `fields`（字段结构）、`card_fields`、`analysis_prefs`（口径默认值、拆解顺序与隐藏项、组合、组合分组）。 |
 | `changelog` | 全局共享，所有人可读，只有 admin 能写。 |
 
 真正做隔离的是 RLS：用户只能读写自己的行，admin 额外拥有对所有人数据的**只读**权限。需要提权
-的写操作走 `security definer` 函数（`update_own_profile`、`touch_last_seen`、`is_admin`），
-前端无法给自己升权。
+的写操作走 `security definer` 函数（`update_own_profile`、`update_own_lang`、
+`touch_last_seen`、`is_admin`），前端无法给自己升权。
 
 ---
 

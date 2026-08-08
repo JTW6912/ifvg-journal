@@ -166,6 +166,28 @@ Email + password sign-up and sign-in, optional "stay signed in" (switches the se
 between `localStorage` and `sessionStorage`), change password with current-password
 verification, custom display name (used in the page title) and gender.
 
+### Language
+
+English and Chinese, switchable from the top of the Settings tab **and** from the sign-in
+screen (so you can pick a language before you have an account). First visit picks a language
+from `navigator.language`; after that the choice is stored on your profile, so signing in on
+another device gets the same language.
+
+Two things are deliberately *not* translated:
+
+- **Your field names.** A new account's default fields are seeded in whatever language was
+  active at signup — `Date` / `Session` / `Entry Time` in English, `日期` / `交易时段` /
+  `入场时间` in Chinese. After that they're your data. Switching language changes the
+  interface around them but never rewrites labels you may have renamed. To change them,
+  edit the fields in Settings.
+- **Option values** (`London`, `Taken`, `W`/`L`/`BE`, …). These are stored in the database
+  and shared by both languages, so statistics stay comparable no matter which language a
+  trade was entered in.
+
+Language sync needs one migration — see [docs/i18n-migration.sql](docs/i18n-migration.sql).
+Without it the app still works and remembers your language per browser; it just won't follow
+you across devices.
+
 ### Admin panel *(admin role only)*
 
 <!-- SCREENSHOT — admin user table → docs/screenshots/admin.png
@@ -190,7 +212,7 @@ topmost modal or lightbox, responsive layout.
 
 | Layer | Choice |
 | --- | --- |
-| Frontend | Static files — `index.html` + `style.css` + `app.js`. No framework, no bundler, no build step. |
+| Frontend | Static files — `index.html` + `style.css` + `i18n.js` + `app.js`. No framework, no bundler, no build step. |
 | Backend | [Supabase](https://supabase.com) (Postgres + Auth), called directly from the browser via `supabase-js`. |
 | Hosting | Any static host. `vercel.json` + `build.js` are included for Vercel. |
 
@@ -208,15 +230,15 @@ the conventions, the traps (notably: **never wrap a container that holds buttons
 
 | Table | Purpose |
 | --- | --- |
-| `profiles` | one row per user — email, role (`user`/`admin`), active flag, display name, gender, last seen. Created automatically by a signup trigger. |
+| `profiles` | one row per user — email, role (`user`/`admin`), active flag, display name, gender, language, last seen. Created automatically by a signup trigger. |
 | `trades` | one row per trade — `mode` (`backtest`/`live`) plus a `jsonb` `data` blob keyed by field id, so adding a field never needs a migration. |
 | `journal_schema` | per-user config — `fields` (the schema), `card_fields`, and `analysis_prefs` (scope defaults, breakdown order/visibility, combos, combo groups). |
 | `changelog` | global, shared by all users; admin-only writes. |
 
 Row-level security is what enforces isolation: users read and write only their own rows,
 admins additionally get **read-only** access to everyone's. Privileged writes go through
-`security definer` functions (`update_own_profile`, `touch_last_seen`, `is_admin`) so the
-client can never escalate its own role.
+`security definer` functions (`update_own_profile`, `update_own_lang`, `touch_last_seen`,
+`is_admin`) so the client can never escalate its own role.
 
 ---
 
