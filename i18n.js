@@ -131,6 +131,91 @@ const I18N = {
     "image.loadFailed": "图片没加载出来",
     "image.openInNewTab": "在新标签打开",
 
+    /* ---------- 分析页：总览 / 口径 ---------- */
+    "analytics.noResultRole": "当前没有字段被标记为『结果』角色 — 去设置页给某个字段打上『结果 W/L/BE』角色标签，分析才能算出来。",
+    "analytics.noTradesLine1": "当前口径下没有可统计的交易——{source}共 {total} 笔，其中 taken=Taken 的有 {withTaken} 笔，result 填了 W/L 的有 {withResult} 笔。",
+    "analytics.sourceModels": "选中的模型",
+    "analytics.sourceDb": "数据库里",
+    "analytics.noTradesLine2": "要么放宽上面的统计口径，要么新建交易时记得点选 taken=Taken、result 也选一个具体值（不能留空）。",
+    "analytics.countTaken": "已入场",
+    "analytics.countTrades": "交易数",
+    "analytics.setupQuality": "设置质量",
+    "analytics.totalR": "总R",
+    "analytics.evPerTrade": "EV / 笔",
+    "analytics.profitFactor": "盈亏比",
+    "analytics.pfBasis": "基于填了 R 的 {n} 笔",
+    "analytics.captureRate": "R 捕获率",
+    "analytics.fadedLine": "· Faded {n}（本应做的 W {w} / 本应避开的 L {l}）",
+    "analytics.byModel": "按模型",
+    "scope.title": "统计口径",
+    "scope.takenOnly": "只算已入场（Taken）的交易",
+    "scope.excludeHumanError": "排除标记为人为错误的交易",
+    "scope.model": "模型",
+    "scope.clearModels": "清空（=全部）",
+    "scope.allModels": "不选=全部",
+    "scope.localHint": "这些是本地设置，只存在这台设备上，不会同步给其他登录设备；只影响上面的总览和下面的字段拆解，不影响组合分析（组合用的是自己单独添加的筛选条件）",
+
+    /* ---------- 分析页：字段拆解 ---------- */
+    "breakdown.title": "全部字段拆解",
+    "breakdown.displaySettings": "显示设置",
+    "breakdown.pickerHint": "取消勾选就不显示，拖动 ⠿ 调整顺序。以后新加的字段会自动出现在最后面。",
+    "breakdown.reset": "恢复默认（全显示 + 默认顺序）",
+    "breakdown.hideField": "不显示这个字段的拆解（想找回去上面『显示设置』里重新勾选）",
+    "breakdown.none": "没有可拆解的字段（全被隐藏了，或者当前口径下这些字段都没填过值）。",
+    "breakdown.comboFromRow": "用这一条直接建一个组合",
+    "breakdown.comboBtn": "组合",
+
+    /* ---------- 组合 ---------- */
+    "combo.untitled": "未命名组合",
+    "combo.issue.noField": "第 {no} 条还没选字段（不会起任何过滤作用）",
+    "combo.issue.fieldDeleted": "第 {no} 条引用的字段已被删除，这条会失效并放行全部交易",
+    "combo.issue.missingOptions": "「{label}」的选项 {opts} 已不存在，永远匹配不到",
+    "combo.issue.noValues": "「{label}」没选任何值（不会起任何过滤作用）",
+    "combo.issue.noRange": "「{label}」没填区间（不会起任何过滤作用）",
+    "combo.issue.noText": "「{label}」没填内容（不会起任何过滤作用）",
+    "combo.cond.fieldDeleted": "⚠ 字段已删除",
+    "combo.cond.and": " 且 ",
+    "combo.cond.contains": "{label} 含「{value}」",
+    "combo.cond.none": "没有任何条件（= 全部交易）",
+    "combo.namePlaceholder": "组合名字…",
+    "combo.editorHint": "条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行。归到哪个分组，收起编辑器后拖卡片到分组标题上就行",
+    "combo.addCondition": "添加条件",
+    "combo.done": "完成",
+    "combo.broken": "条件失效，数字不可信，先修好再看",
+    "combo.dragHint": "拖动排序，或拖到分组标题上归类",
+    "combo.collapse": "收起",
+    "combo.edit": "编辑",
+    "combo.smallSampleTitle": "样本太少，胜率的随机波动会很大，别急着下结论",
+    "combo.smallSample": "样本仅 {n} 笔，参考意义有限",
+    "combo.confirmDelete": "确定删掉「{name}」？",
+    "combo.viewTrades": "查看这 {n} 笔交易 →",
+    "combos.title": "组合分析",
+    "combos.newGroup": "新建分组",
+    "combos.newCombo": "新建组合",
+    "combos.emptyIntro": "还没有组合。组合就是一组固定的筛选条件（比如「模型=A 且 目标类型含 BSL」），存下来之后这里会实时显示它的胜率、EV、PF，点一下就能跳到记录页看是哪些交易。<br>三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。<br>组合多了以后可以用「新建分组」把它们归类，比如「IFVG」下面再分「能做」「不能做」两个二级分组——不想分组的话完全不用管这个，就是个平铺列表。",
+    "combos.emptyWithGroups": "分组建好了，但还没有组合。点右上角「新建组合」手搭一个，或者在记录页调好筛选后点「把当前筛选存为组合」；建好之后把卡片拖到下面的分组标题上就能归类。",
+
+    /* ---------- 组合分组 ---------- */
+    "comboGroup.kindRoot": "分组",
+    "comboGroup.kindSub": "二级分组",
+    "comboGroup.subCount": "{n} 个二级分组",
+    "comboGroup.comboCount": "{n} 个组合",
+    "comboGroup.andJoin": "和",
+    "comboGroup.cascadeWarn": "，里面的{parts}会一起被删掉，这个操作不可撤销",
+    "comboGroup.cascadeEmpty": "（里面是空的）",
+    "comboGroup.confirmDelete": "确定删除{kind}「{name}」？{warn}",
+    "comboGroup.rename": "改名",
+    "comboGroup.addSub": "二级分组",
+    "comboGroup.directBucket": "未归入二级分组",
+    "comboGroup.ungrouped": "未分组",
+    "comboGroup.dropHintSub": "把组合卡片拖到这个标题上，就能归到这个二级分组",
+    "comboGroup.dropHintRoot": "把组合卡片拖到这个标题上，就能归到这个分组",
+    "comboGroup.dropHintUngroup": "拖到这里可以把组合从分组里移出来",
+
+    /* ---------- 分析设置保存 ---------- */
+    "prefs.saveErrorMissingColumn": "分析设置没能保存到数据库——journal_schema 表还缺 analysis_prefs 这一列，去 Supabase SQL Editor 跑一次：alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;",
+    "prefs.saveError": "分析设置保存失败：{msg}",
+
     /* ---------- 字段类型 ---------- */
     "fieldType.text": "单行文本",
     "fieldType.textarea": "多行文本",
@@ -235,6 +320,7 @@ const I18N = {
     "grid.winRate": "Win rate",
     "grid.total": "Total",
     "grid.pfTitle": "Sum of positive R ÷ |sum of negative R|, across the {n} trades that have an R value",
+    "grid.pfTitle_one": "Sum of positive R ÷ |sum of negative R|, across the 1 trade that has an R value",
     "grid.saveFiltersAsCombo": "Save these filters as a combo",
     "grid.prevPage": "‹ Prev",
     "grid.nextPage": "Next ›",
@@ -262,6 +348,7 @@ const I18N = {
     "grid.empty": "No trades yet",
     "grid.viewLarge": "View full size",
     "grid.tradeCount": "{n} trades",
+    "grid.tradeCount_one": "1 trade",
 
     /* ---------- Filters ---------- */
     "filter.title": "Filters",
@@ -287,6 +374,96 @@ const I18N = {
     "modal.urlPreviewHint": "Drag the bottom-right corner to resize the preview",
     "image.loadFailed": "Image didn't load",
     "image.openInNewTab": "Open in new tab",
+
+    /* ---------- Analytics: overview / scope ---------- */
+    "analytics.noResultRole": "No field is tagged with the 'Result' role — go to Settings and give a field the 'Result W/L/BE' role so the analytics can be calculated.",
+    "analytics.noTradesLine1": "Nothing to measure under the current scope — {source} has {total} trades, of which {withTaken} have taken=Taken and {withResult} have a W/L result.",
+    "analytics.sourceModels": "the selected models",
+    "analytics.sourceDb": "the database",
+    "analytics.noTradesLine2": "Either loosen the scope above, or make sure new trades get taken=Taken and a concrete result — it can't be left blank.",
+    "analytics.countTaken": "Taken",
+    "analytics.countTrades": "Trades",
+    "analytics.setupQuality": "Setup quality",
+    "analytics.totalR": "Total R",
+    "analytics.evPerTrade": "EV / trade",
+    "analytics.profitFactor": "Profit factor",
+    "analytics.pfBasis": "Based on the {n} trades with an R value",
+    "analytics.pfBasis_one": "Based on the 1 trade with an R value",
+    "analytics.captureRate": "R capture rate",
+    "analytics.fadedLine": "· Faded {n} ({w} would have won / {l} would have lost)",
+    "analytics.byModel": "By model",
+    "scope.title": "Scope",
+    "scope.takenOnly": "Only count trades that were taken",
+    "scope.excludeHumanError": "Exclude trades flagged as human error",
+    "scope.model": "Model",
+    "scope.clearModels": "Clear (= all)",
+    "scope.allModels": "none selected = all",
+    "scope.localHint": "These are local settings — they live on this device only and don't sync to your other devices. They affect the overview above and the field breakdowns below, but not combo analysis (combos use their own conditions).",
+
+    /* ---------- Analytics: field breakdowns ---------- */
+    "breakdown.title": "All field breakdowns",
+    "breakdown.displaySettings": "Display settings",
+    "breakdown.pickerHint": "Uncheck to hide, drag ⠿ to reorder. Fields you add later show up at the end automatically.",
+    "breakdown.reset": "Reset to default (show all, default order)",
+    "breakdown.hideField": "Hide this field's breakdown (re-enable it under 'Display settings' above)",
+    "breakdown.none": "No fields to break down — they're all hidden, or none of them have values under the current scope.",
+    "breakdown.comboFromRow": "Build a combo straight from this row",
+    "breakdown.comboBtn": "Combo",
+
+    /* ---------- Combos ---------- */
+    "combo.untitled": "Untitled combo",
+    "combo.issue.noField": "Condition {no} has no field selected (it filters nothing)",
+    "combo.issue.fieldDeleted": "Condition {no} points at a deleted field — it does nothing and lets every trade through",
+    "combo.issue.missingOptions": "Options {opts} on \"{label}\" no longer exist, so this can never match",
+    "combo.issue.noValues": "\"{label}\" has no values selected (it filters nothing)",
+    "combo.issue.noRange": "\"{label}\" has no range set (it filters nothing)",
+    "combo.issue.noText": "\"{label}\" has no text entered (it filters nothing)",
+    "combo.cond.fieldDeleted": "⚠ field deleted",
+    "combo.cond.and": " and ",
+    "combo.cond.contains": "{label} contains \"{value}\"",
+    "combo.cond.none": "No conditions (= all trades)",
+    "combo.namePlaceholder": "Combo name…",
+    "combo.editorHint": "Conditions are ANDed; multiple values inside one condition are ORed; tick \"Is none of these\" for NOR. To count only Taken trades or exclude human error, add those as ordinary conditions below. To file this combo in a group, collapse the editor and drag the card onto a group header.",
+    "combo.addCondition": "Add condition",
+    "combo.done": "Done",
+    "combo.broken": "Conditions are broken — these numbers can't be trusted. Fix them first.",
+    "combo.dragHint": "Drag to reorder, or drop onto a group header to file it",
+    "combo.collapse": "Collapse",
+    "combo.edit": "Edit",
+    "combo.smallSampleTitle": "Small sample — win rate swings a lot on chance alone, so don't read much into it",
+    "combo.smallSample": "Only {n} trades — limited signal",
+    "combo.smallSample_one": "Only 1 trade — limited signal",
+    "combo.confirmDelete": "Delete \"{name}\"?",
+    "combo.viewTrades": "View these {n} trades →",
+    "combo.viewTrades_one": "View this 1 trade →",
+    "combos.title": "Combo analysis",
+    "combos.newGroup": "New group",
+    "combos.newCombo": "New combo",
+    "combos.emptyIntro": "No combos yet. A combo is a saved set of filter conditions (say, \"model = A and target type includes BSL\"). Once saved, its win rate, EV and PF show up here live, and one click takes you to the matching trades.<br>Three ways to make one: hit \"New combo\" here; set up filters on the trades page and hit \"Save these filters as a combo\"; or use the \"+Combo\" button on any breakdown row below.<br>Once you have a few, \"New group\" lets you file them — for example an \"IFVG\" group with \"Trade\" and \"Avoid\" subgroups. Don't want groups? Ignore all of it and keep a flat list.",
+    "combos.emptyWithGroups": "Groups are set up, but there are no combos yet. Hit \"New combo\" at the top right, or set up filters on the trades page and hit \"Save these filters as a combo\". Once you have one, drag the card onto a group header to file it.",
+
+    /* ---------- Combo groups ---------- */
+    "comboGroup.kindRoot": "group",
+    "comboGroup.kindSub": "subgroup",
+    "comboGroup.subCount": "{n} subgroups",
+    "comboGroup.subCount_one": "1 subgroup",
+    "comboGroup.comboCount": "{n} combos",
+    "comboGroup.comboCount_one": "1 combo",
+    "comboGroup.andJoin": " and ",
+    "comboGroup.cascadeWarn": " — the {parts} inside will be deleted with it, and this can't be undone",
+    "comboGroup.cascadeEmpty": " (it's empty)",
+    "comboGroup.confirmDelete": "Delete the {kind} \"{name}\"?{warn}",
+    "comboGroup.rename": "Rename",
+    "comboGroup.addSub": "Subgroup",
+    "comboGroup.directBucket": "Not in a subgroup",
+    "comboGroup.ungrouped": "Ungrouped",
+    "comboGroup.dropHintSub": "Drag a combo card onto this header to file it in this subgroup",
+    "comboGroup.dropHintRoot": "Drag a combo card onto this header to file it in this group",
+    "comboGroup.dropHintUngroup": "Drop here to pull a combo back out of its group",
+
+    /* ---------- Saving analysis settings ---------- */
+    "prefs.saveErrorMissingColumn": "Analysis settings couldn't be saved — the journal_schema table is missing the analysis_prefs column. Run this once in the Supabase SQL Editor: alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;",
+    "prefs.saveError": "Couldn't save analysis settings: {msg}",
 
     /* ---------- Field types ---------- */
     "fieldType.text": "Text",
@@ -347,9 +524,14 @@ function readStoredLang() {
 let lang = readStoredLang() || detectBrowserLang();
 
 /* 取词。找不到 key 时按 en → zh → key 本身逐级兜底，
-   这样翻译还没补齐的地方会退回另一种语言，而不是在界面上露出一个原始 key。 */
+   这样翻译还没补齐的地方会退回另一种语言，而不是在界面上露出一个原始 key。
+
+   单复数：传了 n 且当前语言表里有 "<key>_one" 时用单数版（英文的 "1 combo" vs "2 combos"）。
+   刻意只查当前语言表——中文没有单复数、也就不会有 _one，如果放开兜底链，
+   中文界面会去捡英文的 _one，冒出一句英文来。 */
 function T(key, params) {
   const table = I18N[lang] || I18N.en;
+  if (params && Number(params.n) === 1 && table[key + "_one"] !== undefined) key = key + "_one";
   let s = table[key];
   if (s === undefined) s = I18N.en[key];
   if (s === undefined) s = I18N.zh[key];

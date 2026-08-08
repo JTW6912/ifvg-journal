@@ -342,7 +342,7 @@ function normalizeCombo(c) {
   }
   return {
     id: String(c.id),
-    name: typeof c.name === "string" ? c.name : "未命名组合",
+    name: typeof c.name === "string" ? c.name : T("combo.untitled"),
     // tag 是旧版"可以做/要避免"标签留下的字段，功能已经被自定义分组取代，不再读它、不再给 UI 用，
     // 但也不主动清掉——老数据里如果还有值，原样保留，不强行丢用户的东西
     tag: c.tag === "do" || c.tag === "avoid" ? c.tag : "",
@@ -463,8 +463,8 @@ async function writeAnalysisPrefs() {
     // 42703 = undefined_column，PGRST204 = PostgREST 缓存里没这一列，都说明那条 alter table 还没跑
     const missingColumn = error.code === "42703" || error.code === "PGRST204" || /analysis_prefs/.test(error.message || "");
     analysisPrefsError = missingColumn
-      ? "分析设置没能保存到数据库——journal_schema 表还缺 analysis_prefs 这一列，去 Supabase SQL Editor 跑一次：alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;"
-      : "分析设置保存失败：" + error.message;
+      ? T("prefs.saveErrorMissingColumn")
+      : T("prefs.saveError", { msg: error.message });
     render();
   } else if (analysisPrefsError) {
     analysisPrefsError = null;
@@ -642,18 +642,18 @@ function comboIssues(combo) {
   const hard = [], soft = [];
   (combo.conditions || []).forEach((f, i) => {
     const no = i + 1;
-    if (!f.fieldId) { soft.push(`第 ${no} 条还没选字段（不会起任何过滤作用）`); return; }
+    if (!f.fieldId) { soft.push(T("combo.issue.noField", { no })); return; }
     const field = schema.find((x) => x.id === f.fieldId);
-    if (!field) { hard.push(`第 ${no} 条引用的字段已被删除，这条会失效并放行全部交易`); return; }
+    if (!field) { hard.push(T("combo.issue.fieldDeleted", { no })); return; }
     if (field.type === "select" || field.type === "multiselect") {
       const opts = field.options || [];
       const missing = (f.values || []).filter((v) => !opts.includes(v));
-      if (missing.length) hard.push(`「${field.label}」的选项 ${missing.join("、")} 已不存在，永远匹配不到`);
-      if (!(f.values || []).length) soft.push(`「${field.label}」没选任何值（不会起任何过滤作用）`);
+      if (missing.length) hard.push(T("combo.issue.missingOptions", { label: field.label, opts: listJoin(missing) }));
+      if (!(f.values || []).length) soft.push(T("combo.issue.noValues", { label: field.label }));
     } else if (field.type === "date" || field.type === "time") {
-      if (!f.rangeStart && !f.rangeEnd) soft.push(`「${field.label}」没填区间（不会起任何过滤作用）`);
+      if (!f.rangeStart && !f.rangeEnd) soft.push(T("combo.issue.noRange", { label: field.label }));
     } else if (!f.textValue) {
-      soft.push(`「${field.label}」没填内容（不会起任何过滤作用）`);
+      soft.push(T("combo.issue.noText", { label: field.label }));
     }
   });
   return { hard, soft };
@@ -663,19 +663,19 @@ function comboConditionsText(combo) {
   const parts = [];
   (combo.conditions || []).forEach((f) => {
     const field = schema.find((x) => x.id === f.fieldId);
-    if (!field) { parts.push("⚠ 字段已删除"); return; }
+    if (!field) { parts.push(T("combo.cond.fieldDeleted")); return; }
     if (field.type === "select" || field.type === "multiselect") {
       if (!(f.values || []).length) return;
-      const join = f.matchMode === "and" ? " 且 " : " / ";
+      const join = f.matchMode === "and" ? T("combo.cond.and") : " / ";
       parts.push(`${field.label} ${f.negate ? "≠" : "="} ${f.values.join(join)}`);
     } else if (field.type === "date" || field.type === "time") {
       if (!f.rangeStart && !f.rangeEnd) return;
       parts.push(`${field.label} ${f.rangeStart || "…"}~${f.rangeEnd || "…"}`);
     } else if (f.textValue) {
-      parts.push(`${field.label} 含「${f.textValue}」`);
+      parts.push(T("combo.cond.contains", { label: field.label, value: f.textValue }));
     }
   });
-  return parts.length ? parts.join(" · ") : "没有任何条件（= 全部交易）";
+  return parts.length ? parts.join(" · ") : T("combo.cond.none");
 }
 const COMBO_SMALL_SAMPLE = 10;
 
@@ -1300,7 +1300,7 @@ function barRow(row, fieldId) {
     <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div>
     <div class="barMeta">
       <span class="mono">W${row.w} L${row.l}${row.be ? " BE" + row.be : ""}${rPart}</span>
-      ${fieldId && !viewingUserId ? `<button class="tinyBtn" data-action="combo-from-breakdown" data-field="${esc(fieldId)}" data-val="${esc(row.value)}" title="用这一条直接建一个组合">${ICONS.plus}组合</button>` : ""}
+      ${fieldId && !viewingUserId ? `<button class="tinyBtn" data-action="combo-from-breakdown" data-field="${esc(fieldId)}" data-val="${esc(row.value)}" title="${esc(T("breakdown.comboFromRow"))}">${ICONS.plus}${T("breakdown.comboBtn")}</button>` : ""}
     </div>
   </div>`;
 }
@@ -1311,21 +1311,21 @@ function renderStatScopeBar() {
   const takenF = roleField("taken"), heF = roleField("human_error"), modelF = roleField("model");
   if (!takenF && !heF && !modelF) return "";
   return `<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
-    <span style="color:var(--mutedDark);">统计口径</span>
+    <span style="color:var(--mutedDark);">${T("scope.title")}</span>
     ${takenF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-      <input type="checkbox" data-action="toggle-scope-taken" ${scope.takenOnly ? "checked" : ""} style="width:13px;height:13px;" />只算已入场（Taken）的交易
+      <input type="checkbox" data-action="toggle-scope-taken" ${scope.takenOnly ? "checked" : ""} style="width:13px;height:13px;" />${T("scope.takenOnly")}
     </label>` : ""}
     ${heF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-      <input type="checkbox" data-action="toggle-scope-he" ${scope.excludeHumanError ? "checked" : ""} style="width:13px;height:13px;" />排除标记为人为错误的交易
+      <input type="checkbox" data-action="toggle-scope-he" ${scope.excludeHumanError ? "checked" : ""} style="width:13px;height:13px;" />${T("scope.excludeHumanError")}
     </label>` : ""}
     ${modelF ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span>模型</span>
+      <span>${T("scope.model")}</span>
       <div class="chipGroup" style="margin:0;">
         ${(modelF.options || []).map((o) => `<button type="button" class="chip ${modelFilters.includes(o) ? "active" : ""}" data-action="toggle-model-filter-value" data-val="${esc(o)}">${esc(o)}</button>`).join("")}
       </div>
-      ${modelFilters.length ? `<button class="tinyBtn" data-action="clear-model-filters" style="color:var(--mutedDark);">清空（=全部）</button>` : `<span style="color:var(--mutedDark);font-size:11px;">不选=全部</span>`}
+      ${modelFilters.length ? `<button class="tinyBtn" data-action="clear-model-filters" style="color:var(--mutedDark);">${T("scope.clearModels")}</button>` : `<span style="color:var(--mutedDark);font-size:11px;">${T("scope.allModels")}</span>`}
     </div>` : ""}
-    <span style="color:var(--mutedDark);font-size:11px;">这些是本地设置，只存在这台设备上，不会同步给其他登录设备；只影响上面的总览和下面的字段拆解，不影响组合分析（组合用的是自己单独添加的筛选条件）</span>
+    <span style="color:var(--mutedDark);font-size:11px;">${T("scope.localHint")}</span>
   </div>`;
 }
 
@@ -1342,16 +1342,16 @@ function deltaText(v, base, unit, digits) {
 function renderComboEditor(combo) {
   return `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
-      <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="组合名字…" style="flex:1 1 220px;max-width:420px;" />
+      <input type="text" class="select" data-combo-name="${esc(combo.id)}" value="${esc(combo.name)}" placeholder="${esc(T("combo.namePlaceholder"))}" style="flex:1 1 220px;max-width:420px;" />
     </div>
-    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">条件之间 AND，同一条件内多选是 OR，勾上「不是以下任何一个」就是 NOR。想只算 Taken / 排除人为错误，跟其他条件一样在下面加一行。归到哪个分组，收起编辑器后拖卡片到分组标题上就行</div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("combo.editorHint")}</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
       ${(combo.conditions || []).map((f, idx) => filterConditionRowHtml(f, idx, combo.id)).join("")}
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn" data-action="add-filter" data-combo-id="${esc(combo.id)}">${ICONS.plus} 添加条件</button>
-      ${(combo.conditions || []).length ? `<button class="btn" data-action="clear-all-filter-values" data-combo-id="${esc(combo.id)}">一键清空已选</button>` : ""}
-      <button class="btn btn-primary" data-action="close-combo-editor">完成</button>
+      <button class="btn" data-action="add-filter" data-combo-id="${esc(combo.id)}">${ICONS.plus} ${T("combo.addCondition")}</button>
+      ${(combo.conditions || []).length ? `<button class="btn" data-action="clear-all-filter-values" data-combo-id="${esc(combo.id)}">${T("filter.clearAllValues")}</button>` : ""}
+      <button class="btn btn-primary" data-action="close-combo-editor">${T("combo.done")}</button>
     </div>
   </div>`;
 }
@@ -1368,7 +1368,7 @@ function renderComboCard(combo) {
   const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pos)" : "var(--neg)";
   let stats;
   if (broken) {
-    stats = `<div style="font-size:12.5px;color:var(--neg);margin:2px 0 8px;">条件失效，数字不可信，先修好再看</div>`;
+    stats = `<div style="font-size:12.5px;color:var(--neg);margin:2px 0 8px;">${T("combo.broken")}</div>`;
   } else {
     stats = `<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin:2px 0 8px;font-size:12.5px;color:var(--muted);">
       <span class="mono" style="font-size:17px;font-weight:600;color:${wrColor};">${fmtPct(s.wr)}</span>
@@ -1385,40 +1385,40 @@ function renderComboCard(combo) {
   // 编辑器里的下拉和条件行塞不下会顶出卡片边框，看着像布局坏了
   return `<div class="comboCard${editing ? " editing" : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-      ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序，或拖到分组标题上归类">⠿</span>`}
+      ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("combo.dragHint"))}">⠿</span>`}
       <span style="font-size:14px;color:var(--text);font-weight:500;">${esc(combo.name)}</span>
       ${!viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
-        <button class="tinyBtn" data-action="edit-combo" data-combo-id="${esc(combo.id)}">${editing ? "收起" : "编辑"}</button>
-        <button class="tinyBtn" data-action="ask-delete-combo" data-combo-id="${esc(combo.id)}" style="color:var(--neg);">删除</button>
+        <button class="tinyBtn" data-action="edit-combo" data-combo-id="${esc(combo.id)}">${editing ? T("combo.collapse") : T("combo.edit")}</button>
+        <button class="tinyBtn" data-action="ask-delete-combo" data-combo-id="${esc(combo.id)}" style="color:var(--neg);">${T("common.delete")}</button>
       </span>` : ""}
     </div>
-    ${small ? `<div class="comboSmallSampleBadge" title="样本太少，胜率的随机波动会很大，别急着下结论">${ICONS.alert} 样本仅 ${s.n} 笔，参考意义有限</div>` : ""}
+    ${small ? `<div class="comboSmallSampleBadge" title="${esc(T("combo.smallSampleTitle"))}">${ICONS.alert} ${esc(T("combo.smallSample", { n: s.n }))}</div>` : ""}
     ${stats}
     ${issues.hard.length ? `<div style="font-size:11.5px;color:var(--neg);margin-bottom:8px;line-height:1.6;">${issues.hard.map((x) => "⚠ " + esc(x)).join("<br>")}</div>` : ""}
     ${issues.soft.length ? `<div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;line-height:1.6;">${issues.soft.map((x) => "· " + esc(x)).join("<br>")}</div>` : ""}
     <div style="font-size:11.5px;color:var(--mutedDark);line-height:1.6;">${esc(comboConditionsText(combo))}</div>
     ${deleting ? `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12px;color:var(--neg);">
-      确定删掉「${esc(combo.name)}」？
-      <button class="btn btn-danger" data-action="confirm-delete-combo" data-combo-id="${esc(combo.id)}" style="padding:4px 10px;font-size:12px;">删除</button>
-      <button class="btn" data-action="cancel-delete-combo" style="padding:4px 10px;font-size:12px;">取消</button>
+      ${esc(T("combo.confirmDelete", { name: combo.name }))}
+      <button class="btn btn-danger" data-action="confirm-delete-combo" data-combo-id="${esc(combo.id)}" style="padding:4px 10px;font-size:12px;">${T("common.delete")}</button>
+      <button class="btn" data-action="cancel-delete-combo" style="padding:4px 10px;font-size:12px;">${T("common.cancel")}</button>
     </div>` : ""}
-    ${broken ? "" : `<button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" style="margin-top:10px;padding:5px 10px;font-size:12px;">查看这 ${s.n} 笔交易 →</button>`}
+    ${broken ? "" : `<button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" style="margin-top:10px;padding:5px 10px;font-size:12px;">${esc(T("combo.viewTrades", { n: s.n }))}</button>`}
     ${editing ? renderComboEditor(combo) : ""}
   </div>`;
 }
-function renderComboGroupDeleteConfirm(groupId, kind) {
+function renderComboGroupDeleteConfirm(groupId, kindKey) {
   if (comboGroupConfirmDeleteId !== groupId) return "";
   const g = findComboGroup(groupId);
   if (!g) return "";
   const preview = comboGroupCascadePreview(groupId);
   const parts = [];
-  if (preview.subgroupCount) parts.push(`${preview.subgroupCount} 个二级分组`);
-  if (preview.comboCount) parts.push(`${preview.comboCount} 个组合`);
-  const warn = parts.length ? `，里面的${parts.join("和")}会一起被删掉，这个操作不可撤销` : "（里面是空的）";
+  if (preview.subgroupCount) parts.push(T("comboGroup.subCount", { n: preview.subgroupCount }));
+  if (preview.comboCount) parts.push(T("comboGroup.comboCount", { n: preview.comboCount }));
+  const warn = parts.length ? T("comboGroup.cascadeWarn", { parts: parts.join(T("comboGroup.andJoin")) }) : T("comboGroup.cascadeEmpty");
   return `<div style="display:flex;gap:8px;align-items:center;margin:8px 0;font-size:12px;color:var(--neg);flex-wrap:wrap;">
-    确定删除${kind}「${esc(g.name)}」？${warn}
-    <button class="btn btn-danger" data-action="confirm-delete-combo-group" data-group-id="${esc(groupId)}" style="padding:4px 10px;font-size:12px;">删除</button>
-    <button class="btn" data-action="cancel-delete-combo-group" style="padding:4px 10px;font-size:12px;">取消</button>
+    ${esc(T("comboGroup.confirmDelete", { kind: T(kindKey), name: g.name, warn }))}
+    <button class="btn btn-danger" data-action="confirm-delete-combo-group" data-group-id="${esc(groupId)}" style="padding:4px 10px;font-size:12px;">${T("common.delete")}</button>
+    <button class="btn" data-action="cancel-delete-combo-group" style="padding:4px 10px;font-size:12px;">${T("common.cancel")}</button>
   </div>`;
 }
 function renderComboGroupHeader(id, extraAttrs, nameHtml, count, extraButtons) {
@@ -1426,7 +1426,7 @@ function renderComboGroupHeader(id, extraAttrs, nameHtml, count, extraButtons) {
   return `<div class="comboGroupHeader" data-action="toggle-combo-group-collapse" data-group-id="${esc(id)}" ${extraAttrs}>
     <span style="color:var(--mutedDark);display:flex;">${collapsed ? ICONS.chevDown : ICONS.chevUp}</span>
     ${nameHtml}
-    <span style="color:var(--mutedDark);font-size:11.5px;">${count} 个组合</span>
+    <span style="color:var(--mutedDark);font-size:11.5px;">${esc(T("comboGroup.comboCount", { n: count }))}</span>
     ${extraButtons || ""}
   </div>`;
 }
@@ -1438,14 +1438,14 @@ function renderComboSubgroupSection(sub, combos) {
     `<span style="font-weight:500;">${esc(sub.name)}</span>`,
     combos.length,
     !viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
-      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(sub.id)}">改名</button>
-      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(sub.id)}" style="color:var(--neg);">删除</button>
+      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(sub.id)}">${T("comboGroup.rename")}</button>
+      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(sub.id)}" style="color:var(--neg);">${T("common.delete")}</button>
     </span>` : ""
   );
   return `<div class="comboSubgroupSection" data-group-drop="${esc(sub.id)}">
     ${header}
-    ${renderComboGroupDeleteConfirm(sub.id, "二级分组")}
-    ${collapsed ? "" : (combos.length ? `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">把组合卡片拖到这个标题上，就能归到这个二级分组</div>`)}
+    ${renderComboGroupDeleteConfirm(sub.id, "comboGroup.kindSub")}
+    ${collapsed ? "" : (combos.length ? `<div class="comboGrid">${combos.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">${T("comboGroup.dropHintSub")}</div>`)}
   </div>`;
 }
 function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
@@ -1456,9 +1456,9 @@ function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
     `<span style="font-weight:600;font-size:14px;">${esc(root.name)}</span>`,
     directCombos.length + subgroups.reduce((s, sub) => s + (byGroup[sub.id] || []).length, 0),
     !viewingUserId ? `<span style="margin-left:auto;display:flex;gap:6px;">
-      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(root.id)}">改名</button>
-      <button class="tinyBtn" data-action="add-combo-subgroup" data-parent-id="${esc(root.id)}">${ICONS.plus}二级分组</button>
-      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(root.id)}" style="color:var(--neg);">删除</button>
+      <button class="tinyBtn" data-action="rename-combo-group" data-group-id="${esc(root.id)}">${T("comboGroup.rename")}</button>
+      <button class="tinyBtn" data-action="add-combo-subgroup" data-parent-id="${esc(root.id)}">${ICONS.plus}${T("comboGroup.addSub")}</button>
+      <button class="tinyBtn" data-action="ask-delete-combo-group" data-group-id="${esc(root.id)}" style="color:var(--neg);">${T("common.delete")}</button>
     </span>` : ""
   );
   let body = "";
@@ -1473,7 +1473,7 @@ function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
         const directCollapsed = collapsedComboGroups.has(dKey);
         const directHeader = renderComboGroupHeader(
           dKey, viewingUserId ? "" : `draggable="true" data-group-id="${esc(dKey)}"`,
-          `<span style="font-weight:500;color:var(--mutedDark);">未归入二级分组</span>`,
+          `<span style="font-weight:500;color:var(--mutedDark);">${esc(T("comboGroup.directBucket"))}</span>`,
           directCombos.length, ""
         );
         htmlById[dKey] = `<div class="comboSubgroupSection" data-group-drop="${esc(root.id)}">
@@ -1483,34 +1483,32 @@ function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
       }
       body += comboSubgroupSlotIds(root, subgroups).map((id) => htmlById[id] || "").join("");
     } else {
-      body += `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">把组合卡片拖到这个标题上，就能归到这个分组</div>`;
+      body += `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">${T("comboGroup.dropHintRoot")}</div>`;
     }
   }
-  return `<div class="comboGroupSection" data-group-drop="${esc(root.id)}">${header}${renderComboGroupDeleteConfirm(root.id, "分组")}${body}</div>`;
+  return `<div class="comboGroupSection" data-group-drop="${esc(root.id)}">${header}${renderComboGroupDeleteConfirm(root.id, "comboGroup.kindRoot")}${body}</div>`;
 }
 function renderCombosSection() {
   const combos = analysisPrefs.combos || [];
   const groups = analysisPrefs.comboGroups || [];
   let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
-    <div class="sectionLabel" style="margin:0;">⟦ 组合分析 ⟧</div>
+    <div class="sectionLabel" style="margin:0;">⟦ ${esc(T("combos.title"))} ⟧</div>
     ${!viewingUserId ? `<span style="margin-left:auto;display:flex;align-items:center;gap:16px;">
-      <button class="tinyBtn" data-action="add-combo-group" style="color:var(--mutedDark);">${ICONS.plus} 新建分组</button>
-      <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} 新建组合</button>
+      <button class="tinyBtn" data-action="add-combo-group" style="color:var(--mutedDark);">${ICONS.plus} ${T("combos.newGroup")}</button>
+      <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} ${T("combos.newCombo")}</button>
     </span>` : ""}
   </div>`;
   // 一个组合都没有、也没建过分组，才是真正的空状态；只要建过分组就得把分组画出来，
   // 否则新用户先建分组、还没建组合，会以为分组没存上
   if (!combos.length && !groups.length) {
     html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
-      还没有组合。组合就是一组固定的筛选条件（比如「模型=A 且 目标类型含 BSL」），存下来之后这里会实时显示它的胜率、EV、PF，点一下就能跳到记录页看是哪些交易。<br>
-      三个建法：这里点「新建组合」手搭；记录页调好筛选后点「把当前筛选存为组合」；下面字段拆解里每一行右边的「+组合」。<br>
-      组合多了以后可以用「新建分组」把它们归类，比如「IFVG」下面再分「能做」「不能做」两个二级分组——不想分组的话完全不用管这个，就是个平铺列表。
+      ${T("combos.emptyIntro")}
     </div>`;
     return html;
   }
   if (!combos.length && !viewingUserId) {
     html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;">
-      分组建好了，但还没有组合。点右上角「新建组合」手搭一个，或者在记录页调好筛选后点「把当前筛选存为组合」；建好之后把卡片拖到下面的分组标题上就能归类。
+      ${T("combos.emptyWithGroups")}
     </div>`;
   }
   // 「未分组」这个框现在始终显示（哪怕一个分组都没建过），跟建了分组之后视觉上保持一致，
@@ -1524,12 +1522,12 @@ function renderCombosSection() {
   const ungroupedCollapsed = collapsedComboGroups.has("__ungrouped__");
   const ungroupedHeader = renderComboGroupHeader(
     "__ungrouped__", `style="cursor:pointer;"`,
-    `<span style="font-weight:500;color:var(--mutedDark);">未分组</span>`,
+    `<span style="font-weight:500;color:var(--mutedDark);">${esc(T("comboGroup.ungrouped"))}</span>`,
     ungrouped.length, ""
   );
   html += `<div class="comboUngroupedSection" data-group-drop="__ungrouped__">
     ${ungroupedHeader}
-    ${ungroupedCollapsed ? "" : (ungrouped.length ? `<div class="comboGrid">${ungrouped.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">拖到这里可以把组合从分组里移出来</div>`)}
+    ${ungroupedCollapsed ? "" : (ungrouped.length ? `<div class="comboGrid">${ungrouped.map(renderComboCard).join("")}</div>` : `<div style="font-size:11.5px;color:var(--mutedDark);padding:4px 0 8px;">${T("comboGroup.dropHintUngroup")}</div>`)}
   </div>`;
   return html;
 }
@@ -1539,24 +1537,24 @@ function renderBreakdownPicker() {
   const hidden = analysisPrefs.breakdownHidden || [];
   const fields = breakdownCandidateFields();
   return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
-    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">取消勾选就不显示，拖动 ⠿ 调整顺序。以后新加的字段会自动出现在最后面。</div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("breakdown.pickerHint")}</div>
     <div style="display:flex;flex-direction:column;gap:4px;">
       ${fields.map((f, idx) => `<div class="bdRow" draggable="true" data-bd-idx="${idx}">
         <span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>
         <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;">
           <input type="checkbox" data-action="toggle-breakdown-field" data-id="${esc(f.id)}" ${hidden.includes(f.id) ? "" : "checked"} style="width:13px;height:13px;" />
           <span style="font-size:12.5px;color:var(--text);">${esc(f.label)}</span>
-          <span style="font-size:11px;color:var(--mutedDark);">${f.type === "multiselect" ? "多选" : "单选"}${f.role ? " · " + esc(f.role) : ""}</span>
+          <span style="font-size:11px;color:var(--mutedDark);">${esc(f.type === "multiselect" ? T("fieldType.multiselect") : T("fieldType.select"))}${f.role ? " · " + esc(f.role) : ""}</span>
         </label>
       </div>`).join("")}
     </div>
-    <button class="tinyBtn" data-action="reset-breakdown-prefs" style="margin-top:10px;color:var(--mutedDark);">恢复默认（全显示 + 默认顺序）</button>
+    <button class="tinyBtn" data-action="reset-breakdown-prefs" style="margin-top:10px;color:var(--mutedDark);">${T("breakdown.reset")}</button>
   </div>`;
 }
 function renderAnalytics() {
   const stats = computeStats();
   if (!stats.hasResult) {
-    return `<div class="notice">${ICONS.alert}<span>当前没有字段被标记为『结果』角色 — 去设置页给某个字段打上『结果 W/L/BE』角色标签，分析才能算出来。</span></div>`;
+    return `<div class="notice">${ICONS.alert}<span>${T("analytics.noResultRole")}</span></div>`;
   }
   const takenF = roleField("taken"), resultF = roleField("result");
   const scope = statScope;
@@ -1568,35 +1566,35 @@ function renderAnalytics() {
     const withTaken = takenF ? baseList.filter((t) => t[takenF.id] === "Taken").length : total;
     const withResult = resultF ? baseList.filter((t) => t[resultF.id] === "W" || t[resultF.id] === "L").length : 0;
     return prefsNotice + renderStatScopeBar() + `<div class="notice">${ICONS.alert}<div>
-      <div style="color:var(--text);margin-bottom:6px;">当前口径下没有可统计的交易——${modelFilters.length ? "选中的模型" : "数据库里"}共 ${total} 笔，其中 taken=Taken 的有 ${withTaken} 笔，result 填了 W/L 的有 ${withResult} 笔。</div>
-      <div>要么放宽上面的统计口径，要么新建交易时记得点选 taken=Taken、result 也选一个具体值（不能留空）。</div>
+      <div style="color:var(--text);margin-bottom:6px;">${esc(T("analytics.noTradesLine1", { source: modelFilters.length ? T("analytics.sourceModels") : T("analytics.sourceDb"), total, withTaken, withResult }))}</div>
+      <div>${T("analytics.noTradesLine2")}</div>
     </div></div>`;
   }
 
-  const countLabel = scope.takenOnly && takenF ? "已入场" : "交易数";
+  const countLabel = scope.takenOnly && takenF ? T("analytics.countTaken") : T("analytics.countTrades");
   let html = prefsNotice + renderStatScopeBar() + `<div class="statRow">
     <div class="statBox"><div class="statLabel">${countLabel}</div><div class="statValue">${stats.totalTaken}</div></div>
-    <div class="statBox"><div class="statLabel">胜率</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
-    <div class="statBox"><div class="statLabel">设置质量</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
-    ${stats.hasR ? `<div class="statBox"><div class="statLabel">总R</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
-    ${stats.hasR ? `<div class="statBox"><div class="statLabel">EV / 笔</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
-    ${stats.hasR ? `<div class="statBox" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${stats.pfSample} 笔"><div class="statLabel">盈亏比</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">基于填了 R 的 ${stats.pfSample} 笔</div>` : ""}</div>` : ""}
-    ${stats.captureRate !== null ? `<div class="statBox"><div class="statLabel">R 捕获率</div><div class="statValue">${fmtPct(stats.captureRate)}</div></div>` : ""}
+    <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
+    <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
+    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.totalR")}</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.evPerTrade")}</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox" title="${esc(T("grid.pfTitle", { n: stats.pfSample }))}"><div class="statLabel">${T("analytics.profitFactor")}</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">${esc(T("analytics.pfBasis", { n: stats.pfSample }))}</div>` : ""}</div>` : ""}
+    ${stats.captureRate !== null ? `<div class="statBox"><div class="statLabel">${T("analytics.captureRate")}</div><div class="statValue">${fmtPct(stats.captureRate)}</div></div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>
-    ${takenF ? `<span>· Faded ${stats.totalFaded}（本应做的 W ${stats.fadedW} / 本应避开的 L ${stats.fadedL}）</span>` : ""}
+    ${takenF ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
   </div>`;
 
   html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
   if (stats.byModel.length && !modelFilters.length) {
-    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ 按模型 ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
+    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ ${esc(T("analytics.byModel"))} ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
   }
 
   html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    <div class="sectionLabel" style="margin:0;">⟦ 全部字段拆解 ⟧</div>
-    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} 显示设置</button>` : ""}
+    <div class="sectionLabel" style="margin:0;">⟦ ${esc(T("breakdown.title"))} ⟧</div>
+    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
   </div>`;
   if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
   if (stats.breakdowns.length) {
@@ -1606,14 +1604,14 @@ function renderAnalytics() {
       html += `<div class="breakdownCard"${draggable}>
         <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}</span>
-          ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="不显示这个字段的拆解（想找回去上面『显示设置』里重新勾选）">${ICONS.x}</button>` : ""}
+          ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
         </div>
         ${b.rows.map((r) => barRow(r, b.field.id)).join("")}
       </div>`;
     });
     html += `</div>`;
   } else {
-    html += `<div style="font-size:12.5px;color:var(--mutedDark);">没有可拆解的字段（全被隐藏了，或者当前口径下这些字段都没填过值）。</div>`;
+    html += `<div style="font-size:12.5px;color:var(--mutedDark);">${T("breakdown.none")}</div>`;
   }
   return html;
 }
