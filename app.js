@@ -75,42 +75,55 @@ const ICONS = {
 
 /* ============================================================
    FIELD TYPES / ROLES
+   标签跟着界面语言走，所以是函数不是常量——切语言后重新 render 就会拿到新文案。
+   value 是存进数据库的那一份，永远不变。
    ============================================================ */
-const FIELD_TYPES = [
-  { value: "text", label: "单行文本" }, { value: "textarea", label: "多行文本" },
-  { value: "number", label: "数字" }, { value: "date", label: "日期" }, { value: "time", label: "时间" },
-  { value: "select", label: "单选" }, { value: "multiselect", label: "多选" }, { value: "url", label: "链接/截图" },
-];
-const ROLE_OPTIONS = [
-  { value: "", label: "无" }, { value: "date", label: "日期(用于月度覆盖)" },
-  { value: "model", label: "模型(按模型统计)" }, { value: "taken", label: "Taken / Faded" },
-  { value: "result", label: "结果 W/L/BE" }, { value: "r_multiple", label: "R 倍数" },
-  { value: "max_rr", label: "最大 RR" }, { value: "human_error", label: "人为失误" },
-  { value: "screenshot", label: "截图链接" },
-];
+function fieldTypes() {
+  return [
+    { value: "text", label: t("fieldType.text") }, { value: "textarea", label: t("fieldType.textarea") },
+    { value: "number", label: t("fieldType.number") }, { value: "date", label: t("fieldType.date") }, { value: "time", label: t("fieldType.time") },
+    { value: "select", label: t("fieldType.select") }, { value: "multiselect", label: t("fieldType.multiselect") }, { value: "url", label: t("fieldType.url") },
+  ];
+}
+function roleOptions() {
+  return [
+    { value: "", label: t("role.none") }, { value: "date", label: t("role.date") },
+    { value: "model", label: t("role.model") }, { value: "taken", label: t("role.taken") },
+    { value: "result", label: t("role.result") }, { value: "r_multiple", label: t("role.r_multiple") },
+    { value: "max_rr", label: t("role.max_rr") }, { value: "human_error", label: t("role.human_error") },
+    { value: "screenshot", label: t("role.screenshot") },
+  ];
+}
+function fieldTypeLabel(v) { return fieldTypes().find((x) => x.value === v)?.label || v; }
+function roleLabel(v) { return roleOptions().find((x) => x.value === v)?.label || v; }
 
-const DEFAULT_SCHEMA = [
-  { id: "date", label: "日期", type: "date", role: "date" },
-  { id: "session", label: "交易时段", type: "select", role: "", options: ["London", "NYAM", "Asia", "Other"] },
-  { id: "entry_time", label: "入场时间", type: "time", role: "" },
-  { id: "direction", label: "方向", type: "select", role: "", options: ["Long", "Short"] },
-  { id: "model", label: "模型", type: "select", role: "model", options: ["ifvg"] },
-  { id: "entry", label: "入场方式", type: "multiselect", role: "", options: ["displacement", "IFVG", "CISD"] },
-  { id: "taken", label: "做了还是避免", type: "select", role: "taken", options: ["Taken", "Faded"] },
-  { id: "result", label: "结果", type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W"] },
-  { id: "r_multiple", label: "RR", type: "number", role: "r_multiple" },
-  { id: "human_error", label: "人为错误", type: "select", role: "human_error", options: ["yes", "no"] },
-  { id: "setup_grade_self", label: "自评等级", type: "select", role: "", options: ["A+", "A", "B+", "B", "C", "D"] },
-  { id: "target_type", label: "目标类型", type: "multiselect", role: "", options: ["5M ITH/L", "15M ITH/L", "30M+ ITH/L", "BSL/SSL", "PDH/L", "INTERNAL LRL", "SESSION HIGH/LOW", "Unfilled FVG", "REQH/L", "Data H/L", "HR"] },
-  { id: "notes", label: "笔记", type: "textarea", role: "" },
-  { id: "post_note", label: "复盘笔记", type: "textarea", role: "" },
-  { id: "screenshot", label: "截图", type: "url", role: "screenshot" },
-];
+/* 新账号第一次进来时写进数据库的字段表。按当前语言生成一次就落库，
+   之后这些 label 就是用户自己的数据了——切语言不会回头改它们（用户可能已经改过名）。
+   options 里的值刻意保持英文/符号，中英文用户共用，切语言不影响统计口径。 */
+function defaultSchema() {
+  return [
+    { id: "date", label: t("defaultField.date"), type: "date", role: "date" },
+    { id: "session", label: t("defaultField.session"), type: "select", role: "", options: ["London", "NYAM", "Asia", "Other"] },
+    { id: "entry_time", label: t("defaultField.entry_time"), type: "time", role: "" },
+    { id: "direction", label: t("defaultField.direction"), type: "select", role: "", options: ["Long", "Short"] },
+    { id: "model", label: t("defaultField.model"), type: "select", role: "model", options: ["ifvg"] },
+    { id: "entry", label: t("defaultField.entry"), type: "multiselect", role: "", options: ["displacement", "IFVG", "CISD"] },
+    { id: "taken", label: t("defaultField.taken"), type: "select", role: "taken", options: ["Taken", "Faded"] },
+    { id: "result", label: t("defaultField.result"), type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W"] },
+    { id: "r_multiple", label: t("defaultField.r_multiple"), type: "number", role: "r_multiple" },
+    { id: "human_error", label: t("defaultField.human_error"), type: "select", role: "human_error", options: ["yes", "no"] },
+    { id: "setup_grade_self", label: t("defaultField.setup_grade_self"), type: "select", role: "", options: ["A+", "A", "B+", "B", "C", "D"] },
+    { id: "target_type", label: t("defaultField.target_type"), type: "multiselect", role: "", options: ["5M ITH/L", "15M ITH/L", "30M+ ITH/L", "BSL/SSL", "PDH/L", "INTERNAL LRL", "SESSION HIGH/LOW", "Unfilled FVG", "REQH/L", "Data H/L", "HR"] },
+    { id: "notes", label: t("defaultField.notes"), type: "textarea", role: "" },
+    { id: "post_note", label: t("defaultField.post_note"), type: "textarea", role: "" },
+    { id: "screenshot", label: t("defaultField.screenshot"), type: "url", role: "screenshot" },
+  ];
+}
 
 /* ============================================================
    STATE
    ============================================================ */
-let schema = DEFAULT_SCHEMA;
+let schema = defaultSchema();
 let cardFields = [];
 let cardFieldsPickerOpen = false;
 let trades = [];
@@ -194,6 +207,41 @@ let modelFilters = (function () {
     return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
   } catch (e) { return []; }
 })();
+/* ---------- 界面语言 ----------
+   lang / t() 本身定义在 i18n.js（要在 app.js 之前加载）。这里只管「切换」这个动作：
+   本地立刻生效，同时best-effort写回账号，让别的设备登录后也是同一种语言。 */
+async function setLang(next) {
+  if (!I18N_LANGS.includes(next) || next === lang) return;
+  lang = next;
+  try { localStorage.setItem("journal_lang", next); } catch (e) {}
+  applyLangAttr();
+  render();
+  await persistLang();
+}
+// 写回 profiles.lang。数据库迁移还没跑的时候这里必然失败——只警告不打断，
+// 本地 localStorage 那份已经生效了，用户不会看到任何异常。
+async function persistLang() {
+  if (!sb || !session || viewingUserId) return;
+  try {
+    const { error } = await sb.rpc("update_own_lang", { new_lang: lang });
+    if (error) console.warn("语言没能同步到账号（数据库可能还没跑 update_own_lang 迁移）:", error.message);
+    else if (currentProfile) currentProfile.lang = lang;
+  } catch (e) { console.warn(e); }
+}
+// 登录后：账号里存了语言就以账号为准（换设备也一致）；没存过就把当前语言补写上去
+function syncLangFromProfile() {
+  if (!currentProfile) return;
+  if (I18N_LANGS.includes(currentProfile.lang)) {
+    if (currentProfile.lang !== lang) {
+      lang = currentProfile.lang;
+      try { localStorage.setItem("journal_lang", lang); } catch (e) {}
+      applyLangAttr();
+    }
+  } else {
+    persistLang();
+  }
+}
+
 function saveStatScope() { try { localStorage.setItem("journal_stat_scope", JSON.stringify(statScope)); } catch (e) {} }
 function saveModelFilters() {
   try { localStorage.setItem("journal_model_filters", JSON.stringify(modelFilters)); } catch (e) {}
@@ -689,6 +737,7 @@ async function loadProfile() {
   const { data, error } = await sb.from("profiles").select("*").eq("id", session.user.id).single();
   if (error) { console.error(error); currentProfile = null; return; }
   currentProfile = data;
+  syncLangFromProfile();
   sb.rpc("touch_last_seen").then(({ error: e }) => { if (e) console.error(e); });
 }
 async function loadAll() {
@@ -698,8 +747,10 @@ async function loadAll() {
     const { data: schemaRow, error: e1 } = await sb.from("journal_schema").select("*").eq("user_id", uid).single();
     if (e1 && e1.code !== "PGRST116") throw e1;
     if (!schemaRow || !schemaRow.fields || !schemaRow.fields.length) {
-      schema = DEFAULT_SCHEMA;
-      if (!viewingUserId) await sb.from("journal_schema").upsert({ user_id: uid, fields: DEFAULT_SCHEMA, card_fields: [] });
+      // 新账号：按注册/首次登录时的界面语言把默认字段落库，之后就归用户所有
+      const seeded = defaultSchema();
+      schema = seeded;
+      if (!viewingUserId) await sb.from("journal_schema").upsert({ user_id: uid, fields: seeded, card_fields: [] });
     } else {
       schema = schemaRow.fields;
     }
@@ -732,7 +783,7 @@ async function loadAll() {
   } catch (err) {
     console.error(err);
     loadError = "读取数据失败，请稍后刷新重试。如果一直这样，联系管理员检查一下数据库设置。";
-    schema = DEFAULT_SCHEMA; trades = [];
+    schema = defaultSchema(); trades = [];
   }
 }
 async function persistSchema(next) {
@@ -802,13 +853,14 @@ async function removeChangelogEntry(id) {
    ============================================================ */
 function friendlyAuthError(msg) {
   const m = (msg || "").toLowerCase();
-  if (m.includes("invalid login credentials")) return "邮箱或密码不对，再试一次。";
-  if (m.includes("email not confirmed")) return "邮箱还没验证——去邮箱里点确认链接，再回来登录。";
-  if (m.includes("user already registered") || m.includes("already registered")) return "这个邮箱已经注册过了，直接登录就行。";
-  if (m.includes("password") && m.includes("6")) return "密码太短，至少 6 位。";
-  if (m.includes("rate limit") || m.includes("too many")) return "请求太频繁了，等一会再试。";
-  if (m.includes("network") || m.includes("fetch")) return "网络连接失败，检查一下网络或者 Supabase 连接设置。";
-  return "出了点问题，稍后再试一次。";
+  // 匹配的是 Supabase 返回的英文原文，跟界面语言无关；只有返回给用户看的那句要翻译
+  if (m.includes("invalid login credentials")) return t("auth.err.badCredentials");
+  if (m.includes("email not confirmed")) return t("auth.err.notConfirmed");
+  if (m.includes("user already registered") || m.includes("already registered")) return t("auth.err.alreadyRegistered");
+  if (m.includes("password") && m.includes("6")) return t("auth.err.passwordShort");
+  if (m.includes("rate limit") || m.includes("too many")) return t("auth.err.rateLimit");
+  if (m.includes("network") || m.includes("fetch")) return t("auth.err.network");
+  return t("auth.err.generic");
 }
 async function doLogin(email, password, remember) {
   authBusy = true; authError = ""; authSuccess = ""; rememberMe = remember; render();
@@ -821,7 +873,7 @@ async function doRegister(email, password) {
   const { error } = await sb.auth.signUp({ email, password });
   authBusy = false;
   if (error) { authError = friendlyAuthError(error.message); render(); return; }
-  authSuccess = "注册成功。如果需要邮箱验证，去邮箱点一下确认链接，然后回来登录；不需要验证的话现在就能直接登录。";
+  authSuccess = t("auth.registerSuccess");
   authScreenMode = "login"; render();
 }
 async function doLogout() {
@@ -1774,14 +1826,17 @@ function renderSettings() {
         <div class="settingsRowHead" style="cursor:default;">
           <div style="flex:1;">
             <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
-            <span class="fieldTypeTag">${esc(FIELD_TYPES.find((t) => t.value === f.type)?.label || f.type)}</span>
-            ${f.role ? `<span class="fieldRoleTag">· ${esc(ROLE_OPTIONS.find((r) => r.value === f.role)?.label || f.role)}</span>` : ""}
+            <span class="fieldTypeTag">${esc(fieldTypeLabel(f.type))}</span>
+            ${f.role ? `<span class="fieldRoleTag">· ${esc(roleLabel(f.role))}</span>` : ""}
           </div>
         </div>
         ${(f.options && f.options.length) ? `<div class="settingsRowBody open"><div class="chipGroup">${f.options.map((o) => `<span class="chip">${esc(o)}</span>`).join("")}</div></div>` : ""}
       </div>`).join("")}`;
   }
-  let html = `<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+  let html = `<div class="sectionLabel">⟦ ${esc(t("lang.label"))} ⟧</div>
+    <div style="margin-bottom:10px;">${langToggleHtml()}</div>
+    <div style="font-size:12px;color:var(--mutedDark);margin-bottom:22px;line-height:1.7;">${esc(t("lang.hint"))}</div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
     字段的增删改在这里管理，改动会立即同步到录入表单和分析页。「分析角色」决定这个字段在统计里扮演什么。</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
@@ -1790,8 +1845,8 @@ function renderSettings() {
         <span class="dragHandle" title="拖动排序">⠿</span>
         <div style="flex:1;">
           <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
-          <span class="fieldTypeTag">${esc(FIELD_TYPES.find((t) => t.value === f.type)?.label || f.type)}</span>
-          ${f.role ? `<span class="fieldRoleTag">· ${esc(ROLE_OPTIONS.find((r) => r.value === f.role)?.label || f.role)}</span>` : ""}
+          <span class="fieldTypeTag">${esc(fieldTypeLabel(f.type))}</span>
+          ${f.role ? `<span class="fieldRoleTag">· ${esc(roleLabel(f.role))}</span>` : ""}
         </div>
         ${open ? ICONS.chevUp : ICONS.chevDown}
       </div>
@@ -1799,11 +1854,11 @@ function renderSettings() {
         <div class="field"><div class="fieldLabel">字段名</div><input class="input" data-field-edit="label" data-id="${esc(f.id)}" value="${esc(f.label)}" /></div>
         <div class="field"><div class="fieldLabel">类型</div>
           <select class="input" data-field-edit="type" data-id="${esc(f.id)}">
-            ${FIELD_TYPES.map((t) => `<option value="${t.value}" ${f.type === t.value ? "selected" : ""}>${t.label}</option>`).join("")}
+            ${fieldTypes().map((ft) => `<option value="${ft.value}" ${f.type === ft.value ? "selected" : ""}>${esc(ft.label)}</option>`).join("")}
           </select></div>
         <div class="field"><div class="fieldLabel">分析角色</div>
           <select class="input" data-field-edit="role" data-id="${esc(f.id)}">
-            ${ROLE_OPTIONS.map((r) => `<option value="${r.value}" ${(f.role || "") === r.value ? "selected" : ""}>${r.label}</option>`).join("")}
+            ${roleOptions().map((r) => `<option value="${r.value}" ${(f.role || "") === r.value ? "selected" : ""}>${esc(r.label)}</option>`).join("")}
           </select></div>
         ${(f.type === "select" || f.type === "multiselect") ? `
         <div class="field"><div class="fieldLabel">选项池（可拖动排序）</div>
@@ -1819,7 +1874,7 @@ function renderSettings() {
     <div class="dashLabel">+ 新增字段</div>
     <div class="field"><div class="fieldLabel">字段名</div><input class="input" id="newFieldLabel" placeholder="例如：mentor_confirm" /></div>
     <div class="field"><div class="fieldLabel">类型</div>
-      <select class="input" id="newFieldType">${FIELD_TYPES.map((t) => `<option value="${t.value}">${t.label}</option>`).join("")}</select></div>
+      <select class="input" id="newFieldType">${fieldTypes().map((ft) => `<option value="${ft.value}">${esc(ft.label)}</option>`).join("")}</select></div>
     <div class="field"><div class="fieldLabel">初始选项（逗号分隔，仅单选/多选需要）</div><input class="input" id="newFieldOpts" placeholder="yes, no, maybe" /></div>
     <button class="btn btn-primary" data-action="add-field">${ICONS.plus} 添加字段</button>
   </div>`;
@@ -1942,29 +1997,37 @@ function renderAuthScreen() {
   const isRegister = authScreenMode === "register";
   return `
   <div style="max-width:380px;margin:80px auto;padding:0 16px;">
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">${langToggleHtml()}</div>
     <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
       <div style="display:flex;gap:6px;margin-bottom:18px;">
-        <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">登录</button>
-        <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">注册</button>
+        <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${t("auth.login")}</button>
+        <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${t("auth.register")}</button>
       </div>
-      <div class="field"><div class="fieldLabel">邮箱</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
-      <div class="field"><div class="fieldLabel">密码</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
+      <div class="field"><div class="fieldLabel">${t("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
+      <div class="field"><div class="fieldLabel">${t("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
       ${!isRegister ? `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer;">
-        <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />下次自动登录
+        <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${t("auth.rememberMe")}
       </label>` : ""}
+      ${isRegister ? `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:12px;line-height:1.6;">${t("auth.newAccountLangHint")}</div>` : ""}
       ${authError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:12px;line-height:1.6;">${esc(authError)}</div>` : ""}
       ${authSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:12px;line-height:1.6;">${esc(authSuccess)}</div>` : ""}
       <button class="btn btn-primary" style="width:100%;justify-content:center;" data-action="auth-submit" ${authBusy ? "disabled" : ""}>
-        ${authBusy ? "处理中…" : isRegister ? "注册" : "登录"}
+        ${authBusy ? t("common.processing") : isRegister ? t("auth.register") : t("auth.login")}
       </button>
     </div>
   </div>`;
 }
+/* 语言切换控件：登录页和设置页共用同一段 HTML */
+function langToggleHtml() {
+  return `<div class="modeToggle" title="${esc(t("lang.switchTitle"))}">
+    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}" data-action="set-lang" data-lang="${L}">${esc(t("lang." + L))}</button>`).join("")}
+  </div>`;
+}
 function renderDisabledScreen() {
   return `<div style="max-width:380px;margin:100px auto;text-align:center;">
-    <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>这个账号已被管理员禁用。</span></div>
-    <button class="btn" style="margin-top:16px;" data-action="logout">退出登录</button>
+    <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>${t("auth.disabled")}</span></div>
+    <button class="btn" style="margin-top:16px;" data-action="logout">${t("auth.logout")}</button>
   </div>`;
 }
 function profileModalHtml() {
@@ -2079,7 +2142,7 @@ function renderSecondaryModals(force) {
 function render() {
   const app = document.getElementById("app");
 
-  if (authLoading) { app.innerHTML = `<div class="loading">加载中…</div>`; return; }
+  if (authLoading) { app.innerHTML = `<div class="loading">${t("common.loading")}</div>`; return; }
   if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); return; }
   if (currentProfile && currentProfile.active === false) { app.innerHTML = renderDisabledScreen(); return; }
 
@@ -2176,6 +2239,7 @@ document.addEventListener("click", async (e) => {
     try { localStorage.setItem("journal_theme", next); } catch (e) {}
     render();
   }
+  else if (action === "set-lang") { await setLang(el.dataset.lang); }
   else if (action === "toggle-export") { exportMenuOpen = !exportMenuOpen; render(); }
   else if (action === "export-csv") { downloadFile(`trades-${new Date().toISOString().slice(0,10)}.csv`, toCSV(), "text/csv;charset=utf-8;"); exportMenuOpen = false; render(); }
   else if (action === "export-json") { downloadFile(`journal-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify({ schema, trades }, null, 2), "application/json"); exportMenuOpen = false; render(); }
@@ -2998,7 +3062,7 @@ document.addEventListener("keydown", (e) => {
    INIT
    ============================================================ */
 async function bootstrapAuth() {
-  if (!sb) { authLoading = false; loadError = "还没配置 Supabase — 展开登录页下面的『登录不了？调整 Supabase 连接』填好再试。"; return; }
+  if (!sb) { authLoading = false; loadError = t("auth.noConfig"); return; }
   const { data: { session: s } } = await sb.auth.getSession();
   session = s;
   if (session) {
@@ -3013,7 +3077,7 @@ async function bootstrapAuth() {
       await loadProfile();
       if (currentProfile && currentProfile.active !== false) await loadAll();
     } else {
-      currentProfile = null; trades = []; schema = DEFAULT_SCHEMA; adminUsers = null;
+      currentProfile = null; trades = []; schema = defaultSchema(); adminUsers = null;
       defaultFiltersSeeded = false; activeFilters = [];
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
       activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
@@ -3027,6 +3091,7 @@ async function bootstrapAuth() {
     const savedTheme = localStorage.getItem("journal_theme");
     if (savedTheme === "light") document.documentElement.dataset.theme = "light";
   } catch (e) {}
+  applyLangAttr();
   await bootstrapAuth();
   render();
 })();
