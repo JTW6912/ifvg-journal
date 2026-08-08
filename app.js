@@ -2010,7 +2010,6 @@ function renderAuthScreen() {
   const isRegister = authScreenMode === "register";
   return `
   <div style="max-width:380px;margin:80px auto;padding:0 16px;">
-    <div style="display:flex;justify-content:center;margin-bottom:16px;">${langToggleHtml()}</div>
     <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
       <div style="display:flex;gap:6px;margin-bottom:18px;">
@@ -2029,6 +2028,7 @@ function renderAuthScreen() {
         ${authBusy ? T("common.processing") : isRegister ? T("auth.register") : T("auth.login")}
       </button>
     </div>
+    <div style="display:flex;justify-content:center;margin-top:20px;">${langToggleHtml()}</div>
   </div>`;
 }
 /* 语言切换控件：登录页和个人设置弹窗共用同一段 HTML */
