@@ -80,18 +80,18 @@ const ICONS = {
    ============================================================ */
 function fieldTypes() {
   return [
-    { value: "text", label: t("fieldType.text") }, { value: "textarea", label: t("fieldType.textarea") },
-    { value: "number", label: t("fieldType.number") }, { value: "date", label: t("fieldType.date") }, { value: "time", label: t("fieldType.time") },
-    { value: "select", label: t("fieldType.select") }, { value: "multiselect", label: t("fieldType.multiselect") }, { value: "url", label: t("fieldType.url") },
+    { value: "text", label: T("fieldType.text") }, { value: "textarea", label: T("fieldType.textarea") },
+    { value: "number", label: T("fieldType.number") }, { value: "date", label: T("fieldType.date") }, { value: "time", label: T("fieldType.time") },
+    { value: "select", label: T("fieldType.select") }, { value: "multiselect", label: T("fieldType.multiselect") }, { value: "url", label: T("fieldType.url") },
   ];
 }
 function roleOptions() {
   return [
-    { value: "", label: t("role.none") }, { value: "date", label: t("role.date") },
-    { value: "model", label: t("role.model") }, { value: "taken", label: t("role.taken") },
-    { value: "result", label: t("role.result") }, { value: "r_multiple", label: t("role.r_multiple") },
-    { value: "max_rr", label: t("role.max_rr") }, { value: "human_error", label: t("role.human_error") },
-    { value: "screenshot", label: t("role.screenshot") },
+    { value: "", label: T("role.none") }, { value: "date", label: T("role.date") },
+    { value: "model", label: T("role.model") }, { value: "taken", label: T("role.taken") },
+    { value: "result", label: T("role.result") }, { value: "r_multiple", label: T("role.r_multiple") },
+    { value: "max_rr", label: T("role.max_rr") }, { value: "human_error", label: T("role.human_error") },
+    { value: "screenshot", label: T("role.screenshot") },
   ];
 }
 function fieldTypeLabel(v) { return fieldTypes().find((x) => x.value === v)?.label || v; }
@@ -102,21 +102,21 @@ function roleLabel(v) { return roleOptions().find((x) => x.value === v)?.label |
    options 里的值刻意保持英文/符号，中英文用户共用，切语言不影响统计口径。 */
 function defaultSchema() {
   return [
-    { id: "date", label: t("defaultField.date"), type: "date", role: "date" },
-    { id: "session", label: t("defaultField.session"), type: "select", role: "", options: ["London", "NYAM", "Asia", "Other"] },
-    { id: "entry_time", label: t("defaultField.entry_time"), type: "time", role: "" },
-    { id: "direction", label: t("defaultField.direction"), type: "select", role: "", options: ["Long", "Short"] },
-    { id: "model", label: t("defaultField.model"), type: "select", role: "model", options: ["ifvg"] },
-    { id: "entry", label: t("defaultField.entry"), type: "multiselect", role: "", options: ["displacement", "IFVG", "CISD"] },
-    { id: "taken", label: t("defaultField.taken"), type: "select", role: "taken", options: ["Taken", "Faded"] },
-    { id: "result", label: t("defaultField.result"), type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W"] },
-    { id: "r_multiple", label: t("defaultField.r_multiple"), type: "number", role: "r_multiple" },
-    { id: "human_error", label: t("defaultField.human_error"), type: "select", role: "human_error", options: ["yes", "no"] },
-    { id: "setup_grade_self", label: t("defaultField.setup_grade_self"), type: "select", role: "", options: ["A+", "A", "B+", "B", "C", "D"] },
-    { id: "target_type", label: t("defaultField.target_type"), type: "multiselect", role: "", options: ["5M ITH/L", "15M ITH/L", "30M+ ITH/L", "BSL/SSL", "PDH/L", "INTERNAL LRL", "SESSION HIGH/LOW", "Unfilled FVG", "REQH/L", "Data H/L", "HR"] },
-    { id: "notes", label: t("defaultField.notes"), type: "textarea", role: "" },
-    { id: "post_note", label: t("defaultField.post_note"), type: "textarea", role: "" },
-    { id: "screenshot", label: t("defaultField.screenshot"), type: "url", role: "screenshot" },
+    { id: "date", label: T("defaultField.date"), type: "date", role: "date" },
+    { id: "session", label: T("defaultField.session"), type: "select", role: "", options: ["London", "NYAM", "Asia", "Other"] },
+    { id: "entry_time", label: T("defaultField.entry_time"), type: "time", role: "" },
+    { id: "direction", label: T("defaultField.direction"), type: "select", role: "", options: ["Long", "Short"] },
+    { id: "model", label: T("defaultField.model"), type: "select", role: "model", options: ["ifvg"] },
+    { id: "entry", label: T("defaultField.entry"), type: "multiselect", role: "", options: ["displacement", "IFVG", "CISD"] },
+    { id: "taken", label: T("defaultField.taken"), type: "select", role: "taken", options: ["Taken", "Faded"] },
+    { id: "result", label: T("defaultField.result"), type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W"] },
+    { id: "r_multiple", label: T("defaultField.r_multiple"), type: "number", role: "r_multiple" },
+    { id: "human_error", label: T("defaultField.human_error"), type: "select", role: "human_error", options: ["yes", "no"] },
+    { id: "setup_grade_self", label: T("defaultField.setup_grade_self"), type: "select", role: "", options: ["A+", "A", "B+", "B", "C", "D"] },
+    { id: "target_type", label: T("defaultField.target_type"), type: "multiselect", role: "", options: ["5M ITH/L", "15M ITH/L", "30M+ ITH/L", "BSL/SSL", "PDH/L", "INTERNAL LRL", "SESSION HIGH/LOW", "Unfilled FVG", "REQH/L", "Data H/L", "HR"] },
+    { id: "notes", label: T("defaultField.notes"), type: "textarea", role: "" },
+    { id: "post_note", label: T("defaultField.post_note"), type: "textarea", role: "" },
+    { id: "screenshot", label: T("defaultField.screenshot"), type: "url", role: "screenshot" },
   ];
 }
 
@@ -208,7 +208,7 @@ let modelFilters = (function () {
   } catch (e) { return []; }
 })();
 /* ---------- 界面语言 ----------
-   lang / t() 本身定义在 i18n.js（要在 app.js 之前加载）。这里只管「切换」这个动作：
+   lang / T() 本身定义在 i18n.js（要在 app.js 之前加载）。这里只管「切换」这个动作：
    本地立刻生效，同时best-effort写回账号，让别的设备登录后也是同一种语言。 */
 async function setLang(next) {
   if (!I18N_LANGS.includes(next) || next === lang) return;
@@ -854,13 +854,13 @@ async function removeChangelogEntry(id) {
 function friendlyAuthError(msg) {
   const m = (msg || "").toLowerCase();
   // 匹配的是 Supabase 返回的英文原文，跟界面语言无关；只有返回给用户看的那句要翻译
-  if (m.includes("invalid login credentials")) return t("auth.err.badCredentials");
-  if (m.includes("email not confirmed")) return t("auth.err.notConfirmed");
-  if (m.includes("user already registered") || m.includes("already registered")) return t("auth.err.alreadyRegistered");
-  if (m.includes("password") && m.includes("6")) return t("auth.err.passwordShort");
-  if (m.includes("rate limit") || m.includes("too many")) return t("auth.err.rateLimit");
-  if (m.includes("network") || m.includes("fetch")) return t("auth.err.network");
-  return t("auth.err.generic");
+  if (m.includes("invalid login credentials")) return T("auth.err.badCredentials");
+  if (m.includes("email not confirmed")) return T("auth.err.notConfirmed");
+  if (m.includes("user already registered") || m.includes("already registered")) return T("auth.err.alreadyRegistered");
+  if (m.includes("password") && m.includes("6")) return T("auth.err.passwordShort");
+  if (m.includes("rate limit") || m.includes("too many")) return T("auth.err.rateLimit");
+  if (m.includes("network") || m.includes("fetch")) return T("auth.err.network");
+  return T("auth.err.generic");
 }
 async function doLogin(email, password, remember) {
   authBusy = true; authError = ""; authSuccess = ""; rememberMe = remember; render();
@@ -873,7 +873,7 @@ async function doRegister(email, password) {
   const { error } = await sb.auth.signUp({ email, password });
   authBusy = false;
   if (error) { authError = friendlyAuthError(error.message); render(); return; }
-  authSuccess = t("auth.registerSuccess");
+  authSuccess = T("auth.registerSuccess");
   authScreenMode = "login"; render();
 }
 async function doLogout() {
@@ -1019,25 +1019,25 @@ function filterRowValuesHtml(field, idx, f, comboId) {
     const ghosts = vals.filter((v) => !opts.includes(v));
     return `<div class="chipGroup" style="margin-top:8px;">
       ${opts.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
-      ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="这个选项已经不存在了，点一下移除" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
+      ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="${esc(T("filter.ghostOption"))}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
     </div>`;
   }
   if (field.type === "date") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       <input type="date" class="select" data-filter-range="${idx}" data-bound="start"${cid} value="${esc(f.rangeStart || "")}" />
-      <span style="color:var(--mutedDark);font-size:12px;">到</span>
+      <span style="color:var(--mutedDark);font-size:12px;">${T("filter.rangeTo")}</span>
       <input type="date" class="select" data-filter-range="${idx}" data-bound="end"${cid} value="${esc(f.rangeEnd || "")}" />
     </div>`;
   }
   if (field.type === "time") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
       <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="start" data-time-input${cid} value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
-      <span style="color:var(--mutedDark);font-size:12px;">到</span>
+      <span style="color:var(--mutedDark);font-size:12px;">${T("filter.rangeTo")}</span>
       <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="end" data-time-input${cid} value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
     </div>
-    <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">24小时制，直接输入数字如 0930 会自动格式化为 09:30</div>`;
+    <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">${T("filter.timeHint")}</div>`;
   }
-  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}"${cid} value="${esc(f.textValue || "")}" placeholder="包含…" /></div>`;
+  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}"${cid} value="${esc(f.textValue || "")}" placeholder="${esc(T("filter.containsPlaceholder"))}" /></div>`;
 }
 // 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页和组合编辑器共用
 function filterConditionRowHtml(f, idx, comboId) {
@@ -1049,20 +1049,20 @@ function filterConditionRowHtml(f, idx, comboId) {
   const dragAttrs = comboId ? "" : ` draggable="true" data-filter-idx="${idx}"`;
   return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${comboId ? "" : "cursor:grab;"}">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      ${comboId ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>`}
+      ${comboId ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>`}
       <select class="select" data-filter-field="${idx}"${cid}>
-        <option value="">选字段…</option>
+        <option value="">${esc(T("filter.selectField"))}</option>
         ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
       </select>
       ${showAndToggle ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-        <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />要求同时满足选中的全部
+        <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.matchAll")}
       </label>` : ""}
       ${showNegate ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-        <input type="checkbox" data-action="toggle-filter-negate" data-idx="${idx}"${cid} ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />不是以下任何一个
+        <input type="checkbox" data-action="toggle-filter-negate" data-idx="${idx}"${cid} ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.negate")}
       </label>` : ""}
       <button class="tinyBtn" data-action="remove-filter" data-idx="${idx}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
     </div>
-    ${missing ? `<div style="font-size:11.5px;color:var(--neg);margin-top:8px;">⚠ 这个字段已经被删掉了，这条条件不起作用，请重选或删掉</div>` : ""}
+    ${missing ? `<div style="font-size:11.5px;color:var(--neg);margin-top:8px;">${T("filter.fieldDeleted")}</div>` : ""}
     ${field ? filterRowValuesHtml(field, idx, f, comboId) : ""}
   </div>`;
 }
@@ -1085,13 +1085,13 @@ function filteredSummaryStats(list) {
 }
 function renderFilterSummary(filtered) {
   const s = filteredSummaryStats(filtered);
-  if (s.n === 0) return `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:16px;">当前筛选：0 笔 taken</div>`;
+  if (s.n === 0) return `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:16px;">${T("grid.summaryEmpty")}</div>`;
   return `<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:16px;padding:11px 14px;background:var(--surface2);border-radius:8px;">
-    <span class="mono" style="color:var(--accent);font-weight:600;">胜率 ${fmtPct(s.wr)}</span>
+    <span class="mono" style="color:var(--accent);font-weight:600;">${T("grid.winRate")} ${fmtPct(s.wr)}</span>
     <span>W ${s.w} · L ${s.l} · BE ${s.be} · BE→W ${s.bew} · BE→L ${s.bel}</span>
-    ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">总 ${fmtNum(s.totalR)}R · EV ${fmtNum(s.ev, 3)}</span>` : ""}
-    ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}" title="正R之和 ÷ |负R之和|，只统计填了 R 的 ${s.pfSample} 笔">PF ${fmtPF(s.pf)}</span>` : ""}
-    ${!viewingUserId ? `<button class="tinyBtn" data-action="save-filters-as-combo" style="margin-left:auto;color:var(--accent);font-size:12px;">${ICONS.plus} 把当前筛选存为组合</button>` : ""}
+    ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${T("grid.total")} ${fmtNum(s.totalR)}R · EV ${fmtNum(s.ev, 3)}</span>` : ""}
+    ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}" title="${esc(T("grid.pfTitle", { n: s.pfSample }))}">PF ${fmtPF(s.pf)}</span>` : ""}
+    ${!viewingUserId ? `<button class="tinyBtn" data-action="save-filters-as-combo" style="margin-left:auto;color:var(--accent);font-size:12px;">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
   </div>`;
 }
 const CARD_SIZES = { compact: 190, standard: 260, large: 360, huge: 500 };
@@ -1108,9 +1108,9 @@ function currentPageSize() {
 function renderPaginationControls(totalPages, totalCount) {
   if (totalPages <= 1) return "";
   return `<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:20px;">
-    <button class="btn" data-action="grid-prev-page" ${gridPage <= 1 ? "disabled style='opacity:.35'" : ""}>‹ 上一页</button>
-    <span class="mono" style="font-size:12.5px;color:var(--muted);">第 ${gridPage} / ${totalPages} 页 · 共 ${totalCount} 笔</span>
-    <button class="btn" data-action="grid-next-page" ${gridPage >= totalPages ? "disabled style='opacity:.35'" : ""}>下一页 ›</button>
+    <button class="btn" data-action="grid-prev-page" ${gridPage <= 1 ? "disabled style='opacity:.35'" : ""}>${T("grid.prevPage")}</button>
+    <span class="mono" style="font-size:12.5px;color:var(--muted);">${esc(T("grid.pageInfo", { page: gridPage, total: totalPages, count: totalCount }))}</span>
+    <button class="btn" data-action="grid-next-page" ${gridPage >= totalPages ? "disabled style='opacity:.35'" : ""}>${T("grid.nextPage")}</button>
   </div>`;
 }
 const filterableTypes = ["select", "multiselect", "text", "textarea", "number", "date", "time"];
@@ -1119,19 +1119,19 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
   let html = `<div class="filterBar" style="flex-direction:column;align-items:flex-start;">
     <button data-action="toggle-filter-panel" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;cursor:pointer;padding:0;width:100%;">
       ${ICONS.filter}
-      <span style="font-size:12.5px;color:var(--text);font-weight:500;">筛选条件</span>
-      ${activeCount > 0 ? `<span style="font-size:11px;color:var(--accent);background:var(--accentSoft);padding:2px 8px;border-radius:10px;">${activeCount} 个已启用</span>` : ""}
-      <span style="font-size:12px;color:var(--mutedDark);">${filteredCount} 笔</span>
+      <span style="font-size:12.5px;color:var(--text);font-weight:500;">${T("filter.title")}</span>
+      ${activeCount > 0 ? `<span style="font-size:11px;color:var(--accent);background:var(--accentSoft);padding:2px 8px;border-radius:10px;">${esc(T("filter.activeCount", { n: activeCount }))}</span>` : ""}
+      <span style="font-size:12px;color:var(--mutedDark);">${esc(T("grid.tradeCount", { n: filteredCount }))}</span>
       <span style="margin-left:auto;color:var(--mutedDark);">${filterPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
     </button>`;
   if (filterPanelOpen) {
-    html += `<div style="font-size:11.5px;color:var(--mutedDark);margin-top:8px;">条件之间 AND，同一条件内多选是 OR</div>
+    html += `<div style="font-size:11.5px;color:var(--mutedDark);margin-top:8px;">${T("filter.logicHint")}</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;width:100%;">`;
     activeFilters.forEach((f, idx) => { html += filterConditionRowHtml(f, idx, ""); });
     html += `</div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn" data-action="add-filter">${ICONS.plus} 添加筛选条件</button>
-      ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">一键清空已选</button>` : ""}
+      <button class="btn" data-action="add-filter">${ICONS.plus} ${T("filter.addCondition")}</button>
+      ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">${T("filter.clearAllValues")}</button>` : ""}
     </div>
     <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>`;
   }
@@ -1154,50 +1154,50 @@ function renderGrid() {
 
   const activeCombo = activeComboId ? findCombo(activeComboId) : null;
   let html = activeCombo ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;">
-    <span style="font-size:13px;color:var(--accent);">${ICONS.filter} 正在查看组合 <b>${esc(activeCombo.name)}</b> 的交易</span>
+    <span style="font-size:13px;color:var(--accent);">${ICONS.filter} ${T("grid.viewingCombo", { name: `<b>${esc(activeCombo.name)}</b>` })}</span>
     <span style="display:flex;gap:8px;">
-      <button class="btn" data-action="back-to-combo">回到分析页</button>
-      <button class="btn" data-action="restore-pre-combo-filters">还原筛选</button>
+      <button class="btn" data-action="back-to-combo">${T("grid.backToCombo")}</button>
+      <button class="btn" data-action="restore-pre-combo-filters">${T("grid.restoreFilters")}</button>
     </span>
   </div>` : "";
   html += `<div style="position:relative;margin-bottom:12px;max-width:340px;">
     <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mutedDark);pointer-events:none;">${ICONS.search}</span>
-    <input type="text" class="input" data-action="search-input" placeholder="搜索 note 等文本字段…" value="${esc(searchQuery)}" style="padding-left:34px;" />
+    <input type="text" class="input" data-action="search-input" placeholder="${esc(T("grid.searchPlaceholder"))}" value="${esc(searchQuery)}" style="padding-left:34px;" />
   </div>`;
   html += renderFilterPanel(filtered.length, filtered);
 
   // sort controls
   html += `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;">
-    <span style="font-size:11.5px;color:var(--mutedDark);">排序</span>
+    <span style="font-size:11.5px;color:var(--mutedDark);">${T("grid.sort")}</span>
     <select class="select" data-bind="sort-by">
-      <option value="trade_date" ${sortBy === "trade_date" ? "selected" : ""}>交易日期</option>
-      <option value="created_at" ${sortBy === "created_at" ? "selected" : ""}>创建日期</option>
-      <option value="updated_at" ${sortBy === "updated_at" ? "selected" : ""}>修改日期</option>
+      <option value="trade_date" ${sortBy === "trade_date" ? "selected" : ""}>${esc(T("grid.sortTradeDate"))}</option>
+      <option value="created_at" ${sortBy === "created_at" ? "selected" : ""}>${esc(T("grid.sortCreated"))}</option>
+      <option value="updated_at" ${sortBy === "updated_at" ? "selected" : ""}>${esc(T("grid.sortUpdated"))}</option>
     </select>
-    <button class="btn" data-action="toggle-sort-dir" style="padding:5px 10px;font-size:12px;">${sortDir === "desc" ? "↓ 从新到旧" : "↑ 从旧到新"}</button>
+    <button class="btn" data-action="toggle-sort-dir" style="padding:5px 10px;font-size:12px;">${sortDir === "desc" ? T("grid.sortDesc") : T("grid.sortAsc")}</button>
   </div>
 
   <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:${gridViewMode === "card" && cardFieldsPickerOpen ? "0" : "16"}px;">
     <div style="display:flex;gap:6px;">
-      <button class="btn ${gridViewMode === "card" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="card">${ICONS.grid} 卡片</button>
-      <button class="btn ${gridViewMode === "table" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="table">${ICONS.table} 表格</button>
+      <button class="btn ${gridViewMode === "card" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="card">${ICONS.grid} ${T("grid.viewCard")}</button>
+      <button class="btn ${gridViewMode === "table" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="table">${ICONS.table} ${T("grid.viewTable")}</button>
     </div>
     ${gridViewMode === "card" ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-      <span style="font-size:11.5px;color:var(--mutedDark);">图片大小</span>
-      ${Object.keys(CARD_SIZES).map((sz) => `<button class="btn ${gridCardSize === sz ? "btn-primary" : ""}" data-action="set-card-size" data-size="${sz}" style="padding:5px 10px;font-size:12px;">${sz === "compact" ? "紧凑" : sz === "standard" ? "标准" : sz === "large" ? "大图" : "超大图"}</button>`).join("")}
-      <button class="btn ${cardFieldsPickerOpen ? "btn-primary" : ""}" data-action="toggle-card-fields-picker" style="padding:5px 10px;font-size:12px;">${ICONS.settings} 卡片显示字段</button>
+      <span style="font-size:11.5px;color:var(--mutedDark);">${T("grid.imageSize")}</span>
+      ${Object.keys(CARD_SIZES).map((sz) => `<button class="btn ${gridCardSize === sz ? "btn-primary" : ""}" data-action="set-card-size" data-size="${sz}" style="padding:5px 10px;font-size:12px;">${esc(T("grid.size" + sz.charAt(0).toUpperCase() + sz.slice(1)))}</button>`).join("")}
+      <button class="btn ${cardFieldsPickerOpen ? "btn-primary" : ""}" data-action="toggle-card-fields-picker" style="padding:5px 10px;font-size:12px;">${ICONS.settings} ${T("grid.cardFields")}</button>
     </div>` : ""}
   </div>
   ${gridViewMode === "card" && cardFieldsPickerOpen ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
-    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">日期 / 模型 / R值 默认一直显示，这里选的是在这基础上额外多显示哪些字段</div>
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("grid.cardFieldsHint")}</div>
     <div class="chipGroup">
       ${schema.filter((f) => !["date", "model", "r_multiple"].includes(f.role)).map((f) => `<button type="button" class="chip ${cardFields.includes(f.id) ? "active" : ""}" data-action="toggle-card-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
     </div>
-    ${cardFields.length ? `<button class="tinyBtn" data-action="reset-card-fields" style="color:var(--mutedDark);margin-top:8px;">清空额外字段</button>` : ""}
+    ${cardFields.length ? `<button class="tinyBtn" data-action="reset-card-fields" style="color:var(--mutedDark);margin-top:8px;">${T("grid.clearExtraFields")}</button>` : ""}
   </div>` : ""}`;
 
   if (!filtered.length) {
-    html += `<div class="emptyState"><div style="font-size:14px;margin-bottom:14px;">还没有记录</div><button class="btn btn-primary" data-action="new-trade">${ICONS.plus} 新建交易</button></div>`;
+    html += `<div class="emptyState"><div style="font-size:14px;margin-bottom:14px;">${T("grid.empty")}</div><button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button></div>`;
     return html;
   }
 
@@ -1265,7 +1265,7 @@ function renderGrid() {
       <div class="cardImg">
         ${shot ? `<img src="${esc(shot)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="cardImgFallback" onerror="window.__imgFallback(this)" />`
                : `<div class="cardImgFallback">${ICONS.camera}</div>`}
-        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(shot)}" title="大图查看">${ICONS.expand}</button>` : ""}
+        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(shot)}" title="${esc(T("grid.viewLarge"))}">${ICONS.expand}</button>` : ""}
         ${result ? `<span class="resultBadge" style="background:${rc}">${esc(result)}</span>` : ""}
       </div>
       <div class="cardBody">
@@ -1274,7 +1274,7 @@ function renderGrid() {
       <div class="cardFoot">
         ${viewingUserId ? "" : (!confirming
           ? `<button data-action="ask-delete" data-id="${esc(t.id)}">${ICONS.trash}</button>`
-          : `<button data-action="confirm-delete" data-id="${esc(t.id)}" style="background:var(--negSoft);color:var(--neg);">确定删除</button><button data-action="cancel-delete">取消</button>`)}
+          : `<button data-action="confirm-delete" data-id="${esc(t.id)}" style="background:var(--negSoft);color:var(--neg);">${T("common.confirmDelete")}</button><button data-action="cancel-delete">${T("common.cancel")}</button>`)}
       </div>
     </div>`;
   });
@@ -1542,7 +1542,7 @@ function renderBreakdownPicker() {
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">取消勾选就不显示，拖动 ⠿ 调整顺序。以后新加的字段会自动出现在最后面。</div>
     <div style="display:flex;flex-direction:column;gap:4px;">
       ${fields.map((f, idx) => `<div class="bdRow" draggable="true" data-bd-idx="${idx}">
-        <span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="拖动排序">⠿</span>
+        <span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>
         <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;">
           <input type="checkbox" data-action="toggle-breakdown-field" data-id="${esc(f.id)}" ${hidden.includes(f.id) ? "" : "checked"} style="width:13px;height:13px;" />
           <span style="font-size:12.5px;color:var(--text);">${esc(f.label)}</span>
@@ -1605,7 +1605,7 @@ function renderAnalytics() {
       const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
       html += `<div class="breakdownCard"${draggable}>
         <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="拖动排序">⠿</span> ` : ""}${esc(b.field.label)}</span>
+          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}</span>
           ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="不显示这个字段的拆解（想找回去上面『显示设置』里重新勾选）">${ICONS.x}</button>` : ""}
         </div>
         ${b.rows.map((r) => barRow(r, b.field.id)).join("")}
@@ -1833,16 +1833,16 @@ function renderSettings() {
         ${(f.options && f.options.length) ? `<div class="settingsRowBody open"><div class="chipGroup">${f.options.map((o) => `<span class="chip">${esc(o)}</span>`).join("")}</div></div>` : ""}
       </div>`).join("")}`;
   }
-  let html = `<div class="sectionLabel">⟦ ${esc(t("lang.label"))} ⟧</div>
+  let html = `<div class="sectionLabel">⟦ ${esc(T("lang.label"))} ⟧</div>
     <div style="margin-bottom:10px;">${langToggleHtml()}</div>
-    <div style="font-size:12px;color:var(--mutedDark);margin-bottom:22px;line-height:1.7;">${esc(t("lang.hint"))}</div>
+    <div style="font-size:12px;color:var(--mutedDark);margin-bottom:22px;line-height:1.7;">${esc(T("lang.hint"))}</div>
     <div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
     字段的增删改在这里管理，改动会立即同步到录入表单和分析页。「分析角色」决定这个字段在统计里扮演什么。</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
     html += `<div class="settingsRow" draggable="${open ? "false" : "true"}" data-field-idx="${i}">
       <div class="settingsRowHead" data-action="toggle-settings-row" data-id="${esc(f.id)}">
-        <span class="dragHandle" title="拖动排序">⠿</span>
+        <span class="dragHandle" title="${esc(T("common.dragToReorder"))}">⠿</span>
         <div style="flex:1;">
           <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
           <span class="fieldTypeTag">${esc(fieldTypeLabel(f.type))}</span>
@@ -1913,7 +1913,7 @@ function fieldInputHtml(field) {
 }
 function urlPreviewHtml(val) {
   if (!val || !/^https?:\/\//.test(val)) return "";
-  return `<div class="thumbWrap"><img class="thumb" src="${esc(val)}" referrerpolicy="no-referrer" data-fallback-url="${esc(val)}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">拖右下角可以调整预览大小</div>`;
+  return `<div class="thumbWrap"><img class="thumb" src="${esc(val)}" referrerpolicy="no-referrer" data-fallback-url="${esc(val)}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">${T("modal.urlPreviewHint")}</div>`;
 }
 window.__updateUrlPreview = function (fieldId, val) {
   formDraft[fieldId] = val;
@@ -1952,13 +1952,13 @@ window.__imgFallback = function (imgEl) {
   if (iconSpan.firstElementChild) { iconSpan.firstElementChild.style.width = "16px"; iconSpan.firstElementChild.style.height = "16px"; }
   wrap.appendChild(iconSpan);
   const label = document.createElement("span");
-  label.textContent = "图片没加载出来";
+  label.textContent = T("image.loadFailed");
   wrap.appendChild(label);
   const a = document.createElement("a");
   a.href = url;
   a.target = "_blank";
   a.rel = "noopener noreferrer";
-  a.textContent = "在新标签打开";
+  a.textContent = T("image.openInNewTab");
   a.addEventListener("click", (e) => e.stopPropagation());
   wrap.appendChild(a);
   imgEl.replaceWith(wrap);
@@ -1975,17 +1975,17 @@ function renderModal(force) {
   const readOnly = !!viewingUserId;
   root.innerHTML = `<div class="overlay">
     <div class="modal">
-      <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${readOnly ? "查看交易（只读）" : isNew ? "新建交易" : "编辑交易"}</div>
+      <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${readOnly ? T("modal.viewTrade") : isNew ? T("common.newTrade") : T("modal.editTrade")}</div>
         <button class="iconBtn" data-action="close-modal">${ICONS.x}</button></div>
       ${resumedDraft ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 22px;background:var(--accentSoft);border-bottom:1px solid var(--border);font-size:12.5px;color:var(--accent);">
-        <span>已恢复上次未完成的草稿</span>
-        <button class="tinyBtn" data-action="clear-draft" style="color:var(--accent);text-decoration:underline;">清除草稿</button>
+        <span>${T("modal.draftRestored")}</span>
+        <button class="tinyBtn" data-action="clear-draft" style="color:var(--accent);text-decoration:underline;">${T("modal.clearDraft")}</button>
       </div>` : ""}
       <div class="modalBody ${readOnly ? "readOnlyFields" : ""}" ${readOnly ? 'style="opacity:.75;"' : ""}>
         ${schema.map((f) => `<div class="field"><div class="fieldLabel">${esc(f.label)}</div>${fieldInputHtml(f)}</div>`).join("")}
       </div>
-      <div class="modalFoot"><button class="btn" data-action="close-modal">${readOnly ? "关闭" : "取消"}</button>
-        ${readOnly ? "" : `<button class="btn btn-primary" data-action="save-trade">保存</button>`}</div>
+      <div class="modalFoot"><button class="btn" data-action="close-modal">${readOnly ? T("common.close") : T("common.cancel")}</button>
+        ${readOnly ? "" : `<button class="btn btn-primary" data-action="save-trade">${T("common.save")}</button>`}</div>
     </div>
   </div>`;
 }
@@ -2001,33 +2001,33 @@ function renderAuthScreen() {
     <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
       <div style="display:flex;gap:6px;margin-bottom:18px;">
-        <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${t("auth.login")}</button>
-        <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${t("auth.register")}</button>
+        <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${T("auth.login")}</button>
+        <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${T("auth.register")}</button>
       </div>
-      <div class="field"><div class="fieldLabel">${t("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
-      <div class="field"><div class="fieldLabel">${t("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
+      <div class="field"><div class="fieldLabel">${T("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
+      <div class="field"><div class="fieldLabel">${T("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
       ${!isRegister ? `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer;">
-        <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${t("auth.rememberMe")}
+        <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${T("auth.rememberMe")}
       </label>` : ""}
-      ${isRegister ? `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:12px;line-height:1.6;">${t("auth.newAccountLangHint")}</div>` : ""}
+      ${isRegister ? `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:12px;line-height:1.6;">${T("auth.newAccountLangHint")}</div>` : ""}
       ${authError ? `<div style="font-size:12.5px;color:var(--neg);margin-bottom:12px;line-height:1.6;">${esc(authError)}</div>` : ""}
       ${authSuccess ? `<div style="font-size:12.5px;color:var(--pos);margin-bottom:12px;line-height:1.6;">${esc(authSuccess)}</div>` : ""}
       <button class="btn btn-primary" style="width:100%;justify-content:center;" data-action="auth-submit" ${authBusy ? "disabled" : ""}>
-        ${authBusy ? t("common.processing") : isRegister ? t("auth.register") : t("auth.login")}
+        ${authBusy ? T("common.processing") : isRegister ? T("auth.register") : T("auth.login")}
       </button>
     </div>
   </div>`;
 }
 /* 语言切换控件：登录页和设置页共用同一段 HTML */
 function langToggleHtml() {
-  return `<div class="modeToggle" title="${esc(t("lang.switchTitle"))}">
-    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}" data-action="set-lang" data-lang="${L}">${esc(t("lang." + L))}</button>`).join("")}
+  return `<div class="modeToggle" title="${esc(T("lang.switchTitle"))}">
+    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}" data-action="set-lang" data-lang="${L}">${esc(T("lang." + L))}</button>`).join("")}
   </div>`;
 }
 function renderDisabledScreen() {
   return `<div style="max-width:380px;margin:100px auto;text-align:center;">
-    <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>${t("auth.disabled")}</span></div>
-    <button class="btn" style="margin-top:16px;" data-action="logout">${t("auth.logout")}</button>
+    <div class="notice error" style="justify-content:center;">${ICONS.alert}<span>${T("auth.disabled")}</span></div>
+    <button class="btn" style="margin-top:16px;" data-action="logout">${T("auth.logout")}</button>
   </div>`;
 }
 function profileModalHtml() {
@@ -2142,7 +2142,7 @@ function renderSecondaryModals(force) {
 function render() {
   const app = document.getElementById("app");
 
-  if (authLoading) { app.innerHTML = `<div class="loading">${t("common.loading")}</div>`; return; }
+  if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
   if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); return; }
   if (currentProfile && currentProfile.active === false) { app.innerHTML = renderDisabledScreen(); return; }
 
@@ -2150,13 +2150,13 @@ function render() {
   const isAdmin = currentProfile && currentProfile.role === "admin";
   const displayName = currentProfile && currentProfile.display_name;
   const TABS = [
-    { id: "grid", label: "记录", icon: ICONS.grid },
-    { id: "analytics", label: "分析", icon: ICONS.chart },
-    { id: "calendar", label: "月度", icon: ICONS.calendar },
-    { id: "changelog", label: "更新日志", icon: ICONS.clock },
-    { id: "settings", label: "设置", icon: ICONS.settings },
+    { id: "grid", label: T("tab.grid"), icon: ICONS.grid },
+    { id: "analytics", label: T("tab.analytics"), icon: ICONS.chart },
+    { id: "calendar", label: T("tab.calendar"), icon: ICONS.calendar },
+    { id: "changelog", label: T("tab.changelog"), icon: ICONS.clock },
+    { id: "settings", label: T("tab.settings"), icon: ICONS.settings },
   ];
-  if (isAdmin) TABS.push({ id: "admin", label: "管理后台", icon: ICONS.shield });
+  if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   let body = "";
   try {
     if (tab === "grid") body = renderGrid();
@@ -2164,52 +2164,52 @@ function render() {
     else if (tab === "calendar") body = renderCalendar();
     else if (tab === "changelog") body = renderChangelog();
     else if (tab === "settings") body = renderSettings();
-    else if (tab === "admin") body = isAdmin ? renderAdminPanel() : `<div class="notice">${ICONS.alert}<span>没有权限。</span></div>`;
+    else if (tab === "admin") body = isAdmin ? renderAdminPanel() : `<div class="notice">${ICONS.alert}<span>${T("common.noPermission")}</span></div>`;
   } catch (err) {
     console.error(err);
-    body = `<div class="notice error">${ICONS.alert}<span>这个页签渲染出错了：${esc(err.message || err)}</span></div>`;
+    body = `<div class="notice error">${ICONS.alert}<span>${esc(T("common.tabRenderError", { msg: err.message || err }))}</span></div>`;
   }
 
-  document.title = displayName ? `${displayName}的 IFVG Trade Journal` : "IFVG Trade Journal";
+  document.title = displayName ? T("header.titleWithName", { name: displayName }) : "IFVG Trade Journal";
 
   app.innerHTML = `
     <div class="header">
       <div>
-        <div class="brand">${displayName ? `<span class="accent">${esc(displayName)}</span>的 IFVG Trade Journal` : `<span class="accent">IFVG</span> Trade Journal`}</div>
-        <div class="subline">${recordMode === "backtest" ? "回测" : "实盘"} · taken ${stats.totalTaken} · WR ${fmtPct(stats.wr)} ${stats.hasR ? "· EV " + fmtNum(stats.ev, 3) : ""}</div>
+        <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
+        <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${stats.totalTaken} · WR ${fmtPct(stats.wr)} ${stats.hasR ? "· EV " + fmtNum(stats.ev, 3) : ""}</div>
       </div>
       <div class="headerActions">
         <div class="modeToggle">
-          <button class="modeBtn ${recordMode === "backtest" ? "active" : ""}" data-action="set-record-mode" data-mode="backtest">回测</button>
-          <button class="modeBtn ${recordMode === "live" ? "active" : ""}" data-action="set-record-mode" data-mode="live">实盘</button>
+          <button class="modeBtn ${recordMode === "backtest" ? "active" : ""}" data-action="set-record-mode" data-mode="backtest">${T("mode.backtest")}</button>
+          <button class="modeBtn ${recordMode === "live" ? "active" : ""}" data-action="set-record-mode" data-mode="live">${T("mode.live")}</button>
         </div>
-        <button class="themeToggle" data-action="toggle-theme" title="切换主题">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
+        <button class="themeToggle" data-action="toggle-theme" title="${esc(T("header.toggleTheme"))}">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
         <div style="position:relative;">
-          <button class="btn" data-action="toggle-export">${ICONS.download} 导出</button>
+          <button class="btn" data-action="toggle-export">${ICONS.download} ${T("header.export")}</button>
           <div class="exportMenu ${exportMenuOpen ? "open" : ""}">
             <button data-action="export-csv">CSV</button>
-            <button data-action="export-json">JSON 备份</button>
+            <button data-action="export-json">${T("header.jsonBackup")}</button>
           </div>
         </div>
-        ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} 新建交易</button>` : ""}
+        ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
         <div style="position:relative;">
-          <button class="themeToggle" data-action="toggle-user-menu" title="账号">${ICONS.user}</button>
+          <button class="themeToggle" data-action="toggle-user-menu" title="${esc(T("header.account"))}">${ICONS.user}</button>
           <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:220px;">
             <div style="padding:9px 12px;font-size:11.5px;color:var(--mutedDark);border-bottom:1px solid var(--border);">
               ${esc(session.user.email)} ${isAdmin ? "· admin" : ""}
             </div>
-            <button data-action="open-profile-modal">个人设置</button>
-            <button data-action="logout">退出登录</button>
+            <button data-action="open-profile-modal">${T("header.profile")}</button>
+            <button data-action="logout">${T("auth.logout")}</button>
           </div>
         </div>
       </div>
     </div>
     ${viewingUserId ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;">
-      <span style="font-size:13px;color:var(--accent);">${ICONS.expand} 正在查看 <b>${esc(viewingUserEmail)}</b> 的数据（只读）</span>
-      <button class="btn" data-action="exit-view-mode">退出查看</button>
+      <span style="font-size:13px;color:var(--accent);">${ICONS.expand} ${T("header.viewingUser", { email: `<b>${esc(viewingUserEmail)}</b>` })}</span>
+      <button class="btn" data-action="exit-view-mode">${T("header.exitViewMode")}</button>
     </div>` : ""}
     <div class="nav">
-      ${TABS.map((t) => `<button class="tab ${tab === t.id ? "active" : ""}" data-action="switch-tab" data-tab="${t.id}">${t.icon} ${tab === t.id ? "[ " + t.label + " ]" : t.label}</button>`).join("")}
+      ${TABS.map((tb) => `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}">${tb.icon} ${tab === tb.id ? "[ " + esc(tb.label) + " ]" : esc(tb.label)}</button>`).join("")}
     </div>
     ${loadError ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(loadError)}</span></div>` : ""}
     <div id="tabBody">${body}</div>
@@ -3062,7 +3062,7 @@ document.addEventListener("keydown", (e) => {
    INIT
    ============================================================ */
 async function bootstrapAuth() {
-  if (!sb) { authLoading = false; loadError = t("auth.noConfig"); return; }
+  if (!sb) { authLoading = false; loadError = T("auth.noConfig"); return; }
   const { data: { session: s } } = await sb.auth.getSession();
   session = s;
   if (session) {
