@@ -653,11 +653,13 @@ function computeMonthCoverageForYear(year) {
   return result;
 }
 
-// Aggregate taken trades (non-HE) into a stats object for a set of trades on one day / one month.
-// Colors by R sum when an r_multiple field exists; falls back to W/L balance otherwise.
+// Aggregate a set of trades (already filtered by the user's own filter panel) into a stats
+// object for one day / one month. Colors by R sum when an r_multiple field exists; falls back
+// to W/L balance otherwise. Does NOT apply any additional hidden filtering — what's passed in
+// is exactly what gets counted, so the calendar only ever hides what the user filtered out above.
 function aggregateTradeStats(list) {
-  const rF = roleField("r_multiple"), resultF = roleField("result"), takenF = roleField("taken"), heF = roleField("human_error");
-  const clean = list.filter((t) => !heF || t[heF.id] !== "yes");
+  const rF = roleField("r_multiple"), resultF = roleField("result"), takenF = roleField("taken");
+  const clean = list;
   const taken = clean.filter((t) => !takenF || t[takenF.id] === "Taken");
   let rSum = 0, hasR = false;
   if (rF) taken.forEach((t) => { if (t[rF.id] !== undefined && t[rF.id] !== "") { rSum += parseFloat(t[rF.id]) || 0; hasR = true; } });
@@ -1629,14 +1631,36 @@ function renderDayCalendar() {
   const year = calendarYear, month = calendarMonth;
   const firstOfMonth = new Date(year, month - 1, 1);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const prevMonthDays = new Date(year, month - 1, 0).getDate();
   const leadBlanks = (firstOfMonth.getDay() + 6) % 7; // Monday-first
   const totalCells = Math.ceil((leadBlanks + daysInMonth) / 7) * 7;
   const cells = [];
-  for (let i = 0; i < leadBlanks; i++) cells.push({ day: prevMonthDays - leadBlanks + 1 + i, inMonth: false });
-  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, inMonth: true, dateStr: year + "-" + String(month).padStart(2, "0") + "-" + String(d).padStart(2, "0") });
-  let nd = 1;
-  while (cells.length < totalCells) cells.push({ day: nd++, inMonth: false });
+  for (let i = 0; i < totalCells; i++) {
+    const d = new Date(year, month - 1, 1 - leadBlanks + i);
+    cells.push({
+      day: d.getDate(),
+      inMonth: d.getMonth() === month - 1 && d.getFullYear() === year,
+      dateStr: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"),
+    });
+  }
+
+  let weeksHtml = "";
+  for (let w = 0; w < cells.length; w += 7) {
+    const weekCells = cells.slice(w, w + 7);
+    weeksHtml += weekCells.map((c) => {
+      if (!c.inMonth) return `<div class="dayCell outMonth"><div class="dayCellNum">${c.day}</div></div>`;
+      const stats = aggregateTradeStats(tradesOnDate(c.dateStr));
+      const tone = stats.count > 0 ? stats.tone : "";
+      return `<div class="dayCell ${tone}" data-action="open-day-detail" data-date="${c.dateStr}">
+        <div class="dayCellNum">${c.day}</div>
+        ${stats.count > 0 ? `<div class="dayCellInfo">${stats.count} 笔${stats.hasR ? `<br>${fmtNum(stats.rSum)}R` : ""}</div>` : ""}
+      </div>`;
+    }).join("");
+    const weekStats = aggregateTradeStats(weekCells.flatMap((c) => tradesOnDate(c.dateStr)));
+    const weekTone = weekStats.count > 0 ? weekStats.tone : "";
+    weeksHtml += `<div class="weekCell ${weekTone}">
+      ${weekStats.count > 0 ? `<div class="weekCellInfo">${weekStats.hasR ? fmtNum(weekStats.rSum) + "R" : weekStats.w + "胜" + weekStats.l + "负"}</div>` : `<div class="weekCellInfo muted">—</div>`}
+    </div>`;
+  }
 
   let html = `<div class="calendarPanel" id="day-calendar-top">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -1648,16 +1672,8 @@ function renderDayCalendar() {
     </div>
   </div>
   <div class="dayGrid">
-    ${["一", "二", "三", "四", "五", "六", "日"].map((d) => `<div class="dayGridHead">周${d}</div>`).join("")}
-    ${cells.map((c) => {
-      if (!c.inMonth) return `<div class="dayCell outMonth"><div class="dayCellNum">${c.day}</div></div>`;
-      const stats = aggregateTradeStats(tradesOnDate(c.dateStr));
-      const tone = stats.count > 0 ? stats.tone : "";
-      return `<div class="dayCell ${tone}" data-action="open-day-detail" data-date="${c.dateStr}">
-        <div class="dayCellNum">${c.day}</div>
-        ${stats.count > 0 ? `<div class="dayCellInfo">${stats.count} 笔${stats.hasR ? `<br>${fmtNum(stats.rSum)}R` : ""}</div>` : ""}
-      </div>`;
-    }).join("")}
+    ${["一", "二", "三", "四", "五", "六", "日"].map((d) => `<div class="dayGridHead">周${d}</div>`).join("")}<div class="dayGridHead">本周</div>
+    ${weeksHtml}
   </div></div>`;
   return html;
 }

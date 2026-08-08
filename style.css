@@ -155,7 +155,7 @@ a{color:var(--accent);}
 .monthBarValue{font-size:11px;margin-top:4px;font-family:'JetBrains Mono',monospace;color:var(--muted);}
 .monthBarCell.pos .monthBarValue{color:var(--pos);}
 .monthBarCell.neg .monthBarValue{color:var(--neg);}
-.dayGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px;}
+.dayGrid{display:grid;grid-template-columns:repeat(7,1fr) 84px;gap:6px;margin-bottom:10px;}
 .dayGridHead{text-align:center;font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;padding-bottom:4px;}
 .dayCell{border:1px solid var(--border);background:var(--surface2);border-radius:9px;min-height:64px;padding:6px 8px;cursor:pointer;transition:border-color .12s,transform .12s;}
 .dayCell:not(.outMonth):hover{border-color:var(--accent);transform:translateY(-1px);}
@@ -167,6 +167,14 @@ a{color:var(--accent);}
 .dayCellInfo{font-size:11px;margin-top:6px;color:var(--text);line-height:1.5;}
 .dayCell.pos .dayCellInfo{color:var(--pos);}
 .dayCell.neg .dayCellInfo{color:var(--neg);}
+.weekCell{border:1px solid var(--border);background:var(--surface2);border-radius:9px;min-height:64px;padding:6px 4px;display:flex;align-items:center;justify-content:center;text-align:center;}
+.weekCell.pos{border-color:var(--pos);background:var(--posSoft);}
+.weekCell.neg{border-color:var(--neg);background:var(--negSoft);}
+.weekCell.neutral{border-color:var(--accent);background:var(--accentSoft);}
+.weekCellInfo{font-size:12px;font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;}
+.weekCell.pos .weekCellInfo{color:var(--pos);}
+.weekCell.neg .weekCellInfo{color:var(--neg);}
+.weekCellInfo.muted{color:var(--mutedDark);font-weight:400;}
 .dayDetailRow{display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;}
 .calendarPanel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
 .dayDetailThumb{width:120px;height:75px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer;background:var(--surface2);}
