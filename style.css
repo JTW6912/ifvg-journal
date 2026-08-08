@@ -52,13 +52,6 @@ a{color:var(--accent);}
 .exportMenu button{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:transparent;
   border:none;color:var(--text);font-size:12.5px;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;}
 .exportMenu button:hover{background:var(--surface2);}
-/* 账号菜单里嵌的语言切换：上面那条 `.exportMenu button` 是给整行菜单项写的
-   （width:100% + 透明底），会把分段控件压成两行并吃掉选中态。这里按同等或更高
-   特异性把它改回来，顺便让选中态在 hover 时也保持住。 */
-.exportMenu .modeToggle button{width:auto;justify-content:center;background:var(--surface2);color:var(--muted);}
-.exportMenu .modeToggle button:hover{background:var(--border);}
-.exportMenu .modeToggle button.active,
-.exportMenu .modeToggle button.active:hover{background:var(--accent);color:#191307;font-weight:600;}
 .nav{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);}
 .tab{display:flex;align-items:center;gap:6px;padding:10px 14px;background:transparent;border:none;cursor:pointer;
   border-bottom:2px solid transparent;color:var(--muted);font-size:13.5px;font-family:'Inter',sans-serif;margin-bottom:-1px;}

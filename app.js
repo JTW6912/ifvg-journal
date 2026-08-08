@@ -216,7 +216,25 @@ async function setLang(next) {
   try { localStorage.setItem("journal_lang", next); } catch (e) {}
   applyLangAttr();
   render();
+  refreshProfileModalLang();
   await persistLang();
+}
+// 个人设置弹窗放了语言开关，但 renderSecondaryModals 平时会跳过重渲染——
+// 那是为了保护用户正在输入还没保存的内容（显示名、密码框）不被后台刷新打断。
+// 切语言必须强制重渲染弹窗才能换掉里面的文案，所以这里手动把还没保存的输入值
+// （包括只存在本地变量里的性别选择）搬到新 DOM 上，两头都要顾到。
+function refreshProfileModalLang() {
+  if (!profileModalOpen) return;
+  const ids = ["profileNameInput", "pwCurrentInput", "pwNewInput", "pwConfirmInput"];
+  const savedValues = {};
+  ids.forEach((id) => { const el = document.getElementById(id); if (el) savedValues[id] = el.value; });
+  const savedGender = profileGenderDraft;
+  renderSecondaryModals(true);
+  ids.forEach((id) => { const el = document.getElementById(id); if (el && savedValues[id] !== undefined) el.value = savedValues[id]; });
+  profileGenderDraft = savedGender;
+  document.querySelectorAll('[data-action="set-gender-draft"]').forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.val === profileGenderDraft);
+  });
 }
 // 写回 profiles.lang。数据库迁移还没跑的时候这里必然失败——只警告不打断，
 // 本地 localStorage 那份已经生效了，用户不会看到任何异常。
@@ -2013,12 +2031,10 @@ function renderAuthScreen() {
     </div>
   </div>`;
 }
-/* 语言切换控件：登录页和右上角账号菜单共用同一段 HTML。
-   compact 是给账号菜单用的窄版——下拉只有 220px 宽，登录页那个尺寸会撑破。 */
-function langToggleHtml(compact) {
-  const btnStyle = compact ? ` style="padding:5px 12px;font-size:12px;flex:1;"` : "";
+/* 语言切换控件：登录页和个人设置弹窗共用同一段 HTML */
+function langToggleHtml() {
   return `<div class="modeToggle" title="${esc(T("lang.switchTitle"))}">
-    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}"${btnStyle} data-action="set-lang" data-lang="${L}">${esc(T("lang." + L))}</button>`).join("")}
+    ${I18N_LANGS.map((L) => `<button class="modeBtn ${lang === L ? "active" : ""}" data-action="set-lang" data-lang="${L}">${esc(T("lang." + L))}</button>`).join("")}
   </div>`;
 }
 function renderDisabledScreen() {
@@ -2035,6 +2051,11 @@ function profileModalHtml() {
       <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${T("header.profile")}</div>
         <button class="iconBtn" data-action="close-profile-modal">${ICONS.x}</button></div>
       <div class="modalBody">
+        <div class="field"><div class="fieldLabel">${esc(T("lang.label"))}</div>
+          ${langToggleHtml()}
+          <div style="font-size:11px;color:var(--mutedDark);margin-top:6px;line-height:1.5;">${esc(T("lang.hintShort"))}</div>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:16px 0;"></div>
         <div class="field"><div class="fieldLabel">${T("profile.displayName")}</div>
           <input class="input" id="profileNameInput" value="${esc(p.display_name || "")}" placeholder="${esc(T("profile.namePlaceholder"))}" /></div>
         <div class="field"><div class="fieldLabel">${T("profile.gender")}</div>
@@ -2197,11 +2218,6 @@ function render() {
             </div>
             <button data-action="open-profile-modal">${T("header.profile")}</button>
             <button data-action="logout">${T("auth.logout")}</button>
-            <div style="padding:9px 12px;border-top:1px solid var(--border);">
-              <div style="font-size:11px;color:var(--mutedDark);margin-bottom:6px;">${esc(T("lang.label"))}</div>
-              ${langToggleHtml(true)}
-              <div style="font-size:10.5px;color:var(--mutedDark);margin-top:6px;line-height:1.5;">${esc(T("lang.hintShort"))}</div>
-            </div>
           </div>
         </div>
       </div>
