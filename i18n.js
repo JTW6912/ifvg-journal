@@ -140,6 +140,7 @@ const I18N = {
     "modal.urlPreviewHint": "拖右下角可以调整预览大小",
     "image.loadFailed": "图片没加载出来",
     "image.openInNewTab": "在新标签打开",
+    "image.retry": "重试",
 
     /* ---------- 分析页：总览 / 口径 ---------- */
     "analytics.noResultRole": "当前没有字段被标记为『结果』角色 — 去设置页给某个字段打上『结果 W/L/BE』角色标签，分析才能算出来。",
@@ -504,6 +505,7 @@ const I18N = {
     "modal.urlPreviewHint": "Drag the bottom-right corner to resize the preview",
     "image.loadFailed": "Image didn't load",
     "image.openInNewTab": "Open in new tab",
+    "image.retry": "Retry",
 
     /* ---------- Analytics: overview / scope ---------- */
     "analytics.noResultRole": "No field is tagged with the 'Result' role — go to Settings and give a field the 'Result W/L/BE' role so the analytics can be calculated.",

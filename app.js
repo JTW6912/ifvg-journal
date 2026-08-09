@@ -1977,8 +1977,20 @@ function normalizeTimeValue(raw) {
   const mn = Math.min(59, parseInt(m, 10) || 0);
   return String(hn).padStart(2, "0") + ":" + String(mn).padStart(2, "0");
 }
+const IMG_RETRY_DELAYS = [700, 1800]; // ms — a couple of short backoffs before giving up
 window.__imgFallback = function (imgEl) {
   const url = imgEl.dataset.fallbackUrl || "";
+  const retryCount = parseInt(imgEl.dataset.retryCount || "0", 10);
+  if (retryCount < IMG_RETRY_DELAYS.length) {
+    imgEl.dataset.retryCount = String(retryCount + 1);
+    const sep = url.includes("?") ? "&" : "?";
+    setTimeout(() => {
+      if (!imgEl.isConnected) return;
+      imgEl.src = url + sep + "_retry=" + Date.now();
+    }, IMG_RETRY_DELAYS[retryCount]);
+    return;
+  }
+  const originalImgHtml = imgEl.outerHTML;
   const wrap = document.createElement("div");
   wrap.className = imgEl.dataset.fallbackClass || "thumbFallback";
   const iconSpan = document.createElement("span");
@@ -1988,13 +2000,30 @@ window.__imgFallback = function (imgEl) {
   const label = document.createElement("span");
   label.textContent = T("image.loadFailed");
   wrap.appendChild(label);
+  const linkRow = document.createElement("div");
+  linkRow.style.display = "flex";
+  linkRow.style.gap = "8px";
+  const retryLink = document.createElement("a");
+  retryLink.href = "#";
+  retryLink.textContent = T("image.retry");
+  retryLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const tmp = document.createElement("div");
+    tmp.innerHTML = originalImgHtml;
+    const freshImg = tmp.firstElementChild;
+    freshImg.removeAttribute("data-retry-count");
+    wrap.replaceWith(freshImg);
+  });
+  linkRow.appendChild(retryLink);
   const a = document.createElement("a");
   a.href = url;
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   a.textContent = T("image.openInNewTab");
   a.addEventListener("click", (e) => e.stopPropagation());
-  wrap.appendChild(a);
+  linkRow.appendChild(a);
+  wrap.appendChild(linkRow);
   imgEl.replaceWith(wrap);
 };
 let modalRenderedForId = null;
