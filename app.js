@@ -745,18 +745,17 @@ function computeMonthCoverageForYear(year) {
 // to W/L balance otherwise. Does NOT apply any additional hidden filtering — what's passed in
 // is exactly what gets counted, so the calendar only ever hides what the user filtered out above.
 function aggregateTradeStats(list) {
-  const rF = roleField("r_multiple"), resultF = roleField("result"), takenF = roleField("taken");
+  const rF = roleField("r_multiple"), resultF = roleField("result");
   const clean = list;
-  const taken = clean.filter((t) => !takenF || t[takenF.id] === "Taken");
   let rSum = 0, hasR = false;
-  if (rF) taken.forEach((t) => { if (t[rF.id] !== undefined && t[rF.id] !== "") { rSum += parseFloat(t[rF.id]) || 0; hasR = true; } });
-  const w = resultF ? taken.filter((t) => t[resultF.id] === "W").length : 0;
-  const l = resultF ? taken.filter((t) => t[resultF.id] === "L").length : 0;
+  if (rF) clean.forEach((t) => { if (t[rF.id] !== undefined && t[rF.id] !== "") { rSum += parseFloat(t[rF.id]) || 0; hasR = true; } });
+  const w = resultF ? clean.filter((t) => t[resultF.id] === "W").length : 0;
+  const l = resultF ? clean.filter((t) => t[resultF.id] === "L").length : 0;
   let tone = "neutral";
   if (hasR) tone = rSum > 0.0001 ? "pos" : rSum < -0.0001 ? "neg" : "neutral";
   else if (w + l > 0) tone = w > l ? "pos" : w < l ? "neg" : "neutral";
   const wr = (w + l) > 0 ? (w / (w + l)) * 100 : null;
-  return { count: clean.length, takenCount: taken.length, rSum, hasR, w, l, wr, tone };
+  return { count: clean.length, takenCount: clean.length, rSum, hasR, w, l, wr, tone };
 }
 function tradesOnDate(dateStr) {
   const dateF = roleField("date");
