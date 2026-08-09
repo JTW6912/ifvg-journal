@@ -131,6 +131,9 @@ let tab = "grid";
 let editingTrade = null;
 let confirmDeleteId = null;
 let exportMenuOpen = false;
+let exportScope = null; // null = auto (filtered if a filter/search is active, else all); "filtered" | "all" once user picks explicitly
+let exportColumns = "all"; // "all" | "selected"
+let exportSelectedFields = [];
 let activeFilters = []; // [{fieldId, value}]
 let searchQuery = "";
 let openSettingsRow = null;
@@ -284,11 +287,29 @@ function csvEscape(val) {
   if (/[",\n]/.test(val)) val = '"' + val.replace(/"/g, '""') + '"';
   return val;
 }
-function toCSV() {
-  const headers = schema.map((f) => f.label);
+function toCSV(list, fields) {
+  const rows = list || trades;
+  const cols = fields || schema;
+  const headers = cols.map((f) => f.label);
   const lines = [headers.map(csvEscape).join(",")];
-  trades.forEach((t) => lines.push(schema.map((f) => csvEscape(t[f.id])).join(",")));
+  rows.forEach((t) => lines.push(cols.map((f) => csvEscape(t[f.id])).join(",")));
   return lines.join("\n");
+}
+// Records 页筛选条件/搜索是全局状态，导出面板不管当前在哪个 tab 都能拿来复用
+function exportHasActiveFilters() {
+  return activeFilters.some((f) => f.fieldId) || searchQuery.trim() !== "";
+}
+function exportFilteredTrades() {
+  return trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)) && tradeMatchesSearch(t, searchQuery));
+}
+function resolvedExportScope() {
+  return exportScope || (exportHasActiveFilters() ? "filtered" : "all");
+}
+function exportTradeList() {
+  return resolvedExportScope() === "filtered" ? exportFilteredTrades() : trades;
+}
+function exportFieldList() {
+  return exportColumns === "selected" ? schema.filter((f) => exportSelectedFields.includes(f.id)) : schema;
 }
 function downloadFile(filename, content, mime) {
   const blob = new Blob(["\uFEFF" + content], { type: mime });
@@ -2161,6 +2182,44 @@ function renderSecondaryModals(force) {
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else root.innerHTML = "";
 }
+// render() 每次都整体重建 app 的 innerHTML，滚动容器的节点也跟着被换掉，
+// scrollTop 会被浏览器重置成 0 —— 这里手动把滚动位置搬到新节点上
+function renderPreservingScroll(elId) {
+  const prev = document.getElementById(elId);
+  const scrollTop = prev ? prev.scrollTop : null;
+  render();
+  if (scrollTop !== null) {
+    const next = document.getElementById(elId);
+    if (next) next.scrollTop = scrollTop;
+  }
+}
+function renderExportPanel() {
+  const filteredCount = exportFilteredTrades().length;
+  const allCount = trades.length;
+  const scope = resolvedExportScope();
+  return `
+    <div style="padding:10px 12px 6px;font-size:11px;color:var(--mutedDark);">${T("export.scope")}</div>
+    <div class="chipGroup" style="padding:0 12px 8px;margin-bottom:0;">
+      <button type="button" class="chip ${scope === "filtered" ? "active" : ""}" data-action="set-export-scope" data-value="filtered">${T("export.scopeFiltered", { n: filteredCount })}</button>
+      <button type="button" class="chip ${scope === "all" ? "active" : ""}" data-action="set-export-scope" data-value="all">${T("export.scopeAll", { n: allCount })}</button>
+    </div>
+    <div style="padding:8px 12px 6px;font-size:11px;color:var(--mutedDark);border-top:1px solid var(--border);">${T("export.columns")}</div>
+    <div class="chipGroup" style="padding:0 12px 8px;margin-bottom:0;">
+      <button type="button" class="chip ${exportColumns === "all" ? "active" : ""}" data-action="set-export-columns" data-value="all">${T("export.columnsAll")}</button>
+      <button type="button" class="chip ${exportColumns === "selected" ? "active" : ""}" data-action="set-export-columns" data-value="selected">${T("export.columnsSelected")}</button>
+    </div>
+    ${exportColumns === "selected" ? `<div id="exportFieldsScroll" class="chipGroup" style="padding:0 12px 8px;max-height:180px;overflow-y:auto;">
+      ${schema.map((f) => `<button type="button" class="chip ${exportSelectedFields.includes(f.id) ? "active" : ""}" data-action="toggle-export-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
+    </div>
+    <div style="padding:0 12px 8px;display:flex;gap:10px;">
+      <button type="button" class="tinyBtn" data-action="export-fields-select-all">${T("export.selectAll")}</button>
+      <button type="button" class="tinyBtn" data-action="export-fields-clear">${T("export.clearAll")}</button>
+    </div>` : ""}
+    <button data-action="export-csv" ${exportColumns === "selected" && exportSelectedFields.length === 0 ? "disabled" : ""} style="border-top:1px solid var(--border);font-weight:600;color:var(--accent);">${ICONS.download} ${T("export.exportCsv")}</button>
+    <button data-action="export-json">${ICONS.download} ${T("header.jsonBackup")}</button>
+    <div style="padding:6px 12px 10px;font-size:10.5px;color:var(--mutedDark);line-height:1.4;">${T("export.jsonBackupHint")}</div>
+  `;
+}
 function render() {
   const app = document.getElementById("app");
 
@@ -2208,9 +2267,8 @@ function render() {
         <button class="themeToggle" data-action="toggle-theme" title="${esc(T("header.toggleTheme"))}">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
         <div style="position:relative;">
           <button class="btn" data-action="toggle-export">${ICONS.download} ${T("header.export")}</button>
-          <div class="exportMenu ${exportMenuOpen ? "open" : ""}">
-            <button data-action="export-csv">CSV</button>
-            <button data-action="export-json">${T("header.jsonBackup")}</button>
+          <div class="exportMenu ${exportMenuOpen ? "open" : ""}" style="min-width:250px;">
+            ${exportMenuOpen ? renderExportPanel() : ""}
           </div>
         </div>
         ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
@@ -2263,7 +2321,20 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "set-lang") { await setLang(el.dataset.lang); }
   else if (action === "toggle-export") { exportMenuOpen = !exportMenuOpen; render(); }
-  else if (action === "export-csv") { downloadFile(`trades-${new Date().toISOString().slice(0,10)}.csv`, toCSV(), "text/csv;charset=utf-8;"); exportMenuOpen = false; render(); }
+  else if (action === "set-export-scope") { exportScope = el.dataset.value; render(); }
+  else if (action === "set-export-columns") {
+    exportColumns = el.dataset.value;
+    if (exportColumns === "selected" && exportSelectedFields.length === 0) exportSelectedFields = schema.map((f) => f.id);
+    render();
+  }
+  else if (action === "toggle-export-field") {
+    const id = el.dataset.id;
+    exportSelectedFields = exportSelectedFields.includes(id) ? exportSelectedFields.filter((x) => x !== id) : [...exportSelectedFields, id];
+    renderPreservingScroll("exportFieldsScroll");
+  }
+  else if (action === "export-fields-select-all") { exportSelectedFields = schema.map((f) => f.id); renderPreservingScroll("exportFieldsScroll"); }
+  else if (action === "export-fields-clear") { exportSelectedFields = []; renderPreservingScroll("exportFieldsScroll"); }
+  else if (action === "export-csv") { downloadFile(`trades-${new Date().toISOString().slice(0,10)}.csv`, toCSV(exportTradeList(), exportFieldList()), "text/csv;charset=utf-8;"); exportMenuOpen = false; render(); }
   else if (action === "export-json") { downloadFile(`journal-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify({ schema, trades }, null, 2), "application/json"); exportMenuOpen = false; render(); }
   else if (action === "new-trade") {
     if (viewingUserId) return;
