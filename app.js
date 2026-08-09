@@ -755,7 +755,8 @@ function aggregateTradeStats(list) {
   let tone = "neutral";
   if (hasR) tone = rSum > 0.0001 ? "pos" : rSum < -0.0001 ? "neg" : "neutral";
   else if (w + l > 0) tone = w > l ? "pos" : w < l ? "neg" : "neutral";
-  return { count: clean.length, takenCount: taken.length, rSum, hasR, w, l, tone };
+  const wr = (w + l) > 0 ? (w / (w + l)) * 100 : null;
+  return { count: clean.length, takenCount: taken.length, rSum, hasR, w, l, wr, tone };
 }
 function tradesOnDate(dateStr) {
   const dateF = roleField("date");
@@ -1706,7 +1707,7 @@ function renderMonthBar() {
     const tone = stats.count > 0 ? stats.tone : "";
     html += `<button class="monthBarCell ${tone} ${calendarMonth === m ? "current" : ""}" data-action="jump-to-month" data-month="${m}">
       <div class="monthBarLabel">${esc(new Date(2000, m - 1, 1).toLocaleString(localeTag(), { month: "short" }))}</div>
-      ${stats.count > 0 ? `<div class="monthBarValue">${stats.hasR ? fmtNum(stats.rSum) + "R" : T("calendar.winLoss", { w: stats.w, l: stats.l })}</div>` : ""}
+      ${stats.count > 0 ? `<div class="monthBarValue">${stats.hasR ? fmtNum(stats.rSum) + "R" : T("calendar.winLoss", { w: stats.w, l: stats.l })}${stats.wr !== null ? ` · ${fmtPct(stats.wr)}` : ""}</div>` : ""}
     </button>`;
   }
   const ytdTone = ytdHasR ? (ytdR > 0.0001 ? "pos" : ytdR < -0.0001 ? "neg" : "neutral") : "";
@@ -1741,13 +1742,13 @@ function renderDayCalendar() {
       const tone = stats.count > 0 ? stats.tone : "";
       return `<div class="dayCell ${tone}" data-action="open-day-detail" data-date="${c.dateStr}">
         <div class="dayCellNum">${c.day}</div>
-        ${stats.count > 0 ? `<div class="dayCellInfo">${esc(T("dayDetail.summary", { n: stats.count }))}${stats.hasR ? `<br>${fmtNum(stats.rSum)}R` : ""}</div>` : ""}
+        ${stats.count > 0 ? `<div class="dayCellInfo">${esc(T("dayDetail.summary", { n: stats.count }))}${stats.hasR ? `<br>${fmtNum(stats.rSum)}R${stats.wr !== null ? ` · ${fmtPct(stats.wr)}` : ""}` : ""}</div>` : ""}
       </div>`;
     }).join("");
     const weekStats = aggregateTradeStats(weekCells.flatMap((c) => tradesOnDate(c.dateStr)));
     const weekTone = weekStats.count > 0 ? weekStats.tone : "";
     weeksHtml += `<div class="weekCell ${weekTone}">
-      ${weekStats.count > 0 ? `<div class="weekCellInfo">${weekStats.hasR ? fmtNum(weekStats.rSum) + "R" : T("calendar.winLoss", { w: weekStats.w, l: weekStats.l })}</div>` : `<div class="weekCellInfo muted">—</div>`}
+      ${weekStats.count > 0 ? `<div class="weekCellInfo">${weekStats.hasR ? fmtNum(weekStats.rSum) + "R" : T("calendar.winLoss", { w: weekStats.w, l: weekStats.l })}${weekStats.wr !== null ? ` · ${fmtPct(weekStats.wr)}` : ""}</div>` : `<div class="weekCellInfo muted">—</div>`}
     </div>`;
   }
 
