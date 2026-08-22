@@ -153,7 +153,9 @@ grep -o 'action === "[a-zA-Z-]*"' index.html | sort -u
     - 组合区支持**卡片 / 列表**两种视图（`comboViewMode`）。列表模式走 `renderComboRow()`，但**刻意保留 `.comboCard` 类名、`draggable` 和 `data-combo-id`**——拖拽排序和投放分组的处理器全靠这三样定位，所以换布局不用动一行拖拽代码
     - 组合区 / 拆解区两个大区块可整块折叠（`collapsedAnalyticsSections`，存 localStorage）
     - 顶部 `.analyticsSticky` 是**纯 CSS 的 `position:sticky`**，没有滚动监听。别改回 `position:fixed` + scroll 事件那套：那样要同步 JS 状态，而且后台标签页/不合成帧的环境里 scroll 事件根本不发。锚点跳转靠 `#anaScope/#anaOverview/#anaCombos/#anaBreakdowns` 上的 `scroll-margin-top` 给粘条让位，不要手算偏移
-    - 分析页筛选行的选项超过 `COLLAPSE_CHIPS_OVER`(5) 个时默认只显示已选中的，其余收进「+N 更多」。**只对分析页生效**（`filterRowValuesHtml()` 里判断 `ctx === ANALYSIS_CTX`），记录页和组合编辑器保持原样
+    - 筛选行的选项超过 `COLLAPSE_CHIPS_OVER`(5) 个时默认只显示已选中的，其余收进「+N 更多」。分析页和记录页/月度页都启用，**组合编辑器不启用**——那是专门展开来编辑条件的地方，正在挑值时把选项藏起来只会碍事。展开状态的 key 必须走 `chipKey(ctx, idx)` 带上下文前缀，否则记录页第 0 行和分析页第 0 行会互相影响
+- **三个筛选面板共用一套外壳**（`.filterPanel*`）：分析页的「分析范围」、记录页和月度页的「筛选条件」长一个样。都有折叠时的一行人话摘要（`filterPanelSummaryHtml()`，复用 `comboConditionsText()`）和标题上的「230 → 57」链条（`filterPanelChainHtml()`）。记录页和月度页共用同一份 `activeFilters`，所以也共用 `filterPanelOpen`
+- **⚠️ 空条件匹配全部交易**：`tradeMatchesFilter()` 遇到没选值/没填区间/没填文字的条件一律 `return true`。所以「一键清空已选」（把每行清空、保留行）和「把数组清空」筛出来的是同一批交易——曾经并存的「看全部交易」按钮就是因为这个被删掉的。再加同类按钮前先想清楚是不是又在做重复的事
   - 记录页筛选栏也显示 Profit Factor，算法与分析页一致
 - **⚠️ 分析页/记录页数字必须一致的机制**：组合的完整条件由 `comboFilterRows()` 唯一产出，组合卡片的统计、「跳到记录页」、「分析这个组合」三条路径用的都是**同一个函数的返回值**。改这块时不要在任何一边另写一份口径逻辑，否则几边数字会对不上，用户会当成 bug
 - **⚠️ 三套筛选共用同一套筛选行 DOM，靠元素属性区分改的是哪个数组**（`filterCtxOf()`）：`data-filter-ctx="analysis"` → 分析页 / `data-combo-id="c_xxx"` → 那个组合 / **两个都没有 → 记录页的 `activeFilters`**。新增筛选入口时忘了带自己的上下文属性，会默默把用户的记录页筛选改掉，而且不报错。筛选行的拖拽排序只有记录页那份有（drop 处理器直接绑死 `activeFilters`），另外两处条件之间是 AND、顺序不影响结果，就没做

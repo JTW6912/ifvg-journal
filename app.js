@@ -1163,10 +1163,15 @@ function filterCtxAttr(ctx) {
   if (!ctx) return "";
   return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
 }
-// 选项超过这个数，分析页的筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
-// 5 是按一行放得下定的：超过就会折行，条件卡立刻高一倍。
-// 只对分析页生效——记录页和组合编辑器保持原样，不动那两处的手感
+// 选项超过这个数，筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
+// 5 是按「一行放得下」定的：超过就会折行，条件卡立刻高一倍。
+// 分析页和记录页/月度页都启用；组合编辑器不启用——那是个专门展开来编辑条件的地方，
+// 正在挑值的时候把选项藏起来只会碍事
 const COLLAPSE_CHIPS_OVER = 5;
+// 展开状态的 key 必须带上下文，否则记录页第 0 行和分析页第 0 行会互相影响
+function chipKey(ctx, idx) {
+  return (ctx === ANALYSIS_CTX ? "analysis" : ctx || "grid") + ":" + idx;
+}
 function filterRowValuesHtml(field, idx, f, ctx) {
   const cid = filterCtxAttr(ctx);
   if (field.type === "select" || field.type === "multiselect") {
@@ -1174,14 +1179,15 @@ function filterRowValuesHtml(field, idx, f, ctx) {
     const opts = field.options || [];
     // 选项被删掉但条件里还留着的，也列出来并标红，否则用户根本看不见问题在哪
     const ghosts = vals.filter((v) => !opts.includes(v));
-    const collapsible = ctx === ANALYSIS_CTX && opts.length > COLLAPSE_CHIPS_OVER;
-    const expanded = !collapsible || expandedFilterChips.has(String(idx));
+    const collapsible = (ctx === ANALYSIS_CTX || !ctx) && opts.length > COLLAPSE_CHIPS_OVER;
+    const key = chipKey(ctx, idx);
+    const expanded = !collapsible || expandedFilterChips.has(key);
     const shown = expanded ? opts : opts.filter((o) => vals.includes(o));
     const hiddenCount = opts.length - shown.length;
     return `<div class="chipGroup" style="margin-top:8px;">
       ${shown.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
       ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="${esc(T("filter.ghostOption"))}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
-      ${collapsible ? `<button type="button" class="chip chipMore" data-action="toggle-filter-chips" data-idx="${idx}">${esc(expanded ? T("filter.chipsCollapse") : T("filter.chipsMore", { n: hiddenCount }))}</button>` : ""}
+      ${collapsible ? `<button type="button" class="chip chipMore" data-action="toggle-filter-chips" data-chip-key="${esc(key)}">${esc(expanded ? T("filter.chipsCollapse") : T("filter.chipsMore", { n: hiddenCount }))}</button>` : ""}
     </div>`;
   }
   if (field.type === "date") {
@@ -1246,6 +1252,17 @@ function filteredSummaryStats(list) {
   const pfInfo = profitFactorOf(clean, rF);
   return { n: clean.length, w, l, be, bew, bel, wr, totalR, ev, hasR, pf: pfInfo.pf, pfSample: pfInfo.n };
 }
+/* ---------- 筛选面板共用的小零件（分析页 / 记录页 / 月度页长一个样） ---------- */
+// 折叠状态下的一行人话摘要：不展开也知道现在筛的是什么，大多数时候根本不用展开
+function filterPanelSummaryHtml(conditions) {
+  const text = comboConditionsText({ conditions });
+  return `<div class="filterPanelSummary" title="${esc(text)}">${esc(text)}</div>`;
+}
+// 「全部 230 → 57」：把"这个数字是怎么来的"直接摆在标题上
+function filterPanelChainHtml(total, shown, hasFilters, titleText) {
+  if (!hasFilters) return `<span class="filterPanelChain mono">${esc(T("grid.tradeCount", { n: total }))}</span>`;
+  return `<span class="filterPanelChain mono" title="${esc(titleText)}">${total}<span class="arrow">→</span><b>${shown}</b></span>`;
+}
 function renderFilterSummary(filtered) {
   const s = filteredSummaryStats(filtered);
   if (s.n === 0) return `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:16px;">${T("grid.summaryEmpty")}</div>`;
@@ -1277,26 +1294,33 @@ function renderPaginationControls(totalPages, totalCount) {
   </div>`;
 }
 const filterableTypes = ["select", "multiselect", "text", "textarea", "number", "date", "time"];
+// 记录页和月度页共用这一个面板（两页也共用同一份 activeFilters）。
+// 外壳和分析页的「分析范围」是同一套 .filterPanel* 样式，只是里面装的条件数组不同
 function renderFilterPanel(filteredCount, filteredForSummary) {
   const activeCount = activeFilters.filter((f) => f.fieldId).length;
-  let html = `<div class="filterBar" style="flex-direction:column;align-items:flex-start;">
-    <button data-action="toggle-filter-panel" style="display:flex;align-items:center;gap:8px;background:transparent;border:none;cursor:pointer;padding:0;width:100%;">
+  let html = `<div class="filterPanel${filterPanelOpen ? " open" : ""}">
+    <button class="filterPanelHead" data-action="toggle-filter-panel">
       ${ICONS.filter}
-      <span style="font-size:12.5px;color:var(--text);font-weight:500;">${T("filter.title")}</span>
-      ${activeCount > 0 ? `<span style="font-size:11px;color:var(--accent);background:var(--accentSoft);padding:2px 8px;border-radius:10px;">${esc(T("filter.activeCount", { n: activeCount }))}</span>` : ""}
-      <span style="font-size:12px;color:var(--mutedDark);">${esc(T("grid.tradeCount", { n: filteredCount }))}</span>
-      <span style="margin-left:auto;color:var(--mutedDark);">${filterPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
-    </button>`;
+      <span class="filterPanelTitle">${T("filter.title")}</span>
+      ${activeCount
+        ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
+        : `<span class="filterPanelBadge off">${T("ascope.noFilter")}</span>`}
+      ${filterPanelChainHtml(trades.length, filteredCount, activeCount > 0, T("filter.chainTitle"))}
+      <span class="filterPanelChev">${filterPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
+    </button>
+    ${!filterPanelOpen && activeCount ? filterPanelSummaryHtml(activeFilters) : ""}`;
   if (filterPanelOpen) {
-    html += `<div style="font-size:11.5px;color:var(--mutedDark);margin-top:8px;">${T("filter.logicHint")}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;width:100%;">`;
-    activeFilters.forEach((f, idx) => { html += filterConditionRowHtml(f, idx, ""); });
-    html += `</div>
-    <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn" data-action="add-filter">${ICONS.plus} ${T("filter.addCondition")}</button>
-      ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">${T("filter.clearAllValues")}</button>` : ""}
-    </div>
-    <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>`;
+    html += `<div class="filterPanelBody">
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("filter.logicHint")}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
+        ${activeFilters.map((f, idx) => filterConditionRowHtml(f, idx, "")).join("")}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn" data-action="add-filter">${ICONS.plus} ${T("filter.addCondition")}</button>
+        ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">${T("filter.clearAllValues")}</button>` : ""}
+      </div>
+      <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>
+    </div>`;
   }
   html += `</div>`;
   return html;
@@ -1493,16 +1517,17 @@ function renderAnalysisScopePanel(stats) {
   const activeCount = analysisFilters.filter((f) => f.fieldId).length;
   const combo = analysisComboId ? findCombo(analysisComboId) : null;
   const presets = ["taken", "he"].map(analysisQuickPreset).filter(Boolean);
-  let html = `<div class="analysisScope${analysisPanelOpen ? " open" : ""}">
-    <button class="analysisScopeHead" data-action="toggle-analysis-panel">
+  let html = `<div class="filterPanel${analysisPanelOpen ? " open" : ""}">
+    <button class="filterPanelHead" data-action="toggle-analysis-panel">
       ${ICONS.filter}
-      <span class="analysisScopeTitle">${T("ascope.title")}</span>
+      <span class="filterPanelTitle">${T("ascope.title")}</span>
       ${activeCount
-        ? `<span class="analysisScopeBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
-        : `<span class="analysisScopeBadge off">${T("ascope.noFilter")}</span>`}
-      <span class="analysisScopeChain mono" title="${esc(T("ascope.chainTitle"))}">${trades.length}<span class="arrow">→</span><b>${stats.total}</b></span>
-      <span class="analysisScopeChev">${analysisPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
-    </button>`;
+        ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
+        : `<span class="filterPanelBadge off">${T("ascope.noFilter")}</span>`}
+      ${filterPanelChainHtml(trades.length, stats.total, activeCount > 0, T("ascope.chainTitle"))}
+      <span class="filterPanelChev">${analysisPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
+    </button>
+    ${!analysisPanelOpen && activeCount ? filterPanelSummaryHtml(analysisFilters) : ""}`;
   if (combo) {
     html += `<div class="analysisComboTag">
       ${ICONS.chart}
@@ -1514,7 +1539,7 @@ function renderAnalysisScopePanel(stats) {
     </div>`;
   }
   if (analysisPanelOpen) {
-    html += `<div class="analysisScopeBody">
+    html += `<div class="filterPanelBody">
       ${presets.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;">
         <span style="font-size:11.5px;color:var(--mutedDark);">${T("ascope.quick")}</span>
         ${presets.map((pr) => `<button type="button" class="chip ${pr.on ? "active" : ""}" data-action="toggle-analysis-quick" data-quick="${pr.kind}">${esc(T(pr.kind === "taken" ? "ascope.quickTaken" : "ascope.quickNoHE"))}</button>`).join("")}
@@ -1526,7 +1551,6 @@ function renderAnalysisScopePanel(stats) {
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
         <button class="btn" data-action="add-filter" data-filter-ctx="${ANALYSIS_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
         ${analysisFilters.length ? `<button class="btn" data-action="clear-all-filter-values" data-filter-ctx="${ANALYSIS_CTX}">${T("filter.clearAllValues")}</button>` : ""}
-        ${activeCount ? `<button class="btn" data-action="analysis-filters-all">${T("ascope.showAll")}</button>` : ""}
         <button class="btn" data-action="analysis-filters-default">${T("ascope.reset")}</button>
         ${!viewingUserId && activeCount ? `<button class="btn" data-action="save-analysis-filters-as-combo" style="margin-left:auto;color:var(--accent);">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
       </div>
@@ -2926,7 +2950,6 @@ document.addEventListener("click", async (e) => {
     else analysisFilters.push({ ...newFilterRow(pre.field.id), values: [pre.val], negate: pre.negate });
     afterAnalysisFilterChange();
   }
-  else if (action === "analysis-filters-all") { analysisFilters = []; afterAnalysisFilterChange(); }
   else if (action === "analysis-filters-default") {
     analysisFilters = defaultAnalysisFilters();
     analysisComboId = null; analysisComboDirty = false;
@@ -2972,7 +2995,7 @@ document.addEventListener("click", async (e) => {
     render();
   }
   else if (action === "toggle-filter-chips") {
-    const key = String(el.dataset.idx);
+    const key = el.dataset.chipKey;
     if (expandedFilterChips.has(key)) expandedFilterChips.delete(key); else expandedFilterChips.add(key);
     render();
   }

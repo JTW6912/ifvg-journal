@@ -132,6 +132,7 @@ const I18N = {
     "filter.containsPlaceholder": "包含…",
     "filter.chipsMore": "+{n} 更多",
     "filter.chipsCollapse": "只看已选",
+    "filter.chainTitle": "左边是这个模式下的全部交易，右边是当前筛选之后剩下的笔数",
     "common.dragToReorder": "拖动排序",
 
     /* ---------- 交易录入弹窗 ---------- */
@@ -172,7 +173,6 @@ const I18N = {
     "ascope.quick": "快捷条件",
     "ascope.quickTaken": "只看已入场（Taken）",
     "ascope.quickNoHE": "排除人为错误",
-    "ascope.showAll": "看全部交易",
     "ascope.reset": "恢复默认（只看 Taken）",
     "ascope.fromCombo": "正在分析组合：{name}",
     "ascope.fromComboDirty": "正在分析组合：{name}（条件已改动，下面的数字已经不代表这个组合了）",
@@ -180,7 +180,7 @@ const I18N = {
     "ascope.detach": "取消关联",
     "ascope.localHint": "这套筛选只属于分析页，跟记录页、月度页的筛选完全分开，改这里不会动到那两页。只存在这台设备上，不跨设备同步。上面的总览、下面的字段拆解，用的都是同一批筛选结果——看到的数字没有任何额外的隐藏过滤。",
     "ascope.emptyFiltered": "当前筛选没有筛到任何交易——这个模式下一共 {total} 笔，被上面那 {n} 个条件全过滤掉了。",
-    "ascope.emptyFilteredHint": "去上面的「分析范围」里放宽或删掉几条条件，也可以直接点「看全部交易」。",
+    "ascope.emptyFilteredHint": "去上面的「分析范围」里放宽或删掉几条条件，也可以直接点「一键清空已选」。",
     "ascope.emptyAll": "这个模式下还没有任何交易。",
     "ascope.emptyAllHint": "先去记录页新建几笔交易，记得 result 选一个具体值（不能留空），分析才算得出来。",
 
@@ -532,6 +532,7 @@ const I18N = {
     "filter.containsPlaceholder": "Contains…",
     "filter.chipsMore": "+{n} more",
     "filter.chipsCollapse": "Selected only",
+    "filter.chainTitle": "Left: every trade in this mode. Right: what is left after the filters below.",
     "common.dragToReorder": "Drag to reorder",
 
     /* ---------- Trade form modal ---------- */
@@ -574,7 +575,6 @@ const I18N = {
     "ascope.quick": "Quick conditions",
     "ascope.quickTaken": "Taken only",
     "ascope.quickNoHE": "Exclude human error",
-    "ascope.showAll": "Show all trades",
     "ascope.reset": "Reset to default (Taken only)",
     "ascope.fromCombo": "Analyzing combo: {name}",
     "ascope.fromComboDirty": "Analyzing combo: {name} (conditions edited — the numbers below no longer represent that combo)",
@@ -582,7 +582,7 @@ const I18N = {
     "ascope.detach": "Detach",
     "ascope.localHint": "This filter belongs to the Analytics page only — it's completely separate from the Records and Calendar filters, and editing it here never touches those. It lives on this device and doesn't sync. The overview above and the breakdowns below all read from this one filtered set, so there's no hidden filtering behind any number you see.",
     "ascope.emptyFiltered": "The current filter matched nothing — this mode has {total} trades and all of them were excluded by the {n} conditions above.",
-    "ascope.emptyFilteredHint": "Loosen or remove a condition under 'Analysis scope', or just hit 'Show all trades'.",
+    "ascope.emptyFilteredHint": "Loosen or remove a condition under 'Analysis scope', or just hit 'Clear all selections'.",
     "ascope.emptyAll": "There are no trades in this mode yet.",
     "ascope.emptyAllHint": "Add a few trades on the Records page first — make sure each gets a concrete result, it can't be left blank.",
 
