@@ -177,6 +177,23 @@ let defaultFiltersSeeded = false;
 let analysisPrefs = defaultAnalysisPrefs();
 let analysisPrefsError = null;
 let breakdownPickerOpen = false;
+/* ---------- 分析页的"这次怎么看"状态 ----------
+   全是纯视图状态，不影响任何数字。展开/折叠这类临时状态只放内存（刷新回到默认），
+   视图模式/排序这类"我习惯这么看"才存 localStorage。 */
+let expandedLowSample = new Set();     // 哪些拆解卡把「其他 N 项（样本少）」展开了，key=字段 id
+let expandedFilterChips = new Set();   // 分析页筛选行里哪几行把全部选项 chip 展开了，key=行下标
+let comboViewMode = (function () { try { return localStorage.getItem("journal_combo_view") === "list" ? "list" : "card"; } catch (e) { return "card"; } })();
+let breakdownSort = (function () { try { const v = localStorage.getItem("journal_breakdown_sort"); return v === "delta" || v === "ev" ? v : "n"; } catch (e) { return "n"; } })();
+// 分析页两个大区块（组合 / 拆解）收起了哪些
+let collapsedAnalyticsSections = (function () {
+  try {
+    const raw = JSON.parse(localStorage.getItem("journal_analytics_sections") || "[]");
+    return new Set(Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : []);
+  } catch (e) { return new Set(); }
+})();
+function saveCollapsedAnalyticsSections() {
+  try { localStorage.setItem("journal_analytics_sections", JSON.stringify([...collapsedAnalyticsSections])); } catch (e) {}
+}
 let comboEditingId = null;   // 哪个组合的条件编辑器展开着
 let activeComboId = null;    // 记录页顶部「正在查看组合」横幅
 let preComboFilters = null;  // 跳到组合前的筛选快照，「还原筛选」用它原样恢复
@@ -688,6 +705,39 @@ function breakdownRowStats(value, list, resultF, rF) {
   const pfInfo = profitFactorOf(list, rF);
   return { value, w, l, be, n: list.length, wr, totalR, ev, hasR, pf: pfInfo.pf };
 }
+// 拆解行的排序。默认按笔数，找 edge 时按「离整体多远」或按 EV 更快。
+// 排序在渲染时做（要用到整批的胜率做基准），computeBreakdowns 里那次按 n 排只是给个稳定的初始顺序
+function sortBreakdownRows(rows, baseWr) {
+  const arr = rows.slice();
+  if (breakdownSort === "delta") {
+    const d = (r) => (r.wr === null || baseWr === null || baseWr === undefined ? -Infinity : Math.abs(r.wr - baseWr));
+    arr.sort((a, b) => (d(b) - d(a)) || (b.n - a.n));
+  } else if (breakdownSort === "ev") {
+    const e = (r) => (r.hasR && r.ev !== null && r.ev !== undefined ? r.ev : -Infinity);
+    arr.sort((a, b) => (e(b) - e(a)) || (b.n - a.n));
+  } else {
+    arr.sort((a, b) => b.n - a.n);
+  }
+  return arr;
+}
+// 一张拆解卡的行：样本够的正常画，样本不足的默认折成一行「其他 N 项」，点开才展开。
+// 折叠只在有 2 行以上可折时才做——折 1 行既不省高度又少了信息
+function breakdownRowsHtml(field, rows, baseWr) {
+  const strong = rows.filter((r) => r.n >= BREAKDOWN_MIN_SAMPLE);
+  const weak = rows.filter((r) => r.n < BREAKDOWN_MIN_SAMPLE);
+  let html = strong.map((r) => barRow(r, field.id, baseWr)).join("");
+  if (!weak.length) return html;
+  if (weak.length < 2) return html + weak.map((r) => barRow(r, field.id, baseWr)).join("");
+  const open = expandedLowSample.has(field.id);
+  if (open) {
+    html += weak.map((r) => barRow(r, field.id, baseWr)).join("");
+    html += `<button class="bdFoldRow" data-action="toggle-low-sample" data-field="${esc(field.id)}">${ICONS.chevUp} ${esc(T("breakdown.foldBack"))}</button>`;
+  } else {
+    const wn = weak.reduce((sum, r) => sum + r.n, 0);
+    html += `<button class="bdFoldRow" data-action="toggle-low-sample" data-field="${esc(field.id)}" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${ICONS.chevDown} ${esc(T("breakdown.folded", { k: weak.length, n: wn }))}</button>`;
+  }
+  return html;
+}
 function computeBreakdowns(list) {
   const resultF = roleField("result"), rF = roleField("r_multiple");
   return visibleBreakdownFields().map((f) => {
@@ -1113,6 +1163,10 @@ function filterCtxAttr(ctx) {
   if (!ctx) return "";
   return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
 }
+// 选项超过这个数，分析页的筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
+// 5 是按一行放得下定的：超过就会折行，条件卡立刻高一倍。
+// 只对分析页生效——记录页和组合编辑器保持原样，不动那两处的手感
+const COLLAPSE_CHIPS_OVER = 5;
 function filterRowValuesHtml(field, idx, f, ctx) {
   const cid = filterCtxAttr(ctx);
   if (field.type === "select" || field.type === "multiselect") {
@@ -1120,9 +1174,14 @@ function filterRowValuesHtml(field, idx, f, ctx) {
     const opts = field.options || [];
     // 选项被删掉但条件里还留着的，也列出来并标红，否则用户根本看不见问题在哪
     const ghosts = vals.filter((v) => !opts.includes(v));
+    const collapsible = ctx === ANALYSIS_CTX && opts.length > COLLAPSE_CHIPS_OVER;
+    const expanded = !collapsible || expandedFilterChips.has(String(idx));
+    const shown = expanded ? opts : opts.filter((o) => vals.includes(o));
+    const hiddenCount = opts.length - shown.length;
     return `<div class="chipGroup" style="margin-top:8px;">
-      ${opts.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
+      ${shown.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
       ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="${esc(T("filter.ghostOption"))}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
+      ${collapsible ? `<button type="button" class="chip chipMore" data-action="toggle-filter-chips" data-idx="${idx}">${esc(expanded ? T("filter.chipsCollapse") : T("filter.chipsMore", { n: hiddenCount }))}</button>` : ""}
     </div>`;
   }
   if (field.type === "date") {
@@ -1504,6 +1563,38 @@ function renderComboEditor(combo) {
     </div>
   </div>`;
 }
+// 列表模式：一行一个组合。刻意保留 .comboCard 类名、draggable 和 data-combo-id，
+// 拖拽排序/投放分组的处理器全靠这三样定位，换布局不用动一行拖拽代码
+function renderComboRow(combo, s, base, broken, analyzing, deleting) {
+  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pos)" : "var(--neg)";
+  const small = !broken && s.n > 0 && s.n < COMBO_SMALL_SAMPLE;
+  return `<div class="comboCard listRow${analyzing ? " analyzing" : ""}" ${viewingUserId ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`} title="${esc(comboConditionsText(combo))}">
+    ${viewingUserId ? "" : `<span class="listDrag" title="${esc(T("combo.dragHint"))}">⠿</span>`}
+    <span class="listName">${esc(combo.name)}${small ? ` <span class="lowSampleTag" title="${esc(T("combo.smallSampleTitle"))}">${esc(T("combo.smallSample", { n: s.n }))}</span>` : ""}</span>
+    ${broken
+      ? `<span style="font-size:12px;color:var(--neg);">${T("combo.broken")}</span>`
+      : `<span class="listStats">
+          <span class="mono" style="font-size:15px;font-weight:600;color:${wrColor};">${fmtPct(s.wr)}</span>
+          ${deltaText(s.wr, base.wr, "pp", 1)}
+          <span class="mono">n=${s.n}</span>
+          <span class="mono">W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</span>
+          ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span>` : ""}
+          ${s.hasR ? `<span class="mono">EV ${fmtNum(s.ev, 3)}</span>` : ""}
+          ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}">PF ${fmtPF(s.pf)}</span>` : ""}
+        </span>`}
+    <span class="listActions">
+      ${broken ? "" : `<button class="btn ${analyzing ? "" : "btn-primary"}" data-action="apply-combo-to-analysis" data-combo-id="${esc(combo.id)}" title="${esc(T("combo.analyzeTitle"))}">${ICONS.chart} ${esc(T("combo.analyzeShort"))}</button>
+      <button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" title="${esc(T("combo.viewTrades", { n: s.n }))}">${ICONS.grid}</button>`}
+      ${!viewingUserId ? `<button class="tinyBtn" data-action="edit-combo" data-combo-id="${esc(combo.id)}">${T("combo.edit")}</button>
+      <button class="tinyBtn" data-action="ask-delete-combo" data-combo-id="${esc(combo.id)}" style="color:var(--neg);">${T("common.delete")}</button>` : ""}
+    </span>
+    ${deleting ? `<span class="listConfirm">
+      ${esc(T("combo.confirmDelete", { name: combo.name }))}
+      <button class="btn btn-danger" data-action="confirm-delete-combo" data-combo-id="${esc(combo.id)}" style="padding:3px 9px;font-size:12px;">${T("common.delete")}</button>
+      <button class="btn" data-action="cancel-delete-combo" style="padding:3px 9px;font-size:12px;">${T("common.cancel")}</button>
+    </span>` : ""}
+  </div>`;
+}
 function renderComboCard(combo) {
   const issues = comboIssues(combo);
   const broken = issues.hard.length > 0;
@@ -1530,6 +1621,8 @@ function renderComboCard(combo) {
       ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}">PF ${fmtPF(s.pf)}</span>` : ""}
     </div>`;
   }
+
+  if (comboViewMode === "list" && !editing) return renderComboRow(combo, s, base, broken, analyzing, deleting);
 
   // 编辑器展开时卡片独占一整行（.comboCard.editing）：网格列只有 340px，
   // 编辑器里的下拉和条件行塞不下会顶出卡片边框，看着像布局坏了
@@ -1641,16 +1734,33 @@ function renderComboGroupSection(root, directCombos, subgroups, byGroup) {
   }
   return `<div class="comboGroupSection" data-group-drop="${esc(root.id)}">${header}${renderComboGroupDeleteConfirm(root.id, "comboGroup.kindRoot")}${body}</div>`;
 }
+// 分析页大区块的标题：点标题整块收起，状态存 localStorage。
+// 组合和拆解都很长，想专心看一边就把另一边收掉
+function analyticsSectionHead(secId, label, countHint, rightHtml) {
+  const collapsed = collapsedAnalyticsSections.has(secId);
+  return `<div class="anaSectionHead">
+    <button class="anaSectionToggle" data-action="toggle-analytics-section" data-sec="${esc(secId)}">
+      <span style="color:var(--mutedDark);display:flex;">${collapsed ? ICONS.chevDown : ICONS.chevUp}</span>
+      <span class="sectionLabel" style="margin:0;">⟦ ${esc(label)} ⟧</span>
+      ${countHint ? `<span style="font-size:11.5px;color:var(--mutedDark);">${esc(countHint)}</span>` : ""}
+    </button>
+    ${rightHtml || ""}
+  </div>`;
+}
 function renderCombosSection() {
   const combos = analysisPrefs.combos || [];
   const groups = analysisPrefs.comboGroups || [];
-  let html = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
-    <div class="sectionLabel" style="margin:0;">⟦ ${esc(T("combos.title"))} ⟧</div>
-    ${!viewingUserId ? `<span style="margin-left:auto;display:flex;align-items:center;gap:16px;">
-      <button class="tinyBtn" data-action="add-combo-group" style="color:var(--mutedDark);">${ICONS.plus} ${T("combos.newGroup")}</button>
-      <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} ${T("combos.newCombo")}</button>
-    </span>` : ""}
-  </div>`;
+  const collapsed = collapsedAnalyticsSections.has("combos");
+  let html = analyticsSectionHead("combos", T("combos.title"), T("comboGroup.comboCount", { n: combos.length }),
+    `<span class="anaSectionActions">
+      <span class="viewToggle">
+        <button class="viewBtn ${comboViewMode === "card" ? "active" : ""}" data-action="set-combo-view" data-mode="card" title="${esc(T("combos.viewCard"))}">${ICONS.grid}</button>
+        <button class="viewBtn ${comboViewMode === "list" ? "active" : ""}" data-action="set-combo-view" data-mode="list" title="${esc(T("combos.viewList"))}">${ICONS.table}</button>
+      </span>
+      ${!viewingUserId ? `<button class="tinyBtn" data-action="add-combo-group" style="color:var(--mutedDark);">${ICONS.plus} ${T("combos.newGroup")}</button>
+      <button class="btn" data-action="add-combo" style="padding:5px 12px;font-size:12px;">${ICONS.plus} ${T("combos.newCombo")}</button>` : ""}
+    </span>`);
+  if (collapsed) return html;
   // 一个组合都没有、也没建过分组，才是真正的空状态；只要建过分组就得把分组画出来，
   // 否则新用户先建分组、还没建组合，会以为分组没存上
   if (!combos.length && !groups.length) {
@@ -1704,14 +1814,29 @@ function renderBreakdownPicker() {
     <button class="tinyBtn" data-action="reset-breakdown-prefs" style="margin-top:10px;color:var(--mutedDark);">${T("breakdown.reset")}</button>
   </div>`;
 }
+// 贴在顶部的一条细统计条。存在的理由很实在：拆解区很长，
+// 你在第 15 张卡上看到「+17.1pp」时，得知道整体是多少才知道这个差值值不值钱。
+// 用纯 CSS 的 position:sticky，不挂滚动监听：没有 JS 状态要同步，render() 重建它也不会闪，
+// 而且不依赖 scroll 事件（后台标签页/不合成帧的环境里 scroll 事件根本不发）。
+function renderAnalyticsSticky(stats) {
+  const links = [["anaScope", "sticky.scope"], ["anaOverview", "sticky.overview"], ["anaCombos", "sticky.combos"], ["anaBreakdowns", "sticky.breakdowns"]];
+  return `<div class="analyticsSticky" id="analyticsSticky"><div class="analyticsStickyInner">
+    <span class="mono" style="color:var(--mutedDark);">n=${stats.total}</span>
+    <span class="mono" style="color:var(--accent);font-weight:600;">${fmtPct(stats.wr)}</span>
+    ${stats.hasR ? `<span class="mono" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}R</span>` : ""}
+    ${stats.hasR ? `<span class="mono" style="color:${pfColor(stats.pf)}">PF ${fmtPF(stats.pf)}</span>` : ""}
+    ${stats.hasR && stats.dd !== null ? `<span class="mono" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">DD ${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</span>` : ""}
+    <span class="stickyLinks">${links.map(([id, k]) => `<button class="tinyBtn" data-action="scroll-to-section" data-sec="${id}">${esc(T(k))}</button>`).join("")}</span>
+    <button class="tinyBtn stickyTop" data-action="scroll-top" title="${esc(T("sticky.top"))}">${ICONS.up}</button>
+  </div></div>`;
+}
 function renderAnalytics() {
   const stats = computeStats();
   if (!stats.hasResult) {
     return `<div class="notice">${ICONS.alert}<span>${T("analytics.noResultRole")}</span></div>`;
   }
-  const modelF = roleField("model");
   const prefsNotice = analysisPrefsError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(analysisPrefsError)}</span></div>` : "";
-  const panel = renderAnalysisScopePanel(stats);
+  const panel = `<div id="anaScope">${renderAnalysisScopePanel(stats)}</div>`;
   const activeCount = analysisFilters.filter((f) => f.fieldId).length;
 
   if (stats.total === 0) {
@@ -1721,7 +1846,7 @@ function renderAnalytics() {
     </div></div>`;
   }
 
-  let html = prefsNotice + panel + `<div class="statRow">
+  let html = prefsNotice + panel + renderAnalyticsSticky(stats) + `<div id="anaOverview" class="statRow">
     <div class="statBox"><div class="statLabel">${T("analytics.countTrades")}</div><div class="statValue">${stats.total}</div></div>
     <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div><div class="statSub">W${stats.w} · L${stats.l}</div></div>
     <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
@@ -1735,41 +1860,53 @@ function renderAnalytics() {
     ${stats.totalFaded ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
   </div>`;
 
-  html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
+  html += `<div id="anaCombos" style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
   // 拆解跟总览吃的是同一批交易（stats.list），两边数字天然对得上，不用各自再筛一遍
-  const breakdowns = computeBreakdowns(stats.list);
-  // 「按模型」是模型字段拆解的置顶版；筛选里已经把模型钉死时就只剩一行，置顶没意义
-  const modelPinned = modelF && analysisFilters.some((f) => f.fieldId === modelF.id && (f.values || []).length);
-  const byModel = modelF && !modelPinned ? breakdowns.find((b) => b.field.id === modelF.id) : null;
-  if (byModel && byModel.rows.length > 1) {
-    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ ${esc(T("analytics.byModel"))} ⟧</div><div class="breakdownCard">${byModel.rows.map((r) => barRow(r, modelF.id, stats.wr)).join("")}</div></div>`;
-  }
+  const allBreakdowns = computeBreakdowns(stats.list);
+  // 当前范围内只有一个值的字段（往往是被筛选钉死的）：拆出来必然是单行、差值恒等于 0，
+  // 信息量数学上就是零，却要占一整张卡。收成下面一行灰字，别让它们撑长页面
+  const uniform = allBreakdowns.filter((b) => b.rows.length === 1);
+  const breakdowns = allBreakdowns.filter((b) => b.rows.length > 1);
+  const bdCollapsed = collapsedAnalyticsSections.has("breakdowns");
+  html += `<div id="anaBreakdowns">` + analyticsSectionHead("breakdowns", T("breakdown.title"),
+    T("breakdown.basis", { n: stats.total, wr: fmtPct(stats.wr) }),
+    `<span class="anaSectionActions">
+      <span style="font-size:11.5px;color:var(--mutedDark);">${T("breakdown.sortBy")}</span>
+      <select class="select" data-bind="breakdown-sort" style="padding:4px 8px;font-size:12px;">
+        <option value="n" ${breakdownSort === "n" ? "selected" : ""}>${esc(T("breakdown.sortN"))}</option>
+        <option value="delta" ${breakdownSort === "delta" ? "selected" : ""}>${esc(T("breakdown.sortDelta"))}</option>
+        <option value="ev" ${breakdownSort === "ev" ? "selected" : ""}>${esc(T("breakdown.sortEv"))}</option>
+      </select>
+      ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
+    </span>`);
 
-  html += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-    <div class="sectionLabel" style="margin:0;">⟦ ${esc(T("breakdown.title"))} ⟧</div>
-    <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T("breakdown.basis", { n: stats.total, wr: fmtPct(stats.wr) }))}</span>
-    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;margin-left:auto;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
-  </div>`;
-  if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
-  if (breakdowns.length) {
-    html += `<div class="breakdownGrid">`;
-    breakdowns.forEach((b) => {
-      const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
-      // 多选字段一笔交易会落进多行，各行 n 之和大于总笔数——小样本下特别容易被当成 bug，标出来
-      const multi = b.field.type === "multiselect";
-      html += `<div class="breakdownCard"${draggable}>
-        <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}</span>
-          ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
-        </div>
-        ${b.rows.map((r) => barRow(r, b.field.id, stats.wr)).join("")}
-      </div>`;
-    });
-    html += `</div>`;
-  } else {
-    html += `<div style="font-size:12.5px;color:var(--mutedDark);">${T("breakdown.none")}</div>`;
+  if (!bdCollapsed) {
+    if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
+    if (breakdowns.length) {
+      html += `<div class="breakdownGrid">`;
+      breakdowns.forEach((b) => {
+        const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
+        // 多选字段一笔交易会落进多行，各行 n 之和大于总笔数——小样本下特别容易被当成 bug，标出来
+        const multi = b.field.type === "multiselect";
+        html += `<div class="breakdownCard"${draggable}>
+          <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}</span>
+            ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
+          </div>
+          ${breakdownRowsHtml(b.field, sortBreakdownRows(b.rows, stats.wr), stats.wr)}
+        </div>`;
+      });
+      html += `</div>`;
+    } else if (!uniform.length) {
+      html += `<div style="font-size:12.5px;color:var(--mutedDark);">${T("breakdown.none")}</div>`;
+    }
+    if (uniform.length) {
+      html += `<div class="bdUniform">${esc(T("breakdown.uniformIntro"))} ${uniform.map((b) =>
+        `<span class="bdUniformItem">${esc(b.field.label)} = ${esc(b.rows[0].value)} <span style="color:var(--mutedDark);">(${b.rows[0].n}/${stats.total})</span></span>`).join("")}</div>`;
+    }
   }
+  html += `</div>`;
   return html;
 }
 
@@ -2828,6 +2965,33 @@ document.addEventListener("click", async (e) => {
     await saveAnalysisPrefsNow(); render();
   }
   else if (action === "toggle-breakdown-picker") { breakdownPickerOpen = !breakdownPickerOpen; render(); }
+  /* ---------- 分析页：视图状态（都不影响任何数字） ---------- */
+  else if (action === "toggle-low-sample") {
+    const id = el.dataset.field;
+    if (expandedLowSample.has(id)) expandedLowSample.delete(id); else expandedLowSample.add(id);
+    render();
+  }
+  else if (action === "toggle-filter-chips") {
+    const key = String(el.dataset.idx);
+    if (expandedFilterChips.has(key)) expandedFilterChips.delete(key); else expandedFilterChips.add(key);
+    render();
+  }
+  else if (action === "toggle-analytics-section") {
+    const sec = el.dataset.sec;
+    if (collapsedAnalyticsSections.has(sec)) collapsedAnalyticsSections.delete(sec); else collapsedAnalyticsSections.add(sec);
+    saveCollapsedAnalyticsSections(); render();
+  }
+  else if (action === "set-combo-view") {
+    comboViewMode = el.dataset.mode === "list" ? "list" : "card";
+    try { localStorage.setItem("journal_combo_view", comboViewMode); } catch (e) {}
+    render();
+  }
+  else if (action === "scroll-to-section") {
+    // 顶部粘条是 fixed 的，会盖住目标——靠 CSS 的 scroll-margin-top 让出位置，这里不用手算偏移
+    const target = document.getElementById(el.dataset.sec);
+    if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  else if (action === "scroll-top") { window.scrollTo({ top: 0, behavior: "smooth" }); }
   else if (action === "hide-breakdown-field") {
     if (viewingUserId) return;
     const id = el.dataset.id;
@@ -3028,7 +3192,13 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("change", async (e) => {
-  if (e.target.dataset.bind === "sort-by") {
+  if (e.target.dataset.bind === "breakdown-sort") {
+    const v = e.target.value;
+    breakdownSort = v === "delta" || v === "ev" ? v : "n";
+    try { localStorage.setItem("journal_breakdown_sort", breakdownSort); } catch (err) {}
+    render();
+  }
+  else if (e.target.dataset.bind === "sort-by") {
     sortBy = e.target.value;
     if (!viewingUserId) { try { localStorage.setItem("journal_sort_by", sortBy); } catch (err) {} }
     gridPage = 1;

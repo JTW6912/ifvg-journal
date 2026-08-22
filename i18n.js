@@ -130,6 +130,8 @@ const I18N = {
     "filter.rangeTo": "到",
     "filter.timeHint": "24小时制，直接输入数字如 0930 会自动格式化为 09:30",
     "filter.containsPlaceholder": "包含…",
+    "filter.chipsMore": "+{n} 更多",
+    "filter.chipsCollapse": "只看已选",
     "common.dragToReorder": "拖动排序",
 
     /* ---------- 交易录入弹窗 ---------- */
@@ -154,7 +156,15 @@ const I18N = {
     "analytics.maxDDTitle": "按交易日期把 R 累加成一条资金曲线，取「峰值 → 谷底」跌得最深的那一段，单位 R。只统计真的填了 R 的交易。",
     "analytics.ddBasis": "基于填了 R 的 {n} 笔",
     "analytics.fadedLine": "· Faded {n}（本应做的 W {w} / 本应避开的 L {l}）",
-    "analytics.byModel": "按模型",
+
+    "sticky.scope": "范围",
+    "sticky.overview": "总览",
+    "sticky.combos": "组合",
+    "sticky.breakdowns": "拆解",
+    "sticky.top": "回到顶部",
+
+    "combos.viewCard": "卡片视图",
+    "combos.viewList": "列表视图（一行一个，挑组合更快）",
 
     "ascope.title": "分析范围",
     "ascope.noFilter": "全部交易",
@@ -175,6 +185,7 @@ const I18N = {
     "ascope.emptyAllHint": "先去记录页新建几笔交易，记得 result 选一个具体值（不能留空），分析才算得出来。",
 
     "combo.analyze": "分析这个组合",
+    "combo.analyzeShort": "分析",
     "combo.analyzeAgain": "重新套入分析",
     "combo.analyzeTitle": "把这个组合的条件套到页面顶部的「分析范围」里，总览和字段拆解都会只算这个组合里的交易",
 
@@ -184,6 +195,13 @@ const I18N = {
     "breakdown.lowSample": "样本少",
     "breakdown.lowSampleTitle": "不到 {n} 笔，胜率基本是噪音，所以不画色条也不标差值",
     "breakdown.multiTag": "多选",
+    "breakdown.folded": "其他 {k} 项样本不足（共 {n} 笔），点开查看",
+    "breakdown.foldBack": "收起样本不足的那几项",
+    "breakdown.sortBy": "排序",
+    "breakdown.sortN": "按笔数",
+    "breakdown.sortDelta": "按离整体多远",
+    "breakdown.sortEv": "按 EV",
+    "breakdown.uniformIntro": "以下字段在当前范围内只有一个值，拆出来没有可比的对象，已折起：",
     "breakdown.multiTitle": "多选字段：一笔交易会同时落进它选中的每一行，所以各行 n 之和会大于总笔数，这是正常的",
     "breakdown.displaySettings": "显示设置",
     "breakdown.pickerHint": "取消勾选就不显示，拖动 ⠿ 调整顺序。以后新加的字段会自动出现在最后面。",
@@ -512,6 +530,8 @@ const I18N = {
     "filter.rangeTo": "to",
     "filter.timeHint": "24-hour clock. Type digits like 0930 and it becomes 09:30.",
     "filter.containsPlaceholder": "Contains…",
+    "filter.chipsMore": "+{n} more",
+    "filter.chipsCollapse": "Selected only",
     "common.dragToReorder": "Drag to reorder",
 
     /* ---------- Trade form modal ---------- */
@@ -538,7 +558,15 @@ const I18N = {
     "analytics.ddBasis": "Based on the {n} trades with an R value",
     "analytics.ddBasis_one": "Based on the 1 trade with an R value",
     "analytics.fadedLine": "· Faded {n} ({w} would have won / {l} would have lost)",
-    "analytics.byModel": "By model",
+
+    "sticky.scope": "Scope",
+    "sticky.overview": "Overview",
+    "sticky.combos": "Combos",
+    "sticky.breakdowns": "Breakdowns",
+    "sticky.top": "Back to top",
+
+    "combos.viewCard": "Card view",
+    "combos.viewList": "List view (one row each — faster to scan)",
 
     "ascope.title": "Analysis scope",
     "ascope.noFilter": "All trades",
@@ -559,6 +587,7 @@ const I18N = {
     "ascope.emptyAllHint": "Add a few trades on the Records page first — make sure each gets a concrete result, it can't be left blank.",
 
     "combo.analyze": "Analyze this combo",
+    "combo.analyzeShort": "Analyze",
     "combo.analyzeAgain": "Re-apply to analysis",
     "combo.analyzeTitle": "Load this combo's conditions into the 'Analysis scope' panel at the top — the overview and every field breakdown will then cover only this combo's trades",
 
@@ -568,6 +597,13 @@ const I18N = {
     "breakdown.lowSample": "small n",
     "breakdown.lowSampleTitle": "Fewer than {n} trades — the win rate here is mostly noise, so no bar and no delta is drawn",
     "breakdown.multiTag": "multi",
+    "breakdown.folded": "{k} more values with too small a sample ({n} trades) — click to show",
+    "breakdown.foldBack": "Fold the small-sample values back",
+    "breakdown.sortBy": "Sort",
+    "breakdown.sortN": "By count",
+    "breakdown.sortDelta": "By distance from overall",
+    "breakdown.sortEv": "By EV",
+    "breakdown.uniformIntro": "These fields hold a single value across the current scope, so there is nothing to compare them against — folded away:",
     "breakdown.multiTitle": "Multi-select field: one trade lands in every value it has selected, so the row counts add up to more than the total. That's expected.",
     "breakdown.displaySettings": "Display settings",
     "breakdown.pickerHint": "Uncheck to hide, drag ⠿ to reorder. Fields you add later show up at the end automatically.",
