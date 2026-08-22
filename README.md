@@ -81,25 +81,49 @@ backtest sample of hundreds of trades without polluting your real track record.
 
 | Metric | Definition | Notes |
 | --- | --- | --- |
-| Trades | count in the current scope | labelled "Taken" when the Taken-only scope is on |
+| Trades | how many trades the analysis scope currently covers | |
 | Win rate | `W / (W + L)` | BE variants are deliberately **not** in the denominator |
 | Setup quality | `(W + BE→W) / (W + L + BE→W + BE→L)` | how often the idea was right, regardless of management |
 | Total R | `Σ R` | |
 | EV / trade | `Σ R / trades` | denominator counts every in-scope trade, including blank R |
 | Profit factor | `Σ positive R / \|Σ negative R\|` | only trades with an R actually filled in; shows `∞` when there are no losses |
-| R capture | `Σ R / Σ Max RR` | needs both the `r_multiple` and `max_rr` roles |
+| Max drawdown | deepest peak-to-trough drop on the R equity curve | trades ordered by date; only those carrying an R value count |
 
-**Statistical scope** — two independent switches, *"count only trades I actually took"* and
-*"exclude trades flagged as human error"*, plus an optional per-model filter. They apply to
-both the overview tiles and the field breakdowns (but never to combos, which carry their own
-conditions). Scope and model filters are per-device local settings; breakdown and combo
-configuration syncs through the database.
+**Analysis scope** — one filter panel at the top of the page decides which trades every number
+below is computed from. It is a full filter, not a pair of switches: any field, any combination.
+
+- It starts with a single visible condition, `taken = Taken`, so leaving the panel closed shows
+  you what you actually traded.
+- *Taken only* and *exclude human error* are quick buttons that **add a real condition** you can
+  then see, edit or delete — never hidden logic behind a number.
+- The header always carries the chain `230 → 57`: all trades on the left, the set every figure
+  on the page actually uses on the right.
+- It is **entirely separate from the Records and Calendar filters** — its own storage, its own
+  state; editing one never touches the other. It lives per-device and does not sync.
+- The overview tiles, the Faded line and every field breakdown all read from this one filtered
+  set, so nothing is quietly filtered behind your back.
 
 **Field breakdowns** — every select/multiselect field is broken down by value, with win rate,
-sample size, W-L-BE, total R and EV per value. The `result` field is excluded (breaking down
-results by result is circular). Hide the fields you don't care about, drag the rest into the
-order you want; new fields you add later automatically appear at the end instead of being
-swallowed by a stale whitelist.
+sample size, W-L-BE, total R, EV and profit factor per value, plus **each row's delta against
+the overall win rate of the current set** (`+9.2pp`) — the difference is what carries the signal,
+since a high absolute rate often just means the whole set is high. The `result` field is
+excluded (breaking down results by result is circular). Hide the fields you don't care about,
+drag the rest into the order you want; new fields you add later automatically appear at the end
+instead of being swallowed by a stale whitelist.
+
+Because this page gets long, it folds away what carries no information:
+
+- Values with fewer than 5 trades lose their bar and delta and collapse into a single
+  "N more" row you can expand — `n = 3` at 100% should not look as convincing as `n = 80`.
+- Fields holding a single value across the current scope get no card at all; their breakdown
+  would be one row with a delta of exactly zero. They collapse into one line underneath.
+- Rows can be sorted by count, by **distance from the overall rate**, or by EV. The middle one
+  is the fastest way to find an edge.
+- Multi-select fields are tagged as such: one trade lands in every value it selected, so the
+  row counts legitimately add up to more than the total.
+- A compact strip (n, win rate, total R, PF, max drawdown) sticks to the top as you scroll and
+  jumps you between sections, so the baseline a delta refers to is never off-screen. Combos and
+  breakdowns can each be collapsed as a whole.
 
 **Combos**
 
@@ -109,11 +133,16 @@ swallowed by a stale whitelist.
 
 A combo is a saved, named set of filter conditions with live statistics: win rate, n,
 W-L-BE, total R, EV and profit factor, each shown together with its **delta against the
-same-scope global baseline** (`+9.2pp`). Small samples are labelled (`n < 10`).
+global baseline** (`+9.2pp`). Small samples are labelled (`n < 10`).
 
-- Tag a combo as **"do this"** or **"avoid this"**.
+- **"Analyze this combo"** copies its conditions into the Analysis scope panel, so the overview
+  tiles and every field breakdown then cover only that combo's trades. That is the way to drill
+  in: look at a combo, find the field value that stands out inside it, refine, repeat. It is a
+  copy, not a binding — edit freely without touching the combo, and write your edits back when
+  you want to keep them.
 - Three ways to create one: from the analytics page, from the Records filter bar
   ("save current filter as combo"), or from the `+combo` button on any breakdown row.
+- Switch between **card and list view**; the list is much faster to scan once you have a dozen.
 - **Groups and subgroups** — organise combos into a two-level tree (e.g. `IFVG → do / avoid`),
   collapsible, drag-and-drop between groups and drag-reorderable. Ignore groups entirely and
   it stays a flat list.
@@ -152,13 +181,17 @@ engine looks at, so field names are yours to choose freely:
 | Role | Used for |
 | --- | --- |
 | `date` | calendar, monthly coverage, sorting |
-| `model` | per-model breakdown and the model filter |
-| `taken` | `Taken` / `Faded` — drives the "only what I took" scope |
+| `model` | per-model breakdown |
+| `taken` | `Taken` / `Faded` — the default analysis scope filters on this |
 | `result` | `W` / `L` / `BE` / `BE -> W` / `BE -> L` — required for any analytics at all |
-| `r_multiple` | total R, EV, profit factor |
-| `max_rr` | R capture rate (optional) |
-| `human_error` | the "exclude human error" scope |
+| `r_multiple` | total R, EV, profit factor, max drawdown |
+| `max_rr` | nothing any more — kept only so older schemas that use it stay valid |
+| `human_error` | the "exclude human error" quick condition |
 | `screenshot` | card thumbnails and the lightbox |
+
+New to the app? [docs/new-user-guide.md](docs/new-user-guide.md) walks through every default
+field and — importantly — which parts you can safely rename versus which parts will silently
+break your statistics if you edit them.
 
 ### Account
 
@@ -232,7 +265,7 @@ the conventions, the traps (notably: **never wrap a container that holds buttons
 | --- | --- |
 | `profiles` | one row per user — email, role (`user`/`admin`), active flag, display name, gender, language, last seen. Created automatically by a signup trigger. |
 | `trades` | one row per trade — `mode` (`backtest`/`live`) plus a `jsonb` `data` blob keyed by field id, so adding a field never needs a migration. |
-| `journal_schema` | per-user config — `fields` (the schema), `card_fields`, and `analysis_prefs` (scope defaults, breakdown order/visibility, combos, combo groups). |
+| `journal_schema` | per-user config — `fields` (the schema), `card_fields`, and `analysis_prefs` (breakdown order/visibility, combos, combo groups). |
 | `changelog` | global, shared by all users; admin-only writes. |
 
 Row-level security is what enforces isolation: users read and write only their own rows,
@@ -314,8 +347,9 @@ prefers IPv6 and often fails from CI.
   cross-reference grep (see [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) §4).
 - The admin "inspect another user's data, then restore my own state" path has not been fully
   exercised end to end in a real browser.
-- `max_rr` has working support but is not in the default field template, so R capture rate
-  stays hidden until you add that field yourself.
+- `max_rr` no longer drives anything. It used to feed the R capture rate, which max drawdown
+  replaced; the role is kept so schemas already using it do not end up with an unrecognised
+  value in the role dropdown.
 - `app.js` is a single large file with no module split — fine for one maintainer, friction for
   a team.
 - Accounts can be disabled but not deleted from the admin panel; deleting the underlying auth
