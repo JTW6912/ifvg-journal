@@ -183,7 +183,7 @@ let preComboFilters = null;  // 跳到组合前的筛选快照，「还原筛选
 let comboConfirmDeleteId = null;
 let comboGroupConfirmDeleteId = null;
 let comboGroupModal = null; // { mode: "root"|"sub"|"rename", parentId, groupId, name } —— 新建/新建二级/改名分组的弹窗
-// 哪些分组被收起了——纯本地"这次怎么看"状态，不跨设备同步，跟 statScope/modelFilters 一个套路。
+// 哪些分组被收起了——纯本地"这次怎么看"状态，不跨设备同步，跟分析页筛选一个套路。
 // "__ungrouped__" 这个 key 代表页面最下面那个"未分组"桶
 let collapsedComboGroups = (function () {
   try {
@@ -195,21 +195,19 @@ function saveCollapsedComboGroups() {
   try { localStorage.setItem("journal_collapsed_combo_groups", JSON.stringify([...collapsedComboGroups])); } catch (e) {}
 }
 let dragGroupOverId = null;  // 组合卡片正拖在哪个分组头上方（高亮用），"" 代表"未分组"那个投放区
-// 统计口径开关 + 模型筛选：纯本地"这次怎么看"设置，不跨设备同步，只存 localStorage
-let statScope = (function () {
-  try {
-    const raw = JSON.parse(localStorage.getItem("journal_stat_scope") || "null");
-    if (raw && typeof raw === "object") return { excludeHumanError: raw.excludeHumanError !== false, takenOnly: raw.takenOnly !== false };
-  } catch (e) {}
-  return { excludeHumanError: true, takenOnly: true };
-})();
-// 模型筛选是多选（空数组=全部），不是反选——想排除一个就把其余的都勾上，更灵活
-let modelFilters = (function () {
-  try {
-    const raw = JSON.parse(localStorage.getItem("journal_model_filters") || "[]");
-    return Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : [];
-  } catch (e) { return []; }
-})();
+/* ---------- ANALYSIS FILTERS：分析页专属筛选 ----------
+   和记录页的 activeFilters、月度页彻底分开：各自的数组、各自的 localStorage key、
+   各自的事件上下文（data-filter-ctx="analysis"），任何一边改动都碰不到另一边。
+   它取代了以前的「统计口径开关（只算 Taken / 排除人为错误）+ 模型筛选」——
+   口径不再是藏在代码里的隐藏逻辑，而是面板里看得见、能删能改的普通条件。
+   默认只有一条「已入场 = Taken」，所以用户压根不展开面板时，分析页看到的就是 Taken 的数据。 */
+const ANALYSIS_FILTERS_KEY = "journal_analysis_filters";
+const ANALYSIS_CTX = "analysis";
+let analysisFilters = [];
+let analysisFiltersSeeded = false;
+let analysisPanelOpen = (function () { try { return localStorage.getItem("journal_analysis_panel_open") === "true"; } catch (e) { return false; } })();
+let analysisComboId = null;      // 当前这套筛选是从哪个组合套进来的（只用于展示/回写，不参与统计）
+let analysisComboDirty = false;  // 套进来之后又手动改过条件——此时数字已经不代表那个组合了
 /* ---------- 界面语言 ----------
    lang / T() 本身定义在 i18n.js（要在 app.js 之前加载）。这里只管「切换」这个动作：
    本地立刻生效，同时best-effort写回账号，让别的设备登录后也是同一种语言。 */
@@ -263,9 +261,32 @@ function syncLangFromProfile() {
   }
 }
 
-function saveStatScope() { try { localStorage.setItem("journal_stat_scope", JSON.stringify(statScope)); } catch (e) {} }
-function saveModelFilters() {
-  try { localStorage.setItem("journal_model_filters", JSON.stringify(modelFilters)); } catch (e) {}
+function saveAnalysisFilters() {
+  if (viewingUserId) return;
+  try { localStorage.setItem(ANALYSIS_FILTERS_KEY, JSON.stringify(analysisFilters)); } catch (e) {}
+}
+function saveAnalysisPanelOpen() {
+  if (viewingUserId) return;
+  try { localStorage.setItem("journal_analysis_panel_open", analysisPanelOpen ? "true" : "false"); } catch (e) {}
+}
+// 默认口径：只看已入场。没有 taken 角色字段（或它没有 Taken 这个选项）就退回"全部交易"
+function defaultAnalysisFilters() {
+  const takenF = roleField("taken");
+  if (takenF && (takenF.options || []).includes("Taken")) return [{ ...newFilterRow(takenF.id), values: ["Taken"] }];
+  return [];
+}
+// 每次加载数据时跑一次：本地存过就用存的（哪怕是空数组——那是用户主动清成"全部"的意思），没存过才给默认
+function seedAnalysisFilters() {
+  if (analysisFiltersSeeded) return;
+  analysisFiltersSeeded = true;
+  let saved = null;
+  if (!viewingUserId) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(ANALYSIS_FILTERS_KEY) || "null");
+      if (Array.isArray(raw)) saved = raw.map((f) => ({ ...newFilterRow(), ...f }));
+    } catch (e) {}
+  }
+  analysisFilters = saved || defaultAnalysisFilters();
 }
 
 /* ============================================================
@@ -328,8 +349,8 @@ function resultColor(v) {
 /* ============================================================
    ANALYSIS PREFS —— 分析页的拆解显示配置 / 组合 / 组合分组
    存在 journal_schema.analysis_prefs (jsonb) 这一列里，跨设备同步。
-   统计口径开关(statScope)和模型筛选(modelFilters)不在这里——那两个是
-   纯本地的"这次怎么看"设置，只存 localStorage，见下面 STAT SCOPE 那一段。
+   分析页那套筛选条件(analysisFilters)不在这里——它是纯本地的"这次想看哪批交易"，
+   只存 localStorage，不跨设备同步，见上面 ANALYSIS FILTERS 那一段。
    ============================================================ */
 function defaultAnalysisPrefs() {
   return {
@@ -530,19 +551,10 @@ async function saveAnalysisPrefsNow() {
    ANALYTICS ENGINE
    ============================================================ */
 // 模型筛选（多选，空=全部）也算总览/拆解的口径之一，跟另外两个开关一样不影响组合
-function analysisBaseTrades() {
-  const modelF = roleField("model");
-  if (!modelF || !modelFilters.length) return trades;
-  return trades.filter((t) => modelFilters.includes(t[modelF.id]));
-}
-// 当前口径下参与统计的交易集（顶部数字和字段拆解共用同一批）
-function scopedTrades() {
-  const heF = roleField("human_error"), takenF = roleField("taken");
-  const scope = statScope;
-  let list = analysisBaseTrades();
-  if (scope.excludeHumanError && heF) list = list.filter((t) => t[heF.id] !== "yes");
-  if (scope.takenOnly && takenF) list = list.filter((t) => t[takenF.id] === "Taken");
-  return list;
+// 分析页当前在看的那批交易：总览数字、字段拆解、最大回撤全都用这一批，没有任何额外的隐藏过滤。
+// 「看到的数字 = 面板里那几条条件筛出来的结果」是这一页唯一的口径规则，别再往里塞暗逻辑。
+function analysisFilteredTrades() {
+  return trades.filter((t) => analysisFilters.every((f) => tradeMatchesFilter(t, f)));
 }
 // Profit Factor：正R之和 ÷ |负R之和|。只统计真的填了 R 的那些交易，n 一并返回好让 UI 标注口径。
 function profitFactorOf(list, rF) {
@@ -570,40 +582,73 @@ function pfColor(pf) {
   if (pf === Infinity) return "var(--pos)";
   return pf >= 1 ? "var(--pos)" : "var(--neg)";
 }
+// 最大回撤：按交易日期把 R 累加成一条资金曲线，取「峰值 → 谷底」的最大跌幅，单位 R，返回正数。
+// 只算真的填了 R 的交易；没填日期的排到最后，免得它们插进曲线中间把回撤算歪。
+function maxDrawdownR(list, rF) {
+  if (!rF) return null;
+  const dateF = roleField("date");
+  const rows = list.filter((t) => {
+    const raw = t[rF.id];
+    return raw !== undefined && raw !== null && raw !== "" && !isNaN(parseFloat(raw));
+  });
+  if (!rows.length) return null;
+  const dayOf = (t) => (dateF && t[dateF.id] ? String(t[dateF.id]) : "9999-12-31");
+  const ordered = rows.slice().sort((a, b) => {
+    const da = dayOf(a), db = dayOf(b);
+    if (da !== db) return da < db ? -1 : 1;
+    return String(a._created_at || "").localeCompare(String(b._created_at || ""));
+  });
+  let equity = 0, peak = 0, maxDD = 0;
+  ordered.forEach((t) => {
+    equity += parseFloat(t[rF.id]);
+    if (equity > peak) peak = equity;
+    const dd = peak - equity;
+    if (dd > maxDD) maxDD = dd;
+  });
+  return { dd: maxDD, n: ordered.length };
+}
+// 标题栏那行摘要用的是固定口径（只算 Taken），故意不吃分析页的筛选：
+// 它代表"这个账号现在整体什么水平"，不该被某一页里临时筛出来的一小撮交易带偏。
+function headerStats() {
+  const takenF = roleField("taken"), resultF = roleField("result"), rF = roleField("r_multiple");
+  const list = takenF ? trades.filter((t) => t[takenF.id] === "Taken") : trades;
+  const w = resultF ? list.filter((t) => t[resultF.id] === "W").length : 0;
+  const l = resultF ? list.filter((t) => t[resultF.id] === "L").length : 0;
+  let ev = null, hasR = false;
+  if (rF) {
+    const totalR = list.reduce((sum, t) => {
+      if (t[rF.id] !== undefined && t[rF.id] !== "") { hasR = true; return sum + (parseFloat(t[rF.id]) || 0); }
+      return sum;
+    }, 0);
+    ev = list.length ? totalR / list.length : null;
+  }
+  return { n: list.length, wr: w + l ? (w / (w + l)) * 100 : null, ev, hasR };
+}
 function computeStats() {
-  const resultF = roleField("result"), takenF = roleField("taken"), heF = roleField("human_error"),
-        rF = roleField("r_multiple"), maxRrF = roleField("max_rr");
-  const scope = statScope;
-  const base = analysisBaseTrades();
-  const clean = scope.excludeHumanError && heF ? base.filter((t) => t[heF.id] !== "yes") : base;
-  const taken = scopedTrades();
-  const faded = clean.filter((t) => takenF && t[takenF.id] === "Faded");
+  const resultF = roleField("result"), takenF = roleField("taken"), rF = roleField("r_multiple");
+  const list = analysisFilteredTrades();
   const isW = (t) => resultF && t[resultF.id] === "W";
   const isL = (t) => resultF && t[resultF.id] === "L";
   const isBEW = (t) => resultF && t[resultF.id] === "BE -> W";
   const isBEL = (t) => resultF && t[resultF.id] === "BE -> L";
   const isBE = (t) => resultF && t[resultF.id] === "BE";
-  const w = taken.filter(isW).length, l = taken.filter(isL).length;
-  const bew = taken.filter(isBEW).length, bel = taken.filter(isBEL).length, be = taken.filter(isBE).length;
+  const w = list.filter(isW).length, l = list.filter(isL).length;
+  const bew = list.filter(isBEW).length, bel = list.filter(isBEL).length, be = list.filter(isBE).length;
   const wr = w + l ? (w / (w + l)) * 100 : null;
   const sq = w + l + bew + bel ? ((w + bew) / (w + l + bew + bel)) * 100 : null;
   let totalR = null, ev = null;
-  if (rF) { totalR = taken.reduce((s, t) => s + (parseFloat(t[rF.id]) || 0), 0); ev = taken.length ? totalR / taken.length : null; }
-  let captureRate = null;
-  if (rF && maxRrF) {
-    const both = taken.filter((t) => t[rF.id] !== undefined && t[rF.id] !== "" && t[maxRrF.id] !== undefined && t[maxRrF.id] !== "");
-    const sumR = both.reduce((s, t) => s + (parseFloat(t[rF.id]) || 0), 0);
-    const sumMax = both.reduce((s, t) => s + (parseFloat(t[maxRrF.id]) || 0), 0);
-    captureRate = sumMax ? (sumR / sumMax) * 100 : null;
-  }
-  const fadedW = faded.filter(isW).length, fadedL = faded.filter(isL).length;
-  const pfInfo = profitFactorOf(taken, rF);
-  const breakdowns = computeBreakdowns(taken);
-  const modelF = roleField("model");
-  let byModel = [];
-  if (modelF) { const found = breakdowns.find((b) => b.field.id === modelF.id); if (found) byModel = found.rows; }
-  return { totalTaken: taken.length, totalFaded: faded.length, w, l, be, bew, bel, wr, sq, totalR, ev, captureRate,
-           pf: pfInfo.pf, pfSample: pfInfo.n, fadedW, fadedL, breakdowns, byModel, hasResult: !!resultF, hasR: !!rF };
+  if (rF) { totalR = list.reduce((sum, t) => sum + (parseFloat(t[rF.id]) || 0), 0); ev = list.length ? totalR / list.length : null; }
+  // Faded 这行是「当前这批里被放掉的」，不是从别处另算一批——分析页所有数字都出自同一个 list
+  const faded = takenF ? list.filter((t) => t[takenF.id] === "Faded") : [];
+  const pfInfo = profitFactorOf(list, rF);
+  const ddInfo = maxDrawdownR(list, rF);
+  // 拆解不在这里算：render() 每次重绘都会调 computeStats()，塞进来等于在设置页点个按钮也要把
+  // 所有字段拆解白算一遍。拆解由 renderAnalytics() 拿 stats.list 单独算，只在分析页付这个代价。
+  return { list, total: list.length, totalFaded: faded.length, w, l, be, bew, bel, wr, sq, totalR, ev,
+           dd: ddInfo ? ddInfo.dd : null, ddSample: ddInfo ? ddInfo.n : 0,
+           pf: pfInfo.pf, pfSample: pfInfo.n,
+           fadedW: faded.filter(isW).length, fadedL: faded.filter(isL).length,
+           hasResult: !!resultF, hasR: !!rF };
 }
 
 /* ---------- 字段拆解 ---------- */
@@ -806,6 +851,9 @@ async function loadAll() {
       if (!e3) changelog = logRows || [];
     } catch (e) { /* changelog table may not exist yet */ }
 
+    // 分析页筛选：本地存过就用存的，没存过给默认（只看 Taken）。跟记录页那份各存各的，互不影响
+    seedAnalysisFilters();
+
     if (!defaultFiltersSeeded && !viewingUserId) {
       defaultFiltersSeeded = true;
       const saved = loadSavedFilters();
@@ -985,15 +1033,26 @@ async function changeOwnPassword(currentPw, newPw, confirmPw) {
 function newFilterRow(fieldId) {
   return { fieldId: fieldId || "", values: [], negate: false, matchMode: "or", rangeStart: "", rangeEnd: "", textValue: "" };
 }
-// 记录页的 activeFilters 和分析页某个组合的 conditions 共用同一套 DOM 结构和事件处理，
-// 元素上有没有 data-combo-id 决定改的是哪个数组
+// 三个地方共用同一套筛选行 DOM 和事件处理，靠元素上的属性区分改的是哪个数组：
+//   data-filter-ctx="analysis" → 分析页的 analysisFilters
+//   data-combo-id="c_xxx"      → 那个组合的 conditions
+//   两个都没有                 → 记录页的 activeFilters
+// ⚠ 加新的筛选入口时一定要带上自己的上下文属性，否则会默默落到记录页那份上，把用户的记录页筛选改掉
 function filterCtxOf(el) {
+  if (el.dataset.filterCtx === ANALYSIS_CTX) return { arr: analysisFilters, comboId: "", scope: ANALYSIS_CTX };
   const comboId = el.dataset.comboId || "";
-  if (!comboId) return { arr: activeFilters, comboId: "" };
+  if (!comboId) return { arr: activeFilters, comboId: "", scope: "grid" };
   const c = findCombo(comboId);
-  return c ? { arr: c.conditions, comboId } : null;
+  return c ? { arr: c.conditions, comboId, scope: "combo" } : null;
+}
+// 分析页筛选变了：存自己那份 localStorage，顺便标记"套进来的组合已经被改过"
+function afterAnalysisFilterChange() {
+  analysisComboDirty = !!analysisComboId;
+  saveAnalysisFilters();
+  render();
 }
 function afterFilterChange(ctx) {
+  if (ctx.scope === ANALYSIS_CTX) { afterAnalysisFilterChange(); return; }
   if (ctx.comboId) {
     queueSaveAnalysisPrefs();
   } else {
@@ -1049,8 +1108,13 @@ function tradeMatchesFilter(t, f) {
 }
 // comboId 为空 = 记录页的 activeFilters；有值 = 分析页某个组合的条件。
 // 两边共用同一套 DOM 结构和事件处理，靠 data-combo-id 区分改哪个数组。
-function filterRowValuesHtml(field, idx, f, comboId) {
-  const cid = comboId ? ` data-combo-id="${esc(comboId)}"` : "";
+// ctx: "" = 记录页 / ANALYSIS_CTX = 分析页 / 其他字符串 = 组合 id
+function filterCtxAttr(ctx) {
+  if (!ctx) return "";
+  return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
+}
+function filterRowValuesHtml(field, idx, f, ctx) {
+  const cid = filterCtxAttr(ctx);
   if (field.type === "select" || field.type === "multiselect") {
     const vals = f.values || [];
     const opts = field.options || [];
@@ -1078,17 +1142,18 @@ function filterRowValuesHtml(field, idx, f, comboId) {
   }
   return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}"${cid} value="${esc(f.textValue || "")}" placeholder="${esc(T("filter.containsPlaceholder"))}" /></div>`;
 }
-// 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页和组合编辑器共用
-function filterConditionRowHtml(f, idx, comboId) {
-  const cid = comboId ? ` data-combo-id="${esc(comboId)}"` : "";
+// 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页 / 分析页 / 组合编辑器共用
+// 拖拽排序只有记录页那份有：条件之间是 AND，顺序不影响结果，另外两处的拖拽代码是直接绑死 activeFilters 的
+function filterConditionRowHtml(f, idx, ctx) {
+  const cid = filterCtxAttr(ctx);
   const field = schema.find((x) => x.id === f.fieldId);
   const missing = f.fieldId && !field;
   const showNegate = field && (field.type === "select" || field.type === "multiselect");
   const showAndToggle = field && field.type === "multiselect";
-  const dragAttrs = comboId ? "" : ` draggable="true" data-filter-idx="${idx}"`;
-  return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${comboId ? "" : "cursor:grab;"}">
+  const dragAttrs = ctx ? "" : ` draggable="true" data-filter-idx="${idx}"`;
+  return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${ctx ? "" : "cursor:grab;"}">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      ${comboId ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>`}
+      ${ctx ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>`}
       <select class="select" data-filter-field="${idx}"${cid}>
         <option value="">${esc(T("filter.selectField"))}</option>
         ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
@@ -1102,7 +1167,7 @@ function filterConditionRowHtml(f, idx, comboId) {
       <button class="tinyBtn" data-action="remove-filter" data-idx="${idx}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
     </div>
     ${missing ? `<div style="font-size:11.5px;color:var(--neg);margin-top:8px;">${T("filter.fieldDeleted")}</div>` : ""}
-    ${field ? filterRowValuesHtml(field, idx, f, comboId) : ""}
+    ${field ? filterRowValuesHtml(field, idx, f, ctx) : ""}
   </div>`;
 }
 function filteredSummaryStats(list) {
@@ -1325,16 +1390,22 @@ function renderGrid() {
 /* ============================================================
    RENDER — ANALYTICS VIEW
    ============================================================ */
-function barRow(row, fieldId) {
-  const width = row.wr === null ? 0 : row.wr;
+// 样本这么少的行不画色条、不标 delta：n=3 的 67% 是噪音，不能长得跟 n=80 的 67% 一样有说服力
+const BREAKDOWN_MIN_SAMPLE = 5;
+// baseWr = 这一批交易的整体胜率。传了就在每行右边标出「相对整体 +9.2pp」——
+// 拆解真正有信息量的是差值，绝对胜率高往往只是因为整批本来就高
+function barRow(row, fieldId, baseWr) {
+  const low = row.n < BREAKDOWN_MIN_SAMPLE;
+  const width = row.wr === null || low ? 0 : row.wr;
   const color = row.wr === null ? "var(--mutedDark)" : row.wr >= 60 ? "var(--pos)" : row.wr >= 45 ? "var(--accent)" : "var(--neg)";
   const rPart = row.hasR
     ? ` · <span style="color:${row.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(row.totalR)}R</span> · EV ${fmtNum(row.ev, 2)} · PF <span style="color:${pfColor(row.pf)}">${fmtPF(row.pf)}</span>`
     : "";
-  return `<div class="barRow">
+  const delta = !low && baseWr !== undefined && baseWr !== null && row.wr !== null ? " " + deltaText(row.wr, baseWr, "pp", 1) : "";
+  return `<div class="barRow${low ? " lowSample" : ""}">
     <div class="barTop">
-      <span style="color:var(--text)">${esc(row.value)}</span>
-      <span class="mono" style="color:var(--muted)">n=${row.n} · ${fmtPct(row.wr)}</span>
+      <span style="color:var(--text)">${esc(row.value)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</span>
+      <span class="mono" style="color:var(--muted)">n=${row.n} · ${fmtPct(row.wr)}${delta}</span>
     </div>
     <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div>
     <div class="barMeta">
@@ -1344,28 +1415,67 @@ function barRow(row, fieldId) {
   </div>`;
 }
 
-/* ---------- 分析页：口径开关 ---------- */
-function renderStatScopeBar() {
-  const scope = statScope;
-  const takenF = roleField("taken"), heF = roleField("human_error"), modelF = roleField("model");
-  if (!takenF && !heF && !modelF) return "";
-  return `<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--muted);">
-    <span style="color:var(--mutedDark);">${T("scope.title")}</span>
-    ${takenF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-      <input type="checkbox" data-action="toggle-scope-taken" ${scope.takenOnly ? "checked" : ""} style="width:13px;height:13px;" />${T("scope.takenOnly")}
-    </label>` : ""}
-    ${heF ? `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
-      <input type="checkbox" data-action="toggle-scope-he" ${scope.excludeHumanError ? "checked" : ""} style="width:13px;height:13px;" />${T("scope.excludeHumanError")}
-    </label>` : ""}
-    ${modelF ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span>${T("scope.model")}</span>
-      <div class="chipGroup" style="margin:0;">
-        ${(modelF.options || []).map((o) => `<button type="button" class="chip ${modelFilters.includes(o) ? "active" : ""}" data-action="toggle-model-filter-value" data-val="${esc(o)}">${esc(o)}</button>`).join("")}
+/* ---------- 分析页：分析范围面板 ----------
+   取代了以前那条「统计口径开关」。和记录页 activeFilters、月度页彻底分开，见 ANALYSIS FILTERS 那一段。
+   面板头上常驻一行「全部 412 → 47」，把"这个数字怎么来的"直接摆出来，
+   省掉以前"口径藏在别处、用户不知道数字为什么对不上"的疑问。 */
+// 两个快捷条件：点一下往筛选里加/删一条显式条件，不是隐藏开关——加完能在下面的条件行里看见、能改能删
+function analysisQuickPreset(kind) {
+  const field = kind === "taken" ? roleField("taken") : roleField("human_error");
+  if (!field) return null;
+  const val = kind === "taken" ? "Taken" : "yes";
+  if (!(field.options || []).includes(val)) return null;
+  const negate = kind === "he";
+  const idx = analysisFilters.findIndex((r) => r.fieldId === field.id && !!r.negate === negate
+    && (r.values || []).length === 1 && r.values[0] === val);
+  return { kind, field, val, negate, idx, on: idx >= 0 };
+}
+function renderAnalysisScopePanel(stats) {
+  const activeCount = analysisFilters.filter((f) => f.fieldId).length;
+  const combo = analysisComboId ? findCombo(analysisComboId) : null;
+  const presets = ["taken", "he"].map(analysisQuickPreset).filter(Boolean);
+  let html = `<div class="analysisScope${analysisPanelOpen ? " open" : ""}">
+    <button class="analysisScopeHead" data-action="toggle-analysis-panel">
+      ${ICONS.filter}
+      <span class="analysisScopeTitle">${T("ascope.title")}</span>
+      ${activeCount
+        ? `<span class="analysisScopeBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
+        : `<span class="analysisScopeBadge off">${T("ascope.noFilter")}</span>`}
+      <span class="analysisScopeChain mono" title="${esc(T("ascope.chainTitle"))}">${trades.length}<span class="arrow">→</span><b>${stats.total}</b></span>
+      <span class="analysisScopeChev">${analysisPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
+    </button>`;
+  if (combo) {
+    html += `<div class="analysisComboTag">
+      ${ICONS.chart}
+      <span>${esc(T(analysisComboDirty ? "ascope.fromComboDirty" : "ascope.fromCombo", { name: combo.name }))}</span>
+      <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
+        ${!viewingUserId && analysisComboDirty ? `<button class="tinyBtn" data-action="write-back-analysis-combo" style="color:var(--accent);">${T("ascope.writeBack")}</button>` : ""}
+        <button class="tinyBtn" data-action="detach-analysis-combo" style="color:var(--mutedDark);">${T("ascope.detach")}</button>
+      </span>
+    </div>`;
+  }
+  if (analysisPanelOpen) {
+    html += `<div class="analysisScopeBody">
+      ${presets.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;">
+        <span style="font-size:11.5px;color:var(--mutedDark);">${T("ascope.quick")}</span>
+        ${presets.map((pr) => `<button type="button" class="chip ${pr.on ? "active" : ""}" data-action="toggle-analysis-quick" data-quick="${pr.kind}">${esc(T(pr.kind === "taken" ? "ascope.quickTaken" : "ascope.quickNoHE"))}</button>`).join("")}
+      </div>` : ""}
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("filter.logicHint")}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
+        ${analysisFilters.map((f, idx) => filterConditionRowHtml(f, idx, ANALYSIS_CTX)).join("")}
       </div>
-      ${modelFilters.length ? `<button class="tinyBtn" data-action="clear-model-filters" style="color:var(--mutedDark);">${T("scope.clearModels")}</button>` : `<span style="color:var(--mutedDark);font-size:11px;">${T("scope.allModels")}</span>`}
-    </div>` : ""}
-    <span style="color:var(--mutedDark);font-size:11px;">${T("scope.localHint")}</span>
-  </div>`;
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn" data-action="add-filter" data-filter-ctx="${ANALYSIS_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
+        ${analysisFilters.length ? `<button class="btn" data-action="clear-all-filter-values" data-filter-ctx="${ANALYSIS_CTX}">${T("filter.clearAllValues")}</button>` : ""}
+        ${activeCount ? `<button class="btn" data-action="analysis-filters-all">${T("ascope.showAll")}</button>` : ""}
+        <button class="btn" data-action="analysis-filters-default">${T("ascope.reset")}</button>
+        ${!viewingUserId && activeCount ? `<button class="btn" data-action="save-analysis-filters-as-combo" style="margin-left:auto;color:var(--accent);">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
+      </div>
+      <div style="font-size:11px;color:var(--mutedDark);margin-top:14px;line-height:1.7;">${T("ascope.localHint")}</div>
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
 }
 
 /* ---------- 分析页：组合 ---------- */
@@ -1400,6 +1510,7 @@ function renderComboCard(combo) {
   const s = comboStats(combo);
   const base = comboBaseline(combo);
   const editing = comboEditingId === combo.id;
+  const analyzing = analysisComboId === combo.id;
   const small = !broken && s.n > 0 && s.n < COMBO_SMALL_SAMPLE;
   const deleting = comboConfirmDeleteId === combo.id;
 
@@ -1422,7 +1533,7 @@ function renderComboCard(combo) {
 
   // 编辑器展开时卡片独占一整行（.comboCard.editing）：网格列只有 340px，
   // 编辑器里的下拉和条件行塞不下会顶出卡片边框，看着像布局坏了
-  return `<div class="comboCard${editing ? " editing" : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
+  return `<div class="comboCard${editing ? " editing" : ""}${analyzing ? " analyzing" : ""}" ${viewingUserId || editing ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`}>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
       ${viewingUserId || editing ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("combo.dragHint"))}">⠿</span>`}
       <span style="font-size:14px;color:var(--text);font-weight:500;">${esc(combo.name)}</span>
@@ -1441,7 +1552,10 @@ function renderComboCard(combo) {
       <button class="btn btn-danger" data-action="confirm-delete-combo" data-combo-id="${esc(combo.id)}" style="padding:4px 10px;font-size:12px;">${T("common.delete")}</button>
       <button class="btn" data-action="cancel-delete-combo" style="padding:4px 10px;font-size:12px;">${T("common.cancel")}</button>
     </div>` : ""}
-    ${broken ? "" : `<button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" style="margin-top:10px;padding:5px 10px;font-size:12px;">${esc(T("combo.viewTrades", { n: s.n }))}</button>`}
+    ${broken ? "" : `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      <button class="btn ${analyzing ? "" : "btn-primary"}" data-action="apply-combo-to-analysis" data-combo-id="${esc(combo.id)}" style="padding:5px 10px;font-size:12px;" title="${esc(T("combo.analyzeTitle"))}">${ICONS.chart} ${esc(T(analyzing ? "combo.analyzeAgain" : "combo.analyze"))}</button>
+      <button class="btn" data-action="open-combo-in-grid" data-combo-id="${esc(combo.id)}" style="padding:5px 10px;font-size:12px;">${esc(T("combo.viewTrades", { n: s.n }))}</button>
+    </div>`}
     ${editing ? renderComboEditor(combo) : ""}
   </div>`;
 }
@@ -1595,57 +1709,61 @@ function renderAnalytics() {
   if (!stats.hasResult) {
     return `<div class="notice">${ICONS.alert}<span>${T("analytics.noResultRole")}</span></div>`;
   }
-  const takenF = roleField("taken"), resultF = roleField("result");
-  const scope = statScope;
+  const modelF = roleField("model");
   const prefsNotice = analysisPrefsError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(analysisPrefsError)}</span></div>` : "";
+  const panel = renderAnalysisScopePanel(stats);
+  const activeCount = analysisFilters.filter((f) => f.fieldId).length;
 
-  if (stats.totalTaken === 0) {
-    const baseList = analysisBaseTrades();
-    const total = baseList.length;
-    const withTaken = takenF ? baseList.filter((t) => t[takenF.id] === "Taken").length : total;
-    const withResult = resultF ? baseList.filter((t) => t[resultF.id] === "W" || t[resultF.id] === "L").length : 0;
-    return prefsNotice + renderStatScopeBar() + `<div class="notice">${ICONS.alert}<div>
-      <div style="color:var(--text);margin-bottom:6px;">${esc(T("analytics.noTradesLine1", { source: modelFilters.length ? T("analytics.sourceModels") : T("analytics.sourceDb"), total, withTaken, withResult }))}</div>
-      <div>${T("analytics.noTradesLine2")}</div>
+  if (stats.total === 0) {
+    return prefsNotice + panel + `<div class="notice">${ICONS.alert}<div>
+      <div style="color:var(--text);margin-bottom:6px;">${esc(activeCount ? T("ascope.emptyFiltered", { total: trades.length, n: activeCount }) : T("ascope.emptyAll"))}</div>
+      <div>${esc(activeCount ? T("ascope.emptyFilteredHint") : T("ascope.emptyAllHint"))}</div>
     </div></div>`;
   }
 
-  const countLabel = scope.takenOnly && takenF ? T("analytics.countTaken") : T("analytics.countTrades");
-  let html = prefsNotice + renderStatScopeBar() + `<div class="statRow">
-    <div class="statBox"><div class="statLabel">${countLabel}</div><div class="statValue">${stats.totalTaken}</div></div>
-    <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div></div>
+  let html = prefsNotice + panel + `<div class="statRow">
+    <div class="statBox"><div class="statLabel">${T("analytics.countTrades")}</div><div class="statValue">${stats.total}</div></div>
+    <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div><div class="statSub">W${stats.w} · L${stats.l}</div></div>
     <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.totalR")}</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.evPerTrade")}</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
-    ${stats.hasR ? `<div class="statBox" title="${esc(T("grid.pfTitle", { n: stats.pfSample }))}"><div class="statLabel">${T("analytics.profitFactor")}</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.totalTaken ? `<div style="font-size:10.5px;color:var(--mutedDark);margin-top:3px;">${esc(T("analytics.pfBasis", { n: stats.pfSample }))}</div>` : ""}</div>` : ""}
-    ${stats.captureRate !== null ? `<div class="statBox"><div class="statLabel">${T("analytics.captureRate")}</div><div class="statValue">${fmtPct(stats.captureRate)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox" title="${esc(T("grid.pfTitle", { n: stats.pfSample }))}"><div class="statLabel">${T("analytics.profitFactor")}</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.total ? `<div class="statSub">${esc(T("analytics.pfBasis", { n: stats.pfSample }))}</div>` : ""}</div>` : ""}
+    ${stats.hasR && stats.dd !== null ? `<div class="statBox" title="${esc(T("analytics.maxDDTitle"))}"><div class="statLabel">${T("analytics.maxDD")}</div><div class="statValue" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</div>${stats.ddSample !== stats.total ? `<div class="statSub">${esc(T("analytics.ddBasis", { n: stats.ddSample }))}</div>` : ""}</div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>
-    ${takenF ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
+    ${stats.totalFaded ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
   </div>`;
 
   html += `<div style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
-  if (stats.byModel.length && !modelFilters.length) {
-    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ ${esc(T("analytics.byModel"))} ⟧</div><div class="breakdownCard">${stats.byModel.map((r) => barRow(r, roleField("model").id)).join("")}</div></div>`;
+  // 拆解跟总览吃的是同一批交易（stats.list），两边数字天然对得上，不用各自再筛一遍
+  const breakdowns = computeBreakdowns(stats.list);
+  // 「按模型」是模型字段拆解的置顶版；筛选里已经把模型钉死时就只剩一行，置顶没意义
+  const modelPinned = modelF && analysisFilters.some((f) => f.fieldId === modelF.id && (f.values || []).length);
+  const byModel = modelF && !modelPinned ? breakdowns.find((b) => b.field.id === modelF.id) : null;
+  if (byModel && byModel.rows.length > 1) {
+    html += `<div style="margin-bottom:26px;"><div class="sectionLabel">⟦ ${esc(T("analytics.byModel"))} ⟧</div><div class="breakdownCard">${byModel.rows.map((r) => barRow(r, modelF.id, stats.wr)).join("")}</div></div>`;
   }
 
-  html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+  html += `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
     <div class="sectionLabel" style="margin:0;">⟦ ${esc(T("breakdown.title"))} ⟧</div>
-    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
+    <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T("breakdown.basis", { n: stats.total, wr: fmtPct(stats.wr) }))}</span>
+    ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;margin-left:auto;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
   </div>`;
   if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
-  if (stats.breakdowns.length) {
+  if (breakdowns.length) {
     html += `<div class="breakdownGrid">`;
-    stats.breakdowns.forEach((b) => {
+    breakdowns.forEach((b) => {
       const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
+      // 多选字段一笔交易会落进多行，各行 n 之和大于总笔数——小样本下特别容易被当成 bug，标出来
+      const multi = b.field.type === "multiselect";
       html += `<div class="breakdownCard"${draggable}>
         <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}</span>
+          <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}</span>
           ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
         </div>
-        ${b.rows.map((r) => barRow(r, b.field.id)).join("")}
+        ${b.rows.map((r) => barRow(r, b.field.id, stats.wr)).join("")}
       </div>`;
     });
     html += `</div>`;
@@ -2256,7 +2374,7 @@ function render() {
   if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); return; }
   if (currentProfile && currentProfile.active === false) { app.innerHTML = renderDisabledScreen(); return; }
 
-  const stats = computeStats();
+  const hs = headerStats();
   const isAdmin = currentProfile && currentProfile.role === "admin";
   const displayName = currentProfile && currentProfile.display_name;
   const TABS = [
@@ -2286,7 +2404,7 @@ function render() {
     <div class="header">
       <div>
         <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
-        <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${stats.totalTaken} · WR ${fmtPct(stats.wr)} ${stats.hasR ? "· EV " + fmtNum(stats.ev, 3) : ""}</div>
+        <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""}</div>
       </div>
       <div class="headerActions">
         <div class="modeToggle">
@@ -2535,6 +2653,8 @@ document.addEventListener("click", async (e) => {
     analysisPrefs.combos = analysisPrefs.combos.filter((c) => c.id !== id);
     if (comboEditingId === id) comboEditingId = null;
     if (activeComboId === id) activeComboId = null;
+    // 组合没了，但分析页那份条件是复制来的，留着不动，只是不再显示"正在分析组合 XXX"
+    if (analysisComboId === id) { analysisComboId = null; analysisComboDirty = false; }
     comboConfirmDeleteId = null;
     await saveAnalysisPrefsNow(); render();
   }
@@ -2597,6 +2717,7 @@ document.addEventListener("click", async (e) => {
     analysisPrefs.combos = analysisPrefs.combos.filter((c) => !doomedComboIds.has(c.id));
     if (doomedComboIds.has(comboEditingId)) comboEditingId = null;
     if (doomedComboIds.has(activeComboId)) activeComboId = null;
+    if (doomedComboIds.has(analysisComboId)) { analysisComboId = null; analysisComboDirty = false; }
     comboGroupConfirmDeleteId = null;
     await saveAnalysisPrefsNow(); render();
   }
@@ -2657,12 +2778,55 @@ document.addEventListener("click", async (e) => {
     for (let i = 0; i < ctx.arr.length; i++) ctx.arr[i] = newFilterRow(ctx.arr[i].fieldId);
     afterFilterChange(ctx);
   }
-  else if (action === "toggle-model-filter-value") {
-    const val = el.dataset.val;
-    modelFilters = modelFilters.includes(val) ? modelFilters.filter((v) => v !== val) : [...modelFilters, val];
-    saveModelFilters(); render();
+  /* ---------- 分析页：分析范围面板 ---------- */
+  else if (action === "toggle-analysis-panel") {
+    analysisPanelOpen = !analysisPanelOpen; saveAnalysisPanelOpen(); render();
   }
-  else if (action === "clear-model-filters") { modelFilters = []; saveModelFilters(); render(); }
+  else if (action === "toggle-analysis-quick") {
+    const pre = analysisQuickPreset(el.dataset.quick); if (!pre) return;
+    // 快捷条件只是"帮你加/删一条普通条件"，加完就是下面条件行里那一条，用户随时能改能删
+    if (pre.on) analysisFilters.splice(pre.idx, 1);
+    else analysisFilters.push({ ...newFilterRow(pre.field.id), values: [pre.val], negate: pre.negate });
+    afterAnalysisFilterChange();
+  }
+  else if (action === "analysis-filters-all") { analysisFilters = []; afterAnalysisFilterChange(); }
+  else if (action === "analysis-filters-default") {
+    analysisFilters = defaultAnalysisFilters();
+    analysisComboId = null; analysisComboDirty = false;
+    afterAnalysisFilterChange();
+  }
+  else if (action === "apply-combo-to-analysis") {
+    const c = findCombo(el.dataset.comboId); if (!c) return;
+    // 复制一份条件，不是绑定：在分析页怎么改都不会动到组合本身，想改回去点「回写到组合」
+    analysisFilters = comboFilterRows(c);
+    analysisComboId = c.id; analysisComboDirty = false;
+    analysisPanelOpen = true; saveAnalysisPanelOpen();
+    tab = "analytics";
+    saveAnalysisFilters(); render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "detach-analysis-combo") { analysisComboId = null; analysisComboDirty = false; render(); }
+  else if (action === "write-back-analysis-combo") {
+    if (viewingUserId) return;
+    const c = findCombo(analysisComboId); if (!c) return;
+    c.conditions = analysisFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] }));
+    analysisComboDirty = false;
+    await saveAnalysisPrefsNow(); render();
+  }
+  else if (action === "save-analysis-filters-as-combo") {
+    if (viewingUserId) return;
+    const c = normalizeCombo({
+      id: newComboId(),
+      name: T("combo.fromFilters", { date: new Date().toLocaleDateString(localeTag()) }),
+      conditions: analysisFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
+    });
+    analysisPrefs.combos.push(c);
+    comboEditingId = c.id;
+    analysisComboId = c.id; analysisComboDirty = false;
+    // 新组合默认落在"未分组"桶里，那个桶要是被收起了，新建的东西会悄悄不可见——顺手展开
+    collapsedComboGroups.delete("__ungrouped__"); saveCollapsedComboGroups();
+    await saveAnalysisPrefsNow(); render();
+  }
   else if (action === "toggle-breakdown-picker") { breakdownPickerOpen = !breakdownPickerOpen; render(); }
   else if (action === "hide-breakdown-field") {
     if (viewingUserId) return;
@@ -2758,6 +2922,8 @@ document.addEventListener("click", async (e) => {
     viewingUserId = el.dataset.id;
     viewingUserEmail = el.dataset.email;
     activeFilters = [];
+    // 别人的数据用默认口径看，也别把人家的条件写进自己的 localStorage（saveAnalysisFilters 里也挡了一道）
+    analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
     activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     gridPage = 1;
     tab = "grid";
@@ -2776,6 +2942,8 @@ document.addEventListener("click", async (e) => {
       tab = ownStateSnapshot.tab;
       ownStateSnapshot = null;
     }
+    // 退出只读模式：重新播种，把自己那份分析页筛选从 localStorage 读回来
+    analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
     activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     await loadAll();
     render();
@@ -2899,15 +3067,6 @@ document.addEventListener("change", async (e) => {
     if (!row) return;
     row.matchMode = e.target.checked ? "and" : "or";
     afterFilterChange(ctx);
-  }
-  else if (e.target.dataset.action === "toggle-scope-taken") {
-    // 纯本地设置，admin 只读查看别人数据时也能随便调，不影响被查看用户的数据
-    statScope.takenOnly = e.target.checked;
-    saveStatScope(); render();
-  }
-  else if (e.target.dataset.action === "toggle-scope-he") {
-    statScope.excludeHumanError = e.target.checked;
-    saveStatScope(); render();
   }
   else if (e.target.dataset.action === "toggle-breakdown-field") {
     if (viewingUserId) return;
@@ -3201,6 +3360,7 @@ async function bootstrapAuth() {
     } else {
       currentProfile = null; trades = []; schema = defaultSchema(); adminUsers = null;
       defaultFiltersSeeded = false; activeFilters = [];
+      analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
       activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
       comboGroupModal = null; comboGroupConfirmDeleteId = null;
