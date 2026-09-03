@@ -236,6 +236,7 @@ function saveCollapsedAnalyticsSections() {
 }
 let comboEditingId = null;   // 哪个组合的条件编辑器展开着
 let activeComboId = null;    // 记录页顶部「正在查看组合」横幅
+let activeFromAnalysis = false; // 记录页/月度页当前这套筛选是从分析页「搬过来」的（横幅用，不影响任何统计）
 let preComboFilters = null;  // 跳到组合前的筛选快照，「还原筛选」用它原样恢复
 let comboConfirmDeleteId = null;
 let comboGroupConfirmDeleteId = null;
@@ -1233,7 +1234,9 @@ function afterFilterChange(ctx) {
   if (ctx.comboId) {
     queueSaveAnalysisPrefs();
   } else {
-    activeComboId = null; // 手动改过筛选，就不再算是「正在看某个组合」了
+    // 手动改过筛选，就不再算是「正在看某个组合」/「从分析页搬过来的」了
+    activeComboId = null;
+    activeFromAnalysis = false;
     saveActiveFilters();
     gridPage = 1;
   }
@@ -1390,6 +1393,25 @@ function filterPanelChainHtml(total, shown, hasFilters, titleText) {
   if (!hasFilters) return `<span class="filterPanelChain mono">${esc(T("grid.tradeCount", { n: total }))}</span>`;
   return `<span class="filterPanelChain mono" title="${esc(titleText)}">${total}<span class="arrow">→</span><b>${shown}</b></span>`;
 }
+// 记录页/月度页顶上的「这套筛选是从哪来的」横幅。两个来源：组合卡片的「查看这 N 笔交易」，
+// 或分析页的「去记录页/月度页看」。两页共用同一份 activeFilters，所以两页都要显示这条——
+// 否则从月度页进来的人根本不知道自己的筛选被换过，会以为数据错了
+function renderFilterOriginBanner() {
+  const activeCombo = activeComboId ? findCombo(activeComboId) : null;
+  if (!activeCombo && !activeFromAnalysis) return "";
+  // viewingCombo 的文案里带 <b>，是有意的 HTML，不能 esc
+  const label = activeCombo
+    ? T("grid.viewingCombo", { name: `<b>${esc(activeCombo.name)}</b>` })
+    : esc(T("grid.viewingAnalysisFilter"));
+  const backLabel = activeCombo ? T("grid.backToCombo") : T("grid.backToAnalysis");
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--accent);">${ICONS.filter} ${label}</span>
+    <span style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" data-action="back-to-combo">${esc(backLabel)}</button>
+      <button class="btn" data-action="restore-pre-combo-filters">${T("grid.restoreFilters")}</button>
+    </span>
+  </div>`;
+}
 function renderFilterSummary(filtered) {
   const s = filteredSummaryStats(filtered);
   if (s.n === 0) return `<div style="font-size:12px;color:var(--mutedDark);margin-bottom:16px;">${T("grid.summaryEmpty")}</div>`;
@@ -1466,14 +1488,7 @@ function renderGrid() {
     return sortDir === "desc" ? -cmp : cmp;
   });
 
-  const activeCombo = activeComboId ? findCombo(activeComboId) : null;
-  let html = activeCombo ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;">
-    <span style="font-size:13px;color:var(--accent);">${ICONS.filter} ${T("grid.viewingCombo", { name: `<b>${esc(activeCombo.name)}</b>` })}</span>
-    <span style="display:flex;gap:8px;">
-      <button class="btn" data-action="back-to-combo">${T("grid.backToCombo")}</button>
-      <button class="btn" data-action="restore-pre-combo-filters">${T("grid.restoreFilters")}</button>
-    </span>
-  </div>` : "";
+  let html = renderFilterOriginBanner();
   html += `<div style="position:relative;margin-bottom:12px;max-width:340px;">
     <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mutedDark);pointer-events:none;">${ICONS.search}</span>
     <input type="text" class="input" data-action="search-input" placeholder="${esc(T("grid.searchPlaceholder"))}" value="${esc(searchQuery)}" style="padding-left:34px;" />
@@ -1679,7 +1694,11 @@ function renderAnalysisScopePanel(stats) {
         <button class="btn" data-action="add-filter" data-filter-ctx="${ANALYSIS_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
         ${analysisFilters.length ? `<button class="btn" data-action="clear-all-filter-values" data-filter-ctx="${ANALYSIS_CTX}">${T("filter.clearAllValues")}</button>` : ""}
         <button class="btn" data-action="analysis-filters-default">${T("ascope.reset")}</button>
-        ${!viewingUserId && activeCount ? `<button class="btn" data-action="save-analysis-filters-as-combo" style="margin-left:auto;color:var(--accent);">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
+        <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn" data-action="apply-analysis-filters" data-target="grid" title="${esc(T("ascope.applyTitle"))}">${ICONS.grid} ${esc(T("ascope.applyToGrid", { n: stats.total }))}</button>
+          <button class="btn" data-action="apply-analysis-filters" data-target="calendar" title="${esc(T("ascope.applyToCalendarTitle"))}">${ICONS.calendar}</button>
+          ${!viewingUserId && activeCount ? `<button class="btn" data-action="save-analysis-filters-as-combo" style="color:var(--accent);">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
+        </span>
       </div>
       <div style="font-size:11px;color:var(--mutedDark);margin-top:14px;line-height:1.7;">${T("ascope.localHint")}</div>
     </div>`;
@@ -3136,7 +3155,7 @@ function renderCalendar() {
   const dateF = roleField("date");
   if (!dateF) return `<div class="notice">${ICONS.alert}<span>${T("calendar.noDateRole")}</span></div>`;
   const filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)));
-  let html = `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
+  let html = renderFilterOriginBanner() + `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
   if (recordMode === "backtest") html += renderHistoryCoverage();
   return html;
@@ -3970,6 +3989,7 @@ document.addEventListener("click", async (e) => {
     activeFilters = preComboFilters || [];
     preComboFilters = null;
     activeComboId = null;
+    activeFromAnalysis = false;
     saveActiveFilters(); gridPage = 1; render();
   }
   else if (action === "save-filters-as-combo") {
@@ -4034,6 +4054,20 @@ document.addEventListener("click", async (e) => {
     tab = "analytics";
     saveAnalysisFilters(); render();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  else if (action === "apply-analysis-filters") {
+    // 把分析页这套筛选原样复制给记录页/月度页（两页共用一份 activeFilters，所以一次就够）。
+    // 复制不是共享：搬过去之后两边各改各的，分析页不会跟着变。
+    // 不用存成组合就能逐笔翻——这是除了组合卡片之外的第二座桥
+    const target = el.dataset.target === "calendar" ? "calendar" : "grid";
+    // 记住搬过去之前用户手调的筛选，「还原筛选」才能原样找回来
+    preComboFilters = JSON.parse(JSON.stringify(activeFilters));
+    activeFilters = analysisFilters.map((f) => ({ ...f, values: [...(f.values || [])] }));
+    activeComboId = null;
+    activeFromAnalysis = true;
+    saveActiveFilters();
+    gridPage = 1; tab = target; filterPanelOpen = true;
+    render(); window.scrollTo({ top: 0, behavior: "smooth" });
   }
   else if (action === "detach-analysis-combo") { analysisComboId = null; analysisComboDirty = false; render(); }
   else if (action === "write-back-analysis-combo") {
@@ -4237,7 +4271,7 @@ document.addEventListener("click", async (e) => {
     activeFilters = [];
     // 别人的数据用默认口径看，也别把人家的条件写进自己的 localStorage（saveAnalysisFilters 里也挡了一道）
     analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
-    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false; comboGroupModal = null; comboGroupConfirmDeleteId = null;
+    activeComboId = null; activeFromAnalysis = false; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     gridPage = 1;
     tab = "grid";
     await loadAll();
@@ -4257,7 +4291,7 @@ document.addEventListener("click", async (e) => {
     }
     // 退出只读模式：重新播种，把自己那份分析页筛选从 localStorage 读回来
     analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
-    activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; comboGroupModal = null; comboGroupConfirmDeleteId = null;
+    activeComboId = null; activeFromAnalysis = false; comboEditingId = null; comboConfirmDeleteId = null; comboGroupModal = null; comboGroupConfirmDeleteId = null;
     await loadAll();
     render();
   }
@@ -4709,7 +4743,7 @@ async function bootstrapAuth() {
       defaultFiltersSeeded = false; activeFilters = [];
       analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
-      activeComboId = null; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
+      activeComboId = null; activeFromAnalysis = false; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
       comboGroupModal = null; comboGroupConfirmDeleteId = null;
     }
     render();
