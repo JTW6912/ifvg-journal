@@ -311,3 +311,176 @@ textarea.input{resize:vertical;}
 .notice.error{border-color:var(--neg);}
 .loading{padding:60px;text-align:center;color:var(--mutedDark);}
 @media(max-width:520px){.statBox{flex-basis:100%;}}
+
+/* ============================================================
+   复盘（REVIEWS）
+   编辑器是一层自己的全屏浮层，z-index 90 —— 故意低于 .overlay(100)，
+   这样从复盘里点开一笔交易时，交易弹窗盖在编辑器上面而不是被压住。
+   ============================================================ */
+.reviewTop{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+.reviewSearchBox{position:relative;flex:1;min-width:200px;max-width:420px;display:flex;align-items:center;}
+.reviewSearchBox>svg{position:absolute;left:12px;color:var(--mutedDark);pointer-events:none;}
+.reviewSearchInput{padding-left:34px;}
+.reviewCount{font-size:12px;color:var(--mutedDark);margin-left:auto;}
+
+.reviewList{display:flex;flex-direction:column;gap:10px;}
+.reviewCard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;
+  transition:border-color .12s ease,background .12s ease;}
+.reviewCard:hover{border-color:var(--borderLight);background:var(--surface2);}
+.reviewCardHead{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.reviewCardTitle{font-size:15.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.reviewCardDel{color:var(--mutedDark);flex-shrink:0;}
+.reviewCardDel:hover{color:var(--neg);}
+.reviewCardDelConfirm{display:flex;gap:8px;flex-shrink:0;}
+.reviewCardMeta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--mutedDark);margin-top:7px;}
+.reviewWeekTag{padding:2px 8px;border-radius:11px;background:var(--surface2);border:1px solid var(--border);}
+.reviewWeekTag.on{background:var(--accentSoft);border-color:var(--accent);color:var(--accent);}
+.reviewLinkTag{display:inline-flex;align-items:center;gap:4px;color:var(--muted);}
+.reviewLinkTag svg{width:11px;height:11px;}
+.reviewCardExcerpt{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.65;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* ---------- 编辑器外壳 ---------- */
+.reviewEditorOverlay{position:fixed;inset:0;background:rgba(5,7,10,.72);z-index:90;display:flex;
+  align-items:center;justify-content:center;padding:16px;}
+.reviewEditor{background:var(--surface);border:1px solid var(--borderLight);border-radius:14px;
+  width:100%;max-width:1180px;height:100%;max-height:900px;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.reviewEditorHead{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--border);}
+.reviewTitleInput{flex:1;min-width:0;background:transparent;border:none;color:var(--text);font-size:19px;font-weight:600;
+  padding:4px 2px;outline:none;font-family:'Space Grotesk',sans-serif;}
+.reviewTitleInput::placeholder{color:var(--mutedDark);font-weight:400;}
+/* 只读态的标题是静态文字，但要和编辑态的输入框占一样的高度，切换时标题不跳 */
+.reviewTitleStatic{flex:1;min-width:0;font-size:19px;font-weight:600;padding:4px 2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.reviewHeadRight{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.reviewSaveBadge{font-size:11.5px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.reviewSaveBadge.dirty{color:var(--accent);}
+.reviewSaveBadge.ok{color:var(--pos);}
+.reviewSaveBadge.err{color:var(--neg);display:inline-flex;align-items:center;gap:5px;}
+
+.reviewWeekRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 18px;border-bottom:1px solid var(--border);
+  background:var(--surface2);font-size:12px;}
+.reviewWeekLabel{color:var(--mutedDark);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.5px;}
+.reviewWeekRow .tinyBtn{padding:3px 9px;border:1px solid var(--border);border-radius:11px;font-size:11.5px;color:var(--muted);}
+.reviewWeekRow .tinyBtn:hover:not(:disabled){border-color:var(--borderLight);color:var(--text);}
+.reviewWeekRow .tinyBtn.on{background:var(--accentSoft);border-color:var(--accent);color:var(--accent);}
+.reviewWeekRow .tinyBtn:disabled{opacity:.4;cursor:not-allowed;}
+.reviewWeekDate{width:auto;padding:3px 8px;font-size:11.5px;}
+.reviewReadOnly{color:var(--accent);font-size:11.5px;margin-left:auto;}
+
+/* ---------- 工具栏 ---------- */
+.reviewToolbar{display:flex;align-items:center;gap:2px;flex-wrap:wrap;padding:7px 14px;border-bottom:1px solid var(--border);}
+.tbBtn{display:inline-flex;align-items:center;gap:4px;background:transparent;border:none;border-radius:6px;
+  color:var(--muted);cursor:pointer;padding:6px 7px;font-family:'Inter',sans-serif;font-size:12px;}
+.tbBtn:hover{background:var(--surface2);color:var(--text);}
+.tbLabel{font-size:11px;font-family:'JetBrains Mono',monospace;}
+.tbTrade{color:var(--accent);}
+.tbTrade:hover{background:var(--accentSoft);color:var(--accent);}
+.tbSep{width:1px;height:16px;background:var(--border);margin:0 5px;}
+.tbHint{margin-left:auto;font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;}
+
+/* ---------- 编辑区 / 预览区 ---------- */
+.reviewEditorBody{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;}
+.reviewEditorBody.noPreview{grid-template-columns:1fr;}
+.reviewEditorBody.noPreview .reviewPreviewPane{display:none;}
+/* 只读模式：没有可编辑的一侧，预览独占整幅宽度。但正文不能真的铺满 1180px——
+   那个行长读起来很累，所以限一个阅读宽度并居中。 */
+.reviewEditorBody.readOnly{grid-template-columns:1fr;}
+.reviewEditorBody.readOnly .reviewPane{display:none;}
+/* 用 padding 而不是 max-width 收窄：滚动条留在容器边缘，正文居中 */
+.reviewEditorBody.readOnly .reviewPreviewPane{border-left:none;font-size:14.5px;
+  padding:26px max(22px, calc((100% - 760px) / 2)) 60px;}
+.reviewPane{position:relative;min-width:0;display:flex;}
+.reviewBodyInput{flex:1;width:100%;background:transparent;border:none;outline:none;resize:none;
+  color:var(--text);padding:18px 20px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.75;}
+.reviewBodyInput::placeholder{color:var(--mutedDark);}
+.reviewPreviewPane{min-width:0;overflow-y:auto;padding:18px 22px;border-left:1px solid var(--border);background:var(--bg);}
+.reviewPreviewEmpty{color:var(--mutedDark);font-size:12.5px;}
+@media(max-width:900px){
+  .reviewEditorBody{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}
+  .reviewEditorBody.noPreview,.reviewEditorBody.readOnly{grid-template-rows:1fr;}
+  .reviewPreviewPane{border-left:none;border-top:1px solid var(--border);}
+  .reviewEditorOverlay{padding:0;}
+  .reviewEditor{border-radius:0;max-height:none;border:none;}
+  .tbHint{display:none;}
+}
+
+/* ---------- 斜杠插入菜单 ---------- */
+.slashMenu{position:absolute;z-index:30;width:220px;max-height:260px;overflow-y:auto;background:var(--surface);
+  border:1px solid var(--borderLight);border-radius:9px;padding:4px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.slashMenuHead{font-size:10.5px;letter-spacing:.6px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;
+  padding:5px 8px 6px;border-bottom:1px solid var(--border);margin-bottom:3px;}
+.slashItem{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;background:transparent;border:none;
+  border-radius:6px;color:var(--text);font-size:12.5px;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;}
+.slashItem svg{color:var(--mutedDark);flex-shrink:0;}
+.slashItem:hover,.slashItem.active{background:var(--accentSoft);color:var(--accent);}
+.slashItem:hover svg,.slashItem.active svg{color:var(--accent);}
+.slashEmpty{padding:9px;font-size:12px;color:var(--mutedDark);}
+
+/* ---------- 交易选择器 ---------- */
+.tradePickerModal{max-width:560px;display:flex;flex-direction:column;max-height:78vh;}
+.tradePickerSearch{position:relative;display:flex;align-items:center;padding:12px 18px 10px;}
+.tradePickerSearch>svg{position:absolute;left:30px;color:var(--mutedDark);pointer-events:none;}
+.tradePickerSearch .input{padding-left:34px;}
+.tradePickerResults{overflow-y:auto;padding:0 10px 12px;}
+.tradePickerRow{display:flex;align-items:center;gap:11px;width:100%;padding:8px 10px;background:transparent;border:none;
+  border-radius:8px;cursor:pointer;color:var(--text);text-align:left;font-family:'Inter',sans-serif;font-size:12.5px;}
+.tradePickerRow:hover{background:var(--surface2);}
+.tradePickerThumb{width:44px;height:30px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex-shrink:0;}
+.tradePickerThumbEmpty{width:44px;height:30px;border-radius:4px;border:1px dashed var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:var(--mutedDark);}
+.tradePickerThumbEmpty svg{width:13px;height:13px;}
+.tradePickerDate{color:var(--muted);flex-shrink:0;}
+.tradePickerModel{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tradePickerEmpty,.tradePickerMore{padding:14px 12px;font-size:12px;color:var(--mutedDark);}
+
+/* ============================================================
+   MARKDOWN 正文样式（预览区和以后任何要显示复盘正文的地方共用）
+   ============================================================ */
+.mdBody{font-size:14px;line-height:1.75;color:var(--text);word-wrap:break-word;}
+.mdBody>:first-child{margin-top:0;}
+.mdH{font-family:'Space Grotesk',sans-serif;font-weight:600;line-height:1.35;margin:22px 0 10px;}
+.mdH1{font-size:22px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.mdH2{font-size:18px;}
+.mdH3{font-size:15.5px;}
+.mdH4,.mdH5,.mdH6{font-size:14px;color:var(--muted);}
+.mdP{margin:0 0 12px;}
+.mdList{margin:0 0 12px;padding-left:22px;}
+.mdList .mdList{margin:4px 0 0;}
+.mdList li{margin:3px 0;}
+.mdTaskItem{list-style:none;margin-left:-18px;display:flex;align-items:flex-start;gap:8px;}
+.mdTask{width:14px;height:14px;border:1px solid var(--borderLight);border-radius:3px;flex-shrink:0;margin-top:4px;
+  display:inline-flex;align-items:center;justify-content:center;}
+.mdTask.done{background:var(--accent);border-color:var(--accent);}
+.mdTask.done::after{content:"";width:7px;height:3.5px;border-left:1.8px solid #191307;border-bottom:1.8px solid #191307;
+  transform:rotate(-45deg) translate(1px,-1px);}
+.mdQuote{margin:0 0 12px;padding:8px 14px;border-left:3px solid var(--accent);background:var(--accentSoft);
+  color:var(--muted);border-radius:0 6px 6px 0;}
+.mdPre{margin:0 0 12px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  overflow-x:auto;}
+.mdPre code{font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.6;color:var(--text);background:none;
+  border:none;padding:0;}
+.mdBody code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;}
+.mdHr{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.mdImg{max-width:100%;border-radius:8px;border:1px solid var(--border);display:block;margin:6px 0 12px;cursor:zoom-in;}
+.mdImgFallback{display:inline-block;min-width:120px;min-height:34px;border:1px dashed var(--neg);border-radius:6px;}
+.mdTableWrap{overflow-x:auto;margin:0 0 12px;}
+.mdTable{border-collapse:collapse;font-size:12.5px;min-width:100%;}
+.mdTable th{text-align:left;padding:7px 11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;
+  font-weight:500;border-bottom:1px solid var(--borderLight);white-space:nowrap;}
+.mdTable td{padding:7px 11px;border-bottom:1px solid var(--border);}
+
+/* ---------- 正文里的交易引用胶囊 ---------- */
+.tradeRef{display:inline-flex;align-items:center;gap:6px;vertical-align:baseline;cursor:pointer;
+  padding:1px 9px 2px;margin:0 1px;border-radius:12px;font-size:12px;
+  background:var(--accentSoft);border:1px solid var(--accent);color:var(--accent);}
+.tradeRef:hover{background:var(--accent);color:#191307;}
+.tradeRef:hover .tradeRefMeta{color:#191307;}
+.tradeRefIcon{display:inline-flex;}
+.tradeRefIcon svg{width:11px;height:11px;}
+.tradeRefMeta{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11.5px;}
+.tradeRef.broken{background:var(--negSoft);border-color:var(--neg);color:var(--neg);cursor:default;}
+.tradeRef.broken .tradeRefMeta{color:var(--neg);font-family:'Inter',sans-serif;}
+.tradeRef.broken:hover{background:var(--negSoft);color:var(--neg);}
+.tradeRef.broken svg{width:12px;height:12px;}

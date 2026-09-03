@@ -71,6 +71,23 @@ const ICONS = {
   chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M18 15l-6-6-6 6"/></svg>',
   filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>',
+  /* ---------- 复盘 / markdown 工具栏 ---------- */
+  book: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4.5A2.5 2.5 0 016.5 2H20v18H6.5A2.5 2.5 0 004 22z"/><path d="M8 7h8M8 11h6"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>',
+  pencil: '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+  tbBold: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="15" height="15"><path d="M6 4h7a4 4 0 010 8H6zM6 12h8a4 4 0 010 8H6z"/></svg>',
+  tbItalic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M19 4h-9M14 20H5M15 4L9 20"/></svg>',
+  tbStrike: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M4 12h16"/><path d="M7.5 8A3.5 3.5 0 0111 5h2a3.5 3.5 0 013.2 2M6.8 16A3.5 3.5 0 0010 19h3a3.5 3.5 0 003.5-3.5"/></svg>',
+  tbUl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none"/></svg>',
+  tbOl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 4.5h1V9M3.4 14.2c0-.7.6-1.2 1.3-1.2s1.3.5 1.3 1.2c0 1.2-2.6 1.9-2.6 3.3H6" stroke-width="1.6"/></svg>',
+  tbTask: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="8" height="8" rx="1.6"/><path d="M5 8.2l1.6 1.6L9.2 6.6"/><path d="M14 8h7M14 17h7M3 17h7"/></svg>',
+  tbQuote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M4 5v14"/><path d="M9 8h11M9 12h11M9 16h7"/></svg>',
+  tbCode: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M9 6l-5 6 5 6M15 6l5 6-5 6"/></svg>',
+  tbLink: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M10 13a4 4 0 006 .5l2.5-2.5a4 4 0 00-5.7-5.7L11.5 6.6"/><path d="M14 11a4 4 0 00-6-.5L5.5 13a4 4 0 005.7 5.7l1.3-1.3"/></svg>',
+  tbImage: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="16" rx="2.2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l4.5-4.5 3.5 3.5 3-3L20 17"/></svg>',
+  tbHr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M3 12h18"/><path d="M6 7h12M6 17h12" opacity=".35"/></svg>',
+  tbHeading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M5 5v14M15 5v14M5 12h10"/></svg>',
+  tbTable: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>',
 };
 
 /* ============================================================
@@ -144,6 +161,29 @@ let dayDetailDate = null;
 let returnToDayDetail = null;
 let apiDraft = { url: "", key: "" };
 let changelog = [];
+
+/* ---------- 复盘（Reviews）状态 ----------
+   只在实盘模式下出现，所以没有 mode 维度。编辑器不在 #app 里，
+   而是自己一个根节点 #reviewEditorRoot + reviewEditorRenderedFor 守卫，
+   跟 renderModal 的 modalRenderedForId 同一个套路——否则后台 render()
+   会把正在写的长文冲掉。 */
+let reviews = [];
+let reviewsTableMissing = false;      // 没跑迁移 SQL 时置 true，页面上提示去跑
+let reviewSearch = "";
+let reviewConfirmDeleteId = null;
+let editingReview = null;             // { id, title, body, week_start, _isNew }
+let reviewEditorRenderedFor = null;   // 守卫：已经在显示这一篇就不重绘
+let reviewSaveState = "idle";         // 'idle' | 'dirty' | 'saving' | 'saved'
+let reviewSavedAt = null;
+let reviewSaveTimer = null;
+let reviewSaveError = null;
+let reviewPreviewOpen = (function () { try { return localStorage.getItem("journal_review_preview") !== "false"; } catch (e) { return true; } })();
+// 编辑器分两种模式：只读（只显示 markdown 渲染后的样子）和编辑（正文框 + 工具栏 + 预览）。
+// 打开已有帖子一律从只读开始——大多数时候是回头看，不是改；新建帖子当然直接进编辑。
+let reviewEditMode = false;
+let slashMenu = null;                 // { query, index, top, left, anchor } —— 正文里打 / 弹出来的插入菜单
+let tradePickerOpen = false;
+let tradePickerQuery = "";
 let gridCardSize = (function () { try { return localStorage.getItem("journal_card_size") || "large"; } catch (e) { return "large"; } })();
 let gridViewMode = (function () { try { return localStorage.getItem("journal_view_mode") || "card"; } catch (e) { return "card"; } })();
 let filterPanelOpen = (function () { try { return localStorage.getItem("journal_filter_panel_open") === "true"; } catch (e) { return false; } })();
@@ -901,6 +941,9 @@ async function loadAll() {
       if (!e3) changelog = logRows || [];
     } catch (e) { /* changelog table may not exist yet */ }
 
+    // 复盘：表可能还没建，loadReviews 内部自己降级，不会影响这次 loadAll 的其他部分
+    try { await loadReviews(); } catch (e) { console.error(e); }
+
     // 分析页筛选：本地存过就用存的，没存过给默认（只看 Taken）。跟记录页那份各存各的，互不影响
     seedAnalysisFilters();
 
@@ -983,6 +1026,90 @@ async function removeChangelogEntry(id) {
   const { error } = await sb.from("changelog").delete().eq("id", id);
   if (error) console.error(error);
   await loadAll(); render();
+}
+
+/* ============================================================
+   复盘（REVIEWS）—— 数据层
+   表可能还没建（用户没跑 docs/reviews-migration.sql），所有读写都要
+   能优雅降级：置 reviewsTableMissing，页面提示去跑 SQL，别把整个 app 拖垮。
+   ============================================================ */
+const REVIEW_MISSING_CODES = ["42P01", "PGRST205", "PGRST202"];
+function isMissingTableError(err) {
+  if (!err) return false;
+  if (REVIEW_MISSING_CODES.includes(err.code)) return true;
+  return /journal_reviews/.test(err.message || "") && /(does not exist|schema cache)/i.test(err.message || "");
+}
+function newReviewId() { return "r_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+async function loadReviews() {
+  if (!sb || !session) return;
+  const uid = viewingUserId || session.user.id;
+  const { data, error } = await sb.from("journal_reviews").select("*")
+    .eq("user_id", uid).order("created_at", { ascending: false });
+  if (error) {
+    if (isMissingTableError(error)) { reviewsTableMissing = true; reviews = []; return; }
+    console.error(error); reviews = []; return;
+  }
+  reviewsTableMissing = false;
+  reviews = data || [];
+}
+
+/* 正文里抽出所有 [[trade:xxx]]，存进 linked_trade_ids 当冗余索引。
+   正文永远是唯一真相，这一列只是给「这笔交易被哪几篇提到」之类的反查用。 */
+function extractTradeRefs(body) {
+  const out = [];
+  const re = /\[\[trade:([A-Za-z0-9_-]+)\]\]/g;
+  let m;
+  while ((m = re.exec(body || ""))) { if (!out.includes(m[1])) out.push(m[1]); }
+  return out;
+}
+
+async function persistReview(rev, opts) {
+  if (viewingUserId || !sb || !session) return false;
+  const row = {
+    id: rev.id,
+    user_id: session.user.id,
+    title: rev.title || "",
+    body: rev.body || "",
+    week_start: rev.week_start || null,
+    linked_trade_ids: extractTradeRefs(rev.body),
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from("journal_reviews").upsert(row);
+  if (error) {
+    if (isMissingTableError(error)) { reviewsTableMissing = true; reviewSaveError = T("review.tableMissing"); return false; }
+    console.error(error);
+    reviewSaveError = T("review.saveFailed", { msg: error.message });
+    return false;
+  }
+  reviewSaveError = null;
+  // 本地列表同步更新，不重新拉全表——编辑器开着时任何 loadAll 都是多余的网络往返
+  const i = reviews.findIndex((r) => r.id === row.id);
+  if (i >= 0) reviews[i] = { ...reviews[i], ...row };
+  else reviews.unshift({ ...row, created_at: new Date().toISOString() });
+  if (!(opts && opts.silent)) clearReviewDraft();
+  return true;
+}
+
+async function deleteReview(id) {
+  if (viewingUserId || !sb || !session) return;
+  const { error } = await sb.from("journal_reviews").delete().eq("id", id).eq("user_id", session.user.id);
+  if (error) { console.error(error); return; }
+  reviews = reviews.filter((r) => r.id !== id);
+}
+
+/* 本地草稿：数据库那边是 debounce 保存，中间这一秒断网/关标签页靠这个兜底。
+   跟交易草稿（journal_trade_draft）各存各的，互不影响。 */
+const REVIEW_DRAFT_KEY = "journal_review_draft";
+function saveReviewDraft() {
+  if (!editingReview) return;
+  try { localStorage.setItem(REVIEW_DRAFT_KEY, JSON.stringify(editingReview)); } catch (e) {}
+}
+function loadReviewDraft() {
+  try { const raw = localStorage.getItem(REVIEW_DRAFT_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+}
+function clearReviewDraft() {
+  try { localStorage.removeItem(REVIEW_DRAFT_KEY); } catch (e) {}
 }
 
 /* ============================================================
@@ -1964,6 +2091,945 @@ function renderChangelog() {
 }
 
 /* ============================================================
+   MARKDOWN —— 复盘正文的渲染器
+
+   ⚠️ 安全模型（改这一段前务必读完）
+   这是整个项目里唯一一处把用户输入变成 HTML 的地方，别处全部走 esc()。
+   而管理员能只读查看任意用户的数据，所以一段带 <img onerror> 的复盘正文
+   会在管理员的会话里执行 —— 那是权限最高的会话。
+
+   因此本渲染器的铁律是「先转义、再排版」：
+     1. 一进来就把整段过 esc()，此后源文本里不可能再出现真正的 < > " &
+     2. 后续所有规则都只在这份已转义的文本上加白名单标签
+     3. 链接和图片的 URL 只放行 http(s):// 开头的（挡 javascript: / data:）
+   任何时候都不要为了支持某个语法而把原始 HTML 放回去。
+   ============================================================ */
+function mdSafeUrl(u) {
+  const raw = String(u || "").trim();
+  // esc() 把 & 变成了 &amp;，放进 HTML 属性里本来就该是这个形态，不用还原
+  return /^https?:\/\//i.test(raw) ? raw : null;
+}
+
+/* 行内规则。传进来的 text 必须已经是 esc() 过的。 */
+function mdInline(text) {
+  // 行内代码先抽成占位符，免得里面的 * _ [ 被当成语法
+  const codes = [];
+  let out = String(text).replace(/`([^`\n]+)`/g, (m, c) => {
+    codes.push(c);
+    return " CODE" + (codes.length - 1) + " ";
+  });
+
+  // 交易引用要排在链接前面，否则 [[trade:x]] 会先被方括号规则啃掉
+  out = out.replace(/\[\[trade:([A-Za-z0-9_-]+)\]\]/g, (m, id) => tradeRefHtml(id));
+
+  // 图片在链接之前（语法上 ![]() 是 []() 的超集）
+  out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, url) => {
+    const safe = mdSafeUrl(url);
+    if (!safe) return m;
+    return `<img class="mdImg" src="${safe}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${safe}" data-fallback-url="${safe}" data-fallback-class="mdImgFallback" onerror="window.__imgFallback(this)" />`;
+  });
+
+  out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, url) => {
+    const safe = mdSafeUrl(url);
+    if (!safe) return m;
+    return `<a href="${safe}" target="_blank" rel="noopener noreferrer nofollow">${label}</a>`;
+  });
+
+  out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(/(^|[^*\w])\*([^*\n]+)\*(?![*\w])/g, "$1<em>$2</em>");
+  out = out.replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g, "$1<em>$2</em>");
+  out = out.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
+
+  return out.replace(/ CODE(\d+) /g, (m, i) => `<code>${codes[+i]}</code>`);
+}
+
+/* [[trade:xxx]] 渲染成一个可点的小胶囊。
+   找不到那笔交易时**显式标红**，不静默消失 —— 组合引用失效字段的老坑同款。
+   复盘只在实盘模式下用，所以 trades 里就是实盘那批，不存在跨 mode 查不到的情况。 */
+function tradeRefHtml(id) {
+  const t = trades.find((x) => x.id === id);
+  if (!t) {
+    return `<span class="tradeRef broken" title="${esc(id)}">${ICONS.alert}<span class="tradeRefMeta">${esc(T("review.tradeMissing"))}</span></span>`;
+  }
+  const dateF = roleField("date"), modelF = roleField("model"), resultF = roleField("result"), rF = roleField("r_multiple");
+  const result = resultF ? t[resultF.id] : "";
+  const rc = resultColor(result);
+  const bits = [];
+  if (dateF && t[dateF.id]) bits.push(esc(t[dateF.id]));
+  if (modelF && t[modelF.id]) bits.push(esc(String(t[modelF.id])));
+  const rVal = rF ? t[rF.id] : "";
+  const rTxt = (rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal)))
+    ? (parseFloat(rVal) >= 0 ? "+" : "") + rVal + "R" : "";
+  return `<span class="tradeRef" data-action="open-trade-ref" data-id="${esc(id)}" title="${esc(T("review.tradeOpen"))}">`
+    + `<span class="tradeRefIcon">${ICONS.grid}</span>`
+    + `<span class="tradeRefMeta">${bits.join(" · ") || esc(id)}</span>`
+    + (result ? `<span class="mono" style="color:${rc};font-weight:600;">${esc(result)}</span>` : "")
+    + (rTxt ? `<span class="mono" style="color:${rc};">${esc(rTxt)}</span>` : "")
+    + `</span>`;
+}
+
+function mdTableRowCells(line) {
+  let inner = line.trim();
+  if (inner.startsWith("|")) inner = inner.slice(1);
+  if (inner.endsWith("|")) inner = inner.slice(0, -1);
+  return inner.split("|").map((c) => c.trim());
+}
+function mdIsTableDivider(line) {
+  return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line || "");
+}
+
+function renderMarkdown(src) {
+  if (!src || !String(src).trim()) return "";
+  const lines = esc(src).replace(/\r\n?/g, "\n").split("\n");
+  let html = "";
+  let i = 0;
+  // 支持一层缩进嵌套。子列表要放进上一个 <li> 里面才是合法结构，
+  // 所以开子列表时把刚写完的 </li> 撕掉，收子列表时再补回去。
+  const listStack = []; // [{ kind: 'ul'|'ol', nested: boolean }]
+
+  // 这两个直接写 html，不返回字符串：`html += openList()` 会先读走 html 的旧值，
+  // 函数内部对 html 的截断就白做了
+  function openList(kind) {
+    let nested = false;
+    if (listStack.length && html.endsWith("</li>")) { html = html.slice(0, -5); nested = true; }
+    listStack.push({ kind, nested });
+    html += `<${kind} class="mdList">`;
+  }
+  function closeOneList() {
+    const l = listStack.pop();
+    html += `</${l.kind}>` + (l.nested ? "</li>" : "");
+  }
+  function closeLists(toDepth) {
+    while (listStack.length > toDepth) closeOneList();
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 代码块 ```
+    if (/^\s*```/.test(line)) {
+      closeLists(0);
+      const buf = [];
+      i++;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
+      i++; // 吃掉收尾的 ```
+      html += `<pre class="mdPre"><code>${buf.join("\n")}</code></pre>`;
+      continue;
+    }
+
+    // 表格：一行表头 + 一行分隔线，后面跟数据行
+    if (/\|/.test(line) && mdIsTableDivider(lines[i + 1] || "")) {
+      closeLists(0);
+      const head = mdTableRowCells(line);
+      i += 2;
+      const body = [];
+      while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim()) { body.push(mdTableRowCells(lines[i])); i++; }
+      html += `<div class="mdTableWrap"><table class="mdTable"><thead><tr>`
+        + head.map((c) => `<th>${mdInline(c)}</th>`).join("")
+        + `</tr></thead><tbody>`
+        + body.map((r) => `<tr>` + head.map((_, ci) => `<td>${mdInline(r[ci] || "")}</td>`).join("") + `</tr>`).join("")
+        + `</tbody></table></div>`;
+      continue;
+    }
+
+    // 空行 = 段落分隔，同时结束列表
+    if (!line.trim()) { closeLists(0); i++; continue; }
+
+    // 分割线
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { closeLists(0); html += `<hr class="mdHr" />`; i++; continue; }
+
+    // 标题 # ~ ######
+    const h = line.match(/^\s{0,3}(#{1,6})\s+(.*)$/);
+    if (h) {
+      closeLists(0);
+      const lv = Math.min(h[1].length, 6);
+      html += `<h${lv} class="mdH mdH${lv}">${mdInline(h[2].trim())}</h${lv}>`;
+      i++; continue;
+    }
+
+    // 引用 >（esc() 之后 > 已经变成 &gt;）
+    if (/^\s{0,3}&gt;\s?/.test(line)) {
+      closeLists(0);
+      const buf = [];
+      while (i < lines.length && /^\s{0,3}&gt;\s?/.test(lines[i])) { buf.push(lines[i].replace(/^\s{0,3}&gt;\s?/, "")); i++; }
+      html += `<blockquote class="mdQuote">${buf.map((b) => mdInline(b)).join("<br />")}</blockquote>`;
+      continue;
+    }
+
+    // 列表（含待办）。缩进 >=2 空格算第二层
+    const li = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+    if (li) {
+      const depth = Math.min(Math.floor(li[1].replace(/\t/g, "  ").length / 2), 1) + 1;
+      const kind = /^\d/.test(li[2]) ? "ol" : "ul";
+      let content = li[3];
+      let taskHtml = "";
+      const task = content.match(/^\[( |x|X)\]\s+(.*)$/);
+      if (task) {
+        const done = task[1].toLowerCase() === "x";
+        content = task[2];
+        taskHtml = `<span class="mdTask ${done ? "done" : ""}"></span>`;
+      }
+      while (listStack.length > depth) closeOneList();
+      while (listStack.length < depth) openList(kind);
+      if (listStack[depth - 1].kind !== kind) { closeOneList(); openList(kind); }
+      html += `<li${taskHtml ? ' class="mdTaskItem"' : ""}>${taskHtml}${mdInline(content)}</li>`;
+      i++; continue;
+    }
+
+    // 普通段落：连着的非空行合成一段，段内换行转 <br>
+    closeLists(0);
+    const para = [];
+    while (i < lines.length && lines[i].trim()
+      && !/^\s*```/.test(lines[i])
+      && !/^\s{0,3}#{1,6}\s/.test(lines[i])
+      && !/^\s{0,3}&gt;\s?/.test(lines[i])
+      && !/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i])
+      && !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i])) { para.push(lines[i]); i++; }
+    html += `<p class="mdP">${para.map((l) => mdInline(l)).join("<br />")}</p>`;
+  }
+  closeLists(0);
+  return html;
+}
+
+/* 列表页摘要用：把 markdown 语法剥干净，只留人话 */
+function mdPlainExcerpt(src, max) {
+  const t = String(src || "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/\[\[trade:[A-Za-z0-9_-]+\]\]/g, "[trade]")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "[img]")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/gm, " ")   // 表格分隔行
+    .replace(/^\s*([-*+]|\d+[.)])\s+(\[[ xX]\]\s+)?/gm, "")                  // 列表标记 + 待办方框
+    .replace(/^\s{0,3}>\s?/gm, "")
+    .replace(/^\s*-{3,}\s*$/gm, " ")
+    .replace(/[*_~`|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const lim = max || 150;
+  return t.length > lim ? t.slice(0, lim) + "…" : t;
+}
+
+/* ============================================================
+   RENDER — 复盘（REVIEWS）
+
+   只在实盘模式下出现（TABS 里按 recordMode 判断），所以这一整块都不用管
+   回测那份数据，trades 里就是实盘那批。
+
+   ⚠️ 编辑器不在 #app 里，它有自己的根节点 #reviewEditorRoot，
+   靠 reviewEditorRenderedFor 守卫防止背景 render() 把正在写的长文冲掉，
+   跟 renderModal 的 modalRenderedForId 是同一个套路。
+   ============================================================ */
+
+/* 周一那天。日历页 app.js 里也是周一开头，这里保持一致 */
+function mondayOf(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return x;
+}
+function toDateStr(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function thisMondayStr() { return toDateStr(mondayOf(new Date())); }
+function lastMondayStr() {
+  const m = mondayOf(new Date());
+  m.setDate(m.getDate() - 7);
+  return toDateStr(m);
+}
+function fmtReviewTime(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString(localeTag(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+function reviewTitleOf(r) { return (r.title || "").trim() || T("review.untitled"); }
+
+function reviewMatchesSearch(r, q) {
+  const s = (q || "").trim().toLowerCase();
+  if (!s) return true;
+  return ((r.title || "") + " " + (r.body || "")).toLowerCase().includes(s);
+}
+
+function renderReviews() {
+  const readOnly = !!viewingUserId;
+  if (reviewsTableMissing) {
+    return `<div class="notice error">${ICONS.alert}<span>${esc(T("review.tableMissing"))}</span></div>`;
+  }
+  const list = reviews.filter((r) => reviewMatchesSearch(r, reviewSearch));
+
+  let html = `<div class="reviewTop">
+    ${readOnly ? "" : `<button class="btn btn-primary" data-action="new-review">${ICONS.plus} ${T("review.new")}</button>`}
+    <div class="reviewSearchBox">
+      ${ICONS.search}
+      <input class="input reviewSearchInput" type="text" placeholder="${esc(T("review.searchPlaceholder"))}"
+        value="${esc(reviewSearch)}" data-action="review-search-input" />
+    </div>
+    <div class="reviewCount mono">${esc(T("review.count", { n: reviews.length }))}</div>
+  </div>`;
+
+  if (!list.length) {
+    html += `<div class="notice">${ICONS.alert}<span>${esc(reviewSearch ? T("review.emptySearch") : T("review.empty"))}</span></div>`;
+    return html;
+  }
+
+  html += `<div class="reviewList">`;
+  list.forEach((r) => {
+    const confirming = reviewConfirmDeleteId === r.id;
+    const excerpt = mdPlainExcerpt(r.body, 180);
+    const linked = (r.linked_trade_ids || []).length;
+    html += `<div class="reviewCard" data-action="open-review" data-id="${esc(r.id)}">
+      <div class="reviewCardHead">
+        <div class="reviewCardTitle display">${esc(reviewTitleOf(r))}</div>
+        ${readOnly ? "" : (!confirming
+          ? `<button class="tinyBtn reviewCardDel" data-action="ask-delete-review" data-id="${esc(r.id)}" title="${esc(T("review.deleteThis"))}">${ICONS.trash}</button>`
+          : `<span class="reviewCardDelConfirm">
+              <button class="tinyBtn" data-action="confirm-delete-review" data-id="${esc(r.id)}" style="color:var(--neg);">✓</button>
+              <button class="tinyBtn" data-action="cancel-delete-review">${ICONS.x}</button>
+            </span>`)}
+      </div>
+      <div class="reviewCardMeta mono">
+        <span class="reviewWeekTag ${r.week_start ? "on" : ""}">${esc(r.week_start ? T("review.weekOf", { date: r.week_start }) : T("review.freePost"))}</span>
+        <span>${esc(T("review.edited", { time: fmtReviewTime(r.updated_at || r.created_at) }))}</span>
+        ${linked ? `<span class="reviewLinkTag">${ICONS.grid} ${esc(T("review.linkedTrades", { n: linked }))}</span>` : ""}
+      </div>
+      ${excerpt ? `<div class="reviewCardExcerpt">${esc(excerpt)}</div>` : ""}
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+/* ============================================================
+   复盘编辑器 —— 自己的根节点 + 重绘守卫
+   ============================================================ */
+const SLASH_ITEMS = [
+  { cmd: "h1",    labelKey: "review.slash.h1",    keys: ["h1", "heading", "title", "标题", "biaoti"] },
+  { cmd: "h2",    labelKey: "review.slash.h2",    keys: ["h2", "subheading", "小标题"] },
+  { cmd: "h3",    labelKey: "review.slash.h3",    keys: ["h3", "小小标题"] },
+  { cmd: "ul",    labelKey: "review.slash.ul",    keys: ["ul", "list", "bullet", "列表", "liebiao"] },
+  { cmd: "ol",    labelKey: "review.slash.ol",    keys: ["ol", "number", "ordered", "编号", "有序"] },
+  { cmd: "task",  labelKey: "review.slash.task",  keys: ["task", "todo", "check", "待办", "daiban"] },
+  { cmd: "quote", labelKey: "review.slash.quote", keys: ["quote", "引用", "yinyong"] },
+  { cmd: "code",  labelKey: "review.slash.code",  keys: ["code", "代码", "daima"] },
+  { cmd: "hr",    labelKey: "review.slash.hr",    keys: ["hr", "divider", "line", "分割线", "fenge"] },
+  { cmd: "table", labelKey: "review.slash.table", keys: ["table", "表格", "biaoge"] },
+  { cmd: "image", labelKey: "review.slash.image", keys: ["image", "img", "photo", "pic", "图片", "tupian"] },
+  { cmd: "link",  labelKey: "review.slash.link",  keys: ["link", "url", "链接", "lianjie"] },
+  { cmd: "trade", labelKey: "review.slash.trade", keys: ["trade", "交易", "jiaoyi", "复盘", "关联"] },
+];
+const SLASH_MENU_WIDTH = 220;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
+const SLASH_MENU_MAX_H = 260;
+const SLASH_ICONS = {
+  h1: "tbHeading", h2: "tbHeading", h3: "tbHeading", ul: "tbUl", ol: "tbOl", task: "tbTask",
+  quote: "tbQuote", code: "tbCode", hr: "tbHr", table: "tbTable", image: "tbImage", link: "tbLink", trade: "grid",
+};
+
+/* 「能不能编辑」和「此刻是不是在编辑」是两回事：
+   管理员只读查看别人的数据时前者就是 false，连编辑按钮都不该出现。 */
+function reviewCanEdit() { return !viewingUserId; }
+function reviewIsReadOnly() { return !reviewCanEdit() || !reviewEditMode; }
+
+function slashFilteredItems() {
+  const q = ((slashMenu && slashMenu.query) || "").toLowerCase();
+  if (!q) return SLASH_ITEMS;
+  return SLASH_ITEMS.filter((it) =>
+    it.keys.some((k) => k.toLowerCase().includes(q)) || T(it.labelKey).toLowerCase().includes(q));
+}
+
+function reviewToolbarHtml() {
+  const b = (cmd, icon, titleKey, label) =>
+    `<button class="tbBtn" data-action="review-tb" data-cmd="${cmd}" title="${esc(T(titleKey))}">${ICONS[icon]}${label ? `<span class="tbLabel">${label}</span>` : ""}</button>`;
+  return `<div class="reviewToolbar">
+    ${b("bold", "tbBold", "review.tb.bold")}
+    ${b("italic", "tbItalic", "review.tb.italic")}
+    ${b("strike", "tbStrike", "review.tb.strike")}
+    <span class="tbSep"></span>
+    ${b("h1", "tbHeading", "review.tb.h1", "1")}
+    ${b("h2", "tbHeading", "review.tb.h2", "2")}
+    <span class="tbSep"></span>
+    ${b("ul", "tbUl", "review.tb.ul")}
+    ${b("ol", "tbOl", "review.tb.ol")}
+    ${b("task", "tbTask", "review.tb.task")}
+    ${b("quote", "tbQuote", "review.tb.quote")}
+    ${b("code", "tbCode", "review.tb.code")}
+    <span class="tbSep"></span>
+    ${b("link", "tbLink", "review.tb.link")}
+    ${b("image", "tbImage", "review.tb.image")}
+    ${b("hr", "tbHr", "review.tb.hr")}
+    <span class="tbSep"></span>
+    <button class="tbBtn tbTrade" data-action="review-tb" data-cmd="trade" title="${esc(T("review.tb.trade"))}">${ICONS.grid}<span class="tbLabel">${esc(T("review.tb.trade"))}</span></button>
+    <span class="tbHint">${esc(T("review.tb.help"))}</span>
+  </div>`;
+}
+
+function reviewSaveBadgeHtml() {
+  if (reviewSaveError) return `<span class="reviewSaveBadge err">${ICONS.alert} ${esc(reviewSaveError)}</span>`;
+  if (reviewSaveState === "saving") return `<span class="reviewSaveBadge">${esc(T("review.saving"))}</span>`;
+  if (reviewSaveState === "dirty") return `<span class="reviewSaveBadge dirty">${esc(T("review.unsaved"))}</span>`;
+  if (reviewSaveState === "saved" && reviewSavedAt) {
+    return `<span class="reviewSaveBadge ok">${esc(T("review.saved", { time: new Date(reviewSavedAt).toLocaleTimeString(localeTag(), { hour: "2-digit", minute: "2-digit" }) }))}</span>`;
+  }
+  return `<span class="reviewSaveBadge"></span>`;
+}
+function updateReviewSaveBadge() {
+  const n = document.getElementById("reviewSaveSlot");
+  if (n) n.innerHTML = reviewSaveBadgeHtml();
+}
+
+/* 关联周那一行。单独拆出来是因为改周只需要换这一行——
+   重绘整个编辑器会把正在写的正文和光标一起冲掉。 */
+function reviewWeekRowInnerHtml() {
+  if (!editingReview) return "";
+  const readOnly = reviewIsReadOnly();
+  const week = editingReview.week_start || "";
+  // 只读态是拿来看的，一排禁用按钮纯属噪音——只留一枚说明关联到哪一周的标签
+  if (readOnly) {
+    return `<span class="reviewWeekTag ${week ? "on" : ""}">${esc(week ? T("review.weekOf", { date: week }) : T("review.freePost"))}</span>`
+      + (viewingUserId ? `<span class="reviewReadOnly">${esc(T("review.readOnly"))}</span>` : "");
+  }
+  return `<span class="reviewWeekLabel">${esc(T("review.linkedWeek"))}</span>
+    <button class="tinyBtn ${week === thisMondayStr() ? "on" : ""}" data-action="review-week" data-week="this">${esc(T("review.weekThis"))}</button>
+    <button class="tinyBtn ${week === lastMondayStr() ? "on" : ""}" data-action="review-week" data-week="last">${esc(T("review.weekLast"))}</button>
+    <input type="date" class="input reviewWeekDate" value="${esc(week)}" data-review-week-date />
+    <button class="tinyBtn ${week ? "" : "on"}" data-action="review-week" data-week="clear">${esc(T("review.weekClear"))}</button>`;
+}
+function refreshReviewWeekRow() {
+  const row = document.getElementById("reviewWeekRow");
+  if (row) row.innerHTML = reviewWeekRowInnerHtml();
+}
+
+function renderReviewEditor(force) {
+  const root = document.getElementById("reviewEditorRoot");
+  if (!root) return;
+  if (!editingReview) { reviewEditorRenderedFor = null; root.innerHTML = ""; return; }
+  // 已经在显示这一篇就不重绘——否则正在写的正文和光标位置全没了
+  if (!force && reviewEditorRenderedFor === editingReview.id) return;
+  reviewEditorRenderedFor = editingReview.id;
+
+  const canEdit = reviewCanEdit();
+  const readOnly = reviewIsReadOnly();
+  root.innerHTML = `<div class="reviewEditorOverlay">
+    <div class="reviewEditor">
+      <div class="reviewEditorHead">
+        ${readOnly
+          ? `<div class="reviewTitleStatic display">${esc(reviewTitleOf(editingReview))}</div>`
+          : `<input class="reviewTitleInput display" type="text" id="reviewTitleInput"
+              placeholder="${esc(T("review.titlePlaceholder"))}" value="${esc(editingReview.title || "")}"
+              oninput="window.__reviewTitleInput(this)" />`}
+        <div class="reviewHeadRight">
+          <span id="reviewSaveSlot">${canEdit ? reviewSaveBadgeHtml() : ""}</span>
+          ${readOnly ? "" : `<button class="btn" data-action="toggle-review-preview">${esc(reviewPreviewOpen ? T("review.previewOn") : T("review.previewOff"))}</button>`}
+          ${canEdit ? `<button class="btn ${reviewEditMode ? "" : "btn-primary"}" data-action="toggle-review-edit-mode" title="${esc(reviewEditMode ? T("review.modeDoneTitle") : T("review.modeEditTitle"))}">${reviewEditMode ? ICONS.check : ICONS.pencil} ${esc(reviewEditMode ? T("review.modeDone") : T("review.modeEdit"))}</button>` : ""}
+          <button class="iconBtn" data-action="close-review-editor" title="${esc(T("review.editorClose"))}">${ICONS.x}</button>
+        </div>
+      </div>
+      <div class="reviewWeekRow" id="reviewWeekRow">${reviewWeekRowInnerHtml()}</div>
+      ${readOnly ? "" : reviewToolbarHtml()}
+      <div class="reviewEditorBody ${readOnly ? "readOnly" : reviewPreviewOpen ? "" : "noPreview"}">
+        <div class="reviewPane">
+          <textarea class="reviewBodyInput" id="reviewBodyInput" spellcheck="false"
+            placeholder="${esc(T("review.bodyPlaceholder"))}"
+            oninput="window.__reviewBodyInput(this)"
+            onkeydown="window.__reviewKeydown(event, this)"
+            onclick="window.__reviewCaretMoved()"
+            onpaste="window.__reviewPaste(event, this)">${esc(editingReview.body || "")}</textarea>
+          <div id="slashMenuRoot"></div>
+        </div>
+        <div class="reviewPreviewPane mdBody" id="reviewPreview">${renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`}</div>
+      </div>
+      <div id="tradePickerRoot"></div>
+    </div>
+  </div>`;
+
+  const ta = document.getElementById("reviewBodyInput");
+  if (ta && !readOnly) {
+    ta.focus();
+    const end = ta.value.length;
+    ta.setSelectionRange(end, end);
+  }
+}
+
+function updateReviewPreview() {
+  const box = document.getElementById("reviewPreview");
+  if (!box || !editingReview) return;
+  box.innerHTML = renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`;
+}
+
+/* ---------- 自动保存 ----------
+   停手 1.2 秒写数据库，同时每次输入都镜像一份到 localStorage 兜底。
+   全程不调 render()，否则编辑器会被重建。 */
+function scheduleReviewSave() {
+  reviewSaveState = "dirty";
+  reviewSaveError = null;
+  updateReviewSaveBadge();
+  saveReviewDraft();
+  clearTimeout(reviewSaveTimer);
+  reviewSaveTimer = setTimeout(() => { flushReviewSave(); }, 1200);
+}
+async function flushReviewSave() {
+  clearTimeout(reviewSaveTimer);
+  reviewSaveTimer = null;
+  if (!editingReview || viewingUserId) return true;
+  if (reviewSaveState !== "dirty") return true;
+  reviewSaveState = "saving";
+  updateReviewSaveBadge();
+  const ok = await persistReview(editingReview);
+  if (ok) {
+    editingReview._isNew = false;
+    reviewSaveState = "saved";
+    reviewSavedAt = Date.now();
+  } else {
+    reviewSaveState = "dirty";
+  }
+  updateReviewSaveBadge();
+  return ok;
+}
+
+/* ---------- textarea 上的输入处理 ----------
+   全部走内联 on* 属性交给这几个 window.__ 函数，跟项目里
+   window.__updateUrlPreview / window.__imgFallback 一个路子。 */
+window.__reviewTitleInput = function (el) {
+  if (!editingReview) return;
+  editingReview.title = el.value;
+  scheduleReviewSave();
+};
+window.__reviewBodyInput = function (ta) {
+  if (!editingReview) return;
+  editingReview.body = ta.value;
+  updateReviewPreview();
+  scheduleReviewSave();
+  syncSlashMenu(ta);
+};
+window.__reviewCaretMoved = function () {
+  if (slashMenu) closeSlashMenu();
+};
+window.__reviewPaste = function (e, ta) {
+  const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
+  if (!/^https?:\/\/\S+$/i.test(text.trim())) return;   // 不是纯链接就走默认粘贴
+  const url = text.trim();
+  const hasSel = ta.selectionStart !== ta.selectionEnd;
+  const isImage = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?|#|$)/i.test(url);
+  if (!hasSel && !isImage) return;                      // 光秃秃粘个普通链接，保持原样最省事
+  e.preventDefault();
+  if (isImage && !hasSel) {
+    replaceRange(ta, ta.selectionStart, ta.selectionEnd, `![](${url})`, null);
+  } else {
+    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd) || T("review.linkText");
+    replaceRange(ta, ta.selectionStart, ta.selectionEnd, `[${sel}](${url})`, null);
+  }
+};
+
+/* 统一的「改 textarea 内容」入口：改完同步状态、预览、光标 */
+function replaceRange(ta, from, to, text, selStart, selEnd) {
+  const before = ta.value.slice(0, from);
+  const after = ta.value.slice(to);
+  ta.value = before + text + after;
+  const a = (selStart === null || selStart === undefined) ? from + text.length : selStart;
+  const b = (selEnd === null || selEnd === undefined) ? a : selEnd;
+  ta.setSelectionRange(a, b);
+  ta.focus();
+  if (editingReview) editingReview.body = ta.value;
+  updateReviewPreview();
+  scheduleReviewSave();
+}
+
+/* 整行整行地改（缩进、列表、标题都走这里）。
+   本来选中了多行，就把改完的这几行继续选着——否则 Tab 之后选区一塌，
+   紧接着的 Shift+Tab 只能退最后一行。没选中就只按长度差挪一下光标。 */
+function applyLineEdit(ta, s, en, text) {
+  const hadRange = ta.selectionStart !== ta.selectionEnd;
+  const caret = ta.selectionStart;
+  const delta = text.length - (en - s);
+  if (hadRange) replaceRange(ta, s, en, text, s, s + text.length);
+  else replaceRange(ta, s, en, text, Math.max(s, caret + delta));
+}
+
+function lineBoundsAt(value, pos) {
+  const start = value.lastIndexOf("\n", pos - 1) + 1;
+  let end = value.indexOf("\n", pos);
+  if (end === -1) end = value.length;
+  return { start, end };
+}
+
+/* 给选中的每一行加/去掉前缀（列表、引用、标题都走这个） */
+function toggleLinePrefix(ta, prefix, numbered) {
+  const v = ta.value;
+  const s = lineBoundsAt(v, ta.selectionStart).start;
+  const e = lineBoundsAt(v, ta.selectionEnd).end;
+  const lines = v.slice(s, e).split("\n");
+  const stripRe = /^(\s*)(#{1,6}\s+|[-*+]\s+\[[ xX]\]\s+|[-*+]\s+|\d+[.)]\s+|>\s?)?/;
+  const allHave = lines.every((l) => !l.trim() || l.replace(/^\s*/, "").startsWith(numbered ? "" : prefix.trim()));
+  const out = lines.map((l, i) => {
+    const m = l.match(stripRe);
+    const indent = m[1] || "";
+    const bare = l.slice((m[0] || "").length);
+    if (allHave && !numbered && m[2] && m[2].trim() === prefix.trim()) return indent + bare;   // 再点一次 = 去掉
+    return indent + (numbered ? (i + 1) + ". " : prefix) + bare;
+  });
+  const text = out.join("\n");
+  applyLineEdit(ta, s, e, text);
+}
+
+function wrapSelection(ta, mark, endMark) {
+  const close = endMark === undefined ? mark : endMark;
+  const from = ta.selectionStart, to = ta.selectionEnd;
+  const sel = ta.value.slice(from, to);
+  // 已经包着同样的标记就脱掉，再点一次能取消
+  if (sel && ta.value.slice(from - mark.length, from) === mark && ta.value.slice(to, to + close.length) === close) {
+    const inner = sel;
+    replaceRange(ta, from - mark.length, to + close.length, inner, from - mark.length + inner.length);
+    return;
+  }
+  if (!sel) {
+    replaceRange(ta, from, to, mark + close, from + mark.length);   // 空选中：把光标停在中间
+    return;
+  }
+  replaceRange(ta, from, to, mark + sel + close, from + mark.length + sel.length + close.length);
+}
+
+function insertBlock(ta, text) {
+  const v = ta.value;
+  const { start } = lineBoundsAt(v, ta.selectionStart);
+  const atLineStart = ta.selectionStart === start;
+  const lead = atLineStart ? "" : "\n";
+  replaceRange(ta, ta.selectionStart, ta.selectionEnd, lead + text);
+}
+
+function runReviewCommand(cmd) {
+  const ta = document.getElementById("reviewBodyInput");
+  if (!ta || reviewIsReadOnly()) return;
+  switch (cmd) {
+    case "bold": wrapSelection(ta, "**"); break;
+    case "italic": wrapSelection(ta, "*"); break;
+    case "strike": wrapSelection(ta, "~~"); break;
+    case "h1": toggleLinePrefix(ta, "# "); break;
+    case "h2": toggleLinePrefix(ta, "## "); break;
+    case "h3": toggleLinePrefix(ta, "### "); break;
+    case "ul": toggleLinePrefix(ta, "- "); break;
+    case "ol": toggleLinePrefix(ta, "1. ", true); break;
+    case "task": toggleLinePrefix(ta, "- [ ] "); break;
+    case "quote": toggleLinePrefix(ta, "> "); break;
+    case "code": {
+      const multi = ta.value.slice(ta.selectionStart, ta.selectionEnd).includes("\n");
+      if (multi) {
+        const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
+        replaceRange(ta, ta.selectionStart, ta.selectionEnd, "```\n" + sel + "\n```");
+      } else wrapSelection(ta, "`");
+      break;
+    }
+    case "hr": insertBlock(ta, "\n---\n"); break;
+    case "table": insertBlock(ta, "\n| A | B |\n| --- | --- |\n|  |  |\n"); break;
+    case "link": {
+      const url = window.prompt(T("review.promptLink"), "https://");
+      if (!url || !/^https?:\/\//i.test(url.trim())) return;
+      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd) || T("review.linkText");
+      replaceRange(ta, ta.selectionStart, ta.selectionEnd, `[${sel}](${url.trim()})`);
+      break;
+    }
+    case "image": {
+      const url = window.prompt(T("review.promptImage"), "https://");
+      if (!url || !/^https?:\/\//i.test(url.trim())) return;
+      insertBlock(ta, `![](${url.trim()})\n`);
+      break;
+    }
+    case "trade": openTradePicker(); break;
+  }
+}
+
+/* ---------- 键盘：回车续列表 / Tab 缩进 / 常用快捷键 ----------
+   ⚠️ 所有分支都要先看 e.isComposing —— 中文输入法选词时按回车/空格
+   走的是同一个 keydown，不挡住的话会把没上屏的拼音切碎。 */
+window.__reviewKeydown = function (e, ta) {
+  if (reviewIsReadOnly()) return;
+
+  if (slashMenu && !e.isComposing) {
+    const items = slashFilteredItems();
+    if (e.key === "ArrowDown") { e.preventDefault(); slashMenu.index = (slashMenu.index + 1) % Math.max(items.length, 1); renderSlashMenu(); return; }
+    if (e.key === "ArrowUp") { e.preventDefault(); slashMenu.index = (slashMenu.index - 1 + Math.max(items.length, 1)) % Math.max(items.length, 1); renderSlashMenu(); return; }
+    if (e.key === "Enter" || e.key === "Tab") {
+      if (items.length) { e.preventDefault(); applySlashItem(items[slashMenu.index] || items[0]); return; }
+    }
+    if (e.key === "Escape") { e.preventDefault(); closeSlashMenu(); return; }
+  }
+
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && !e.altKey && !e.isComposing) {
+    const k = e.key.toLowerCase();
+    if (k === "b") { e.preventDefault(); runReviewCommand("bold"); return; }
+    if (k === "i") { e.preventDefault(); runReviewCommand("italic"); return; }
+    if (k === "k") { e.preventDefault(); runReviewCommand("link"); return; }
+    if (k === "s") { e.preventDefault(); flushReviewSave(); return; }
+  }
+
+  if (e.key === "Tab" && !e.isComposing) {
+    e.preventDefault();
+    const v = ta.value;
+    const s = lineBoundsAt(v, ta.selectionStart).start;
+    const en = lineBoundsAt(v, ta.selectionEnd).end;
+    const lines = v.slice(s, en).split("\n");
+    const out = e.shiftKey ? lines.map((l) => l.replace(/^ {1,2}/, "")) : lines.map((l) => "  " + l);
+    const text = out.join("\n");
+    applyLineEdit(ta, s, en, text);
+    return;
+  }
+
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    const v = ta.value;
+    const { start } = lineBoundsAt(v, ta.selectionStart);
+    const line = v.slice(start, ta.selectionStart);
+    const m = line.match(/^(\s*)([-*+]|\d+[.)])\s+(\[[ xX]\]\s+)?(.*)$/);
+    if (!m) return;
+    const [, indent, marker, task, rest] = m;
+    if (!rest.trim()) {
+      // 空的列表项上按回车 = 退出列表（把这一行的标记清掉）
+      e.preventDefault();
+      replaceRange(ta, start, ta.selectionStart, "");
+      return;
+    }
+    e.preventDefault();
+    let nextMarker = marker;
+    if (/^\d/.test(marker)) {
+      const n = parseInt(marker, 10) + 1;
+      nextMarker = n + marker.replace(/^\d+/, "");
+    }
+    const nextTask = task ? "[ ] " : "";
+    replaceRange(ta, ta.selectionStart, ta.selectionEnd, "\n" + indent + nextMarker + " " + nextTask);
+  }
+};
+
+/* ---------- 斜杠插入菜单 ---------- */
+function syncSlashMenu(ta) {
+  const caret = ta.selectionStart;
+  if (!slashMenu) {
+    // 行首或空白后面刚打了个 / 才弹，写 and/or 这种就不该跳出来
+    if (caret > 0 && ta.value[caret - 1] === "/" && (caret === 1 || /[\s\n]/.test(ta.value[caret - 2]))) {
+      slashMenu = { start: caret - 1, query: "", index: 0 };
+      renderSlashMenu();
+    }
+    return;
+  }
+  if (caret <= slashMenu.start || ta.value[slashMenu.start] !== "/") { closeSlashMenu(); return; }
+  const q = ta.value.slice(slashMenu.start + 1, caret);
+  if (/\s/.test(q) || q.length > 20) { closeSlashMenu(); return; }
+  slashMenu.query = q;
+  slashMenu.index = 0;
+  renderSlashMenu();
+}
+function closeSlashMenu() {
+  slashMenu = null;
+  const root = document.getElementById("slashMenuRoot");
+  if (root) root.innerHTML = "";
+}
+function applySlashItem(item) {
+  const ta = document.getElementById("reviewBodyInput");
+  if (!ta || !item || !slashMenu) return;
+  const from = slashMenu.start;
+  const to = ta.selectionStart;
+  closeSlashMenu();
+  replaceRange(ta, from, to, "");   // 先把 /query 本身删掉
+  runReviewCommand(item.cmd);
+}
+
+/* textarea 里光标的像素位置：做一个样式一致的隐藏 div，把光标前的文字塞进去量 */
+function caretCoords(ta, index) {
+  const cs = getComputedStyle(ta);
+  const div = document.createElement("div");
+  ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "wordSpacing",
+    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"].forEach((k) => { div.style[k] = cs[k]; });
+  div.style.position = "absolute";
+  div.style.top = "0";
+  div.style.left = "-9999px";
+  div.style.visibility = "hidden";
+  div.style.whiteSpace = "pre-wrap";
+  div.style.wordWrap = "break-word";
+  div.style.boxSizing = "border-box";
+  div.style.border = "none";
+  div.style.width = ta.clientWidth + "px";
+  div.textContent = ta.value.slice(0, index);
+  const span = document.createElement("span");
+  span.textContent = ta.value.slice(index) || ".";
+  div.appendChild(span);
+  document.body.appendChild(div);
+  const top = span.offsetTop;
+  const left = span.offsetLeft;
+  const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.5;
+  document.body.removeChild(div);
+  return { top: top - ta.scrollTop, left: left - ta.scrollLeft, lineHeight: lh };
+}
+
+function renderSlashMenu() {
+  const root = document.getElementById("slashMenuRoot");
+  const ta = document.getElementById("reviewBodyInput");
+  if (!root || !ta || !slashMenu) return;
+  const items = slashFilteredItems();
+  const pos = caretCoords(ta, slashMenu.start);
+  const maxLeft = Math.max(ta.clientWidth - SLASH_MENU_WIDTH - 8, 0);
+  const left = Math.min(Math.max(pos.left, 0), maxLeft);
+  // 菜单默认挂在光标那一行下面；下面塞不下就翻到上面去，别让它掉出编辑区
+  const menuH = Math.min(items.length * 32 + 34, SLASH_MENU_MAX_H);
+  const below = pos.top + pos.lineHeight;
+  const rawTop = (below + menuH > ta.clientHeight && pos.top - menuH > 0) ? pos.top - menuH - 2 : below;
+  const top = Math.max(Math.min(rawTop, ta.clientHeight - menuH), 0);
+  root.innerHTML = `<div class="slashMenu" style="top:${top}px;left:${left}px;">
+    <div class="slashMenuHead">${esc(T("review.slash.title"))}${slashMenu.query ? ` · ${esc(slashMenu.query)}` : ""}</div>
+    ${items.length
+      ? items.map((it, i) => `<button class="slashItem ${i === slashMenu.index ? "active" : ""}" data-action="slash-pick" data-cmd="${it.cmd}">
+          ${ICONS[SLASH_ICONS[it.cmd]] || ""}<span>${esc(T(it.labelKey))}</span>
+        </button>`).join("")
+      : `<div class="slashEmpty">${esc(T("review.slash.empty"))}</div>`}
+  </div>`;
+}
+
+/* ---------- 交易选择器 ----------
+   只渲染进 #tradePickerRoot，绝不碰编辑器本体；搜索时也只换结果区，
+   否则输入框自己会被重建、光标丢失。 */
+let tradePickerCaret = null;
+const TRADE_PICKER_LIMIT = 40;
+
+function openTradePicker() {
+  const ta = document.getElementById("reviewBodyInput");
+  tradePickerCaret = ta ? { from: ta.selectionStart, to: ta.selectionEnd } : null;
+  tradePickerOpen = true;
+  tradePickerQuery = "";
+  renderTradePicker();
+}
+function closeTradePicker() {
+  tradePickerOpen = false;
+  const root = document.getElementById("tradePickerRoot");
+  if (root) root.innerHTML = "";
+  const ta = document.getElementById("reviewBodyInput");
+  if (ta) ta.focus();
+}
+/* 选择器自己的搜索，不复用记录页的 tradeMatchesSearch()——那个只搜
+   text/textarea/url，而在这里最常搜的恰恰是日期和模型（select 类型）。 */
+function tradePickerMatches(t, q) {
+  if (!q) return true;
+  return schema.some((f) => {
+    const v = t[f.id];
+    if (v === undefined || v === null || v === "") return false;
+    const str = Array.isArray(v) ? v.join(" ") : String(v);
+    return str.toLowerCase().includes(q);
+  });
+}
+function tradePickerList() {
+  const q = (tradePickerQuery || "").trim().toLowerCase();
+  const dateF = roleField("date");
+  const list = trades.filter((t) => tradePickerMatches(t, q));
+  return list.slice().sort((a, b) => {
+    const av = dateF ? (a[dateF.id] || "") : "";
+    const bv = dateF ? (b[dateF.id] || "") : "";
+    if (av !== bv) return av < bv ? 1 : -1;
+    return (b._created_at || "") < (a._created_at || "") ? -1 : 1;
+  });
+}
+function tradePickerResultsHtml() {
+  const all = tradePickerList();
+  if (!all.length) {
+    return `<div class="tradePickerEmpty">${esc(trades.length ? T("review.picker.empty") : T("review.picker.noTrades"))}</div>`;
+  }
+  const shown = all.slice(0, TRADE_PICKER_LIMIT);
+  const dateF = roleField("date"), modelF = roleField("model"), resultF = roleField("result"),
+    rF = roleField("r_multiple"), shotF = roleField("screenshot");
+  let html = shown.map((t) => {
+    const result = resultF ? t[resultF.id] : "";
+    const rc = resultColor(result);
+    const shot = shotF ? t[shotF.id] : null;
+    const rVal = rF ? t[rF.id] : "";
+    const rTxt = (rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal)))
+      ? (parseFloat(rVal) >= 0 ? "+" : "") + rVal + "R" : "";
+    return `<button class="tradePickerRow" data-action="pick-trade" data-id="${esc(t.id)}">
+      ${shot
+        ? `<img class="tradePickerThumb" src="${esc(shot)}" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="tradePickerThumbEmpty" onerror="window.__imgFallback(this)" />`
+        : `<span class="tradePickerThumbEmpty">${ICONS.camera}</span>`}
+      <span class="tradePickerDate mono">${esc((dateF && t[dateF.id]) || "—")}</span>
+      <span class="tradePickerModel">${esc((modelF && t[modelF.id]) || "")}</span>
+      <span class="mono" style="color:${rc};font-weight:600;">${esc(result || "")}</span>
+      <span class="mono" style="color:${rc};">${esc(rTxt)}</span>
+    </button>`;
+  }).join("");
+  if (all.length > shown.length) {
+    html += `<div class="tradePickerMore">${esc(T("review.picker.more", { n: TRADE_PICKER_LIMIT }))}</div>`;
+  }
+  return html;
+}
+function renderTradePicker() {
+  const root = document.getElementById("tradePickerRoot");
+  if (!root) return;
+  if (!tradePickerOpen) { root.innerHTML = ""; return; }
+  root.innerHTML = `<div class="overlay tradePickerOverlay" data-action="close-trade-picker">
+    <div class="modal tradePickerModal">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${esc(T("review.picker.title"))}</div>
+        <button class="iconBtn" data-action="close-trade-picker">${ICONS.x}</button>
+      </div>
+      <div class="tradePickerSearch">
+        ${ICONS.search}
+        <input class="input" type="text" id="tradePickerInput" placeholder="${esc(T("review.picker.search"))}"
+          value="${esc(tradePickerQuery)}" oninput="window.__tradePickerInput(this)" />
+      </div>
+      <div class="tradePickerResults" id="tradePickerResults">${tradePickerResultsHtml()}</div>
+    </div>
+  </div>`;
+  const input = document.getElementById("tradePickerInput");
+  if (input) input.focus();
+}
+window.__tradePickerInput = function (el) {
+  tradePickerQuery = el.value;
+  const box = document.getElementById("tradePickerResults");
+  if (box) box.innerHTML = tradePickerResultsHtml();   // 只换结果，输入框留着
+};
+function insertTradeRef(id) {
+  const ta = document.getElementById("reviewBodyInput");
+  closeTradePicker();
+  if (!ta) return;
+  const from = tradePickerCaret ? tradePickerCaret.from : ta.selectionStart;
+  const to = tradePickerCaret ? tradePickerCaret.to : ta.selectionEnd;
+  tradePickerCaret = null;
+  replaceRange(ta, from, to, `[[trade:${id}]] `);
+}
+
+/* ---------- 打开 / 关闭编辑器 ---------- */
+function openReviewEditor(id) {
+  const r = reviews.find((x) => x.id === id);
+  if (!r) return;
+  editingReview = { id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "", _isNew: false };
+  reviewEditMode = false;          // 打开已有帖子默认只读
+  reviewSaveState = "idle";
+  reviewSavedAt = null;
+  reviewSaveError = null;
+  slashMenu = null;
+  tradePickerOpen = false;
+  renderReviewEditor(true);
+}
+function openNewReview() {
+  editingReview = { id: newReviewId(), title: "", body: "", week_start: thisMondayStr(), _isNew: true };
+  reviewEditMode = true;           // 新建当然直接进编辑，只读的空白页没有意义
+  reviewSaveState = "idle";
+  reviewSavedAt = null;
+  reviewSaveError = null;
+  slashMenu = null;
+  tradePickerOpen = false;
+  renderReviewEditor(true);
+}
+async function closeReviewEditor() {
+  closeSlashMenu();
+  tradePickerOpen = false;
+  const wasNew = editingReview && editingReview._isNew;
+  const isBlank = editingReview && !(editingReview.title || "").trim() && !(editingReview.body || "").trim();
+  if (wasNew && isBlank) {
+    // 开了个空白页又直接关掉：别往数据库里塞空行
+    clearTimeout(reviewSaveTimer); reviewSaveTimer = null;
+    reviewSaveState = "idle";
+    clearReviewDraft();
+  } else {
+    await flushReviewSave();
+  }
+  editingReview = null;
+  reviewEditorRenderedFor = null;
+  renderReviewEditor();
+  render();
+}
+
+/* ============================================================
    RENDER — CALENDAR VIEW
    ============================================================ */
 function renderMonthBar() {
@@ -2545,12 +3611,15 @@ function render() {
     { id: "changelog", label: T("tab.changelog"), icon: ICONS.clock },
     { id: "settings", label: T("tab.settings"), icon: ICONS.settings },
   ];
+  // 复盘只在实盘模式下出现——回测那批数据不需要写周复盘，页签也就不该占位置
+  if (recordMode === "live") TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   let body = "";
   try {
     if (tab === "grid") body = renderGrid();
     else if (tab === "analytics") body = renderAnalytics();
     else if (tab === "calendar") body = renderCalendar();
+    else if (tab === "reviews") body = renderReviews();
     else if (tab === "changelog") body = renderChangelog();
     else if (tab === "settings") body = renderSettings();
     else if (tab === "admin") body = isAdmin ? renderAdminPanel() : `<div class="notice">${ICONS.alert}<span>${T("common.noPermission")}</span></div>`;
@@ -2604,6 +3673,7 @@ function render() {
   `;
   renderModal();
   renderSecondaryModals();
+  renderReviewEditor();
 }
 
 /* ============================================================
@@ -3072,6 +4142,60 @@ document.addEventListener("click", async (e) => {
     const cf = document.getElementById("pwConfirmInput").value;
     await changeOwnPassword(cur, nw, cf);
   }
+  /* ---------- 复盘 ---------- */
+  else if (action === "new-review") { if (!viewingUserId) openNewReview(); }
+  else if (action === "open-review") { openReviewEditor(el.dataset.id); }
+  else if (action === "close-review-editor") { await closeReviewEditor(); }
+  else if (action === "ask-delete-review") { reviewConfirmDeleteId = el.dataset.id; render(); }
+  else if (action === "cancel-delete-review") { reviewConfirmDeleteId = null; render(); }
+  else if (action === "confirm-delete-review") {
+    const id = el.dataset.id;
+    reviewConfirmDeleteId = null;
+    await deleteReview(id);
+    if (editingReview && editingReview.id === id) {
+      clearTimeout(reviewSaveTimer); reviewSaveTimer = null;
+      editingReview = null; reviewEditorRenderedFor = null; clearReviewDraft();
+      renderReviewEditor();
+    }
+    render();
+  }
+  else if (action === "toggle-review-edit-mode") {
+    if (!editingReview || !reviewCanEdit()) return;
+    closeSlashMenu();
+    if (reviewEditMode) await flushReviewSave();   // 退出编辑就立刻落盘，不等 debounce
+    reviewEditMode = !reviewEditMode;
+    renderReviewEditor(true);                      // 两种模式的骨架不一样，必须强制重建
+  }
+  else if (action === "review-tb") { runReviewCommand(el.dataset.cmd); }
+  else if (action === "slash-pick") {
+    const item = SLASH_ITEMS.find((i) => i.cmd === el.dataset.cmd);
+    if (item) applySlashItem(item);
+  }
+  else if (action === "toggle-review-preview") {
+    reviewPreviewOpen = !reviewPreviewOpen;
+    try { localStorage.setItem("journal_review_preview", String(reviewPreviewOpen)); } catch (err) {}
+    // 只换一个 class 和一个按钮文案，不重建编辑器——正文和光标要留在原地
+    const body = document.querySelector(".reviewEditorBody");
+    if (body) body.classList.toggle("noPreview", !reviewPreviewOpen);
+    el.textContent = reviewPreviewOpen ? T("review.previewOn") : T("review.previewOff");
+  }
+  else if (action === "review-week") {
+    if (!editingReview || reviewIsReadOnly()) return;
+    const w = el.dataset.week;
+    editingReview.week_start = w === "this" ? thisMondayStr() : w === "last" ? lastMondayStr() : "";
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+  }
+  else if (action === "open-trade-picker") { openTradePicker(); }
+  else if (action === "close-trade-picker") {
+    if (el.classList.contains("tradePickerOverlay") && e.target !== el) return;  // 点内容不关闭（不能用 stopPropagation）
+    closeTradePicker();
+  }
+  else if (action === "pick-trade") { insertTradeRef(el.dataset.id); }
+  else if (action === "open-trade-ref") {
+    const t = trades.find((x) => x.id === el.dataset.id);
+    if (t) { editingTrade = { ...t }; renderModal(true); }
+  }
   else if (action === "preview-image") {
     lightboxUrl = el.dataset.url;
     render();
@@ -3084,6 +4208,8 @@ document.addEventListener("click", async (e) => {
   else if (action === "set-record-mode") {
     if (recordMode === el.dataset.mode) return;
     recordMode = el.dataset.mode;
+    // 复盘页签只在实盘下存在，切回回测时得离开，否则会停在一个不存在的页签上
+    if (recordMode !== "live" && tab === "reviews") tab = "grid";
     if (!viewingUserId) { try { localStorage.setItem("journal_record_mode", recordMode); } catch (e) {} }
     if (recordMode === "live") {
       const now = new Date();
@@ -3213,8 +4339,22 @@ document.addEventListener("input", (e) => {
     const el = document.querySelector('[data-action="search-input"]');
     if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (err) {} }
   }
+  else if (e.target.dataset.action === "review-search-input") {
+    reviewSearch = e.target.value;
+    const caret = e.target.selectionStart;
+    render();
+    const el = document.querySelector('[data-action="review-search-input"]');
+    if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (err) {} }
+  }
 });
 document.addEventListener("change", async (e) => {
+  if (e.target.dataset.reviewWeekDate !== undefined) {
+    if (!editingReview || reviewIsReadOnly()) return;
+    editingReview.week_start = e.target.value || "";
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+    return;
+  }
   if (e.target.dataset.bind === "breakdown-sort") {
     const v = e.target.value;
     breakdownSort = v === "delta" || v === "ev" ? v : "n";
@@ -3521,6 +4661,10 @@ window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); });
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
   if (lightboxUrl) { lightboxUrl = null; render(); return; }
+  // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
+  // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
+  if (slashMenu) { closeSlashMenu(); return; }
+  if (tradePickerOpen) { closeTradePicker(); return; }
   if (comboGroupModal) { comboGroupModal = null; render(); return; }
   if (profileModalOpen) { profileModalOpen = false; render(); return; }
   if (editingTrade) {
@@ -3529,7 +4673,17 @@ document.addEventListener("keydown", (e) => {
     renderModal(); render();
     return;
   }
+  if (editingReview) { closeReviewEditor(); return; }
   if (dayDetailDate) { dayDetailDate = null; render(); return; }
+});
+
+/* 复盘是长文，debounce 那一秒里关掉标签页就丢了。localStorage 那份草稿能兜底，
+   但还是先拦一下，让用户自己决定。 */
+window.addEventListener("beforeunload", (e) => {
+  if (!editingReview || viewingUserId) return;
+  if (reviewSaveState !== "dirty" && reviewSaveState !== "saving") return;
+  e.preventDefault();
+  e.returnValue = "";
 });
 
 /* ============================================================

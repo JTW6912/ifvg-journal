@@ -10,9 +10,9 @@
 
 ## 二、技术栈
 
-- **前端**：纯 `index.html` 一个文件（HTML + CSS + vanilla JS，~2000+ 行），没有框架，没有构建步骤
+- **前端**：`index.html` 只是外壳，实际代码拆成 `app.js`（全部逻辑）/ `style.css` / `i18n.js`（中英词典），没有框架，没有打包步骤
 - **后端**：Supabase（Postgres 数据库 + Auth 认证），没有自己写的服务器，前端直接调 Supabase JS client
-- **部署**：Vercel（免费版），手动拖文件夹部署，没接 Git 自动部署
+- **部署**：Vercel（免费版），已接 Git —— `git push origin master` 之后自动部署
 - **备份/运维**：GitHub Actions 定时任务（跑在一个独立的私有仓库里，跟主项目代码仓库分开）
 
 ## 三、数据库结构（当前真实状态）
@@ -82,11 +82,28 @@ created_at  timestamptz
 ```
 - RLS：登录用户都能读；只有 admin 能 INSERT/DELETE
 
+### journal_reviews（复盘帖子）
+```
+id                text, 主键
+user_id           uuid, 引用 auth.users(id)
+title             text
+body              text —— markdown 原文（不是 HTML，渲染在前端做）
+week_start        date, 可空 —— 关联到哪一周（周一那天）；null = 自由帖
+linked_trade_ids  text[] —— 保存时从正文 [[trade:xxx]] 抽出来的冗余索引
+created_at        timestamptz
+updated_at        timestamptz
+```
+- **这张表没有 mode 列**：复盘只在实盘模式下使用（`TABS` 里按 `recordMode === "live"` 决定页签出不出现），所以不存在回测那一份
+- `linked_trade_ids` 只是索引，**正文才是唯一真相**。改正文一定要重新抽一遍（`extractTradeRefs()`），别让两边对不上
+- RLS：跟 trades 一样，自己读写自己的 + 一条 admin 只读（`select using (is_admin())`）
+- 这张表要手动建，整段 SQL 在 `docs/reviews-migration.sql`。没跑也不影响其他功能：前端捕获 42P01/PGRST205 后置 `reviewsTableMissing`，只在复盘页显示一条提示
+
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
 - `update_own_profile(new_display_name, new_gender)` — 普通用户改自己名字/性别专用，改不了权限
 - `touch_last_seen()` — 更新自己的 last_seen_at
 - `handle_new_user()` — 触发器，新用户自动建 profiles 行
+- 复盘那张表不需要新函数，RLS 直接复用 `is_admin()`
 
 ## 四、前端架构
 
@@ -104,9 +121,10 @@ created_at  timestamptz
 - `#app` —— 主内容区（记录/分析/月度/设置等页签内容）
 - `#modalRoot` —— 交易编辑弹窗（新建/编辑交易）
 - `#secondaryModalRoot` —— 个人设置弹窗 / 图片灯箱 / 当日交易明细弹窗（互斥，同一时间只显示一个）
+- `#reviewEditorRoot` —— 复盘编辑器（全屏浮层，`z-index:90`，故意低于 `.overlay` 的 100，好让交易弹窗盖在它上面）
 
 ### ⚠️ 弹窗重绘保护（防止用户输入被冲掉）
-`renderModal(force)` 和 `renderSecondaryModals(force)` 内部都有"已经显示的是同一个东西就跳过重绘"的守卫（`modalRenderedForId` / `secondaryModalState`）。**背景异步操作触发的全局 `render()` 不会无脑重建正在编辑的弹窗**，否则没保存的输入会被清空。新增弹窗类交互要参考这个模式。
+`renderModal(force)`、`renderSecondaryModals(force)` 和 `renderReviewEditor(force)` 内部都有"已经显示的是同一个东西就跳过重绘"的守卫（`modalRenderedForId` / `secondaryModalState` / `reviewEditorRenderedFor`）。**背景异步操作触发的全局 `render()` 不会无脑重建正在编辑的弹窗**，否则没保存的输入会被清空。新增弹窗类交互要参考这个模式。
 
 ### ⚠️⚠️ 最容易踩的坑：不要用 stopPropagation 包住带按钮的容器
 **这个错误在项目里已经真实发生过至少两次**（交易编辑弹窗、表格删除按钮）。原理：子元素点击要冒泡到 `document` 才能被处理，中间任何一层用了 `stopPropagation()` 会让子元素按钮**彻底失效且不报错**，非常隐蔽。
@@ -116,13 +134,27 @@ created_at  timestamptz
 
 ### 改完代码务必做的两件事
 ```bash
-# 1. 语法检查（提取 script 内容单独跑 node）
-node --check extracted.js
+# 1. 语法检查（代码已经拆成独立 js 文件，直接跑）
+node --check app.js
+node --check i18n.js
 
 # 2. 检查 data-action 声明和处理逻辑是否一一对应
-grep -o 'data-action="[a-zA-Z-]*"' index.html | sort -u
-grep -o 'action === "[a-zA-Z-]*"' index.html | sort -u
-# 两边应该完全对得上
+grep -o 'data-action="[a-zA-Z-]*"' app.js | sed 's/.*="//;s/"//' | sort -u
+grep -o 'action === "[a-zA-Z-]*"' app.js | sed 's/.*=== "//;s/"//' | sort -u
+# 两边应该完全对得上（set-gender-draft / toggle-low-sample 是历史遗留的例外，
+# 它们不走 click 委托那条 if 链）
+
+# 3. 中英词典有没有漏词（i18n.js 是浏览器脚本，得在 vm 里跑一下才能拿到 I18N）
+node -e "$(cat <<'JS'
+const fs=require('fs'), vm=require('vm');
+const sb={window:{},navigator:{language:'zh'},localStorage:{getItem:()=>null,setItem(){}},document:{documentElement:{}},console};
+vm.createContext(sb);
+vm.runInContext(fs.readFileSync('i18n.js','utf8')+';var E=I18N;', sb);
+const I=sb.E;
+console.log('zh 有 en 没有:', Object.keys(I.zh).filter(k=>!(k in I.en)));
+JS
+)"
+# en 那边会多出若干 *_one 的英文单数形式，是正常的
 ```
 
 ## 五、已实现的功能清单（避免重复造轮子）
@@ -161,14 +193,28 @@ grep -o 'action === "[a-zA-Z-]*"' index.html | sort -u
 - **⚠️ 三套筛选共用同一套筛选行 DOM，靠元素属性区分改的是哪个数组**（`filterCtxOf()`）：`data-filter-ctx="analysis"` → 分析页 / `data-combo-id="c_xxx"` → 那个组合 / **两个都没有 → 记录页的 `activeFilters`**。新增筛选入口时忘了带自己的上下文属性，会默默把用户的记录页筛选改掉，而且不报错。筛选行的拖拽排序只有记录页那份有（drop 处理器直接绑死 `activeFilters`），另外两处条件之间是 AND、顺序不影响结果，就没做
 - **⚠️ `tradeMatchesFilter()` 找不到字段时 `return true`**：意味着删掉字段后，引用它的组合会静默降级成「匹配全部交易」，数字突然变好看却没有任何提示。所以 `comboIssues()` 会在渲染前把失效字段/失效选项挑出来标红并禁掉统计。新增任何「保存下来的条件」类功能都要考虑这个陷阱
 - **管理后台**（仅 admin 可见）：API 连接配置、用户管理（禁用/启用、设权限、查看上次在线时间+交易总数）、**只读查看任意用户的数据**（不影响自己的登录状态和本地设置，退出后自动恢复原状）
+- **复盘页（仅实盘模式）**：用户自己发帖，markdown 正文，可以把帖子关联到某一周，也可以在正文里关联到具体某笔交易。下面几条是这块最容易改坏的地方：
+  - **⚠️ 编辑器有自己的根节点 `#reviewEditorRoot`（index.html 里第 4 个根），不在 `#app` 里面**。因为 `render()` 每次都整体重建 `#app` 的 innerHTML，而复盘是一篇能写二十分钟的长文——放进 `#app` 的话，任何后台异步操作触发的 `render()` 都会清空 textarea、丢光标、丢撤销栈。`renderReviewEditor(force)` 里用 `reviewEditorRenderedFor` 做守卫，跟 `renderModal` 的 `modalRenderedForId` 完全同一个套路
+  - 由此派生的规矩：**编辑器打开期间，任何状态变化都不许走 `render()`**，只能定点更新某个节点。已经这么做的有：预览区（`updateReviewPreview()`）、保存状态（`updateReviewSaveBadge()`）、关联周那一行（`refreshReviewWeekRow()`）、插入菜单（`renderSlashMenu()`）、交易选择器的结果区（`window.__tradePickerInput`，只换结果不换搜索框，否则输入框自己会被重建、光标丢失）。新加编辑器里的交互要照这个来
+  - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去
+  - **交易引用**语法是 `[[trade:t_xxx]]`，`tradeRefHtml()` 渲染成可点的胶囊（日期 · 模型 · 结果 · R），点击打开该笔交易的弹窗。**找不到那笔交易时显式标红「已删除的交易」，不静默消失**——组合引用失效字段那个老坑的同款处理
+  - **只读 / 编辑两种模式**，由 `reviewEditMode` 控制，打开已有帖子默认只读（`openReviewEditor` 里置 false，新建的 `openNewReview` 置 true）。注意区分两个判定：`reviewCanEdit()` 是「有没有编辑权」（管理员看别人的数据时为 false，连编辑按钮都不出现），`reviewIsReadOnly()` 是「此刻是不是只读」。**编辑器里所有会改内容的入口都必须守 `reviewIsReadOnly()` 而不是 `viewingUserId`**，否则只读模式下工具栏快捷键还能改到正文。切换模式要 `renderReviewEditor(true)` 强制重建（两种模式骨架不一样），退出编辑前先 `await flushReviewSave()` 立刻落盘
+  - 编辑器是 **textarea + 增强输入**，不是 contenteditable 块编辑器。这是刻意的：contenteditable 要自己处理选区和中文输入法组字，本项目是中文用户为主，风险不成比例。**所有 keydown 分支都必须先看 `e.isComposing`**，否则输入法选词时的回车会把没上屏的拼音切碎
+  - 编辑器里的输入全走内联 `on*` 属性交给 `window.__reviewBodyInput` / `__reviewKeydown` / `__reviewPaste` / `__reviewTitleInput`，跟项目里 `window.__updateUrlPreview` / `__imgFallback` 一个路子
+  - 改 textarea 内容统一走 `replaceRange()`；**整行整行地改**（缩进、列表、标题）走 `applyLineEdit()`——它会在原本有选区时把改完的几行继续选着，否则 Tab 之后选区一塌，紧接着的 Shift+Tab 只能退最后一行
+  - 交易选择器的搜索**没有复用记录页的 `tradeMatchesSearch()`**，另写了 `tradePickerMatches()`。前者只搜 text/textarea/url，而这里最常搜的恰恰是日期和模型（select 类型）
+  - **⚠️ 插入菜单、交易选择器这些浮层里全是按钮，不要用 `stopPropagation` 包容器**（见第四节那条踩过两次的坑）。「点背景关闭、点内容不关闭」用 `e.target === el` 判断，`close-trade-picker` 就是这么写的
+  - 层级：`.reviewEditorOverlay` 是 `z-index:90`，**故意低于 `.overlay` 的 100**——从复盘里点开一笔交易时，交易弹窗要盖在编辑器上面。ESC 的处理顺序是 灯箱 → 插入菜单 → 交易选择器 → 交易弹窗 → 复盘编辑器
+  - 自动保存：停手 1.2 秒写库（`scheduleReviewSave` / `flushReviewSave`），同时每次输入镜像一份到 localStorage（`journal_review_draft`，跟交易草稿各存各的），另有 `beforeunload` 兜底。**新建的空白帖子直接关掉不会落库**，免得攒一堆空行
+
 - **更新日志页**：全局共享，仅 admin 能发布/删除
 - **深色/浅色主题**、图片懒加载
 
 ## 六、部署流程
 
-- Vercel 免费版，**手动拖文件夹部署**，没接 Git 自动化
-- 更新代码后：项目页面 → Deployments → 进某条部署详情 → Source 里的 "Vercel Drop" 链接 → 重新拖整个文件夹
-- 不要用 "Redeploy" 按钮，那个只是重跑旧代码，不会读取新文件
+- Vercel 免费版，**已经接上 Git 自动部署**：`git push origin master` 之后 Vercel 自己会拉最新代码构建
+- 不需要去 Vercel 后台点任何东西，也不要用 "Redeploy"（那个只重跑旧 commit）
+- 构建时 `build.js` 会读环境变量 `SUPABASE_URL` / `SUPABASE_ANON_KEY` 生成 `config.js`（这个文件不进 git）
 
 ## 七、备份与防暂停
 
@@ -188,5 +234,7 @@ grep -o 'action === "[a-zA-Z-]*"' index.html | sort -u
 - **拖拽排序功能（筛选卡片、字段选项池、组合卡片、拆解字段列表）从没在真实浏览器里跑过完整测试**，只做过静态代码检查 + node 里的逻辑测试，可能有边界情况没覆盖到。**组合的「列表视图」尤其没试过拖**——属性和类名都对得上（拖拽处理器只认 `.comboCard[draggable="true"]` 和 `data-combo-id`），但 HTML5 拖放没法脚本模拟，值得手动验一次
 - **README.md / README.zh-CN.md 有约 8 处过时**：还在写「统计口径两个开关」「R 捕获率」「口径和模型筛选是本设备的本地设置」。功能已经换成「分析范围」筛选面板 + 最大回撤，文档还没跟上
 - **管理员"只读查看他人数据"退出后状态还原**的完整链路也没有真机测试过
-- 现在整个项目是单文件、没拆分 HTML/CSS/JS，多人协作或开源会有摩擦（合并冲突、上手门槛），是否要拆分是一个待定的、值得单独作为一轮任务处理的事项，不建议和其他任务混在一起做
+- 代码已经拆成 `app.js` / `style.css` / `i18n.js`，但 `app.js` 仍然是一个四千多行的大文件，多人协作会有合并冲突。要不要再往下拆成模块是个待定项，建议单独作为一轮任务处理，不要和其他任务混在一起做
+- **复盘功能没有在真实数据库上跑过**：`docs/reviews-migration.sql` 还没在 Supabase 上执行过，所以「建表 → 写入 → 读回 → RLS 拦不拦得住别人」这条完整链路是未验证的。前端逻辑（编辑器、markdown 渲染、插入菜单、交易选择器、只读态、ESC 分层、后台 render 不冲掉正文）已经在浏览器里逐条验过，用的是内存假数据
+- **复盘的 markdown 渲染器是自己写的子集**，支持标题/粗斜体/删除线/行内码/代码块/列表/待办/引用/分割线/链接/图片/表格。刻意没引 marked + DOMPurify（项目除 supabase-js 外零依赖）。**代价是它只认这些语法**，写别的（脚注、嵌套引用、HTML 标签）会原样显示。安全性上按"先转义再排版"设计并过了一轮攻击串测试，但它终究是自己写的，以后加语法时要重新审一遍
 - `max_rr` 这个角色还留在角色下拉里，但**已经没有任何功能挂在它上面**了（它原来只驱动"R捕获率"，那项统计已经被"最大回撤"取代）。保留是为了不让老数据里 `role: "max_rr"` 的字段变成下拉框里认不出的空值

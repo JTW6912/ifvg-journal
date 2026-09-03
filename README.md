@@ -167,6 +167,39 @@ global baseline** (`+9.2pp`). Small samples are labelled (`n < 10`).
   glance where your backtest sample has holes.
 - The Records page filters apply here too.
 
+### Reviews *(live mode only)*
+
+Free-form posts for writing up a week — or anything else. Markdown, stored as plain text.
+
+- **Write a post** — title, body, and an optional **week tag** (This week / Last week / any
+  date, normalised to that week's Monday). Posts are free-form: nothing forces one per week,
+  and the week tag can be left off entirely.
+- **Read and edit modes** — opening an existing post lands in **read mode by default**: the
+  formatted body at full width, no toolbar and no input box, just something to read. Hit
+  **`Edit`** in the top right to get the toolbar and the split view; **`Done`** saves
+  immediately (no waiting on the autosave debounce) and drops back to reading. New posts open
+  straight into edit mode.
+- **Editor** — a plain textarea with the ergonomics on top, not a block editor: press Enter
+  inside a list and the next bullet appears (numbers increment, to-dos repeat, an empty item
+  exits the list); Tab / Shift+Tab indent a whole selection and keep it selected;
+  `Ctrl/Cmd+B` `I` `K` for bold, italic, link; `Ctrl/Cmd+S` saves now. Pasting a bare image
+  URL turns it into an image, and pasting a link over selected text turns it into a link.
+- **`/` insert menu** — type `/` at the start of a line for headings, lists, to-dos, quote,
+  code block, divider, table, image, link, and **Link a trade**. It filters as you type, in
+  either language (`/table` and `/表格` both work).
+- **Images** are inserted by URL, the same way trade screenshots are. Click one to open it in
+  the lightbox.
+- **Linked trades** — pick a trade from the picker (searchable by date, model, anything) and
+  it drops a `[[trade:…]]` reference at the cursor. It renders as a pill showing date, model,
+  result and R; click it to open that trade. If the trade is later deleted, the pill turns
+  red and says so rather than silently vanishing.
+- **Live preview** (edit mode only) side by side, stacked on narrow screens, and hideable.
+- **Autosave** — writes 1.2 s after you stop typing, with a saved/unsaved indicator, a local
+  draft as a fallback, and a warning if you close the tab mid-save.
+
+Reviews are not split by backtest/live the way trades are — they live in **live mode only**,
+so the tab is hidden in backtest mode.
+
 ### Settings
 
 Manage the field schema: rename fields, change their type, edit the option pool
@@ -267,6 +300,7 @@ the conventions, the traps (notably: **never wrap a container that holds buttons
 | `trades` | one row per trade — `mode` (`backtest`/`live`) plus a `jsonb` `data` blob keyed by field id, so adding a field never needs a migration. |
 | `journal_schema` | per-user config — `fields` (the schema), `card_fields`, and `analysis_prefs` (breakdown order/visibility, combos, combo groups). |
 | `changelog` | global, shared by all users; admin-only writes. |
+| `journal_reviews` | one row per review post — markdown `body`, optional `week_start`, and `linked_trade_ids` (a denormalised index of the `[[trade:…]]` references in the body). |
 
 Row-level security is what enforces isolation: users read and write only their own rows,
 admins additionally get **read-only** access to everyone's. Privileged writes go through
@@ -279,7 +313,7 @@ admins additionally get **read-only** access to everyone's. Privileged writes go
 
 ### 1. Supabase project
 
-Create a project, then create the four tables above with their RLS policies and helper
+Create a project, then create the tables above with their RLS policies and helper
 functions. The exact structure — columns, types, policies, triggers — is documented in
 [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) §3; the repository does not ship an init script, so
 either build it from that document or ask the maintainer for the SQL.
@@ -292,6 +326,11 @@ alter table journal_schema add column if not exists analysis_prefs jsonb default
 
 The app runs fine without it — the analytics page just can't persist its settings, and shows
 a notice telling you to run this statement.
+
+The Reviews page needs its own table, created by running
+[`docs/reviews-migration.sql`](docs/reviews-migration.sql) once in the SQL editor. Until you
+do, the rest of the app is unaffected — the Reviews tab just shows a notice pointing at that
+file.
 
 ### 2. Run it locally
 
