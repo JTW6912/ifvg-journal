@@ -2559,6 +2559,7 @@ function renderReviewEditor(force) {
     </div>
   </div>`;
 
+  lastPreviewHtml = null;   // 预览区刚被重建，上一篇的缓存作废
   const ta = document.getElementById("reviewBodyInput");
   if (ta && !readOnly) {
     ta.focus();
@@ -2567,10 +2568,43 @@ function renderReviewEditor(force) {
   }
 }
 
+/* ⚠️ 这里不能简单地 `box.innerHTML = ...`。
+   整块替换会把预览区里的 <img> 全部换成新元素，而新建的 <img> 在图片解码完成前
+   高度是 0 —— 浏览器恰好在这一刻做布局，scrollHeight 骤降，scrollTop 跟着被夹小；
+   等图片异步恢复高度时滚动位置已经丢了。每按一次键削掉几十像素，长文里就表现为
+   「一打字预览区就自己往上滚」。
+   所以：内容没变就不动 DOM；要换就把已经加载好的 <img> 原样搬到新树里，最后把
+   滚动位置放回去。 */
+let lastPreviewHtml = null;
 function updateReviewPreview() {
   const box = document.getElementById("reviewPreview");
   if (!box || !editingReview) return;
-  box.innerHTML = renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`;
+  const html = renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`;
+  if (html === lastPreviewHtml) return;
+  lastPreviewHtml = html;
+
+  const top = box.scrollTop;
+  const next = document.createElement("div");
+  next.innerHTML = html;
+
+  // 按 src 建索引，把旧树里已经加载完的图片节点复用过去（移动节点不会触发重新加载）。
+  // 同一张图可能在正文里出现多次，所以每个 src 存一队，逐个取用。
+  const loaded = new Map();
+  box.querySelectorAll("img").forEach((img) => {
+    if (!img.complete || !img.naturalHeight) return;
+    if (!loaded.has(img.src)) loaded.set(img.src, []);
+    loaded.get(img.src).push(img);
+  });
+  next.querySelectorAll("img").forEach((img) => {
+    const queue = loaded.get(img.src);
+    if (!queue || !queue.length) return;
+    const old = queue.shift();
+    old.alt = img.alt;                 // alt 可能被改过，其余属性由 src 唯一决定
+    img.replaceWith(old);
+  });
+
+  box.replaceChildren(...next.childNodes);
+  box.scrollTop = top;
 }
 
 /* ---------- 自动保存 ----------
