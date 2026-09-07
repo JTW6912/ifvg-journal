@@ -216,6 +216,22 @@ const I18N = {
     "breakdown.none": "没有可拆解的字段（全被隐藏了，或者当前口径下这些字段都没填过值）。",
     "breakdown.comboFromRow": "用这一条直接建一个组合",
     "breakdown.comboBtn": "组合",
+    "breakdown.timeTag": "时段",
+    "breakdown.timeTagTitle": "时间字段按时间段拆解：固定按时间先后排列，不吃上面的排序，样本少的行也不折叠——时间轴被打乱或挖空就看不出趋势了",
+    "breakdown.timeOther": "其他时段",
+    "breakdown.timeBucketsHint": "时间段边界（用逗号隔开，每两个相邻边界切出一段，左闭右开）",
+    "breakdown.timeBucketsNote": "当前切成 {n} 段。落在这些段之外的交易会归到「其他时段」一行，不会被丢掉。留空会恢复默认那套（美股 RTH）。",
+
+    /* ---------- 近期表现 ---------- */
+    "recent.title": "近期表现",
+    "recent.basis": "按创建日期 · 基于当前分析范围",
+    "recent.window": "最近 {n} 天",
+    "recent.all": "当前范围全部",
+
+    /* ---------- 虚拟字段（创建/修改日期） ---------- */
+    "vfield.group": "记录信息",
+    "vfield.created": "创建日期",
+    "vfield.updated": "修改日期",
 
     /* ---------- 组合 ---------- */
     "combo.untitled": "未命名组合",
@@ -706,6 +722,22 @@ const I18N = {
     "breakdown.none": "No fields to break down — they're all hidden, or none of them have values under the current scope.",
     "breakdown.comboFromRow": "Build a combo straight from this row",
     "breakdown.comboBtn": "Combo",
+    "breakdown.timeTag": "by time",
+    "breakdown.timeTagTitle": "Time field broken down into slots: always in chronological order, ignoring the sort above, and small-sample rows are never folded — a scrambled or gappy timeline hides the trend",
+    "breakdown.timeOther": "Other times",
+    "breakdown.timeBucketsHint": "Slot boundaries (comma separated; each adjacent pair is one slot, start inclusive, end exclusive)",
+    "breakdown.timeBucketsNote": "Currently {n} slots. Trades outside every slot land in an 'Other times' row rather than being dropped. Leave it empty to restore the default (US RTH).",
+
+    /* ---------- Recent form ---------- */
+    "recent.title": "Recent form",
+    "recent.basis": "By created date · within the current analysis scope",
+    "recent.window": "Last {n} days",
+    "recent.all": "Whole scope",
+
+    /* ---------- Virtual fields (created / updated) ---------- */
+    "vfield.group": "Record info",
+    "vfield.created": "Created",
+    "vfield.updated": "Updated",
 
     /* ---------- Combos ---------- */
     "combo.untitled": "Untitled combo",

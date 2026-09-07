@@ -98,6 +98,20 @@ a{color:var(--accent);}
 .statValue{font-size:22px;font-weight:600;font-family:'JetBrains Mono',monospace;}
 .statSub{font-size:10.5px;color:var(--mutedDark);margin-top:4px;font-family:'JetBrains Mono',monospace;}
 
+/* 近期表现：最近 3/7/30 天 + 当前范围全体，四格一行。
+   最后那格是基准（前三格的差值都相对它算），所以给个 accent 左边框跟前三格区分开。
+   窄屏下 grid 会自己掉成 2 列，不用写断点——minmax(150px,1fr) 已经处理了 */
+.recentPanel{margin-bottom:28px;}
+.recentHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.recentRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+.recentBox{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.recentBox.recentBase{border-left:2px solid var(--accent);}
+.recentBox.lowSample{opacity:.5;}
+.recentLabel{font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;letter-spacing:.4px;
+  margin-bottom:6px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.recentWr{font-size:19px;font-weight:600;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.recentMeta{font-size:10.5px;color:var(--mutedDark);line-height:1.6;}
+
 /* 筛选面板外壳：分析页的「分析范围」和记录页/月度页的「筛选条件」共用同一套样式，
    三个地方长一个样，用户不用在两种筛选界面之间重新适应 */
 .filterPanel{border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:20px;overflow:hidden;}

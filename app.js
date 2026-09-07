@@ -137,6 +137,11 @@ function defaultSchema() {
   ];
 }
 
+// 时间字段拆解的默认分段边界（美股 RTH：开盘前半小时切细，之后放宽）。完整说明见下面 TIME BUCKETS 那一段。
+// ⚠ 必须声明在 STATE 之前：下面 `let analysisPrefs = defaultAnalysisPrefs()` 在加载时就会读它，
+// 放到 TIME BUCKETS 那一段里会撞 TDZ，app.js 整个起不来
+const DEFAULT_TIME_BUCKETS = ["09:30", "09:45", "10:00", "10:30", "11:00", "12:00"];
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -368,10 +373,10 @@ function csvEscape(val) {
 }
 function toCSV(list, fields) {
   const rows = list || trades;
-  const cols = fields || schema;
+  const cols = fields || exportAllFields();
   const headers = cols.map((f) => f.label);
   const lines = [headers.map(csvEscape).join(",")];
-  rows.forEach((t) => lines.push(cols.map((f) => csvEscape(t[f.id])).join(",")));
+  rows.forEach((t) => lines.push(cols.map((f) => csvEscape(tradeFieldValue(t, f))).join(",")));
   return lines.join("\n");
 }
 // Records 页筛选条件/搜索是全局状态，导出面板不管当前在哪个 tab 都能拿来复用
@@ -387,8 +392,13 @@ function resolvedExportScope() {
 function exportTradeList() {
   return resolvedExportScope() === "filtered" ? exportFilteredTrades() : trades;
 }
+// 导出的候选列 = 用户字段 + 创建/修改日期。虚拟字段排在最后，跟表格视图保持一致的顺序
+function exportAllFields() {
+  return schema.concat(virtualFields());
+}
 function exportFieldList() {
-  return exportColumns === "selected" ? schema.filter((f) => exportSelectedFields.includes(f.id)) : schema;
+  const all = exportAllFields();
+  return exportColumns === "selected" ? all.filter((f) => exportSelectedFields.includes(f.id)) : all;
 }
 function downloadFile(filename, content, mime) {
   const blob = new Blob(["\uFEFF" + content], { type: mime });
@@ -405,6 +415,51 @@ function resultColor(v) {
 }
 
 /* ============================================================
+   虚拟字段 —— 创建日期 / 修改日期
+   这两个不是用户自己定义的字段，不在 schema 里、不落 trades.data、交易弹窗里也不出现；
+   它们是 trades 表本来就有的 created_at / updated_at 列，loadAll() 已经映射成 t._created_at /
+   t._updated_at 挂在每笔交易上（见 loadAll）。这里把它们包装成「长得像 date 字段」的对象，
+   于是筛选行、组合条件、卡片额外字段、CSV 导出这些地方全都能免费复用现成的那套代码。
+
+   ⚠ 两条铁律：
+   1. 任何按 id 找字段的地方都要走 resolveField()，不能再直接 schema.find()——
+      漏一处的后果是：组合里存了创建日期条件，comboIssues() 会把它当成「字段已删除」标红并禁掉统计。
+   2. 任何取字段值的地方都要走 tradeFieldValue()，不能直接 t[field.id]——
+      _created_at 是完整的 UTC ISO（2026-09-06T20:14:33.921Z），必须先折成用户本地时区的自然日
+      才能跟筛选框里的 YYYY-MM-DD 比。直接比会同时错两处：
+      (a) "2026-09-06T20:14..." > "2026-09-06" 恒真，结束日期选当天会把当天的单全部排除；
+      (b) 北京时间晚上 8 点以后录的单，UTC 已经是第二天，会整整错开一天。
+   ============================================================ */
+const VF_CREATED = "__created_at";
+const VF_UPDATED = "__updated_at";
+function virtualFields() {
+  return [
+    { id: VF_CREATED, label: T("vfield.created"), type: "date", role: "", virtual: true },
+    { id: VF_UPDATED, label: T("vfield.updated"), type: "date", role: "", virtual: true },
+  ];
+}
+function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED; }
+// 按 id 找字段：先虚拟字段，再用户自己的 schema。找不到返回 null（调用方按"字段已删除"处理）
+function resolveField(id) {
+  if (isVirtualFieldId(id)) return virtualFields().find((f) => f.id === id) || null;
+  return schema.find((x) => x.id === id) || null;
+}
+// UTC ISO 时间戳 → 用户本地时区的自然日 YYYY-MM-DD。所以「9月6号」指的永远是用户那边的 9月6号
+function localDateStr(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? "" : toDateStr(d);
+}
+// 一笔交易在某个字段上的值。虚拟字段从 _created_at/_updated_at 折出本地自然日，其余原样取
+function tradeFieldValue(t, field) {
+  if (!field) return undefined;
+  if (field.id === VF_CREATED) return localDateStr(t._created_at);
+  // 没被改过的老数据 updated_at 可能是空的，回落到创建时间，免得筛「修改日期」时整批凭空消失
+  if (field.id === VF_UPDATED) return localDateStr(t._updated_at || t._created_at);
+  return t[field.id];
+}
+
+/* ============================================================
    ANALYSIS PREFS —— 分析页的拆解显示配置 / 组合 / 组合分组
    存在 journal_schema.analysis_prefs (jsonb) 这一列里，跨设备同步。
    分析页那套筛选条件(analysisFilters)不在这里——它是纯本地的"这次想看哪批交易"，
@@ -416,6 +471,7 @@ function defaultAnalysisPrefs() {
     breakdownOrder: [],    // 只存用户排过序的，没排到的按 schema 顺序接在后面
     combos: [],
     comboGroups: [],        // {id, name, parentId} 扁平列表，parentId=null 是顶层分组，最多两层
+    timeBuckets: DEFAULT_TIME_BUCKETS.slice(), // 时间字段拆解用的分段边界，见 TIME BUCKETS 那一段
   };
 }
 function normalizeAnalysisPrefs(raw) {
@@ -439,6 +495,7 @@ function normalizeAnalysisPrefs(raw) {
     breakdownOrder: Array.isArray(raw.breakdownOrder) ? raw.breakdownOrder.filter((x) => typeof x === "string") : [],
     combos: Array.isArray(raw.combos) ? raw.combos.map(normalizeCombo).filter(Boolean) : [],
     comboGroups,
+    timeBuckets: sanitizeTimeBoundaries(raw.timeBuckets),
   };
 }
 function normalizeCombo(c) {
@@ -709,10 +766,104 @@ function computeStats() {
            hasResult: !!resultF, hasR: !!rF };
 }
 
+/* ============================================================
+   近期表现 —— 按「创建日期」往回看几个滚动窗口
+   问的是「我最近这几天录进来的单打得怎么样」。用创建日期而不是交易日期，是因为回测模式下
+   交易日期可能是 2021 年的历史 K 线，只有创建日期才代表「我最近的判断水平」。
+
+   三个窗口是故意重叠的（最近 3 天也在最近 30 天里），读法是「越往右越平滑」：
+   最右边那格是当前分析范围的全体，当基准，前三格标相对它的差值。
+   正因为重叠，它不能做成拆解卡——拆解卡各行的语义是互斥分桶，混进重叠窗口会让人以为笔数算错了。
+
+   ⚠ 口径：切的是 computeStats() 那个 list，不是 trades。跟总览、拆解永远是同一批交易的时间切片，
+   不是"从别处另算一批"。卡片上写明「基于当前分析范围」，用户改了上面的筛选这里会跟着动。
+   ============================================================ */
+const RECENT_WINDOWS = [3, 7, 30];
+// 按本地自然日往回数，今天算第 1 天：最近 3 天 = 今天 + 昨天 + 前天。
+// 不用「往回 72 小时」是因为那样同一批交易上午看和下午看结果会不一样
+function recentWindowStats(list) {
+  const resultF = roleField("result"), rF = roleField("r_multiple");
+  const today = toDateStr(new Date());
+  return RECENT_WINDOWS.map((days) => {
+    const from = new Date();
+    from.setDate(from.getDate() - (days - 1));
+    const fromStr = toDateStr(from);
+    const sub = list.filter((t) => {
+      const c = localDateStr(t._created_at);
+      return c && c >= fromStr && c <= today;
+    });
+    return { days, ...breakdownRowStats(T("recent.window", { n: days }), sub, resultF, rF) };
+  });
+}
+
+/* ============================================================
+   TIME BUCKETS —— 时间字段的分段拆解
+   time 类型字段（入场时间这种）没法像 select 那样按值拆：每个 09:37 都是独一无二的值，
+   拆出来是几十行 n=1。所以按用户定义的边界切成时间段，用「这个时段的胜率」来拆。
+
+   边界存 analysisPrefs.timeBuckets，是一串 "HH:MM"，n 个边界切出 n-1 段，左闭右开：
+   ["09:30","09:45","10:00"] → [09:30,09:45) 和 [09:45,10:00)，09:45 那笔算后一段。
+   默认这套是美股 RTH（开盘 09:30 起，前半小时切细、后面放宽），记纽约数据直接能用；
+   记 London/Asia 时段的用户在「拆解显示设置」里改成自己的边界。
+   落在所有段之外的交易归到最后一行「其他时段」，不静默丢掉——否则用户会觉得笔数对不上。
+
+   ⚠ 这里全是 "HH:MM" 的字符串比较，不转数字：值本来就是 normalizeTimeValue() 补过零的
+   两位小时+两位分钟，字典序等于时间序。别改成 parseInt，那样 09:30 会变成 930 反而要处理进位。
+
+   ⚠ DEFAULT_TIME_BUCKETS 不在这一段里，它被提到文件最上面的 STATE 之前去了——
+   defaultAnalysisPrefs() 在模块加载时就被调用（let analysisPrefs = defaultAnalysisPrefs()），
+   const 放在这里的话那次调用会撞上 TDZ，整个 app.js 直接起不来。
+   ============================================================ */
+// 清洗一串边界：去掉解析不出来的、去重、排序。不足 2 个（切不出任何一段）就回落到默认，
+// 免得用户不小心清空之后时间拆解卡整张消失、还不知道为什么
+function sanitizeTimeBoundaries(raw) {
+  if (!Array.isArray(raw)) return DEFAULT_TIME_BUCKETS.slice();
+  const seen = new Set();
+  raw.forEach((v) => {
+    const norm = normalizeTimeValue(v);
+    if (norm) seen.add(norm);
+  });
+  const list = Array.from(seen).sort();
+  return list.length >= 2 ? list : DEFAULT_TIME_BUCKETS.slice();
+}
+// 用户在输入框里随便怎么分隔（逗号 / 中文逗号 / 空格 / 顿号）都认
+function parseTimeBoundaryInput(text) {
+  return sanitizeTimeBoundaries(String(text || "").split(/[,，、\s]+/).filter(Boolean));
+}
+function currentTimeBoundaries() {
+  return sanitizeTimeBoundaries(analysisPrefs.timeBuckets);
+}
+// 边界 → 段。每段 { label, start, end }，end 是开区间上界
+function timeBucketDefs() {
+  const b = currentTimeBoundaries();
+  const out = [];
+  for (let i = 0; i < b.length - 1; i++) out.push({ label: b[i] + "–" + b[i + 1], start: b[i], end: b[i + 1] });
+  return out;
+}
+// 段是左闭右开 [start, end)，但筛选行的时间区间是两头都闭的（tradeMatchesFilter 里 tv > rangeEnd 才排除）。
+// 直接把 end 填进筛选，09:45 那笔会同时算进 [09:30,09:45) 这一行和它生成的组合里，两个数字对不上。
+// 时间精度就是分钟，所以退一分钟正好等价。
+function timeMinusOneMinute(hhmm) {
+  const [h, m] = String(hhmm).split(":").map((x) => parseInt(x, 10));
+  if (isNaN(h) || isNaN(m)) return hhmm;
+  const total = h * 60 + m - 1;
+  if (total < 0) return "00:00";
+  return String(Math.floor(total / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+}
+// 一笔交易的时间值落在第几段；返回 -1 表示落在所有段之外（归「其他时段」）
+function timeBucketIndexOf(value, defs) {
+  const v = normalizeTimeValue(value);
+  if (!v) return -1;
+  for (let i = 0; i < defs.length; i++) if (v >= defs[i].start && v < defs[i].end) return i;
+  return -1;
+}
+
 /* ---------- 字段拆解 ---------- */
-// 能拆解的字段：所有 select/multiselect，只排掉「结果」角色（按 result 拆是自我循环，W 那行必然 100%）
+// 能拆解的字段：所有 select/multiselect（只排掉「结果」角色——按 result 拆是自我循环，W 那行必然 100%），
+// 外加所有 time 字段（按上面那套时间段分桶）。跟项目其他地方一样只认 type/role，不认字段叫什么名字，
+// 所以以后加个「出场时间」字段也会自动多出一张拆解卡
 function breakdownCandidateFields() {
-  const all = schema.filter((f) => (f.type === "select" || f.type === "multiselect") && f.role !== "result");
+  const all = schema.filter((f) => (f.type === "select" || f.type === "multiselect" || f.type === "time") && f.role !== "result");
   const order = analysisPrefs.breakdownOrder || [];
   const ranked = [], rest = [];
   all.forEach((f) => (order.includes(f.id) ? ranked : rest).push(f));
@@ -779,9 +930,33 @@ function breakdownRowsHtml(field, rows, baseWr) {
   }
   return html;
 }
+// 时间字段的拆解：按段分桶，空桶不出行（一张全是"—"的卡没意义），
+// 但顺序必须原样保留——时间轴打乱了就读不出「开盘那半小时最好、11 点以后最差」这种趋势。
+// ordered:true 就是告诉渲染层「这张卡别排序、别折叠」
+function computeTimeBreakdown(field, list, resultF, rF) {
+  const defs = timeBucketDefs();
+  const buckets = defs.map(() => []);
+  const other = [];
+  list.forEach((t) => {
+    const raw = t[field.id];
+    if (raw === undefined || raw === null || raw === "") return;
+    const i = timeBucketIndexOf(raw, defs);
+    if (i < 0) other.push(t); else buckets[i].push(t);
+  });
+  const rows = [];
+  defs.forEach((d, i) => {
+    if (!buckets[i].length) return;
+    // 带上区间，行末的「+组合」才能建出 time 字段能用的区间条件（而不是 select 那种 values 条件）
+    rows.push({ ...breakdownRowStats(d.label, buckets[i], resultF, rF), rangeStart: d.start, rangeEnd: timeMinusOneMinute(d.end) });
+  });
+  // 「其他时段」是所有段的补集，没法用一个连续区间表示，所以这行不给「+组合」按钮
+  if (other.length) rows.push({ ...breakdownRowStats(T("breakdown.timeOther"), other, resultF, rF), noCombo: true });
+  return { field, rows, ordered: true };
+}
 function computeBreakdowns(list) {
   const resultF = roleField("result"), rF = roleField("r_multiple");
   return visibleBreakdownFields().map((f) => {
+    if (f.type === "time") return computeTimeBreakdown(f, list, resultF, rF);
     const map = {};
     list.forEach((t) => {
       let vals = t[f.id];
@@ -818,7 +993,7 @@ function comboIssues(combo) {
   (combo.conditions || []).forEach((f, i) => {
     const no = i + 1;
     if (!f.fieldId) { soft.push(T("combo.issue.noField", { no })); return; }
-    const field = schema.find((x) => x.id === f.fieldId);
+    const field = resolveField(f.fieldId);
     if (!field) { hard.push(T("combo.issue.fieldDeleted", { no })); return; }
     if (field.type === "select" || field.type === "multiselect") {
       const opts = field.options || [];
@@ -837,7 +1012,7 @@ function comboIssues(combo) {
 function comboConditionsText(combo) {
   const parts = [];
   (combo.conditions || []).forEach((f) => {
-    const field = schema.find((x) => x.id === f.fieldId);
+    const field = resolveField(f.fieldId);
     if (!field) { parts.push(T("combo.cond.fieldDeleted")); return; }
     if (field.type === "select" || field.type === "multiselect") {
       if (!(f.values || []).length) return;
@@ -1265,25 +1440,26 @@ function tradeMatchesSearch(t, query) {
   });
 }
 function tradeMatchesFilter(t, f) {
-  const field = schema.find((x) => x.id === f.fieldId);
+  const field = resolveField(f.fieldId);
   if (!field) return true;
   if (field.type === "select" || field.type === "multiselect") {
     if (!f.values || f.values.length === 0) return true;
-    const tv = t[field.id];
+    const tv = tradeFieldValue(t, field);
     const matches = field.type === "multiselect"
       ? (Array.isArray(tv) && (f.matchMode === "and" ? f.values.every((v) => tv.includes(v)) : f.values.some((v) => tv.includes(v))))
       : f.values.includes(tv);
     return f.negate ? !matches : matches;
   }
   if (field.type === "date" || field.type === "time") {
-    const tv = t[field.id] || "";
+    const tv = tradeFieldValue(t, field) || "";
     if (!f.rangeStart && !f.rangeEnd) return true;
+    // 创建/修改日期永远有值；但用户自己的日期字段可以留空，空值不该被区间"意外筛掉"之外的方式匹配
     if (f.rangeStart && tv < f.rangeStart) return false;
     if (f.rangeEnd && tv > f.rangeEnd) return false;
     return true;
   }
   if (!f.textValue) return true;
-  const tv = t[field.id];
+  const tv = tradeFieldValue(t, field);
   return String(tv === undefined || tv === null ? "" : tv).toLowerCase().includes(String(f.textValue).toLowerCase());
 }
 // comboId 为空 = 记录页的 activeFilters；有值 = 分析页某个组合的条件。
@@ -1341,7 +1517,7 @@ function filterRowValuesHtml(field, idx, f, ctx) {
 // 拖拽排序只有记录页那份有：条件之间是 AND，顺序不影响结果，另外两处的拖拽代码是直接绑死 activeFilters 的
 function filterConditionRowHtml(f, idx, ctx) {
   const cid = filterCtxAttr(ctx);
-  const field = schema.find((x) => x.id === f.fieldId);
+  const field = resolveField(f.fieldId);
   const missing = f.fieldId && !field;
   const showNegate = field && (field.type === "select" || field.type === "multiselect");
   const showAndToggle = field && field.type === "multiselect";
@@ -1352,6 +1528,9 @@ function filterConditionRowHtml(f, idx, ctx) {
       <select class="select" data-filter-field="${idx}"${cid}>
         <option value="">${esc(T("filter.selectField"))}</option>
         ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
+        <optgroup label="${esc(T("vfield.group"))}">
+          ${virtualFields().map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
+        </optgroup>
       </select>
       ${showAndToggle ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
         <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.matchAll")}
@@ -1520,7 +1699,7 @@ function renderGrid() {
   ${gridViewMode === "card" && cardFieldsPickerOpen ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("grid.cardFieldsHint")}</div>
     <div class="chipGroup">
-      ${schema.filter((f) => !["date", "model", "r_multiple"].includes(f.role)).map((f) => `<button type="button" class="chip ${cardFields.includes(f.id) ? "active" : ""}" data-action="toggle-card-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
+      ${schema.filter((f) => !["date", "model", "r_multiple"].includes(f.role)).concat(virtualFields()).map((f) => `<button type="button" class="chip ${cardFields.includes(f.id) ? "active" : ""}" data-action="toggle-card-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
     </div>
     ${cardFields.length ? `<button class="tinyBtn" data-action="reset-card-fields" style="color:var(--mutedDark);margin-top:8px;">${T("grid.clearExtraFields")}</button>` : ""}
   </div>` : ""}`;
@@ -1538,8 +1717,10 @@ function renderGrid() {
   const pageItems = filtered.slice(pageStart, pageStart + pageSize);
 
   if (gridViewMode === "table") {
+    // 创建/修改日期挂在最后两列：它们不是交易内容，是"这条记录本身"的信息，混在自定义字段中间会乱
+    const cols = schema.concat(virtualFields());
     html += `<div class="tableScroll"><table class="dataTable"><thead><tr>
-      <th></th>${schema.map((f) => `<th>${esc(f.label)}</th>`).join("")}
+      <th></th>${cols.map((f) => `<th>${esc(f.label)}</th>`).join("")}
     </tr></thead><tbody>`;
     pageItems.forEach((t) => {
       const result = resultF ? t[resultF.id] : null;
@@ -1549,11 +1730,11 @@ function renderGrid() {
         <td>${viewingUserId ? "" : (!confirming
           ? `<button class="tinyBtn" data-action="ask-delete" data-id="${esc(t.id)}" style="color:var(--neg)">${ICONS.trash}</button>`
           : `<button class="tinyBtn" data-action="confirm-delete" data-id="${esc(t.id)}" style="color:var(--neg)">✓</button><button class="tinyBtn" data-action="cancel-delete">${ICONS.x}</button>`)}</td>
-        ${schema.map((f) => {
-          let v = t[f.id];
+        ${cols.map((f) => {
+          let v = tradeFieldValue(t, f);
           if (Array.isArray(v)) v = v.join(", ");
           const isResultCol = f.role === "result";
-          return `<td style="${isResultCol ? `color:${rc};font-weight:600;` : ""}${f.role === "screenshot" ? "max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" : ""}">${esc(v ?? "")}</td>`;
+          return `<td style="${isResultCol ? `color:${rc};font-weight:600;` : ""}${f.virtual ? "color:var(--mutedDark);white-space:nowrap;" : ""}${f.role === "screenshot" ? "max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" : ""}">${esc(v ?? "")}</td>`;
         }).join("")}
       </tr>`;
     });
@@ -1581,12 +1762,12 @@ function renderGrid() {
         <div class="cardModel">${modelF ? esc(t[modelF.id] || "—") : "—"}</div>`;
     if (cardFields.length) {
       bodyHtml += cardFields.map((fid) => {
-        const f = schema.find((x) => x.id === fid);
+        const f = resolveField(fid);
         if (!f) return "";
         const isLongText = f.type === "textarea";
         return `<div style="margin-top:8px;font-size:${isLongText ? "13px" : "11.5px"};">
           <div style="color:var(--mutedDark);margin-bottom:2px;${isLongText ? "font-size:11.5px;" : ""}">${esc(f.label)}</div>
-          <div style="color:var(--text);white-space:normal;word-break:break-word;line-height:1.6;">${esc(formatFieldValueShort(f, t[fid]))}</div>
+          <div style="color:var(--text);white-space:normal;word-break:break-word;line-height:1.6;">${esc(formatFieldValueShort(f, tradeFieldValue(t, f)))}</div>
         </div>`;
       }).join("");
     }
@@ -1635,7 +1816,7 @@ function barRow(row, fieldId, baseWr) {
     <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div>
     <div class="barMeta">
       <span class="mono">W${row.w} L${row.l}${row.be ? " BE" + row.be : ""}${rPart}</span>
-      ${fieldId && !viewingUserId ? `<button class="tinyBtn" data-action="combo-from-breakdown" data-field="${esc(fieldId)}" data-val="${esc(row.value)}" title="${esc(T("breakdown.comboFromRow"))}">${ICONS.plus}${T("breakdown.comboBtn")}</button>` : ""}
+      ${fieldId && !viewingUserId && !row.noCombo ? `<button class="tinyBtn" data-action="combo-from-breakdown" data-field="${esc(fieldId)}" data-val="${esc(row.value)}"${row.rangeStart ? ` data-range-start="${esc(row.rangeStart)}" data-range-end="${esc(row.rangeEnd)}"` : ""} title="${esc(T("breakdown.comboFromRow"))}">${ICONS.plus}${T("breakdown.comboBtn")}</button>` : ""}
     </div>
   </div>`;
 }
@@ -1969,6 +2150,8 @@ function renderCombosSection() {
 function renderBreakdownPicker() {
   const hidden = analysisPrefs.breakdownHidden || [];
   const fields = breakdownCandidateFields();
+  // 一个 time 字段都没有就别把时间段设置摆出来占地方
+  const hasTime = fields.some((f) => f.type === "time");
   return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("breakdown.pickerHint")}</div>
     <div style="display:flex;flex-direction:column;gap:4px;">
@@ -1977,10 +2160,15 @@ function renderBreakdownPicker() {
         <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;">
           <input type="checkbox" data-action="toggle-breakdown-field" data-id="${esc(f.id)}" ${hidden.includes(f.id) ? "" : "checked"} style="width:13px;height:13px;" />
           <span style="font-size:12.5px;color:var(--text);">${esc(f.label)}</span>
-          <span style="font-size:11px;color:var(--mutedDark);">${esc(f.type === "multiselect" ? T("fieldType.multiselect") : T("fieldType.select"))}${f.role ? " · " + esc(f.role) : ""}</span>
+          <span style="font-size:11px;color:var(--mutedDark);">${esc(fieldTypeLabel(f.type))}${f.role ? " · " + esc(f.role) : ""}</span>
         </label>
       </div>`).join("")}
     </div>
+    ${hasTime ? `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("breakdown.timeBucketsHint")}</div>
+      <input type="text" class="input mono" data-bind="time-buckets" value="${esc(currentTimeBoundaries().join(", "))}" placeholder="${esc(DEFAULT_TIME_BUCKETS.join(", "))}" style="font-size:12.5px;" />
+      <div style="font-size:11px;color:var(--mutedDark);margin-top:6px;line-height:1.6;">${T("breakdown.timeBucketsNote", { n: Math.max(0, currentTimeBoundaries().length - 1) })}</div>
+    </div>` : ""}
     <button class="tinyBtn" data-action="reset-breakdown-prefs" style="margin-top:10px;color:var(--mutedDark);">${T("breakdown.reset")}</button>
   </div>`;
 }
@@ -1988,6 +2176,33 @@ function renderBreakdownPicker() {
 // 你在第 15 张卡上看到「+17.1pp」时，得知道整体是多少才知道这个差值值不值钱。
 // 用纯 CSS 的 position:sticky，不挂滚动监听：没有 JS 状态要同步，render() 重建它也不会闪，
 // 而且不依赖 scroll 事件（后台标签页/不合成帧的环境里 scroll 事件根本不发）。
+/* ---------- 分析页：近期表现 ----------
+   四格一行：最近 3 / 7 / 30 天 + 当前范围全体（基准）。前三格的胜率右边标相对基准的差值。
+   n 少的时候胜率会剧烈跳动（3 笔里 2 胜 = 66.7%，纯噪音），所以沿用拆解那套阈值：
+   n < BREAKDOWN_MIN_SAMPLE 的格子降透明度并标「样本少」，不让它看起来跟 n=80 那格一样有说服力。 */
+function renderRecentPanel(stats) {
+  const rows = recentWindowStats(stats.list);
+  const cell = (label, s, isBase) => {
+    const low = !isBase && s.n > 0 && s.n < BREAKDOWN_MIN_SAMPLE;
+    const delta = !isBase && !low && s.wr !== null && stats.wr !== null ? " " + deltaText(s.wr, stats.wr, "pp", 1) : "";
+    return `<div class="recentBox${isBase ? " recentBase" : ""}${low ? " lowSample" : ""}">
+      <div class="recentLabel">${esc(label)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</div>
+      <div class="recentWr" style="color:${s.wr === null ? "var(--mutedDark)" : "var(--accent)"}">${fmtPct(s.wr)}${delta}</div>
+      <div class="recentMeta mono">n=${s.n} · W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</div>
+      ${s.hasR ? `<div class="recentMeta mono"><span style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span> · EV ${fmtNum(s.ev, 2)}</div>` : ""}
+    </div>`;
+  };
+  return `<div class="recentPanel">
+    <div class="recentHead">
+      <span class="sectionLabel" style="margin:0;">⟦ ${esc(T("recent.title"))} ⟧</span>
+      <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T("recent.basis"))}</span>
+    </div>
+    <div class="recentRow">
+      ${rows.map((s) => cell(s.value, s, false)).join("")}
+      ${cell(T("recent.all"), { ...stats, n: stats.total, be: stats.be + stats.bew + stats.bel }, true)}
+    </div>
+  </div>`;
+}
 function renderAnalyticsSticky(stats) {
   const links = [["anaScope", "sticky.scope"], ["anaOverview", "sticky.overview"], ["anaCombos", "sticky.combos"], ["anaBreakdowns", "sticky.breakdowns"]];
   return `<div class="analyticsSticky" id="analyticsSticky"><div class="analyticsStickyInner">
@@ -2030,6 +2245,8 @@ function renderAnalytics() {
     ${stats.totalFaded ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
   </div>`;
 
+  html += renderRecentPanel(stats);
+
   html += `<div id="anaCombos" style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 
   // 拆解跟总览吃的是同一批交易（stats.list），两边数字天然对得上，不用各自再筛一遍
@@ -2061,10 +2278,14 @@ function renderAnalytics() {
         const multi = b.field.type === "multiselect";
         html += `<div class="breakdownCard"${draggable}>
           <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}</span>
+            <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}${b.ordered ? ` <span class="bdMultiTag" title="${esc(T("breakdown.timeTagTitle"))}">${esc(T("breakdown.timeTag"))}</span>` : ""}</span>
             ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
           </div>
-          ${breakdownRowsHtml(b.field, sortBreakdownRows(b.rows, stats.wr), stats.wr)}
+          ${b.ordered
+            // 时间段卡固定按时间先后，不吃排序下拉、也不折叠低样本行：
+            // 时间轴一旦被重排或者中间挖个洞，「开盘那半小时最好、11 点以后最差」这种趋势就读不出来了
+            ? b.rows.map((r) => barRow(r, b.field.id, stats.wr)).join("")
+            : breakdownRowsHtml(b.field, sortBreakdownRows(b.rows, stats.wr), stats.wr)}
         </div>`;
       });
       html += `</div>`;
@@ -3636,7 +3857,7 @@ function renderExportPanel() {
       <button type="button" class="chip ${exportColumns === "selected" ? "active" : ""}" data-action="set-export-columns" data-value="selected">${T("export.columnsSelected")}</button>
     </div>
     ${exportColumns === "selected" ? `<div id="exportFieldsScroll" class="chipGroup" style="padding:0 12px 8px;max-height:180px;overflow-y:auto;">
-      ${schema.map((f) => `<button type="button" class="chip ${exportSelectedFields.includes(f.id) ? "active" : ""}" data-action="toggle-export-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
+      ${exportAllFields().map((f) => `<button type="button" class="chip ${exportSelectedFields.includes(f.id) ? "active" : ""}" data-action="toggle-export-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
     </div>
     <div style="padding:0 12px 8px;display:flex;gap:10px;">
       <button type="button" class="tinyBtn" data-action="export-fields-select-all">${T("export.selectAll")}</button>
@@ -3763,7 +3984,7 @@ document.addEventListener("click", async (e) => {
     exportSelectedFields = exportSelectedFields.includes(id) ? exportSelectedFields.filter((x) => x !== id) : [...exportSelectedFields, id];
     renderPreservingScroll("exportFieldsScroll");
   }
-  else if (action === "export-fields-select-all") { exportSelectedFields = schema.map((f) => f.id); renderPreservingScroll("exportFieldsScroll"); }
+  else if (action === "export-fields-select-all") { exportSelectedFields = exportAllFields().map((f) => f.id); renderPreservingScroll("exportFieldsScroll"); }
   else if (action === "export-fields-clear") { exportSelectedFields = []; renderPreservingScroll("exportFieldsScroll"); }
   else if (action === "export-csv") { downloadFile(`trades-${new Date().toISOString().slice(0,10)}.csv`, toCSV(exportTradeList(), exportFieldList()), "text/csv;charset=utf-8;"); exportMenuOpen = false; render(); }
   else if (action === "export-json") { downloadFile(`journal-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify({ schema, trades }, null, 2), "application/json"); exportMenuOpen = false; render(); }
@@ -4044,12 +4265,18 @@ document.addEventListener("click", async (e) => {
   else if (action === "combo-from-breakdown") {
     if (viewingUserId) return;
     const fieldId = el.dataset.field, val = el.dataset.val;
-    const field = schema.find((f) => f.id === fieldId);
+    const field = resolveField(fieldId);
     if (!field) return;
+    // 时间段那一行给的是区间不是某个值——time 字段的筛选走 rangeStart/rangeEnd，
+    // 塞进 values 的话 tradeMatchesFilter 根本不看，组合会变成"匹配全部交易"
+    const rangeStart = el.dataset.rangeStart;
+    const condition = rangeStart
+      ? { ...newFilterRow(fieldId), rangeStart, rangeEnd: el.dataset.rangeEnd || "" }
+      : { ...newFilterRow(fieldId), values: [val] };
     const c = normalizeCombo({
       id: newComboId(),
       name: `${field.label} = ${val}`,
-      conditions: [{ ...newFilterRow(fieldId), values: [val] }],
+      conditions: [condition],
     });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
@@ -4163,6 +4390,7 @@ document.addEventListener("click", async (e) => {
     if (viewingUserId) return;
     analysisPrefs.breakdownHidden = [];
     analysisPrefs.breakdownOrder = [];
+    analysisPrefs.timeBuckets = DEFAULT_TIME_BUCKETS.slice();
     await saveAnalysisPrefsNow(); render();
   }
   else if (action === "add-changelog") {
@@ -4428,6 +4656,12 @@ document.addEventListener("change", async (e) => {
     breakdownSort = v === "delta" || v === "ev" ? v : "n";
     try { localStorage.setItem("journal_breakdown_sort", breakdownSort); } catch (err) {}
     render();
+  }
+  else if (e.target.dataset.bind === "time-buckets") {
+    if (viewingUserId) return;
+    // 走 change 不走 input：边打字边解析的话，"09:3" 这种中间状态会被清洗成别的边界，输入框自己跳
+    analysisPrefs.timeBuckets = parseTimeBoundaryInput(e.target.value);
+    await saveAnalysisPrefsNow(); render();
   }
   else if (e.target.dataset.bind === "sort-by") {
     sortBy = e.target.value;
