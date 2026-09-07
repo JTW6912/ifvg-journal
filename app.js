@@ -1004,6 +1004,8 @@ function comboIssues(combo) {
       if (!(f.values || []).length) soft.push(T("combo.issue.noValues", { label: field.label }));
     } else if (field.type === "date" || field.type === "time") {
       if (!f.rangeStart && !f.rangeEnd) soft.push(T("combo.issue.noRange", { label: field.label }));
+    } else if (field.type === "number") {
+      if (!f.rangeStart && !f.rangeEnd && !f.textValue) soft.push(T("combo.issue.noRange", { label: field.label }));
     } else if (!f.textValue) {
       soft.push(T("combo.issue.noText", { label: field.label }));
     }
@@ -1024,6 +1026,13 @@ function filterLeafText(f) {
   if (field.type === "date" || field.type === "time") {
     if (!f.rangeStart && !f.rangeEnd) return "";
     return `${field.label} ${f.rangeStart || "…"}~${f.rangeEnd || "…"}`;
+  }
+  if (field.type === "number") {
+    // 单边区间读成 ≥ / ≤，比 "2~…" 直观得多
+    if (f.rangeStart && f.rangeEnd) return `${field.label} ${f.rangeStart}~${f.rangeEnd}`;
+    if (f.rangeStart) return `${field.label} ≥ ${f.rangeStart}`;
+    if (f.rangeEnd) return `${field.label} ≤ ${f.rangeEnd}`;
+    return f.textValue ? T("combo.cond.contains", { label: field.label, value: f.textValue }) : "";
   }
   return f.textValue ? T("combo.cond.contains", { label: field.label, value: f.textValue }) : "";
 }
@@ -1438,6 +1447,7 @@ function filterNodeIsEffective(n) {
   if (!field) return false;                       // 字段被删了：按无效算，别让它污染外面的取反
   if (field.type === "select" || field.type === "multiselect") return (n.values || []).length > 0;
   if (field.type === "date" || field.type === "time") return !!(n.rangeStart || n.rangeEnd);
+  if (field.type === "number") return !!(n.rangeStart || n.rangeEnd || n.textValue);
   return !!n.textValue;
 }
 function nodeMatchesTrade(t, node) {
@@ -1511,8 +1521,21 @@ function normalizeFilterNodes(raw, depth) {
         children: normalizeFilterNodes(n.children, d + 1),
       };
     }
-    return { ...newFilterRow(), ...n };
+    return migrateLegacyNumberCondition({ ...newFilterRow(), ...n });
   }).filter(Boolean);
+}
+// 数字字段以前存的是 textValue（字符串包含）。改成数值区间之后，老条件如果原样留着，
+// 用户在界面上只看得到两个空的区间框，却有一条看不见的条件在生效。
+// 所以读盘时就地迁移成「精确等于」——那正是当初填 "2" 想表达的意思，而且比原来的
+// 包含匹配更准（原来填 2 会把 12、2.5 一起捞进来）。解析不出数字的就留着，
+// tradeMatchesFilter 里有兜底，绝不会静默变成"匹配全部"
+function migrateLegacyNumberCondition(f) {
+  if (!f.fieldId || !f.textValue || f.rangeStart || f.rangeEnd) return f;
+  const field = resolveField(f.fieldId);
+  if (!field || field.type !== "number") return f;
+  const v = parseFloat(f.textValue);
+  if (isNaN(v)) return f;
+  return { ...f, rangeStart: String(v), rangeEnd: String(v), textValue: "" };
 }
 function cloneFilterNodes(arr) {
   return (arr || []).map((n) => isFilterGroup(n)
@@ -1618,9 +1641,30 @@ function tradeMatchesFilter(t, f) {
     if (f.rangeEnd && tv > f.rangeEnd) return false;
     return true;
   }
+  // 数字字段走数值区间，不走字符串包含。以前是包含匹配，填 2 会把 12、2.5 全捞进来，
+  // 而且「R >= 2」这种根本写不出来——空着一头就是单边比较
+  if (field.type === "number") {
+    if (f.rangeStart === "" || f.rangeStart === undefined || f.rangeStart === null) {
+      if (f.rangeEnd === "" || f.rangeEnd === undefined || f.rangeEnd === null) {
+        // 没填区间：优先看有没有遗留的 textValue（老数据 normalize 时会迁移掉，这里是兜底）。
+        // 直接 return true 的话，没迁移成功的老条件会从"substring 匹配"悄悄变成"匹配全部"，
+        // 数字凭空变好看——正是这个项目最忌讳的那种静默放宽
+        return f.textValue ? legacyTextContains(t, field, f.textValue) : true;
+      }
+    }
+    const n = parseFloat(tradeFieldValue(t, field));
+    if (isNaN(n)) return false;   // 跟日期区间一致：设了边界，没填值的那批就不算满足
+    const lo = parseFloat(f.rangeStart), hi = parseFloat(f.rangeEnd);
+    if (!isNaN(lo) && n < lo) return false;
+    if (!isNaN(hi) && n > hi) return false;
+    return true;
+  }
   if (!f.textValue) return true;
+  return legacyTextContains(t, field, f.textValue);
+}
+function legacyTextContains(t, field, needle) {
   const tv = tradeFieldValue(t, field);
-  return String(tv === undefined || tv === null ? "" : tv).toLowerCase().includes(String(f.textValue).toLowerCase());
+  return String(tv === undefined || tv === null ? "" : tv).toLowerCase().includes(String(needle).toLowerCase());
 }
 // comboId 为空 = 记录页的 activeFilters；有值 = 分析页某个组合的条件。
 // 两边共用同一套 DOM 结构和事件处理，靠 data-combo-id 区分改哪个数组。
@@ -1670,6 +1714,15 @@ function filterRowValuesHtml(field, path, f, ctx) {
       <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${path}" data-bound="end" data-time-input${cid} value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
     </div>
     <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">${T("filter.timeHint")}</div>`;
+  }
+  if (field.type === "number") {
+    // 两头都可以空着：只填左边 = 「≥ 这个数」，只填右边 = 「≤ 这个数」，都填 = 闭区间
+    return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+      <input type="number" step="any" class="select mono" data-filter-range="${path}" data-bound="start"${cid} value="${esc(f.rangeStart || "")}" placeholder="${esc(T("filter.numMin"))}" />
+      <span style="color:var(--mutedDark);font-size:12px;">${T("filter.rangeTo")}</span>
+      <input type="number" step="any" class="select mono" data-filter-range="${path}" data-bound="end"${cid} value="${esc(f.rangeEnd || "")}" placeholder="${esc(T("filter.numMax"))}" />
+    </div>
+    <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">${T("filter.numHint")}</div>`;
   }
   return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${path}"${cid} value="${esc(f.textValue || "")}" placeholder="${esc(T("filter.containsPlaceholder"))}" /></div>`;
 }
