@@ -56,9 +56,19 @@ backtest sample of hundreds of trades without polluting your real track record.
 <p align="center"><img src="docs/screenshots/records.png" alt="Records" width="900"></p>
 -->
 
-- **Card view** with 4 image sizes (compact / standard / large / huge) and a picker for which
-  extra fields appear on the card. Date, model and R are always shown.
+- **Card view** with 3 image sizes (compact / standard / large) and a picker for which
+  extra fields appear on the card. Date, model and R are always shown. Built for *finding*
+  one trade among dozens.
 - **Table view** — every field as a column, 25 rows per page.
+- **Focus view** — one trade per row at full size, built for *reading* a trade: page through
+  dozens in a row to spot patterns and build a feel for the market. Screenshots are **never
+  cropped** here (card view crops to keep the grid tidy), only capped by height, with three
+  height steps (comfy / large / full screen). Fields sit to the right of the chart or below it
+  (below lets the chart use the full row width and get bigger, at the cost of one trade no
+  longer fitting on a single screen). <kbd>J</kbd> / <kbd>K</kbd> or <kbd>↑</kbd> / <kbd>↓</kbd>
+  steps between trades; click the chart for full size. A **hide-outcome** toggle covers the
+  result and R so you judge the chart first and then reveal — for training your read, not for
+  reviewing the books.
 - **Full-text search** across text and textarea fields (notes, review notes…).
 - **Filtering** — multiple fields combined with AND; multiple values inside one field
   combined with OR (switchable to AND for multiselect fields); invert a condition; date

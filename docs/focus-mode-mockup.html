@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>看图模式 mockup — IFVG Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css" />
+<style>
+/* ============================================================
+   看图模式（focus）—— 这一段就是准备原样搬进 style.css 的
+   一行一笔。图按高度锁死 + object-fit:contain 不裁：
+   截图宽高比人人不同（16:9 / 21:9 / 竖着截），按宽度撑满会让同样的
+   K 线在不同笔里视觉大小差一倍，眼睛没法在多笔之间校准。
+   锁高度 = 每笔在屏幕上占同样高度 = 尺度一致，滚一屏看一笔。
+   ============================================================ */
+.focusList{display:flex;flex-direction:column;gap:22px;}
+.focusRow{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:stretch;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;
+  scroll-snap-align:start;scroll-margin-top:14px;transition:border-color .15s;}
+.focusRow.isCurrent{border-color:var(--accent);}
+
+/* 图靠左对齐、不居中：连着看多笔时左边缘对齐，眼睛不用每次重找起点。
+   ⚠ 容器不写死高度、只写 max-height：写死的话宽图（被列宽卡住、实际没那么高）
+   上下会留出一大片空 letterbox，侧栏也跟着被撑开 */
+.focusShot{max-height:var(--focusH,78vh);min-height:240px;background:var(--surface2);border-radius:9px;
+  display:flex;align-items:center;justify-content:flex-start;overflow:hidden;position:relative;cursor:zoom-in;}
+.focusShot img{max-width:100%;max-height:var(--focusH,78vh);object-fit:contain;display:block;}
+.focusShotEmpty{width:100%;min-height:240px;display:flex;align-items:center;justify-content:center;
+  color:var(--mutedDark);font-size:12px;cursor:default;}
+.focusShot .focusZoomHint{position:absolute;right:10px;bottom:10px;opacity:0;transition:opacity .15s;
+  background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 9px;border-radius:6px;pointer-events:none;}
+.focusShot:hover .focusZoomHint{opacity:1;}
+
+/* 侧栏的内容装在一层 absolute 里：这样侧栏自己对行高的贡献是 0，
+   行高永远只由图片决定，notes 再长也不会把这一行撑高（长了就在里面滚）。
+   grid 默认 stretch 让 .focusSide 拿到图片的高度，inset:0 的内层就跟着一样高。 */
+.focusSide{position:relative;min-width:0;min-height:0;}
+.focusSideInner{position:absolute;inset:0;overflow:auto;display:flex;flex-direction:column;padding-right:4px;}
+.focusSideHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.focusDate{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text);}
+.focusR{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600;}
+.focusModelRow{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.focusModel{font-size:14px;color:var(--text);}
+.focusResult{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:6px;color:#0B0F14;}
+.focusSideDivider{height:1px;background:var(--border);margin:12px 0;}
+.focusFields{display:flex;flex-direction:column;gap:11px;}
+.focusField{min-width:0;}
+.focusFieldLabel{font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;
+  letter-spacing:.3px;margin-bottom:3px;}
+.focusFieldVal{font-size:13px;color:var(--text);line-height:1.65;word-break:break-word;white-space:pre-wrap;}
+.focusField.isLong .focusFieldVal{max-height:170px;overflow:auto;padding-right:4px;}
+.focusSideFoot{margin-top:auto;padding-top:14px;display:flex;gap:8px;}
+.focusSideFoot .btn{padding:6px 12px;font-size:12px;}
+
+/* 遮挡：只盖结果和 R，其余照常。先自己判断，点一下再对答案 */
+.focusMaskBox{border:1px dashed var(--borderLight);border-radius:9px;padding:14px;
+  display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;}
+.focusMaskHint{font-size:11.5px;color:var(--mutedDark);line-height:1.6;}
+
+/* ---- 变体：字段放底部横排 ----
+   右侧栏要吃掉 320px，宽图（16:9、21:9）会先被列宽卡死、根本顶不到设定高度。
+   字段挪到底下之后图能吃满整行宽，高度封顶才真正开始起作用，
+   代价是字段和图不在一个视线里、要往下扫一眼。 */
+.focusRow.sideBottom{grid-template-columns:1fr;}
+.focusRow.sideBottom .focusSide{position:static;}
+.focusRow.sideBottom .focusSideInner{position:static;overflow:visible;padding-right:0;padding-top:12px;}
+.focusRow.sideBottom .focusSideTop{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;}
+.focusRow.sideBottom .focusSideHead{gap:18px;}
+.focusRow.sideBottom .focusModelRow{margin-top:0;}
+.focusRow.sideBottom .focusSideDivider{margin:10px 0;}
+.focusRow.sideBottom .focusFields{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px 24px;align-items:start;}
+.focusRow.sideBottom .focusField.isLong{grid-column:span 2;}
+.focusRow.sideBottom .focusField.isLong .focusFieldVal{max-height:120px;}
+.focusRow.sideBottom .focusSideFoot{margin-top:14px;}
+
+/* 序号条 */
+.focusIndex{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mutedDark);
+  margin-bottom:8px;letter-spacing:.4px;}
+
+@media(max-width:1100px){
+  .focusRow{grid-template-columns:1fr;}
+  .focusSide{position:static;}
+  .focusSideInner{position:static;overflow:visible;padding-right:0;}
+}
+
+/* ---- 只属于 mockup 的东西，不进 style.css ---- */
+.mockNote{border:1px solid var(--accent);background:var(--accentSoft);border-radius:10px;
+  padding:12px 16px;margin-bottom:20px;font-size:12.5px;color:var(--text);line-height:1.8;}
+.mockNote b{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <div class="brand"><span class="accent">IFVG</span> Trade Journal</div>
+      <div class="subline" style="font-size:12px;color:var(--muted);margin-top:4px;">看图模式 mockup · 假数据</div>
+    </div>
+    <div class="headerActions" style="display:flex;gap:10px;align-items:center;">
+      <button class="themeToggle" id="themeBtn" title="切换主题">◐</button>
+    </div>
+  </div>
+
+  <div class="mockNote">
+    静态 mockup，数据和图都是现场画的假 K 线，<b>故意做成五种不同宽高比</b>（16:9 / 21:9 / 4:3 / 2.33:1 / 16:10），
+    用来验证「不裁图 + 高度封顶」在各种截图习惯下的表现。<br>
+    要试的东西：<b>J / K</b> 或 <b>↑ / ↓</b> 跳上下一笔 · 点图开原图 · 切三档高度 ·
+    <b>字段「右侧」↔「底部」来回切，看图能变多大</b> · 打开「遮挡结果」再点揭晓 · 右上角切亮/暗主题。<br>
+    <b>实测的取舍</b>（1680×1000 窗口、高度档「大」）：字段放右侧，图 1246px 宽、高度 526~780 不等——宽图先被列宽卡住，
+    高度封顶其实没生效；但一整笔正好一屏，滚动节奏最舒服。字段放底部，图 1040~1586px 宽、高度 669~780，
+    <b>明显更大也更齐</b>，代价是一笔要占 900~1100px，超过一屏，字段得往下扫一眼才看得到。
+  </div>
+
+  <!-- 工具栏：跟现在记录页那一行同构 -->
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+    <div style="display:flex;gap:6px;">
+      <button class="btn">▦ 卡片</button>
+      <button class="btn">▤ 表格</button>
+      <button class="btn btn-primary">◉ 看图</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:11.5px;color:var(--mutedDark);">图片高度</span>
+      <button class="btn" data-h="62" style="padding:5px 10px;font-size:12px;">舒适</button>
+      <button class="btn btn-primary" data-h="78" style="padding:5px 10px;font-size:12px;">大</button>
+      <button class="btn" data-h="92" style="padding:5px 10px;font-size:12px;">满屏</button>
+      <span style="font-size:11.5px;color:var(--mutedDark);margin-left:8px;">字段</span>
+      <button class="btn btn-primary" data-side="right" style="padding:5px 10px;font-size:12px;">右侧</button>
+      <button class="btn" data-side="bottom" style="padding:5px 10px;font-size:12px;">底部</button>
+      <button class="btn" id="maskBtn" style="padding:5px 10px;font-size:12px;">◐ 遮挡结果</button>
+      <button class="btn" style="padding:5px 10px;font-size:12px;">⚙ 显示字段</button>
+    </div>
+  </div>
+
+  <div class="focusIndex" id="posBar">1 / 5 · 共 47 笔</div>
+  <div class="focusList" id="list"></div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-top:24px;">
+    <button class="btn">‹ 上一页</button>
+    <span class="mono" style="font-size:12.5px;color:var(--muted);">第 1 / 5 页 · 共 47 笔</span>
+    <button class="btn">下一页 ›</button>
+  </div>
+</div>
+
+<div class="overlay" id="lightbox" style="display:none;padding:30px;z-index:80;">
+  <img id="lightboxImg" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" />
+</div>
+
+<script>
+/* ---------- 画假 K 线：不同宽高比，用来验证"锁高度"的效果 ---------- */
+function rng(seed){ let s = seed; return () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; }
+function chartSVG(w, h, seed, dir){
+  const r = rng(seed);
+  const n = Math.floor(w / 11);
+  const padT = h * 0.08, padB = h * 0.10, usable = h - padT - padB;
+  let price = 0.5, candles = [], lo = 1, hi = 0;
+  const drift = dir === "Long" ? 0.004 : -0.004;
+  for (let i = 0; i < n; i++){
+    const o = price;
+    price += (r() - 0.5) * 0.055 + drift;
+    price = Math.max(0.06, Math.min(0.94, price));
+    const c = price;
+    const wh = Math.max(o, c) + r() * 0.028, wl = Math.min(o, c) - r() * 0.028;
+    candles.push({ o, c, wh, wl });
+    lo = Math.min(lo, wl); hi = Math.max(hi, wh);
+  }
+  const y = (v) => padT + (1 - (v - lo) / (hi - lo || 1)) * usable;
+  const cw = w / n, bw = Math.max(2, cw * 0.62);
+  let body = "";
+  // 网格
+  for (let g = 1; g < 5; g++){
+    const gy = padT + usable * g / 5;
+    body += `<line x1="0" y1="${gy.toFixed(1)}" x2="${w}" y2="${gy.toFixed(1)}" stroke="#1E2733" stroke-width="1"/>`;
+  }
+  candles.forEach((k, i) => {
+    const x = i * cw + cw / 2;
+    const up = k.c >= k.o;
+    const col = up ? "#4FA87A" : "#C2564B";
+    const yo = y(k.o), yc = y(k.c);
+    body += `<line x1="${x.toFixed(1)}" y1="${y(k.wh).toFixed(1)}" x2="${x.toFixed(1)}" y2="${y(k.wl).toFixed(1)}" stroke="${col}" stroke-width="1.2"/>`;
+    body += `<rect x="${(x - bw/2).toFixed(1)}" y="${Math.min(yo,yc).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1.5, Math.abs(yc-yo)).toFixed(1)}" fill="${col}"/>`;
+  });
+  // FVG 区块 + 入场/止损线，让它长得像张真的复盘图
+  const fi = Math.floor(n * 0.42), fx = fi * cw;
+  const ft = y(candles[fi].wh), fb = y(candles[fi].wl);
+  body += `<rect x="${fx.toFixed(1)}" y="${ft.toFixed(1)}" width="${(w - fx).toFixed(1)}" height="${Math.max(8, fb-ft).toFixed(1)}" fill="rgba(201,162,75,.16)" stroke="#C9A24B" stroke-width="1" stroke-dasharray="4 3"/>`;
+  const ey = (ft + fb) / 2;
+  body += `<line x1="${fx.toFixed(1)}" y1="${ey.toFixed(1)}" x2="${w}" y2="${ey.toFixed(1)}" stroke="#C9A24B" stroke-width="1.4"/>`;
+  body += `<text x="${(fx+6).toFixed(1)}" y="${(ey-6).toFixed(1)}" fill="#C9A24B" font-family="monospace" font-size="${(h*0.028).toFixed(1)}">IFVG · entry</text>`;
+  const sy = dir === "Long" ? fb + usable * 0.09 : ft - usable * 0.09;
+  body += `<line x1="${fx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${w}" y2="${sy.toFixed(1)}" stroke="#C2564B" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <rect width="${w}" height="${h}" fill="#131A22"/>${body}
+    <text x="${w-8}" y="${h-8}" text-anchor="end" fill="#4A5461" font-family="monospace" font-size="${(h*0.03).toFixed(1)}">NQ1! · 5m · ${w}×${h}</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
+/* ---------- 假数据：宽高比刻意各不相同 ---------- */
+const TRADES = [
+  { date:"2025-08-14", model:"ifvg", r:2.3, result:"W", dir:"Long", w:1920, h:1080, seed:7,
+    fields:[["SESSION","NYAM"],["DIRECTION","Long"],["ENTRY TIME","09:52"],["ENTRY","displacement, IFVG"],
+            ["TARGET","5M ITH/L, PDH/L"],["SELF GRADE","A+"],
+            ["NOTES","开盘扫了 PDL 之后直接位移上来，IFVG 回踩很干净，没有反复。等了两根确认才进，回头看第一根就该进了。\n\n止损放在 FVG 下沿外一个点，没被扫。"]] },
+  { date:"2025-08-13", model:"ifvg", r:-1.0, result:"L", dir:"Short", w:2560, h:1080, seed:23,
+    fields:[["SESSION","London"],["DIRECTION","Short"],["ENTRY TIME","03:20"],["ENTRY","IFVG"],
+            ["TARGET","BSL/SSL"],["SELF GRADE","B"],
+            ["NOTES","位移不够，只有一根中阴。当时想着 London 波动小无所谓，其实就是不该进。"],
+            ["POST NOTE","归类：位移强度不达标。这周第三次了。"]] },
+  { date:"2025-08-12", model:"ifvg", r:4.1, result:"W", dir:"Long", w:1600, h:1200, seed:41,
+    fields:[["SESSION","NYAM"],["DIRECTION","Long"],["ENTRY TIME","10:04"],["ENTRY","displacement, IFVG, CISD"],
+            ["TARGET","30M+ ITH/L"],["SELF GRADE","A+"],
+            ["NOTES","三个条件全齐。拿到了 30M 的目标位，中途 BE 过一次没动。"]] },
+  { date:"2025-08-11", model:"ifvg", r:0, result:"BE", dir:"Short", w:2100, h:900, seed:88,
+    fields:[["SESSION","NYAM"],["DIRECTION","Short"],["ENTRY TIME","09:41"],["ENTRY","IFVG, CISD"],
+            ["TARGET","SESSION HIGH/LOW"],["SELF GRADE","B+"],
+            ["NOTES","进得早了半根。推到 1R 挪保本，然后被拉回来扫掉。方向是对的。"]] },
+  { date:"2025-08-08", model:"ifvg", r:-1.0, result:"BE -> L", dir:"Long", w:1440, h:900, seed:5,
+    fields:[["SESSION","Asia"],["DIRECTION","Long"],["ENTRY TIME","21:15"],["ENTRY","IFVG"],
+            ["TARGET","INTERNAL LRL"],["SELF GRADE","C"],
+            ["NOTES","Asia 段本来就不该做。人为错误。"],["HUMAN ERROR","yes"]] },
+];
+
+function resultColor(res){
+  if (!res) return "var(--muted)";
+  if (res.endsWith("W")) return "var(--pos)";
+  if (res.endsWith("L")) return "var(--neg)";
+  return "var(--accent)";
+}
+
+let masked = false;
+let sidePos = "right";   // right | bottom
+const revealed = new Set();
+
+function build(){
+  document.getElementById("list").innerHTML = TRADES.map((t, i) => {
+    const rc = resultColor(t.result);
+    const src = chartSVG(t.w, t.h, t.seed, t.dir);
+    const hide = masked && !revealed.has(i);
+    const outcome = hide
+      ? `<div class="focusMaskBox">
+           <div class="focusMaskHint">先自己判断这笔该不该做、能走多远</div>
+           <button class="btn" data-reveal="${i}" style="padding:6px 14px;font-size:12px;">揭晓</button>
+         </div>`
+      : `<div class="focusSideHead">
+           <span class="focusDate">${t.date}</span>
+           <span class="focusR" style="color:${rc}">${t.r >= 0 ? "+" : ""}${t.r.toFixed(1)}R</span>
+         </div>
+         <div class="focusModelRow">
+           <span class="focusModel">${t.model}</span>
+           <span class="focusResult" style="background:${rc}">${t.result}</span>
+         </div>`;
+    const headWhenMasked = hide
+      ? `<div class="focusSideHead"><span class="focusDate">${t.date}</span></div>
+         <div class="focusModelRow"><span class="focusModel">${t.model}</span></div>`
+      : "";
+    return `<div class="focusRow ${sidePos === "bottom" ? "sideBottom" : ""}" data-i="${i}">
+      <div class="focusShot" data-src="${src}">
+        <img src="${src}" alt="" loading="lazy" />
+        <span class="focusZoomHint">点击看原图 · ${t.w}×${t.h}</span>
+      </div>
+      <div class="focusSide"><div class="focusSideInner">
+        <div class="focusSideTop">${headWhenMasked}${outcome}</div>
+        <div class="focusSideDivider"></div>
+        <div class="focusFields">
+          ${t.fields.map(([k, v]) => `<div class="focusField${v.length > 40 ? " isLong" : ""}">
+            <div class="focusFieldLabel">${k}</div>
+            <div class="focusFieldVal">${v.replace(/</g,"&lt;")}</div>
+          </div>`).join("")}
+        </div>
+        <div class="focusSideFoot">
+          <button class="btn">编辑</button>
+          <button class="btn" style="color:var(--neg)">删除</button>
+        </div>
+      </div></div>
+    </div>`;
+  }).join("");
+}
+build();
+
+/* 高度三档 */
+document.querySelectorAll("[data-h]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-h]").forEach((x) => x.classList.remove("btn-primary"));
+  b.classList.add("btn-primary");
+  document.documentElement.style.setProperty("--focusH", b.dataset.h + "vh");
+}));
+
+/* 字段位置 */
+document.querySelectorAll("[data-side]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-side]").forEach((x) => x.classList.remove("btn-primary"));
+  b.classList.add("btn-primary");
+  sidePos = b.dataset.side; build();
+}));
+
+/* 遮挡开关 */
+document.getElementById("maskBtn").addEventListener("click", (e) => {
+  masked = !masked; revealed.clear();
+  e.currentTarget.classList.toggle("btn-primary", masked);
+  build();
+});
+document.addEventListener("click", (e) => {
+  const rv = e.target.closest("[data-reveal]");
+  if (rv){ revealed.add(+rv.dataset.reveal); build(); return; }
+  const shot = e.target.closest(".focusShot");
+  if (shot && shot.dataset.src){
+    document.getElementById("lightboxImg").src = shot.dataset.src;
+    document.getElementById("lightbox").style.display = "flex";
+    return;
+  }
+  if (e.target.closest("#lightbox")) document.getElementById("lightbox").style.display = "none";
+});
+
+/* J/K · ↑/↓ 跳上下一笔 */
+let cur = 0;
+function goTo(i){
+  const rows = [...document.querySelectorAll(".focusRow")];
+  cur = Math.max(0, Math.min(rows.length - 1, i));
+  rows.forEach((r, n) => r.classList.toggle("isCurrent", n === cur));
+  rows[cur].scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("posBar").textContent = `${cur + 1} / ${rows.length} · 共 47 笔`;
+}
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input,textarea")) return;
+  if (e.key === "Escape"){ document.getElementById("lightbox").style.display = "none"; return; }
+  if (e.key === "j" || e.key === "ArrowDown"){ e.preventDefault(); goTo(cur + 1); }
+  if (e.key === "k" || e.key === "ArrowUp"){ e.preventDefault(); goTo(cur - 1); }
+});
+
+/* 主题切换，用来验证亮色下也不难看 */
+document.getElementById("themeBtn").addEventListener("click", () => {
+  if (document.documentElement.dataset.theme === "light") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = "light";
+});
+</script>
+</body>
+</html>

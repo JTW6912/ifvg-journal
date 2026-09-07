@@ -91,6 +91,91 @@ a{color:var(--accent);}
 .cardFoot{display:flex;border-top:1px solid var(--border);}
 .cardFoot button{flex:1;padding:7px 0;background:transparent;border:none;color:var(--mutedDark);cursor:pointer;font-size:12px;}
 .cardFoot button:hover{background:var(--surface2);}
+
+/* ============================================================
+   看图模式（focus）—— 记录页第三种视图，一行一笔
+   跟卡片视图的取舍正好相反：卡片是缩略图墙（aspect-ratio 定死 + object-fit:cover
+   裁一刀，为的是网格整齐），这里是「看清这一张」，所以不裁、不定宽高比，
+   只给高度封顶。截图宽高比人人不同（16:9 / 21:9 / 竖着截），
+   裁了等于每笔丢掉的上下文都不一样，看盘最怕这个。
+   ============================================================ */
+.focusList{display:flex;flex-direction:column;gap:22px;}
+.focusRow{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:stretch;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;
+  scroll-snap-align:start;scroll-margin-top:14px;transition:border-color .15s;}
+.focusRow.isCurrent{border-color:var(--accent);}
+
+/* 图靠左对齐、不居中：连着看多笔时左边缘对齐，眼睛不用每次重新找起点。
+   ⚠ 容器只写 max-height 不写死 height：写死的话，被列宽卡住的宽图
+   （实际没那么高）上下会留出一大片空 letterbox，侧栏也跟着被撑开 */
+.focusShot{max-height:var(--focusH,78vh);min-height:240px;background:var(--surface2);border-radius:9px;
+  display:flex;align-items:center;justify-content:flex-start;overflow:hidden;position:relative;cursor:zoom-in;}
+.focusShot img{max-width:100%;max-height:var(--focusH,78vh);object-fit:contain;display:block;}
+.focusShotEmpty{width:100%;min-height:240px;display:flex;align-items:center;justify-content:center;
+  color:var(--mutedDark);font-size:12px;cursor:default;}
+.focusShot .focusZoomHint{position:absolute;right:10px;bottom:10px;opacity:0;transition:opacity .15s;
+  background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:4px 9px;border-radius:6px;pointer-events:none;
+  font-family:'JetBrains Mono',monospace;}
+.focusShot:hover .focusZoomHint{opacity:1;}
+
+/* ⚠ 侧栏的内容装在一层 absolute 里，所以侧栏自己对行高的贡献是 0 —— 行高永远只由图片决定，
+   notes 再长也撑不高这一行（长了就在里面滚）。grid 默认 stretch 让 .focusSide 拿到图片的高度，
+   inset:0 的内层就跟着一样高。改成普通流式布局的话，一篇长 notes 能把整行拉到两屏高 */
+.focusSide{position:relative;min-width:0;min-height:0;}
+.focusSideInner{position:absolute;inset:0;overflow:auto;display:flex;flex-direction:column;padding-right:4px;}
+.focusSideHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.focusDate{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--text);}
+.focusR{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:600;}
+.focusModelRow{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+.focusModel{font-size:14px;color:var(--text);}
+.focusResult{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:6px;color:#0B0F14;}
+.focusSideDivider{height:1px;background:var(--border);margin:12px 0;}
+.focusFields{display:flex;flex-direction:column;gap:11px;}
+.focusField{min-width:0;}
+.focusFieldLabel{font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;
+  letter-spacing:.3px;margin-bottom:3px;}
+.focusFieldVal{font-size:13px;color:var(--text);line-height:1.65;word-break:break-word;white-space:pre-wrap;}
+.focusField.isLong .focusFieldVal{max-height:170px;overflow:auto;padding-right:4px;}
+.focusSideFoot{margin-top:auto;padding-top:14px;display:flex;gap:8px;}
+.focusSideFoot .btn{padding:6px 12px;font-size:12px;}
+
+/* 这一笔没截图：让侧栏回到普通流、由它自己撑高。
+   否则行高被那个 240px 的占位框定死，字段全被挤进一个 240px 的滚动条里 */
+.focusRow.noShot .focusSide{position:static;}
+.focusRow.noShot .focusSideInner{position:static;overflow:visible;padding-right:0;}
+
+/* 遮挡：只盖结果和 R，日期/模型/其余字段照常。先自己判断该不该做、能走多远，再点揭晓对答案 */
+.focusMaskBox{border:1px dashed var(--borderLight);border-radius:9px;padding:14px;
+  display:flex;flex-direction:column;align-items:center;gap:9px;text-align:center;}
+.focusMaskHint{font-size:11.5px;color:var(--mutedDark);line-height:1.6;}
+
+.focusIndex{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mutedDark);
+  margin-bottom:8px;letter-spacing:.4px;}
+
+/* 变体：字段放底部横排。
+   右侧栏要吃掉 320px，宽高比大于 1.6 的图（16:9、21:9 都在内）会先被列宽卡死、
+   根本顶不到设定高度；挪到底下之后图能吃满整行宽，高度封顶才真正起作用。
+   代价是一笔占的高度超过一屏，字段得往下扫一眼。默认仍是右侧——一屏一笔的翻牌节奏更重要 */
+.focusRow.sideBottom{grid-template-columns:1fr;}
+.focusRow.sideBottom .focusSide{position:static;}
+.focusRow.sideBottom .focusSideInner{position:static;overflow:visible;padding-right:0;padding-top:12px;}
+.focusRow.sideBottom .focusSideTop{display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;}
+.focusRow.sideBottom .focusSideHead{gap:18px;}
+.focusRow.sideBottom .focusModelRow{margin-top:0;}
+.focusRow.sideBottom .focusSideDivider{margin:10px 0;}
+.focusRow.sideBottom .focusFields{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:12px 24px;align-items:start;}
+.focusRow.sideBottom .focusField.isLong{grid-column:span 2;}
+.focusRow.sideBottom .focusField.isLong .focusFieldVal{max-height:120px;}
+.focusRow.sideBottom .focusSideFoot{margin-top:14px;}
+
+@media(max-width:1100px){
+  .focusRow{grid-template-columns:1fr;}
+  .focusSide{position:static;}
+  .focusSideInner{position:static;overflow:visible;padding-right:0;padding-top:12px;}
+}
+
 .emptyState{text-align:center;padding:60px 20px;color:var(--mutedDark);}
 .statRow{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
 .statBox{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;flex:1 1 130px;}

@@ -212,8 +212,29 @@ function reviewGroupCollapseKey(gid) { return recordMode + ":" + gid; }
 let slashMenu = null;                 // { query, index, top, left, anchor } —— 正文里打 / 弹出来的插入菜单
 let tradePickerOpen = false;
 let tradePickerQuery = "";
-let gridCardSize = (function () { try { return localStorage.getItem("journal_card_size") || "large"; } catch (e) { return "large"; } })();
-let gridViewMode = (function () { try { return localStorage.getItem("journal_view_mode") || "card"; } catch (e) { return "card"; } })();
+/* localStorage 里读出来的枚举一律过一遍白名单：
+   「超大图」(huge) 这一档被看图模式取代删掉了，老用户本地还存着 "huge"，
+   不校验的话四个尺寸按钮会全都不高亮、还查不出为什么 */
+function pickStored(key, allowed, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return allowed.includes(v) ? v : fallback;
+  } catch (e) { return fallback; }
+}
+let gridCardSize = pickStored("journal_card_size", ["compact", "standard", "large"], "large");
+let gridViewMode = pickStored("journal_view_mode", ["card", "table", "focus"], "card");
+/* ---------- 看图模式（focus）的状态 ----------
+   高度/字段位置是"我习惯这么看"，存 localStorage；
+   遮挡和已揭晓是"这一次想怎么练"，只放内存，刷新回到不遮挡——
+   遮挡状态被记住的话，第二天打开记录页只看到一排盖住的牌，会莫名其妙 */
+let focusHeight = pickStored("journal_focus_height", ["comfy", "large", "full"], "large");
+let focusSidePos = pickStored("journal_focus_side", ["right", "bottom"], "right");
+let focusMasked = false;
+let focusRevealed = new Set();
+let focusFieldsPickerOpen = false;
+let focusCursor = 0;            // 当前停在这一页的第几笔，J/K 用
+let focusIndexTotal = 0;        // 筛完之后一共多少笔，J/K 就地改序号条时要用，省得重算一遍筛选
+let focusFields = [];           // journal_schema.focus_fields，跟卡片视图的 cardFields 各存各的
 let filterPanelOpen = (function () { try { return localStorage.getItem("journal_filter_panel_open") === "true"; } catch (e) { return false; } })();
 let sortBy = (function () { try { return localStorage.getItem("journal_sort_by") || "trade_date"; } catch (e) { return "trade_date"; } })();
 let sortDir = (function () { try { return localStorage.getItem("journal_sort_dir") || "desc"; } catch (e) { return "desc"; } })();
@@ -1151,6 +1172,11 @@ async function loadAll() {
       schema = schemaRow.fields;
     }
     cardFields = (schemaRow && Array.isArray(schemaRow.card_fields)) ? schemaRow.card_fields : [];
+    /* focus_fields：列还没建（docs/focus-mode-migration.sql 没跑）或者从没配过时是 null → 用默认。
+       ⚠ 这里只能判 Array.isArray，不能顺手加 .length：空数组是"用户主动清空了"，
+       跟"没配过"是两回事，混在一起的话「清空额外字段」按下去下次刷新又变回默认 */
+    focusFields = (schemaRow && Array.isArray(schemaRow.focus_fields))
+      ? schemaRow.focus_fields : defaultFocusFields();
     analysisPrefs = normalizeAnalysisPrefs(schemaRow && schemaRow.analysis_prefs);
     reviewPrefs = normalizeReviewPrefs(schemaRow && schemaRow.review_prefs);
     const { data: tradeRows, error: e2 } = await sb.from("trades").select("*")
@@ -1204,6 +1230,17 @@ async function persistCardFields(next) {
   if (!sb || !session) return;
   const { error } = await sb.from("journal_schema").update({ card_fields: next }).eq("user_id", session.user.id);
   if (error) console.error(error);
+}
+/* 看图模式的字段选择。列没建的话这里会报错——只 console 一条，不弹窗：
+   功能本身照常能用，只是这次的选择不跨设备、刷新后回到默认，
+   为这个打断用户不值当（docs/focus-mode-migration.sql 跑一下就好了） */
+async function persistFocusFields(next) {
+  if (viewingUserId) return;
+  focusFields = next;
+  render();
+  if (!sb || !session) return;
+  const { error } = await sb.from("journal_schema").update({ focus_fields: next }).eq("user_id", session.user.id);
+  if (error) console.error("focus_fields 存不进去（多半是 docs/focus-mode-migration.sql 还没跑）:", error);
 }
 async function persistTrade(trade) {
   if (viewingUserId) return;
@@ -2092,8 +2129,14 @@ function renderFilterSummary(filtered) {
     ${!viewingUserId ? `<button class="tinyBtn" data-action="save-filters-as-combo" style="margin-left:auto;color:var(--accent);font-size:12px;">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
   </div>`;
 }
-const CARD_SIZES = { compact: 190, standard: 260, large: 360, huge: 500 };
+/* 原来还有一档 huge:500。删掉了：它还是走 .grid 的多列布局、还是被 object-fit:cover 裁，
+   在 2200px 的 .wrap 里一行照样排四张——"更宽的缩略图"而已，不是"看得清的大图"。
+   真想看清一张图请用看图模式（focus），那边不裁、一行一笔 */
+const CARD_SIZES = { compact: 190, standard: 260, large: 360 };
 const TABLE_PAGE_SIZE = 25;
+// 看图模式一笔就占大半屏，一页给多了只是让分页条更远、图更多张一起下载
+const FOCUS_PAGE_SIZE = 10;
+const FOCUS_HEIGHTS = { comfy: "62vh", large: "78vh", full: "92vh" };
 function estimateCardColumns() {
   const cardPx = CARD_SIZES[gridCardSize] || CARD_SIZES.standard;
   const gap = 18;
@@ -2101,7 +2144,9 @@ function estimateCardColumns() {
   return Math.max(1, Math.floor((availableWidth + gap) / (cardPx + gap)));
 }
 function currentPageSize() {
-  return gridViewMode === "table" ? TABLE_PAGE_SIZE : estimateCardColumns() * 4;
+  if (gridViewMode === "table") return TABLE_PAGE_SIZE;
+  if (gridViewMode === "focus") return FOCUS_PAGE_SIZE;
+  return estimateCardColumns() * 4;
 }
 function renderPaginationControls(totalPages, totalCount) {
   if (totalPages <= 1) return "";
@@ -2144,6 +2189,124 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
   html += `</div>`;
   return html;
 }
+/* ============================================================
+   记录页 —— 看图模式（focus）
+   一行一笔，左边一张不裁的大图，右边（或底下）挂用户选的字段。
+   用途跟卡片视图不一样：卡片是"找到那一笔"，这里是"把这一笔看清楚"，
+   连着翻几十笔来找规律、养盘感。所以这里的取舍全部倒过来：
+   不裁图、不定宽高比、一页只放 10 笔。
+   ============================================================ */
+// 这几个角色在看图模式里是常驻的（顶上那两行），不进"额外字段"的候选池，
+// 免得同一个值在同一栏里出现两遍
+const FOCUS_PINNED_ROLES = ["date", "model", "result", "r_multiple", "screenshot"];
+
+// 能被挑来当"额外显示字段"的：排掉常驻角色，再把创建/修改日期这两个虚拟字段接在后面
+function pickableFields(pinnedRoles) {
+  return schema.filter((f) => !pinnedRoles.includes(f.role)).concat(virtualFields());
+}
+
+/* 还没配过时的默认：所有长文本字段。
+   复盘一张图的时候最想看的就是当时写的那几句话，而长文本正是卡片视图里最挤、
+   最放不下的东西——看图模式右边有一整栏，正好归它。
+   一个长文本都没有的话退回前三个非常驻字段，总比空着强 */
+function defaultFocusFields() {
+  const longs = schema.filter((f) => f.type === "textarea" && !FOCUS_PINNED_ROLES.includes(f.role));
+  if (longs.length) return longs.map((f) => f.id);
+  return schema.filter((f) => !FOCUS_PINNED_ROLES.includes(f.role)).slice(0, 3).map((f) => f.id);
+}
+
+/* 图片高度是一个挂在 <html> 上的 CSS 变量，不是 inline style：
+   一行一笔、一页十行，写 inline 就是十份重复的样式；改一档还得整页重渲染 */
+function applyFocusHeight() {
+  document.documentElement.style.setProperty("--focusH", FOCUS_HEIGHTS[focusHeight] || FOCUS_HEIGHTS.large);
+}
+
+function renderFocusToolbar() {
+  const heightBtn = (k, label) => `<button class="btn ${focusHeight === k ? "btn-primary" : ""}" data-action="set-focus-height" data-height="${k}" style="padding:5px 10px;font-size:12px;">${esc(label)}</button>`;
+  const sideBtn = (k, label, title) => `<button class="btn ${focusSidePos === k ? "btn-primary" : ""}" data-action="set-focus-side" data-side="${k}" style="padding:5px 10px;font-size:12px;"${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
+  return `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+    <span style="font-size:11.5px;color:var(--mutedDark);">${T("focus.height")}</span>
+    ${heightBtn("comfy", T("focus.heightComfy"))}${heightBtn("large", T("focus.heightLarge"))}${heightBtn("full", T("focus.heightFull"))}
+    <span style="font-size:11.5px;color:var(--mutedDark);margin-left:8px;">${T("focus.sidePos")}</span>
+    ${sideBtn("right", T("focus.sideRight"))}${sideBtn("bottom", T("focus.sideBottom"), T("focus.sideBottomTitle"))}
+    <button class="btn ${focusMasked ? "btn-primary" : ""}" data-action="toggle-focus-mask" title="${esc(T("focus.maskTitle"))}" style="padding:5px 10px;font-size:12px;margin-left:8px;">${T("focus.mask")}</button>
+    <button class="btn ${focusFieldsPickerOpen ? "btn-primary" : ""}" data-action="toggle-focus-fields-picker" style="padding:5px 10px;font-size:12px;">${ICONS.settings} ${T("focus.fields")}</button>
+  </div>`;
+}
+
+/* pageItems 是当前这一页的交易。totalCount 只用来在序号条上显示"共 N 笔"，不参与别的 */
+function renderFocusList(pageItems, totalCount, roles) {
+  const { modelF, resultF, dateF, rF, shotF } = roles;
+  if (focusCursor >= pageItems.length) focusCursor = Math.max(0, pageItems.length - 1);
+  focusIndexTotal = totalCount;
+
+  let html = `<div class="focusIndex">${esc(T("focus.position", { cur: focusCursor + 1, total: pageItems.length, n: totalCount }))} · ${esc(T("focus.navHint"))}</div>`;
+  html += `<div class="focusList">`;
+
+  pageItems.forEach((t, i) => {
+    const result = resultF ? t[resultF.id] : null;
+    const rc = resultColor(result);
+    const shot = shotF ? t[shotF.id] : null;
+    const rVal = rF ? t[rF.id] : undefined;
+    const hasR = rVal !== undefined && rVal !== "";
+    // 遮挡只盖"结果"，日期和模型照常显示——不然连是哪一天哪个模型都不知道，没法判断
+    const hidden = focusMasked && !focusRevealed.has(t.id);
+
+    const outcomeHtml = hidden
+      ? `<div class="focusSideHead"><span class="focusDate">${dateF ? esc(t[dateF.id] || "—") : "—"}</span></div>
+         <div class="focusModelRow"><span class="focusModel">${modelF ? esc(t[modelF.id] || "—") : "—"}</span></div>
+         <div class="focusMaskBox">
+           <div class="focusMaskHint">${T("focus.maskHint")}</div>
+           <button class="btn" data-action="focus-reveal" data-id="${esc(t.id)}" style="padding:6px 14px;font-size:12px;">${T("focus.reveal")}</button>
+         </div>`
+      : `<div class="focusSideHead">
+           <span class="focusDate">${dateF ? esc(t[dateF.id] || "—") : "—"}</span>
+           ${hasR ? `<span class="focusR" style="color:${rc}">${(parseFloat(rVal) >= 0 ? "+" : "") + esc(String(rVal))}R</span>` : ""}
+         </div>
+         <div class="focusModelRow">
+           <span class="focusModel">${modelF ? esc(t[modelF.id] || "—") : "—"}</span>
+           ${result ? `<span class="focusResult" style="background:${rc}">${esc(result)}</span>` : ""}
+         </div>`;
+
+    const fieldsHtml = focusFields.map((fid) => {
+      const f = resolveField(fid);
+      if (!f) return "";   // 字段被删了：静默跳过，不留空壳
+      let v = tradeFieldValue(t, f);
+      if (Array.isArray(v)) v = v.length ? v.join(", ") : "";
+      const text = (v === undefined || v === null || v === "") ? "—" : String(v);
+      return `<div class="focusField${f.type === "textarea" || text.length > 40 ? " isLong" : ""}">
+        <div class="focusFieldLabel">${esc(f.label)}</div>
+        <div class="focusFieldVal">${esc(text)}</div>
+      </div>`;
+    }).join("");
+
+    /* ⚠ 图片和整行都没有 data-action="edit-trade"：卡片视图整张卡点了就进编辑弹窗，
+       在这儿会变成灾难——一边翻一边看，误触一次就弹一个编辑器出来。
+       这里点图是看原图（lightbox），要改得点右下角那个明确的"编辑" */
+    html += `<div class="focusRow${focusSidePos === "bottom" ? " sideBottom" : ""}${shot ? "" : " noShot"}${i === focusCursor ? " isCurrent" : ""}" data-focus-row="${i}">
+      <div class="focusShot"${shot ? ` data-action="preview-image" data-url="${esc(shot)}"` : ""}>
+        ${shot
+          ? `<img src="${esc(shot)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="focusShotEmpty" onerror="window.__imgFallback(this)" />
+             <span class="focusZoomHint">${esc(T("focus.zoomHint"))}</span>`
+          : `<div class="focusShotEmpty">${ICONS.camera} ${esc(T("focus.noShot"))}</div>`}
+      </div>
+      <div class="focusSide"><div class="focusSideInner">
+        <div class="focusSideTop">${outcomeHtml}</div>
+        ${fieldsHtml ? `<div class="focusSideDivider"></div><div class="focusFields">${fieldsHtml}</div>` : ""}
+        ${viewingUserId ? "" : `<div class="focusSideFoot">
+          <button class="btn" data-action="edit-trade" data-id="${esc(t.id)}">${T("focus.edit")}</button>
+          ${confirmDeleteId === t.id
+            ? `<button class="btn" data-action="confirm-delete" data-id="${esc(t.id)}" style="background:var(--negSoft);color:var(--neg);">${T("common.confirmDelete")}</button><button class="btn" data-action="cancel-delete">${T("common.cancel")}</button>`
+            : `<button class="btn" data-action="ask-delete" data-id="${esc(t.id)}" style="color:var(--neg)">${ICONS.trash}</button>`}
+        </div>`}
+      </div></div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
 function renderGrid() {
   const modelF = roleField("model"), resultF = roleField("result"), dateF = roleField("date"), rF = roleField("r_multiple"), shotF = roleField("screenshot");
 
@@ -2165,6 +2328,10 @@ function renderGrid() {
   </div>`;
   html += renderFilterPanel(filtered.length, filtered);
 
+  // 字段选择器展开时，视图切换那一行要贴着它，中间不留 16px 的缝
+  const pickerOpen = (gridViewMode === "card" && cardFieldsPickerOpen)
+                  || (gridViewMode === "focus" && focusFieldsPickerOpen);
+
   // sort controls
   html += `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px;">
     <span style="font-size:11.5px;color:var(--mutedDark);">${T("grid.sort")}</span>
@@ -2176,23 +2343,32 @@ function renderGrid() {
     <button class="btn" data-action="toggle-sort-dir" style="padding:5px 10px;font-size:12px;">${sortDir === "desc" ? T("grid.sortDesc") : T("grid.sortAsc")}</button>
   </div>
 
-  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:${gridViewMode === "card" && cardFieldsPickerOpen ? "0" : "16"}px;">
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:${pickerOpen ? "0" : "16"}px;">
     <div style="display:flex;gap:6px;">
       <button class="btn ${gridViewMode === "card" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="card">${ICONS.grid} ${T("grid.viewCard")}</button>
       <button class="btn ${gridViewMode === "table" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="table">${ICONS.table} ${T("grid.viewTable")}</button>
+      <button class="btn ${gridViewMode === "focus" ? "btn-primary" : ""}" data-action="set-view-mode" data-mode="focus">${ICONS.expand} ${T("grid.viewFocus")}</button>
     </div>
     ${gridViewMode === "card" ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
       <span style="font-size:11.5px;color:var(--mutedDark);">${T("grid.imageSize")}</span>
       ${Object.keys(CARD_SIZES).map((sz) => `<button class="btn ${gridCardSize === sz ? "btn-primary" : ""}" data-action="set-card-size" data-size="${sz}" style="padding:5px 10px;font-size:12px;">${esc(T("grid.size" + sz.charAt(0).toUpperCase() + sz.slice(1)))}</button>`).join("")}
       <button class="btn ${cardFieldsPickerOpen ? "btn-primary" : ""}" data-action="toggle-card-fields-picker" style="padding:5px 10px;font-size:12px;">${ICONS.settings} ${T("grid.cardFields")}</button>
     </div>` : ""}
+    ${gridViewMode === "focus" ? renderFocusToolbar() : ""}
   </div>
   ${gridViewMode === "card" && cardFieldsPickerOpen ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("grid.cardFieldsHint")}</div>
     <div class="chipGroup">
-      ${schema.filter((f) => !["date", "model", "r_multiple"].includes(f.role)).concat(virtualFields()).map((f) => `<button type="button" class="chip ${cardFields.includes(f.id) ? "active" : ""}" data-action="toggle-card-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
+      ${pickableFields(["date", "model", "r_multiple"]).map((f) => `<button type="button" class="chip ${cardFields.includes(f.id) ? "active" : ""}" data-action="toggle-card-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
     </div>
     ${cardFields.length ? `<button class="tinyBtn" data-action="reset-card-fields" style="color:var(--mutedDark);margin-top:8px;">${T("grid.clearExtraFields")}</button>` : ""}
+  </div>` : ""}
+  ${gridViewMode === "focus" && focusFieldsPickerOpen ? `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:16px;">
+    <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("focus.fieldsHint")}</div>
+    <div class="chipGroup">
+      ${pickableFields(FOCUS_PINNED_ROLES).map((f) => `<button type="button" class="chip ${focusFields.includes(f.id) ? "active" : ""}" data-action="toggle-focus-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
+    </div>
+    ${focusFields.length ? `<button class="tinyBtn" data-action="reset-focus-fields" style="color:var(--mutedDark);margin-top:8px;">${T("focus.clearFields")}</button>` : ""}
   </div>` : ""}`;
 
   if (!filtered.length) {
@@ -2206,6 +2382,12 @@ function renderGrid() {
   if (gridPage < 1) gridPage = 1;
   const pageStart = (gridPage - 1) * pageSize;
   const pageItems = filtered.slice(pageStart, pageStart + pageSize);
+
+  if (gridViewMode === "focus") {
+    html += renderFocusList(pageItems, filtered.length, { modelF, resultF, dateF, rF, shotF });
+    html += renderPaginationControls(totalPages, filtered.length);
+    return html;
+  }
 
   if (gridViewMode === "table") {
     // 创建/修改日期挂在最后两列：它们不是交易内容，是"这条记录本身"的信息，混在自定义字段中间会乱
@@ -4696,6 +4878,7 @@ function render() {
   // 复盘只在实盘模式下出现——回测那批数据不需要写周复盘，页签也就不该占位置
   TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
+  applyFocusHeight();
   let body = "";
   try {
     if (tab === "grid") body = renderGrid();
@@ -4952,6 +5135,7 @@ document.addEventListener("click", async (e) => {
     gridViewMode = el.dataset.mode;
     if (!viewingUserId) { try { localStorage.setItem("journal_view_mode", gridViewMode); } catch (e) {} }
     gridPage = 1;
+    focusCursor = 0;
     render();
   }
   else if (action === "set-card-size") {
@@ -4960,8 +5144,31 @@ document.addEventListener("click", async (e) => {
     gridPage = 1;
     render();
   }
-  else if (action === "grid-prev-page") { gridPage--; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  else if (action === "grid-next-page") { gridPage++; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  /* ---------- 记录页：看图模式 ---------- */
+  else if (action === "set-focus-height") {
+    focusHeight = el.dataset.height;
+    if (!viewingUserId) { try { localStorage.setItem("journal_focus_height", focusHeight); } catch (e) {} }
+    applyFocusHeight();   // 只是改一个 CSS 变量，不用重渲染整页
+  }
+  else if (action === "set-focus-side") {
+    focusSidePos = el.dataset.side;
+    if (!viewingUserId) { try { localStorage.setItem("journal_focus_side", focusSidePos); } catch (e) {} }
+    render();
+  }
+  else if (action === "toggle-focus-mask") {
+    focusMasked = !focusMasked;
+    focusRevealed = new Set();   // 重新盖上时把已揭晓的清空，不然再打开是一排已经翻好的牌
+    render();
+  }
+  else if (action === "focus-reveal") { focusRevealed.add(el.dataset.id); render(); }
+  else if (action === "toggle-focus-fields-picker") { focusFieldsPickerOpen = !focusFieldsPickerOpen; render(); }
+  else if (action === "toggle-focus-field") {
+    const id = el.dataset.id;
+    await persistFocusFields(focusFields.includes(id) ? focusFields.filter((x) => x !== id) : [...focusFields, id]);
+  }
+  else if (action === "reset-focus-fields") { await persistFocusFields([]); }
+  else if (action === "grid-prev-page") { gridPage--; focusCursor = 0; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+  else if (action === "grid-next-page") { gridPage++; focusCursor = 0; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
   else if (action === "toggle-card-fields-picker") { cardFieldsPickerOpen = !cardFieldsPickerOpen; render(); }
   else if (action === "toggle-card-field") {
     const id = el.dataset.id;
@@ -5904,7 +6111,37 @@ document.addEventListener("drop", (e) => {
 // 800ms 的 debounce 还没到就关页面的话，把没写完的分析设置补上
 window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); flushReviewPrefs(); });
 
+/* 看图模式的 J/K · ↑/↓ 翻笔。
+   排在 Escape 那一串前面，但自己先把所有"正在输入/有弹层"的情况让开：
+   记录页搜索框里打个 "j" 要能打出 j 来，弹窗开着时方向键归弹窗管 */
+function focusKeyNav(e) {
+  if (tab !== "grid" || gridViewMode !== "focus") return false;
+  if (lightboxUrl || editingTrade || editingReview || dayDetailDate || profileModalOpen) return false;
+  const t = e.target;
+  if (t && (t.matches("input, textarea, select") || t.isContentEditable)) return false;
+  if (e.ctrlKey || e.metaKey || e.altKey) return false;
+
+  let delta = 0;
+  if (e.key === "j" || e.key === "ArrowDown") delta = 1;
+  else if (e.key === "k" || e.key === "ArrowUp") delta = -1;
+  else return false;
+
+  const rows = document.querySelectorAll("[data-focus-row]");
+  if (!rows.length) return false;
+  e.preventDefault();
+  const next = Math.max(0, Math.min(rows.length - 1, focusCursor + delta));
+  if (next === focusCursor) return true;   // 已经在头/尾，别白渲染一次
+  focusCursor = next;
+  rows.forEach((r, i) => r.classList.toggle("isCurrent", i === focusCursor));
+  rows[focusCursor].scrollIntoView({ behavior: "smooth", block: "start" });
+  // 只更新序号条，不重渲染整页——重渲染会把所有 <img> 拆了重建，滚动中途图会闪
+  const bar = document.querySelector(".focusIndex");
+  if (bar) bar.textContent = T("focus.position", { cur: focusCursor + 1, total: rows.length, n: focusIndexTotal }) + " · " + T("focus.navHint");
+  return true;
+}
+
 document.addEventListener("keydown", (e) => {
+  if (focusKeyNav(e)) return;
   if (e.key !== "Escape") return;
   if (lightboxUrl) { lightboxUrl = null; render(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
