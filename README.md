@@ -183,9 +183,14 @@ its groups.
   straight into edit mode.
 - **Editor** — a plain textarea with the ergonomics on top, not a block editor: press Enter
   inside a list and the next bullet appears (numbers increment, to-dos repeat, an empty item
-  exits the list); Tab / Shift+Tab indent a whole selection and keep it selected;
-  `Ctrl/Cmd+B` `I` `K` for bold, italic, link; `Ctrl/Cmd+S` saves now. Pasting a bare image
-  URL turns it into an image, and pasting a link over selected text turns it into a link.
+  exits the list); Tab / Shift+Tab indent a whole selection and keep it selected. Pasting a
+  bare image URL turns it into an image, and pasting a link over selected text turns it into
+  a link.
+- **Shortcuts** — with `Ctrl/Cmd`: `B` bold, `I` italic, `E` inline code, `K` link, `S` save
+  now. Add `Shift` for: `X` strikethrough, `1`/`2`/`3` headings, `8` bullets, `7` numbers,
+  `9` to-do, `.` quote. Hover any toolbar button to see its key.
+  **`Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z` are the browser's own undo and redo** — every edit
+  the toolbar, shortcuts, list continuation and Tab make can be stepped back through.
 - **`/` insert menu** — type `/` at the start of a line for headings, lists, to-dos, quote,
   code block, divider, table, image, link, and **Link a trade**. It filters as you type, in
   either language (`/table` and `/表格` both work).

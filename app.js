@@ -3238,9 +3238,23 @@ function slashFilteredItems() {
     it.keys.some((k) => k.toLowerCase().includes(q)) || T(it.labelKey).toLowerCase().includes(q));
 }
 
+/* 工具栏按钮的快捷键，顺便写进 title 里，用户不用去别处翻 */
+const REVIEW_SHORTCUTS = {
+  bold: "B", italic: "I", strike: "Shift+X", h1: "Shift+1", h2: "Shift+2",
+  ul: "Shift+8", ol: "Shift+7", task: "Shift+9", quote: "Shift+.",
+  code: "E", link: "K",
+};
+function isMacLike() {
+  const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+  return /mac|iphone|ipad/i.test(p);
+}
+function shortcutHint(cmd) {
+  const k = REVIEW_SHORTCUTS[cmd];
+  return k ? ` (${isMacLike() ? "⌘" : "Ctrl"}+${k})` : "";
+}
 function reviewToolbarHtml() {
   const b = (cmd, icon, titleKey, label) =>
-    `<button class="tbBtn" data-action="review-tb" data-cmd="${cmd}" title="${esc(T(titleKey))}">${ICONS[icon]}${label ? `<span class="tbLabel">${label}</span>` : ""}</button>`;
+    `<button class="tbBtn" data-action="review-tb" data-cmd="${cmd}" title="${esc(T(titleKey) + shortcutHint(cmd))}">${ICONS[icon]}${label ? `<span class="tbLabel">${label}</span>` : ""}</button>`;
   return `<div class="reviewToolbar">
     ${b("bold", "tbBold", "review.tb.bold")}
     ${b("italic", "tbItalic", "review.tb.italic")}
@@ -3581,6 +3595,10 @@ window.__reviewTitleInput = function (el) {
 window.__reviewBodyInput = function (ta) {
   if (!editingReview) return;
   editingReview.body = ta.value;
+  // execCommand 会顺带派发一次 input。那一路的收尾由 replaceRange 自己做，
+  // 而且**绝对不能在这里跑 syncSlashMenu**——程序性插入之后光标前面可能正好是个 "/"，
+  // 会莫名其妙把插入菜单又弹出来
+  if (programmaticEdit) return;
   updateReviewPreview();
   scheduleReviewSave();
   syncSlashMenu(ta);
@@ -3614,18 +3632,39 @@ window.__reviewPaste = function (e, ta) {
   }
 };
 
-/* 统一的「改 textarea 内容」入口：改完同步状态、预览、光标 */
+/* 统一的「改 textarea 内容」入口：改完同步状态、预览、光标。
+
+   ⚠️⚠️ 这里必须走 execCommand，不能写 `ta.value = ...`（已经踩过一次）。
+   给 textarea 的 value 直接赋值会把浏览器的**原生撤销栈整个清空**，而回车续列表、
+   Tab 缩进、工具栏、插入菜单、粘贴全都经过这个函数——结果就是编辑器里 Ctrl+Z
+   完全失效。execCommand("insertText") 会被浏览器当成一次真实编辑记进撤销栈，
+   Ctrl+Z / Ctrl+Shift+Z 就都是原生行为，一行都不用自己实现。
+   （execCommand 标准上标了 deprecated，但这是目前唯一能保住 textarea 撤销栈的
+   办法，各家浏览器也都还支持；真失败了下面有兜底。） */
+let programmaticEdit = false;
 function replaceRange(ta, from, to, text, selStart, selEnd) {
-  const before = ta.value.slice(0, from);
-  const after = ta.value.slice(to);
-  ta.value = before + text + after;
+  ta.focus();
+  ta.setSelectionRange(from, to);
+  programmaticEdit = true;
+  let ok = false;
+  try {
+    // 空串 + 有选区 = 删除；insertText 传空串在各家表现不一致，分开处理
+    if (text === "") ok = from === to ? true : document.execCommand("delete");
+    else ok = document.execCommand("insertText", false, text);
+  } catch (err) { ok = false; }
+  if (!ok) {
+    // 兜底：万一哪天 execCommand 真没了，功能不能跟着废，代价是这一步撤销不了
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+  }
+  programmaticEdit = false;
+
   const a = (selStart === null || selStart === undefined) ? from + text.length : selStart;
   const b = (selEnd === null || selEnd === undefined) ? a : selEnd;
   ta.setSelectionRange(a, b);
-  ta.focus();
   if (editingReview) editingReview.body = ta.value;
   updateReviewPreview();
   scheduleReviewSave();
+  highlightCaretBlock();
 }
 
 /* 整行整行地改（缩进、列表、标题都走这里）。
@@ -3750,10 +3789,22 @@ window.__reviewKeydown = function (e, ta) {
   const mod = e.ctrlKey || e.metaKey;
   if (mod && !e.altKey && !e.isComposing) {
     const k = e.key.toLowerCase();
-    if (k === "b") { e.preventDefault(); runReviewCommand("bold"); return; }
-    if (k === "i") { e.preventDefault(); runReviewCommand("italic"); return; }
-    if (k === "k") { e.preventDefault(); runReviewCommand("link"); return; }
-    if (k === "s") { e.preventDefault(); flushReviewSave(); return; }
+    // ⚠️ 撤销/重做一律放行，交给浏览器原生处理——我们自己不维护撤销栈，
+    // 拦下来只会把它弄坏。（能撤销的前提是所有编辑都走 replaceRange 的 execCommand）
+    if (k === "z" || k === "y") return;
+    if (!e.shiftKey) {
+      if (k === "b") { e.preventDefault(); runReviewCommand("bold"); return; }
+      if (k === "i") { e.preventDefault(); runReviewCommand("italic"); return; }
+      if (k === "k") { e.preventDefault(); runReviewCommand("link"); return; }
+      if (k === "e") { e.preventDefault(); runReviewCommand("code"); return; }
+      if (k === "s") { e.preventDefault(); flushReviewSave(); return; }
+    } else {
+      // 数字键判 e.code：Shift+7 在多数布局上 e.key 是 "&" 而不是 "7"
+      const byCode = { Digit1: "h1", Digit2: "h2", Digit3: "h3", Digit7: "ol", Digit8: "ul", Digit9: "task" }[e.code];
+      if (byCode) { e.preventDefault(); runReviewCommand(byCode); return; }
+      if (k === "x") { e.preventDefault(); runReviewCommand("strike"); return; }
+      if (e.code === "Period" || k === ">") { e.preventDefault(); runReviewCommand("quote"); return; }
+    }
   }
 
   if (e.key === "Tab" && !e.isComposing) {

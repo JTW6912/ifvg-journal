@@ -263,6 +263,9 @@ JS
   - 搜索时**把结果拍平成一个列表、不按分组显示**，每条标出所属分组。否则搜到的东西可能藏在折叠着的分组里，用户会以为没搜到
   - 编辑器是 **textarea + 增强输入**，不是 contenteditable 块编辑器。这是刻意的：contenteditable 要自己处理选区和中文输入法组字，本项目是中文用户为主，风险不成比例。**所有 keydown 分支都必须先看 `e.isComposing`**，否则输入法选词时的回车会把没上屏的拼音切碎
   - 编辑器里的输入全走内联 `on*` 属性交给 `window.__reviewBodyInput` / `__reviewKeydown` / `__reviewPaste` / `__reviewTitleInput`，跟项目里 `window.__updateUrlPreview` / `__imgFallback` 一个路子
+  - **⚠️⚠️ 改 textarea 内容必须走 `replaceRange()` 里的 `execCommand`，绝对不能写 `ta.value = ...`**（已经踩过一次）。给 value 直接赋值会把浏览器的**原生撤销栈整个清空**，而回车续列表、Tab、工具栏、插入菜单、粘贴全都经过这个函数，结果是编辑器里 Ctrl+Z 完全失效。`execCommand("insertText")` 会被当成一次真实编辑记进撤销栈，撤销/重做于是全是原生行为，一行都不用自己实现。空串 + 有选区要用 `execCommand("delete")`，insertText 传空串各家表现不一致。execCommand 标准上标了 deprecated，但这是目前唯一能保住 textarea 撤销栈的办法，代码里留了直接赋值的兜底
+  - 由此派生：`__reviewKeydown` 里 **`Ctrl+Z` / `Ctrl+Y` 一律 return 放行**，我们不维护自己的撤销栈，拦下来只会把原生的弄坏
+  - 还有一条：execCommand 会顺带派发一次 `input`，所以 `replaceRange` 期间置 `programmaticEdit`，让 `__reviewBodyInput` 直接返回。**关键是不能在那一路跑 `syncSlashMenu`**——程序性插入之后光标前面可能正好是个 `/`，会莫名其妙把插入菜单又弹出来
   - 改 textarea 内容统一走 `replaceRange()`；**整行整行地改**（缩进、列表、标题）走 `applyLineEdit()`——它会在原本有选区时把改完的几行继续选着，否则 Tab 之后选区一塌，紧接着的 Shift+Tab 只能退最后一行
   - 交易选择器的搜索**没有复用记录页的 `tradeMatchesSearch()`**，另写了 `tradePickerMatches()`。前者只搜 text/textarea/url，而这里最常搜的恰恰是日期和模型（select 类型）
   - **⚠️ 插入菜单、交易选择器这些浮层里全是按钮，不要用 `stopPropagation` 包容器**（见第四节那条踩过两次的坑）。「点背景关闭、点内容不关闭」用 `e.target === el` 判断，`close-trade-picker` 就是这么写的
