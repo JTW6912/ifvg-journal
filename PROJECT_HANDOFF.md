@@ -246,6 +246,11 @@ JS
 - **复盘页（仅实盘模式）**：用户自己发帖，markdown 正文，可以把帖子关联到某一周，也可以在正文里关联到具体某笔交易。下面几条是这块最容易改坏的地方：
   - **⚠️ 编辑器有自己的根节点 `#reviewEditorRoot`（index.html 里第 4 个根），不在 `#app` 里面**。因为 `render()` 每次都整体重建 `#app` 的 innerHTML，而复盘是一篇能写二十分钟的长文——放进 `#app` 的话，任何后台异步操作触发的 `render()` 都会清空 textarea、丢光标、丢撤销栈。`renderReviewEditor(force)` 里用 `reviewEditorRenderedFor` 做守卫，跟 `renderModal` 的 `modalRenderedForId` 完全同一个套路
   - 由此派生的规矩：**编辑器打开期间，任何状态变化都不许走 `render()`**，只能定点更新某个节点。已经这么做的有：预览区（`updateReviewPreview()`）、保存状态（`updateReviewSaveBadge()`）、关联周那一行（`refreshReviewWeekRow()`）、插入菜单（`renderSlashMenu()`）、交易选择器的结果区（`window.__tradePickerInput`，只换结果不换搜索框，否则输入框自己会被重建、光标丢失）。新加编辑器里的交互要照这个来
+  - **编辑区和预览区滚动联动**：`renderMarkdown` 给每个块打了 `data-md-line`（它在源码里的起始行号），联动就是把编辑区里这些行的 y 坐标量出来（隐藏 div 镜像，按「正文 + 宽度」缓存），和预览里对应块的位置一一对上，中间线性插值。**不要退化成按比例硬滚**——正文里有图片或表格时两边高度能差几百像素，按比例对不上任何东西
+  - 联动是**单向的**（编辑区带动预览区）。反向联动要处理两边互相触发的死循环，收益不值那个复杂度
+  - **⚠️ scroll 事件的 `isTrusted` 永远是 true**，区分不了「用户滚的」和「我自己设的 scrollTop」。所以对预览滚动位置的程序性修改一律走 `setPreviewScrollTop()`，它会打一个时间戳，`__reviewPreviewScroll` 靠 150ms 窗口把自己引发的那次滤掉。用户真的手动滚了预览就抑制联动 1.2 秒，别跟他抢
+  - **⚠️⚠️ textarea 的 `onkeyup` 绝对不能关插入菜单**（已经踩过一次）。按键顺序是 keydown → input → keyup，打 `/` 时 input 刚把菜单弹出来，紧接着的 keyup 会立刻关掉它，表现是「斜杠菜单一闪就没」。所以拆成两个：`__reviewCaretMoved`（点击用，关菜单 + 更新高亮）和 `__reviewCaretKey`（keyup 用，只更新高亮）
+  - 高亮当前块用的是两层 `box-shadow` 叠出来的竖条，**不要改成 border/padding**：那会改变块的尺寸，联动量出来的位置就跟着跳了
   - **⚠️ 预览区不能用 `box.innerHTML = ...` 整块换掉**（已经踩过一次）。整块替换会把里面的 `<img>` 全换成新元素，而新建的 `<img>` 在图片解码完成前高度是 0，浏览器恰好在这一刻做布局，`scrollHeight` 骤降、`scrollTop` 跟着被夹小；等图片异步恢复高度时滚动位置已经丢了。表现是「长文里一打字预览区就自己往上滚」，实测每次按键掉约 30px。`updateReviewPreview()` 现在的做法是：渲染结果和上次一样就直接 return（`lastPreviewHtml`）；要换就先建离屏树，把旧树里**已经加载完的** `<img>` 按 src 原样搬过去（移动 DOM 节点不会触发重新加载），再 `replaceChildren`，最后把 `scrollTop` 放回去。以后往预览区加任何异步撑高度的东西（视频、iframe、字体导致的回流）都要想到这条
   - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去
   - 交易引用**不需要带 mode**：复盘按模式分开了，回测复盘里引用的必然是回测交易，而 `trades` 本来就只装当前模式那批，所以永远能对上。别因为「跨模式查不到」这个担心去给引用加 mode

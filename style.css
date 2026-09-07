@@ -455,6 +455,11 @@ textarea.input{resize:vertical;}
 .reviewBodyInput::placeholder{color:var(--mutedDark);}
 .reviewPreviewPane{min-width:0;overflow-y:auto;padding:18px 22px;border-left:1px solid var(--border);background:var(--bg);}
 .reviewPreviewEmpty{color:var(--mutedDark);font-size:12.5px;}
+/* 光标所在的那一段，在预览里用一道左边线标出来——「我现在写的是哪一块」一眼能对上。
+   两层 box-shadow 叠出「3px 竖条 + 5px 空隙」：先列的画在上面，用背景色的那层
+   把里侧盖掉。用 box-shadow 而不是 border/padding 是因为后者会改变块的尺寸，
+   滚动联动量出来的位置会跟着跳。 */
+.mdActiveBlock{box-shadow:-5px 0 0 0 var(--bg), -8px 0 0 0 var(--accent);}
 @media(max-width:900px){
   .reviewEditorBody{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}
   .reviewEditorBody.noPreview,.reviewEditorBody.readOnly{grid-template-rows:1fr;}

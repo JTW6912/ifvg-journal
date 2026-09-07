@@ -2936,8 +2936,15 @@ function renderMarkdown(src) {
     while (listStack.length > toDepth) closeOneList();
   }
 
+  // 每个块都带上它在源码里的起始行号（data-md-line）。编辑区和预览区的滚动联动
+  // 全靠这个把两边对上——没有它就只能按比例硬滚，图片和表格一多就完全对不齐。
+  // 值是渲染时算出来的行号，不是用户输入，不影响「先转义再排版」那条铁律。
+  let blockLine = 0;
+  const at = () => ` data-md-line="${blockLine}"`;
+
   while (i < lines.length) {
     const line = lines[i];
+    blockLine = i;
 
     // 代码块 ```
     if (/^\s*```/.test(line)) {
@@ -2946,7 +2953,7 @@ function renderMarkdown(src) {
       i++;
       while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
       i++; // 吃掉收尾的 ```
-      html += `<pre class="mdPre"><code>${buf.join("\n")}</code></pre>`;
+      html += `<pre class="mdPre"${at()}><code>${buf.join("\n")}</code></pre>`;
       continue;
     }
 
@@ -2957,7 +2964,7 @@ function renderMarkdown(src) {
       i += 2;
       const body = [];
       while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim()) { body.push(mdTableRowCells(lines[i])); i++; }
-      html += `<div class="mdTableWrap"><table class="mdTable"><thead><tr>`
+      html += `<div class="mdTableWrap"${at()}><table class="mdTable"><thead><tr>`
         + head.map((c) => `<th>${mdInline(c)}</th>`).join("")
         + `</tr></thead><tbody>`
         + body.map((r) => `<tr>` + head.map((_, ci) => `<td>${mdInline(r[ci] || "")}</td>`).join("") + `</tr>`).join("")
@@ -2969,14 +2976,14 @@ function renderMarkdown(src) {
     if (!line.trim()) { closeLists(0); i++; continue; }
 
     // 分割线
-    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { closeLists(0); html += `<hr class="mdHr" />`; i++; continue; }
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { closeLists(0); html += `<hr class="mdHr"${at()} />`; i++; continue; }
 
     // 标题 # ~ ######
     const h = line.match(/^\s{0,3}(#{1,6})\s+(.*)$/);
     if (h) {
       closeLists(0);
       const lv = Math.min(h[1].length, 6);
-      html += `<h${lv} class="mdH mdH${lv}">${mdInline(h[2].trim())}</h${lv}>`;
+      html += `<h${lv} class="mdH mdH${lv}"${at()}>${mdInline(h[2].trim())}</h${lv}>`;
       i++; continue;
     }
 
@@ -2985,7 +2992,7 @@ function renderMarkdown(src) {
       closeLists(0);
       const buf = [];
       while (i < lines.length && /^\s{0,3}&gt;\s?/.test(lines[i])) { buf.push(lines[i].replace(/^\s{0,3}&gt;\s?/, "")); i++; }
-      html += `<blockquote class="mdQuote">${buf.map((b) => mdInline(b)).join("<br />")}</blockquote>`;
+      html += `<blockquote class="mdQuote"${at()}>${buf.map((b) => mdInline(b)).join("<br />")}</blockquote>`;
       continue;
     }
 
@@ -3005,7 +3012,7 @@ function renderMarkdown(src) {
       while (listStack.length > depth) closeOneList();
       while (listStack.length < depth) openList(kind);
       if (listStack[depth - 1].kind !== kind) { closeOneList(); openList(kind); }
-      html += `<li${taskHtml ? ' class="mdTaskItem"' : ""}>${taskHtml}${mdInline(content)}</li>`;
+      html += `<li${taskHtml ? ' class="mdTaskItem"' : ""}${at()}>${taskHtml}${mdInline(content)}</li>`;
       i++; continue;
     }
 
@@ -3018,7 +3025,7 @@ function renderMarkdown(src) {
       && !/^\s{0,3}&gt;\s?/.test(lines[i])
       && !/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i])
       && !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i])) { para.push(lines[i]); i++; }
-    html += `<p class="mdP">${para.map((l) => mdInline(l)).join("<br />")}</p>`;
+    html += `<p class="mdP"${at()}>${para.map((l) => mdInline(l)).join("<br />")}</p>`;
   }
   closeLists(0);
   return html;
@@ -3326,11 +3333,13 @@ function renderReviewEditor(force) {
             placeholder="${esc(T("review.bodyPlaceholder"))}"
             oninput="window.__reviewBodyInput(this)"
             onkeydown="window.__reviewKeydown(event, this)"
+            onkeyup="window.__reviewCaretKey()"
             onclick="window.__reviewCaretMoved()"
+            onscroll="window.__reviewEditorScroll()"
             onpaste="window.__reviewPaste(event, this)">${esc(editingReview.body || "")}</textarea>
           <div id="slashMenuRoot"></div>
         </div>
-        <div class="reviewPreviewPane mdBody" id="reviewPreview">${renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`}</div>
+        <div class="reviewPreviewPane mdBody" id="reviewPreview" onscroll="window.__reviewPreviewScroll()">${renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`}</div>
       </div>
       <div id="tradePickerRoot"></div>
     </div>
@@ -3342,8 +3351,153 @@ function renderReviewEditor(force) {
     ta.focus();
     const end = ta.value.length;
     ta.setSelectionRange(end, end);
+    suppressPreviewSyncUntil = 0;
+    highlightCaretBlock();
   }
 }
+
+/* ============================================================
+   编辑区 ⇄ 预览区滚动联动
+
+   目标：写到正文哪一段，右边预览就停在哪一段。
+
+   做法是「按块对齐」而不是「按比例硬滚」：renderMarkdown 给每个块打了
+   data-md-line（它在源码里的起始行号），这里把编辑区里同样这些行的 y 坐标量出来，
+   两张表一一对应，中间的位置线性插值。按比例硬滚在纯文字时勉强能看，
+   一旦正文里有图片或表格——两边高度差几百像素——就完全对不上了。
+
+   量 y 用的是老办法：做一个字体、宽度、padding 都和 textarea 一致的隐藏 div，
+   把正文按块切成若干 span 塞进去，读每个 span 的 offsetTop。一次量完全部，
+   并按「正文 + 宽度」缓存，滚动时不会反复量。
+
+   联动是单向的（编辑区带动预览区）。反向联动要处理两边互相触发的死循环，
+   收益不值那个复杂度；用户手动滚预览时不会被打断，等下次动编辑区再重新对齐。
+   ============================================================ */
+let mdOffsetCache = { text: null, width: 0, tops: null, lineNums: null };
+let previewSyncRaf = null;
+let suppressPreviewSyncUntil = 0;   // 用户刚手动滚过预览，这段时间内不抢他的滚动位置
+let lastProgrammaticScrollAt = 0;   // 自己设的 scrollTop 也会派发 scroll 事件，得认出来
+let activeMdLineEl = null;
+
+/* 所有对预览区滚动位置的程序性修改都走这里，好让 scroll 处理器认出「这一下是我自己干的」。
+   scroll 事件的 isTrusted 永远是 true，区分不了来源，只能靠时间戳。 */
+function setPreviewScrollTop(box, v) {
+  const next = Math.min(Math.max(v, 0), Math.max(box.scrollHeight - box.clientHeight, 0));
+  if (Math.abs(box.scrollTop - next) < 1) return;
+  lastProgrammaticScrollAt = Date.now();
+  box.scrollTop = next;
+}
+
+/* 块在预览区「内容坐标系」里的位置（可以直接和 scrollTop 比）。
+   不用 el.offsetTop - box.offsetTop：那个只在两者共用同一个定位祖先时才成立，
+   哪天给预览区加个 position:relative 就会静默错位。 */
+function blockOffsetInPreview(el, box) {
+  return el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+}
+
+/* 预览区里所有带行号的块，按出现顺序（也就是行号升序） */
+function previewBlocks() {
+  const box = document.getElementById("reviewPreview");
+  if (!box) return [];
+  return [...box.querySelectorAll("[data-md-line]")];
+}
+
+/* 把编辑区里这些行的 y 坐标量出来。lineNums 必须升序 */
+function measureEditorLineTops(ta, lineNums) {
+  if (mdOffsetCache.text === ta.value && mdOffsetCache.width === ta.clientWidth
+      && mdOffsetCache.lineNums && mdOffsetCache.lineNums.join() === lineNums.join()) {
+    return mdOffsetCache.tops;
+  }
+  const cs = getComputedStyle(ta);
+  const div = document.createElement("div");
+  ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "wordSpacing",
+    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"].forEach((k) => { div.style[k] = cs[k]; });
+  div.style.position = "absolute";
+  div.style.top = "0";
+  div.style.left = "-9999px";
+  div.style.visibility = "hidden";
+  div.style.whiteSpace = "pre-wrap";
+  div.style.wordWrap = "break-word";
+  div.style.boxSizing = "border-box";
+  div.style.border = "none";
+  div.style.width = ta.clientWidth + "px";
+
+  const srcLines = ta.value.split("\n");
+  const spans = lineNums.map((ln, idx) => {
+    const to = idx + 1 < lineNums.length ? lineNums[idx + 1] : srcLines.length;
+    const span = document.createElement("span");
+    // textContent 不解析 HTML，正文里的 < & 在这里没有任何危险
+    span.textContent = srcLines.slice(ln, to).join("\n") + (to < srcLines.length ? "\n" : "");
+    div.appendChild(span);
+    return span;
+  });
+  document.body.appendChild(div);
+  const tops = spans.map((sp) => sp.offsetTop);
+  document.body.removeChild(div);
+
+  mdOffsetCache = { text: ta.value, width: ta.clientWidth, tops, lineNums: lineNums.slice() };
+  return tops;
+}
+
+/* 编辑区滚到哪，预览就滚到对应的块。中间位置在相邻两块之间线性插值 */
+function syncPreviewToEditor() {
+  if (Date.now() < suppressPreviewSyncUntil) return;
+  const ta = document.getElementById("reviewBodyInput");
+  const box = document.getElementById("reviewPreview");
+  if (!ta || !box || reviewIsReadOnly() || !reviewPreviewOpen) return;
+  const blocks = previewBlocks();
+  if (blocks.length < 2) return;
+
+  const lineNums = blocks.map((b) => +b.dataset.mdLine);
+  const tops = measureEditorLineTops(ta, lineNums);
+  if (!tops || tops.length !== blocks.length) return;
+
+  const y = ta.scrollTop;
+  let k = 0;
+  while (k + 1 < tops.length && tops[k + 1] <= y) k++;
+  const t0 = tops[k], t1 = k + 1 < tops.length ? tops[k + 1] : t0 + 1;
+  const frac = t1 > t0 ? Math.min(Math.max((y - t0) / (t1 - t0), 0), 1) : 0;
+
+  const p0 = blockOffsetInPreview(blocks[k], box);
+  const p1 = k + 1 < blocks.length ? blockOffsetInPreview(blocks[k + 1], box) : p0;
+  setPreviewScrollTop(box, p0 + (p1 - p0) * frac);
+}
+
+/* 光标所在的块高亮一下，顺便在它跑出预览可视区时把它带回来。
+   只在真的看不见时才滚——每敲一个字就把预览拽一下，比不联动更烦人。 */
+function highlightCaretBlock() {
+  const ta = document.getElementById("reviewBodyInput");
+  const box = document.getElementById("reviewPreview");
+  if (!ta || !box || reviewIsReadOnly() || !reviewPreviewOpen) return;
+  const line = ta.value.slice(0, ta.selectionStart).split("\n").length - 1;
+  let el = null;
+  previewBlocks().forEach((b) => { if (+b.dataset.mdLine <= line) el = b; });
+  if (activeMdLineEl && activeMdLineEl !== el) activeMdLineEl.classList.remove("mdActiveBlock");
+  activeMdLineEl = el;
+  if (!el) return;
+  el.classList.add("mdActiveBlock");
+  if (Date.now() < suppressPreviewSyncUntil) return;
+  const elTop = blockOffsetInPreview(el, box);
+  const elBottom = elTop + el.offsetHeight;
+  if (elTop < box.scrollTop || elBottom > box.scrollTop + box.clientHeight) {
+    setPreviewScrollTop(box, elTop - box.clientHeight * 0.3);
+  }
+}
+
+/* 滚动事件很密，合并到一帧里做一次 */
+function queuePreviewSync() {
+  if (previewSyncRaf) return;
+  previewSyncRaf = requestAnimationFrame(() => {
+    previewSyncRaf = null;
+    syncPreviewToEditor();
+  });
+}
+window.__reviewEditorScroll = function () { queuePreviewSync(); };
+/* 用户自己滚预览时先让开，别跟他抢；等他回去动编辑区再重新对齐 */
+window.__reviewPreviewScroll = function () {
+  if (Date.now() - lastProgrammaticScrollAt < 150) return;   // 这一下是上面自己设的
+  suppressPreviewSyncUntil = Date.now() + 1200;
+};
 
 /* ⚠️ 这里不能简单地 `box.innerHTML = ...`。
    整块替换会把预览区里的 <img> 全部换成新元素，而新建的 <img> 在图片解码完成前
@@ -3381,6 +3535,8 @@ function updateReviewPreview() {
   });
 
   box.replaceChildren(...next.childNodes);
+  activeMdLineEl = null;          // 上一轮的高亮节点已经被换掉了
+  lastProgrammaticScrollAt = Date.now();
   box.scrollTop = top;
 }
 
@@ -3428,9 +3584,19 @@ window.__reviewBodyInput = function (ta) {
   updateReviewPreview();
   scheduleReviewSave();
   syncSlashMenu(ta);
+  highlightCaretBlock();
 };
+/* 鼠标点进正文：光标跳走了，插入菜单没有意义了，关掉 */
 window.__reviewCaretMoved = function () {
   if (slashMenu) closeSlashMenu();
+  highlightCaretBlock();
+};
+/* 键盘抬起：只更新「现在写的是哪一段」的高亮。
+   ⚠️ 这里绝对不能关插入菜单——按键顺序是 keydown → input → keyup，
+   打 `/` 时 input 刚把菜单弹出来，紧接着的 keyup 会立刻把它关掉。
+   菜单的开关由 syncSlashMenu(input 时) 和 __reviewKeydown(方向键/回车/Esc) 负责。 */
+window.__reviewCaretKey = function () {
+  highlightCaretBlock();
 };
 window.__reviewPaste = function (e, ta) {
   const text = (e.clipboardData && e.clipboardData.getData("text")) || "";

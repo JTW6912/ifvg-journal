@@ -196,6 +196,12 @@ its groups.
   result and R; click it to open that trade. If the trade is later deleted, the pill turns
   red and says so rather than silently vanishing.
 - **Live preview** (edit mode only) side by side, stacked on narrow screens, and hideable.
+- **The two panes scroll together** — scroll the editor and the preview lands on the same
+  passage, and the block your cursor sits in gets a gold rule in the preview (jump somewhere
+  far away and the preview brings it back into view). The alignment is per block rather than
+  proportional: once a post has images or tables the two sides differ in height by hundreds
+  of pixels and a proportional scroll lines up with nothing. Scrolling the preview by hand
+  is left alone until you touch the editor again.
 - **Groups** — make as many named groups as you like (one level, no nesting) and drag posts
   into them. Weekly write-ups can just sit in Ungrouped in date order, while collections you
   keep adding to — recurring mistakes, ideas to test — get a group each. Group headers drag
