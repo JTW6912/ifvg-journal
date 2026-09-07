@@ -134,6 +134,27 @@ a{color:var(--accent);}
   color:var(--accent);background:var(--accentSoft);border-top:1px solid var(--border);}
 .analysisComboTag svg{width:14px;height:14px;flex-shrink:0;}
 
+/* 条件分组（嵌套的 且/或/非）。
+   ⚠ 布局硬要求：没建分组时界面跟以前完全一样，所以分组也活在条件行那个 flex-wrap 容器里。
+   折叠态 = 跟条件行同样宽的一张卡（flex:1 1 320px），能跟条件行并排；
+   展开态才 flex-basis:100% 独占一行，把子条件竖着排开。 */
+.filterGroup{border:1px solid var(--borderLight);border-radius:8px;background:var(--surface2);
+  flex:1 1 320px;min-width:280px;max-width:420px;align-self:flex-start;}
+.filterGroup.open{flex-basis:100%;max-width:100%;}
+.filterGroupHead{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+.filterGroupChev{background:transparent;border:none;color:var(--mutedDark);cursor:pointer;display:flex;padding:0;}
+.filterGroupChev:hover{color:var(--accent);}
+.filterGroupOp{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--accent);
+  background:var(--accentSoft);border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0;}
+/* 取反的分组用警示色：这一组是"排除掉"的意思，跟旁边"保留"的条件必须一眼分得开 */
+.filterGroupOp.neg{color:var(--neg);background:var(--negSoft);}
+.filterGroupSummary{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.filterGroupBody{padding:0 10px 10px;}
+.filterGroupOps{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+/* 子条件列表：跟外层同一套 flex-wrap，所以分组里也能并排放两三个条件，不会一个条件占一行 */
+.filterNodeList{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;}
+.filterGroupFoot{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
 /* 样本太少的拆解行：不画色条、不标 delta、整行降权，免得 n=3 的胜率长得跟 n=80 一样有说服力 */
 .barRow.lowSample{opacity:.5;}
 .lowSampleTag{font-size:10px;color:var(--mutedDark);border:1px solid var(--border);border-radius:4px;padding:0 4px;

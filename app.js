@@ -226,7 +226,8 @@ let breakdownPickerOpen = false;
    全是纯视图状态，不影响任何数字。展开/折叠这类临时状态只放内存（刷新回到默认），
    视图模式/排序这类"我习惯这么看"才存 localStorage。 */
 let expandedLowSample = new Set();     // 哪些拆解卡把「其他 N 项（样本少）」展开了，key=字段 id
-let expandedFilterChips = new Set();   // 分析页筛选行里哪几行把全部选项 chip 展开了，key=行下标
+let expandedFilterChips = new Set();   // 筛选行里哪几行把全部选项 chip 展开了，key=chipKey(ctx, path)
+let expandedFilterGroups = new Set();  // 哪几个条件分组是展开的（默认折叠成一行摘要），key 同上。纯 UI 状态，不落库
 let comboViewMode = (function () { try { return localStorage.getItem("journal_combo_view") === "list" ? "list" : "card"; } catch (e) { return "card"; } })();
 let breakdownSort = (function () { try { const v = localStorage.getItem("journal_breakdown_sort"); return v === "delta" || v === "ev" ? v : "n"; } catch (e) { return "n"; } })();
 // 分析页两个大区块（组合 / 拆解）收起了哪些
@@ -346,7 +347,7 @@ function seedAnalysisFilters() {
   if (!viewingUserId) {
     try {
       const raw = JSON.parse(localStorage.getItem(ANALYSIS_FILTERS_KEY) || "null");
-      if (Array.isArray(raw)) saved = raw.map((f) => ({ ...newFilterRow(), ...f }));
+      if (Array.isArray(raw)) saved = normalizeFilterNodes(raw);
     } catch (e) {}
   }
   analysisFilters = saved || defaultAnalysisFilters();
@@ -384,7 +385,7 @@ function exportHasActiveFilters() {
   return activeFilters.some((f) => f.fieldId) || searchQuery.trim() !== "";
 }
 function exportFilteredTrades() {
-  return trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)) && tradeMatchesSearch(t, searchQuery));
+  return trades.filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
 }
 function resolvedExportScope() {
   return exportScope || (exportHasActiveFilters() ? "filtered" : "all");
@@ -500,7 +501,7 @@ function normalizeAnalysisPrefs(raw) {
 }
 function normalizeCombo(c) {
   if (!c || typeof c !== "object" || !c.id) return null;
-  let conditions = Array.isArray(c.conditions) ? c.conditions.map((f) => ({ ...newFilterRow(), ...f })) : [];
+  let conditions = normalizeFilterNodes(c.conditions);
   // 老数据迁移：以前"只算Taken/排除人为错误"是组合自带的隐藏开关，现在改成用户自己在下面加条件。
   // 只在旧数据明确是 true（不是新组合缺这个字段）时才转成一条显式条件，避免升级后旧组合口径突然变宽
   if (c.scopeTaken === true) {
@@ -669,7 +670,7 @@ async function saveAnalysisPrefsNow() {
 // 分析页当前在看的那批交易：总览数字、字段拆解、最大回撤全都用这一批，没有任何额外的隐藏过滤。
 // 「看到的数字 = 面板里那几条条件筛出来的结果」是这一页唯一的口径规则，别再往里塞暗逻辑。
 function analysisFilteredTrades() {
-  return trades.filter((t) => analysisFilters.every((f) => tradeMatchesFilter(t, f)));
+  return trades.filter((t) => tradeMatchesFilters(t, analysisFilters));
 }
 // Profit Factor：正R之和 ÷ |负R之和|。只统计真的填了 R 的那些交易，n 一并返回好让 UI 标注口径。
 function profitFactorOf(list, rF) {
@@ -975,11 +976,11 @@ function computeBreakdowns(list) {
 // 组合的完整筛选条件 = 用户自己加的条件（想只算 Taken / 排除人为错误，自己在下面加一行）。
 // 组合卡片的统计和「跳到记录页」都走这一个函数，两边数字才能保证一模一样。
 function comboFilterRows(combo) {
-  return (combo.conditions || []).map((f) => ({ ...f, values: [...(f.values || [])] }));
+  return cloneFilterNodes(combo.conditions);
 }
 function comboMatchedTrades(combo) {
   const rows = comboFilterRows(combo);
-  return trades.filter((t) => rows.every((f) => tradeMatchesFilter(t, f)));
+  return trades.filter((t) => tradeMatchesFilters(t, rows));
 }
 function comboStats(combo) {
   const list = comboMatchedTrades(combo);
@@ -990,7 +991,8 @@ function comboStats(combo) {
 // 数字突然变好看却毫无提示。所以渲染前先把这类失效条件挑出来。
 function comboIssues(combo) {
   const hard = [], soft = [];
-  (combo.conditions || []).forEach((f, i) => {
+  // 拍平成叶子再编号：树形结构下「第 N 条」按渲染顺序数，才跟用户从上往下看到的对得上
+  flattenFilterLeaves(combo.conditions).forEach((f, i) => {
     const no = i + 1;
     if (!f.fieldId) { soft.push(T("combo.issue.noField", { no })); return; }
     const field = resolveField(f.fieldId);
@@ -1009,22 +1011,34 @@ function comboIssues(combo) {
   return { hard, soft };
 }
 // 卡片上那行人话版的条件描述
+// 一条叶子条件的人话。返回 "" 表示这条还没填完，调用方直接跳过
+function filterLeafText(f) {
+  const field = resolveField(f.fieldId);
+  if (!f.fieldId) return "";
+  if (!field) return T("combo.cond.fieldDeleted");
+  if (field.type === "select" || field.type === "multiselect") {
+    if (!(f.values || []).length) return "";
+    const join = f.matchMode === "and" ? T("combo.cond.and") : " / ";
+    return `${field.label} ${f.negate ? "≠" : "="} ${f.values.join(join)}`;
+  }
+  if (field.type === "date" || field.type === "time") {
+    if (!f.rangeStart && !f.rangeEnd) return "";
+    return `${field.label} ${f.rangeStart || "…"}~${f.rangeEnd || "…"}`;
+  }
+  return f.textValue ? T("combo.cond.contains", { label: field.label, value: f.textValue }) : "";
+}
+// 分组的人话，带括号：非(信号=noticeable 且 gap=non-BW)。
+// 搭好的规则能一眼读出来核对，是不做表达式输入框换来的那半边——没有这行，嵌套就成了黑箱
+function filterNodeText(n) {
+  if (!isFilterGroup(n)) return filterLeafText(n);
+  const inner = (n.children || []).map(filterNodeText).filter(Boolean);
+  if (!inner.length) return "";
+  const joiner = n.op === "or" ? T("filter.joinOr") : T("filter.joinAnd");
+  return (n.negate ? T("filter.notPrefix") : "") + "(" + inner.join(joiner) + ")";
+}
 function comboConditionsText(combo) {
-  const parts = [];
-  (combo.conditions || []).forEach((f) => {
-    const field = resolveField(f.fieldId);
-    if (!field) { parts.push(T("combo.cond.fieldDeleted")); return; }
-    if (field.type === "select" || field.type === "multiselect") {
-      if (!(f.values || []).length) return;
-      const join = f.matchMode === "and" ? T("combo.cond.and") : " / ";
-      parts.push(`${field.label} ${f.negate ? "≠" : "="} ${f.values.join(join)}`);
-    } else if (field.type === "date" || field.type === "time") {
-      if (!f.rangeStart && !f.rangeEnd) return;
-      parts.push(`${field.label} ${f.rangeStart || "…"}~${f.rangeEnd || "…"}`);
-    } else if (f.textValue) {
-      parts.push(T("combo.cond.contains", { label: field.label, value: f.textValue }));
-    }
-  });
+  // 顶层用 " · " 分隔（读作 AND），跟以前一模一样——没建分组的用户看到的摘要一个字都不会变
+  const parts = (combo.conditions || []).map(filterNodeText).filter(Boolean);
   return parts.length ? parts.join(" · ") : T("combo.cond.none");
 }
 const COMBO_SMALL_SAMPLE = 10;
@@ -1071,13 +1085,13 @@ function aggregateTradeStats(list) {
 function tradesOnDate(dateStr) {
   const dateF = roleField("date");
   if (!dateF) return [];
-  return trades.filter((t) => (t[dateF.id] || "") === dateStr && activeFilters.every((f) => tradeMatchesFilter(t, f)));
+  return trades.filter((t) => (t[dateF.id] || "") === dateStr && tradeMatchesFilters(t, activeFilters));
 }
 function tradesInMonth(year, month) {
   const dateF = roleField("date");
   if (!dateF) return [];
   const prefix = year + "-" + String(month).padStart(2, "0");
-  return trades.filter((t) => String(t[dateF.id] || "").startsWith(prefix) && activeFilters.every((f) => tradeMatchesFilter(t, f)));
+  return trades.filter((t) => String(t[dateF.id] || "").startsWith(prefix) && tradeMatchesFilters(t, activeFilters));
 }
 
 /* ============================================================
@@ -1386,6 +1400,147 @@ async function changeOwnPassword(currentPw, newPw, confirmPw) {
 function newFilterRow(fieldId) {
   return { fieldId: fieldId || "", values: [], negate: false, matchMode: "or", rangeStart: "", rangeEnd: "", textValue: "" };
 }
+
+/* ============================================================
+   筛选条件树 —— 嵌套的 且 / 或 / 非
+   平铺的「所有条件一律 AND」表达不了「排除掉某个组合」这种规则。比如
+   「noticeable 整体胜率低，但 noticeable + BW gap 是能做的」，要写的是
+   非( 信号=noticeable 且 gap=non-BW )——对一个组合取反，平铺列表没有任何写法能表达。
+
+   模型上做的取舍：**顶层仍然是数组、仍然是隐式 AND，只是数组元素可以是条件，也可以是分组**。
+   于是老数据（localStorage 里的筛选、数据库 analysis_prefs 里的组合）读上来就是合法的树，
+   一行迁移代码都不用写，没建过分组的用户界面也跟以前一模一样。
+
+     叶子 = 现在的筛选行，字段一个没变
+     分组 = { op: "and"|"or", negate: bool, children: [叶子|分组, ...] }
+
+   ⚠ 三条容易踩的：
+   1. **空分组必须中性，而且要忽略 negate**。项目铁律是「没填的条件匹配全部交易」，
+      照搬到分组上就是「空分组 = 全部」，那么「非(空分组)」= 全部筛掉——用户刚点出一个分组
+      还没来得及填，页面唰地空了，看起来完全像 bug。所以先数有效子节点，一个都没有就直接 true。
+   2. **定位节点一律用路径不用下标**（"1.0.2" = 顶层第 1 个 → 它的第 0 个孩子 → 再第 2 个）。
+      嵌套之后 data-idx 那套单层下标彻底不够用了，混用会改错节点而且不报错。
+   3. **深拷贝要能拷树**。组合跳记录页那两座桥靠的是深拷贝，浅拷贝会让两边共享同一个 children
+      数组，在一边改条件另一边跟着变——正是"复制不是共享"那条约定要防的。
+   ============================================================ */
+// 顶层数组本身算第 0 层，顶层里的分组是第 1 层。限死两层嵌套（分组里还能再放一层分组）：
+// 无限嵌套的 UI 会难读到没人用，项目里组合分组也是同样理由限死两层的
+const MAX_FILTER_GROUP_DEPTH = 2;
+function isFilterGroup(n) { return !!n && typeof n === "object" && Array.isArray(n.children); }
+function newFilterGroup(op) { return { op: op === "or" ? "or" : "and", negate: false, children: [newFilterRow()] }; }
+
+// 这个节点会不会真的筛掉点什么。空节点在顶层无所谓（反正 return true），
+// 但在「非(...)」里面就是天壤之别，所以判定集中在这一个函数里
+function filterNodeIsEffective(n) {
+  if (isFilterGroup(n)) return (n.children || []).some(filterNodeIsEffective);
+  if (!n || !n.fieldId) return false;
+  const field = resolveField(n.fieldId);
+  if (!field) return false;                       // 字段被删了：按无效算，别让它污染外面的取反
+  if (field.type === "select" || field.type === "multiselect") return (n.values || []).length > 0;
+  if (field.type === "date" || field.type === "time") return !!(n.rangeStart || n.rangeEnd);
+  return !!n.textValue;
+}
+function nodeMatchesTrade(t, node) {
+  if (!isFilterGroup(node)) return tradeMatchesFilter(t, node);
+  const kids = (node.children || []).filter(filterNodeIsEffective);
+  if (!kids.length) return true;                  // 见上面第 1 条：空分组中性，negate 也不生效
+  const hit = node.op === "or"
+    ? kids.some((k) => nodeMatchesTrade(t, k))
+    : kids.every((k) => nodeMatchesTrade(t, k));
+  return node.negate ? !hit : hit;
+}
+// 顶层：数组元素之间隐式 AND，跟以前完全一致
+function tradeMatchesFilters(t, arr) {
+  return (arr || []).every((n) => nodeMatchesTrade(t, n));
+}
+
+/* ---------- 路径寻址 ---------- */
+// "2" = 顶层第 2 个；"2.0" = 它的第 0 个孩子。空串代表顶层数组本身
+function parseFilterPath(p) {
+  return String(p == null ? "" : p).split(".").filter((s) => s !== "").map((s) => parseInt(s, 10));
+}
+// 返回这条路径指向的节点；路径指不到就返回 null（渲染和事件之间隔着一次 render，可能已经不在了）
+function filterNodeAt(arr, path) {
+  const idx = parseFilterPath(path);
+  let cur = null, list = arr;
+  for (let i = 0; i < idx.length; i++) {
+    if (!Array.isArray(list)) return null;
+    cur = list[idx[i]];
+    if (cur === undefined) return null;
+    list = isFilterGroup(cur) ? cur.children : null;
+  }
+  return cur;
+}
+// 返回 { list, index }：这条路径的节点挂在哪个数组的第几位。删除/插入/换位都要用它
+function filterParentAt(arr, path) {
+  const idx = parseFilterPath(path);
+  if (!idx.length) return null;
+  let list = arr;
+  for (let i = 0; i < idx.length - 1; i++) {
+    const n = list[idx[i]];
+    if (!isFilterGroup(n)) return null;
+    list = n.children;
+  }
+  return { list, index: idx[idx.length - 1] };
+}
+// 往这条路径指向的容器里追加一个节点。path 为空 = 顶层数组
+function filterChildListAt(arr, path) {
+  if (!String(path || "")) return arr;
+  const n = filterNodeAt(arr, path);
+  return isFilterGroup(n) ? n.children : null;
+}
+function filterPathDepth(path) { return parseFilterPath(path).length; }
+// 同一个父级下面才允许换位。跨层拖拽的语义（拖进/拖出分组）先不做，
+// 不然"拖到分组标题上"到底是插进去还是插在它前面会很难说清楚
+function filterPathParentKey(path) {
+  const idx = parseFilterPath(path);
+  return idx.slice(0, -1).join(".");
+}
+
+/* ---------- 规范化 / 深拷贝 ---------- */
+// 读盘入口：localStorage 的筛选和数据库里的组合都走这里。老的平铺数组原样就是合法的树
+function normalizeFilterNodes(raw, depth) {
+  if (!Array.isArray(raw)) return [];
+  const d = depth || 0;
+  return raw.map((n) => {
+    if (isFilterGroup(n)) {
+      return {
+        op: n.op === "or" ? "or" : "and",
+        negate: !!n.negate,
+        // 深度超限的分组不丢数据，原样读进来照常渲染，只是 UI 不再提供"继续往里加分组"
+        children: normalizeFilterNodes(n.children, d + 1),
+      };
+    }
+    return { ...newFilterRow(), ...n };
+  }).filter(Boolean);
+}
+function cloneFilterNodes(arr) {
+  return (arr || []).map((n) => isFilterGroup(n)
+    ? { op: n.op, negate: !!n.negate, children: cloneFilterNodes(n.children) }
+    : { ...n, values: [...(n.values || [])] });
+}
+// 按渲染顺序把树拍平成叶子列表。comboIssues 报"第 N 条"用它，编号才跟用户从上往下看到的一致
+function flattenFilterLeaves(arr, out) {
+  const acc = out || [];
+  (arr || []).forEach((n) => { if (isFilterGroup(n)) flattenFilterLeaves(n.children, acc); else acc.push(n); });
+  return acc;
+}
+function countFilterConditions(arr) {
+  return flattenFilterLeaves(arr).filter((f) => f.fieldId).length;
+}
+// 存成组合的时候用：把还没选字段的空行、以及被清空的分组剪掉。
+// ⚠ 不能写成 arr.filter(f => f.fieldId)——分组节点没有 fieldId，那样会把用户搭的整棵子树静默丢掉
+function pruneFilterNodes(arr) {
+  return (arr || []).reduce((out, n) => {
+    if (isFilterGroup(n)) {
+      const children = pruneFilterNodes(n.children);
+      if (children.length) out.push({ op: n.op, negate: !!n.negate, children });
+    } else if (n.fieldId) {
+      out.push({ ...n, values: [...(n.values || [])] });
+    }
+    return out;
+  }, []);
+}
 // 三个地方共用同一套筛选行 DOM 和事件处理，靠元素上的属性区分改的是哪个数组：
 //   data-filter-ctx="analysis" → 分析页的 analysisFilters
 //   data-combo-id="c_xxx"      → 那个组合的 conditions
@@ -1397,6 +1552,11 @@ function filterCtxOf(el) {
   if (!comboId) return { arr: activeFilters, comboId: "", scope: "grid" };
   const c = findCombo(comboId);
   return c ? { arr: c.conditions, comboId, scope: "combo" } : null;
+}
+// filterCtxOf 返回的是上下文对象，chipKey / filterCtxAttr 要的是渲染时那个上下文字符串。
+// 展开状态的 key 必须两边算出来一模一样，否则点开的分组下一次 render 就自己合上了
+function ctxKeyOf(ctx) {
+  return ctx.scope === ANALYSIS_CTX ? ANALYSIS_CTX : (ctx.comboId || "");
 }
 // 分析页筛选变了：存自己那份 localStorage，顺便标记"套进来的组合已经被改过"
 function afterAnalysisFilterChange() {
@@ -1478,7 +1638,7 @@ const COLLAPSE_CHIPS_OVER = 5;
 function chipKey(ctx, idx) {
   return (ctx === ANALYSIS_CTX ? "analysis" : ctx || "grid") + ":" + idx;
 }
-function filterRowValuesHtml(field, idx, f, ctx) {
+function filterRowValuesHtml(field, path, f, ctx) {
   const cid = filterCtxAttr(ctx);
   if (field.type === "select" || field.type === "multiselect") {
     const vals = f.values || [];
@@ -1486,46 +1646,49 @@ function filterRowValuesHtml(field, idx, f, ctx) {
     // 选项被删掉但条件里还留着的，也列出来并标红，否则用户根本看不见问题在哪
     const ghosts = vals.filter((v) => !opts.includes(v));
     const collapsible = (ctx === ANALYSIS_CTX || !ctx) && opts.length > COLLAPSE_CHIPS_OVER;
-    const key = chipKey(ctx, idx);
+    const key = chipKey(ctx, path);
     const expanded = !collapsible || expandedFilterChips.has(key);
     const shown = expanded ? opts : opts.filter((o) => vals.includes(o));
     const hiddenCount = opts.length - shown.length;
     return `<div class="chipGroup" style="margin-top:8px;">
-      ${shown.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
-      ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="${esc(T("filter.ghostOption"))}" data-action="toggle-filter-value" data-idx="${idx}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
+      ${shown.map((o) => `<button type="button" class="chip ${vals.includes(o) ? "active" : ""}" data-action="toggle-filter-value" data-idx="${path}" data-val="${esc(o)}"${cid}>${esc(o)}</button>`).join("")}
+      ${ghosts.map((o) => `<button type="button" class="chip active" style="border-color:var(--neg);color:var(--neg);background:var(--negSoft);" title="${esc(T("filter.ghostOption"))}" data-action="toggle-filter-value" data-idx="${path}" data-val="${esc(o)}"${cid}>${esc(o)} ⚠</button>`).join("")}
       ${collapsible ? `<button type="button" class="chip chipMore" data-action="toggle-filter-chips" data-chip-key="${esc(key)}">${esc(expanded ? T("filter.chipsCollapse") : T("filter.chipsMore", { n: hiddenCount }))}</button>` : ""}
     </div>`;
   }
   if (field.type === "date") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-      <input type="date" class="select" data-filter-range="${idx}" data-bound="start"${cid} value="${esc(f.rangeStart || "")}" />
+      <input type="date" class="select" data-filter-range="${path}" data-bound="start"${cid} value="${esc(f.rangeStart || "")}" />
       <span style="color:var(--mutedDark);font-size:12px;">${T("filter.rangeTo")}</span>
-      <input type="date" class="select" data-filter-range="${idx}" data-bound="end"${cid} value="${esc(f.rangeEnd || "")}" />
+      <input type="date" class="select" data-filter-range="${path}" data-bound="end"${cid} value="${esc(f.rangeEnd || "")}" />
     </div>`;
   }
   if (field.type === "time") {
     return `<div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
-      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="start" data-time-input${cid} value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${path}" data-bound="start" data-time-input${cid} value="${esc(f.rangeStart || "")}" oninput="window.__formatTimeInput(this)" />
       <span style="color:var(--mutedDark);font-size:12px;">${T("filter.rangeTo")}</span>
-      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${idx}" data-bound="end" data-time-input${cid} value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
+      <input type="text" inputmode="numeric" maxlength="5" placeholder="HH:MM" class="select mono" data-filter-range="${path}" data-bound="end" data-time-input${cid} value="${esc(f.rangeEnd || "")}" oninput="window.__formatTimeInput(this)" />
     </div>
     <div style="font-size:10.5px;color:var(--mutedDark);margin-top:5px;">${T("filter.timeHint")}</div>`;
   }
-  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${idx}"${cid} value="${esc(f.textValue || "")}" placeholder="${esc(T("filter.containsPlaceholder"))}" /></div>`;
+  return `<div style="margin-top:8px;"><input type="text" class="select" data-filter-text="${path}"${cid} value="${esc(f.textValue || "")}" placeholder="${esc(T("filter.containsPlaceholder"))}" /></div>`;
 }
-// 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页 / 分析页 / 组合编辑器共用
-// 拖拽排序只有记录页那份有：条件之间是 AND，顺序不影响结果，另外两处的拖拽代码是直接绑死 activeFilters 的
-function filterConditionRowHtml(f, idx, ctx) {
+// 一整行筛选条件（字段下拉 + AND/取反开关 + 值），记录页 / 分析页 / 组合编辑器共用。
+// path 是这一行在条件树里的位置（"1" 或 "1.0"），所有 data-* 都带着它，handler 靠它回头定位节点
+// 拖拽排序只有记录页顶层那份有：条件之间是 AND，顺序不影响结果，另外两处没做
+function filterConditionRowHtml(f, path, ctx) {
   const cid = filterCtxAttr(ctx);
   const field = resolveField(f.fieldId);
   const missing = f.fieldId && !field;
   const showNegate = field && (field.type === "select" || field.type === "multiselect");
   const showAndToggle = field && field.type === "multiselect";
-  const dragAttrs = ctx ? "" : ` draggable="true" data-filter-idx="${idx}"`;
-  return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${ctx ? "" : "cursor:grab;"}">
+  // 只有记录页的顶层行可拖：嵌套之后跨层拖拽的语义（拖到分组标题上是插进去还是插在它前面）说不清楚
+  const canDrag = !ctx && filterPathDepth(path) === 1;
+  const dragAttrs = canDrag ? ` draggable="true" data-filter-idx="${path}"` : "";
+  return `<div class="filterRow"${dragAttrs} style="padding:10px 12px;border:1px solid ${missing ? "var(--neg)" : "var(--border)"};border-radius:8px;flex:1 1 320px;min-width:280px;max-width:420px;${canDrag ? "cursor:grab;" : ""}">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      ${ctx ? "" : `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>`}
-      <select class="select" data-filter-field="${idx}"${cid}>
+      ${canDrag ? `<span style="color:var(--mutedDark);cursor:grab;font-size:14px;" title="${esc(T("common.dragToReorder"))}">⠿</span>` : ""}
+      <select class="select" data-filter-field="${path}"${cid}>
         <option value="">${esc(T("filter.selectField"))}</option>
         ${schema.filter((x) => filterableTypes.includes(x.type)).map((x) => `<option value="${esc(x.id)}" ${f.fieldId === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}
         <optgroup label="${esc(T("vfield.group"))}">
@@ -1533,16 +1696,68 @@ function filterConditionRowHtml(f, idx, ctx) {
         </optgroup>
       </select>
       ${showAndToggle ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-        <input type="checkbox" data-action="toggle-filter-and" data-idx="${idx}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.matchAll")}
+        <input type="checkbox" data-action="toggle-filter-and" data-idx="${path}"${cid} ${f.matchMode === "and" ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.matchAll")}
       </label>` : ""}
       ${showNegate ? `<label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;">
-        <input type="checkbox" data-action="toggle-filter-negate" data-idx="${idx}"${cid} ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.negate")}
+        <input type="checkbox" data-action="toggle-filter-negate" data-idx="${path}"${cid} ${f.negate ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.negate")}
       </label>` : ""}
-      <button class="tinyBtn" data-action="remove-filter" data-idx="${idx}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
+      <button class="tinyBtn" data-action="remove-filter" data-idx="${path}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
     </div>
     ${missing ? `<div style="font-size:11.5px;color:var(--neg);margin-top:8px;">${T("filter.fieldDeleted")}</div>` : ""}
-    ${field ? filterRowValuesHtml(field, idx, f, ctx) : ""}
+    ${field ? filterRowValuesHtml(field, path, f, ctx) : ""}
   </div>`;
+}
+
+/* ---------- 分组块 ----------
+   ⚠ 布局上的硬要求：**没建分组时界面必须跟以前像素级一致**。
+   条件行是在一个 flex-wrap 容器里平铺的卡片（flex:1 1 320px）。分组折叠时就长成同样一张卡，
+   跟条件行并排；展开时才 flex-basis:100% 独占一整行。这样不用嵌套的人完全看不出加过东西。
+   分组默认折叠，只显示一行人话摘要——分析页天生就长，展开的嵌套块很占高度。
+   新建的分组例外，建完自动展开，否则点一下"添加分组"什么都没看见。 */
+function filterGroupHtml(node, path, ctx) {
+  const cid = filterCtxAttr(ctx);
+  const key = chipKey(ctx, path);
+  const open = expandedFilterGroups.has(key);
+  const text = filterNodeText(node) || T("filter.groupEmpty");
+  const canNest = filterPathDepth(path) < MAX_FILTER_GROUP_DEPTH;
+  const kids = node.children || [];
+  const head = `<div class="filterGroupHead">
+    <button type="button" class="filterGroupChev" data-action="toggle-filter-group" data-chip-key="${esc(key)}" title="${esc(T(open ? "filter.groupCollapse" : "filter.groupExpand"))}">${open ? ICONS.chevUp : ICONS.chevDown}</button>
+    <!-- 取反时徽章只写「排除」：右边那行摘要已经是「非(a 且 b)」，把且/或再写一遍是重复，
+         而「非全部满足」这种拼法读起来还容易被误解成「不是全都满足」 -->
+    <span class="filterGroupOp ${node.negate ? "neg" : ""}">${node.negate ? T("filter.groupExclude") : T(node.op === "or" ? "filter.opOr" : "filter.opAnd")}</span>
+    <span class="filterGroupSummary" title="${esc(text)}">${esc(text)}</span>
+    <button class="tinyBtn" data-action="remove-filter" data-idx="${path}"${cid} style="color:var(--neg);font-size:16px;margin-left:auto;">${ICONS.x}</button>
+  </div>`;
+  if (!open) return `<div class="filterGroup">${head}</div>`;
+  return `<div class="filterGroup open">
+    ${head}
+    <div class="filterGroupBody">
+      <div class="filterGroupOps">
+        <span style="font-size:11.5px;color:var(--mutedDark);">${T("filter.groupLogic")}</span>
+        <button type="button" class="chip ${node.op !== "or" ? "active" : ""}" data-action="set-filter-group-op" data-idx="${path}" data-op="and"${cid}>${T("filter.opAnd")}</button>
+        <button type="button" class="chip ${node.op === "or" ? "active" : ""}" data-action="set-filter-group-op" data-idx="${path}" data-op="or"${cid}>${T("filter.opOr")}</button>
+        <label style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);cursor:pointer;margin-left:4px;">
+          <input type="checkbox" data-action="toggle-filter-group-negate" data-idx="${path}"${cid} ${node.negate ? "checked" : ""} style="width:13px;height:13px;" />${T("filter.groupNegate")}
+        </label>
+      </div>
+      <div class="filterNodeList">
+        ${kids.map((child, i) => filterNodeHtml(child, path + "." + i, ctx)).join("")}
+      </div>
+      <div class="filterGroupFoot">
+        <button class="btn" data-action="add-filter" data-parent-path="${path}"${cid}>${ICONS.plus} ${T("filter.addCondition")}</button>
+        ${canNest ? `<button class="btn" data-action="add-filter-group" data-parent-path="${path}"${cid}>${ICONS.plus} ${T("filter.addGroup")}</button>` : ""}
+      </div>
+    </div>
+  </div>`;
+}
+// 一个节点：是分组就画分组块，是条件就画条件行
+function filterNodeHtml(node, path, ctx) {
+  return isFilterGroup(node) ? filterGroupHtml(node, path, ctx) : filterConditionRowHtml(node, path, ctx);
+}
+// 一整棵树（顶层数组）。三个筛选面板都调这个
+function filterNodeListHtml(arr, ctx) {
+  return (arr || []).map((n, i) => filterNodeHtml(n, String(i), ctx)).join("");
 }
 function filteredSummaryStats(list) {
   const rF = roleField("r_multiple"), resultF = roleField("result");
@@ -1625,7 +1840,7 @@ const filterableTypes = ["select", "multiselect", "text", "textarea", "number", 
 // 记录页和月度页共用这一个面板（两页也共用同一份 activeFilters）。
 // 外壳和分析页的「分析范围」是同一套 .filterPanel* 样式，只是里面装的条件数组不同
 function renderFilterPanel(filteredCount, filteredForSummary) {
-  const activeCount = activeFilters.filter((f) => f.fieldId).length;
+  const activeCount = countFilterConditions(activeFilters);
   let html = `<div class="filterPanel${filterPanelOpen ? " open" : ""}">
     <button class="filterPanelHead" data-action="toggle-filter-panel">
       ${ICONS.filter}
@@ -1639,12 +1854,13 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
     ${!filterPanelOpen && activeCount ? filterPanelSummaryHtml(activeFilters) : ""}`;
   if (filterPanelOpen) {
     html += `<div class="filterPanelBody">
-      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("filter.logicHint")}</div>
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;line-height:1.7;">${T("filter.logicHint")}<br>${T("filter.groupHint")}</div>
       <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
-        ${activeFilters.map((f, idx) => filterConditionRowHtml(f, idx, "")).join("")}
+        ${filterNodeListHtml(activeFilters, "")}
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn" data-action="add-filter">${ICONS.plus} ${T("filter.addCondition")}</button>
+        <button class="btn" data-action="add-filter-group">${ICONS.plus} ${T("filter.addGroup")}</button>
         ${activeFilters.length ? `<button class="btn" data-action="clear-all-filter-values">${T("filter.clearAllValues")}</button>` : ""}
       </div>
       <div style="margin-top:14px;">${renderFilterSummary(filteredForSummary)}</div>
@@ -1656,7 +1872,7 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
 function renderGrid() {
   const modelF = roleField("model"), resultF = roleField("result"), dateF = roleField("date"), rF = roleField("r_multiple"), shotF = roleField("screenshot");
 
-  let filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)) && tradeMatchesSearch(t, searchQuery));
+  let filtered = trades.filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
   const sortVal = (t) => {
     if (sortBy === "created_at") return t._created_at || "";
     if (sortBy === "updated_at") return t._updated_at || t._created_at || "";
@@ -1837,7 +2053,7 @@ function analysisQuickPreset(kind) {
   return { kind, field, val, negate, idx, on: idx >= 0 };
 }
 function renderAnalysisScopePanel(stats) {
-  const activeCount = analysisFilters.filter((f) => f.fieldId).length;
+  const activeCount = countFilterConditions(analysisFilters);
   const combo = analysisComboId ? findCombo(analysisComboId) : null;
   const presets = ["taken", "he"].map(analysisQuickPreset).filter(Boolean);
   let html = `<div class="filterPanel${analysisPanelOpen ? " open" : ""}">
@@ -1867,12 +2083,13 @@ function renderAnalysisScopePanel(stats) {
         <span style="font-size:11.5px;color:var(--mutedDark);">${T("ascope.quick")}</span>
         ${presets.map((pr) => `<button type="button" class="chip ${pr.on ? "active" : ""}" data-action="toggle-analysis-quick" data-quick="${pr.kind}">${esc(T(pr.kind === "taken" ? "ascope.quickTaken" : "ascope.quickNoHE"))}</button>`).join("")}
       </div>` : ""}
-      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;">${T("filter.logicHint")}</div>
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:10px;line-height:1.7;">${T("filter.logicHint")}<br>${T("filter.groupHint")}</div>
       <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
-        ${analysisFilters.map((f, idx) => filterConditionRowHtml(f, idx, ANALYSIS_CTX)).join("")}
+        ${filterNodeListHtml(analysisFilters, ANALYSIS_CTX)}
       </div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
         <button class="btn" data-action="add-filter" data-filter-ctx="${ANALYSIS_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
+        <button class="btn" data-action="add-filter-group" data-filter-ctx="${ANALYSIS_CTX}">${ICONS.plus} ${T("filter.addGroup")}</button>
         ${analysisFilters.length ? `<button class="btn" data-action="clear-all-filter-values" data-filter-ctx="${ANALYSIS_CTX}">${T("filter.clearAllValues")}</button>` : ""}
         <button class="btn" data-action="analysis-filters-default">${T("ascope.reset")}</button>
         <span style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
@@ -1905,10 +2122,11 @@ function renderComboEditor(combo) {
     </div>
     <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("combo.editorHint")}</div>
     <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">
-      ${(combo.conditions || []).map((f, idx) => filterConditionRowHtml(f, idx, combo.id)).join("")}
+      ${filterNodeListHtml(combo.conditions, combo.id)}
     </div>
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn" data-action="add-filter" data-combo-id="${esc(combo.id)}">${ICONS.plus} ${T("combo.addCondition")}</button>
+      <button class="btn" data-action="add-filter-group" data-combo-id="${esc(combo.id)}">${ICONS.plus} ${T("filter.addGroup")}</button>
       ${(combo.conditions || []).length ? `<button class="btn" data-action="clear-all-filter-values" data-combo-id="${esc(combo.id)}">${T("filter.clearAllValues")}</button>` : ""}
       <button class="btn btn-primary" data-action="close-combo-editor">${T("combo.done")}</button>
     </div>
@@ -2222,7 +2440,7 @@ function renderAnalytics() {
   }
   const prefsNotice = analysisPrefsError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(analysisPrefsError)}</span></div>` : "";
   const panel = `<div id="anaScope">${renderAnalysisScopePanel(stats)}</div>`;
-  const activeCount = analysisFilters.filter((f) => f.fieldId).length;
+  const activeCount = countFilterConditions(analysisFilters);
 
   if (stats.total === 0) {
     return prefsNotice + panel + `<div class="notice">${ICONS.alert}<div>
@@ -3409,7 +3627,7 @@ function renderHistoryCoverage() {
 function renderCalendar() {
   const dateF = roleField("date");
   if (!dateF) return `<div class="notice">${ICONS.alert}<span>${T("calendar.noDateRole")}</span></div>`;
-  const filtered = trades.filter((t) => activeFilters.every((f) => tradeMatchesFilter(t, f)));
+  const filtered = trades.filter((t) => tradeMatchesFilters(t, activeFilters));
   let html = renderFilterOriginBanner() + `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
   if (recordMode === "backtest") html += renderHistoryCoverage();
@@ -4038,18 +4256,46 @@ document.addEventListener("click", async (e) => {
   else if (action === "ask-delete") { if (viewingUserId) return; confirmDeleteId = el.dataset.id; render(); }
   else if (action === "add-filter") {
     const ctx = filterCtxOf(el); if (!ctx) return;
-    ctx.arr.push(newFilterRow());
+    // data-parent-path 有值 = 加进那个分组，没有 = 加在顶层
+    const list = filterChildListAt(ctx.arr, el.dataset.parentPath || "");
+    if (!list) return;
+    list.push(newFilterRow());
+    afterFilterChange(ctx);
+  }
+  else if (action === "add-filter-group") {
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    const parentPath = el.dataset.parentPath || "";
+    if (filterPathDepth(parentPath) >= MAX_FILTER_GROUP_DEPTH) return;
+    const list = filterChildListAt(ctx.arr, parentPath);
+    if (!list) return;
+    list.push(newFilterGroup("and"));
+    // 分组默认折叠，但刚建出来的必须展开——否则点完"添加分组"屏幕上只多一行灰字，像没反应
+    expandedFilterGroups.add(chipKey(ctxKeyOf(ctx), (parentPath ? parentPath + "." : "") + (list.length - 1)));
+    afterFilterChange(ctx);
+  }
+  else if (action === "toggle-filter-group") {
+    const key = el.dataset.chipKey;
+    if (expandedFilterGroups.has(key)) expandedFilterGroups.delete(key); else expandedFilterGroups.add(key);
+    render();
+  }
+  else if (action === "set-filter-group-op") {
+    const ctx = filterCtxOf(el); if (!ctx) return;
+    const g = filterNodeAt(ctx.arr, el.dataset.idx);
+    if (!isFilterGroup(g)) return;
+    g.op = el.dataset.op === "or" ? "or" : "and";
     afterFilterChange(ctx);
   }
   else if (action === "remove-filter") {
     const ctx = filterCtxOf(el); if (!ctx) return;
-    ctx.arr.splice(parseInt(el.dataset.idx, 10), 1);
+    const at = filterParentAt(ctx.arr, el.dataset.idx);
+    if (!at) return;
+    at.list.splice(at.index, 1);
     afterFilterChange(ctx);
   }
   else if (action === "toggle-filter-value") {
     const ctx = filterCtxOf(el); if (!ctx) return;
-    const row = ctx.arr[parseInt(el.dataset.idx, 10)];
-    if (!row) return;
+    const row = filterNodeAt(ctx.arr, el.dataset.idx);
+    if (!row || isFilterGroup(row)) return;
     const val = el.dataset.val, vals = row.values || [];
     row.values = vals.includes(val) ? vals.filter((v) => v !== val) : [...vals, val];
     afterFilterChange(ctx);
@@ -4252,7 +4498,7 @@ document.addEventListener("click", async (e) => {
     const c = normalizeCombo({
       id: newComboId(),
       name: T("combo.fromFilters", { date: new Date().toLocaleDateString(localeTag()) }),
-      conditions: activeFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
+      conditions: pruneFilterNodes(activeFilters),
     });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
@@ -4285,9 +4531,15 @@ document.addEventListener("click", async (e) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   else if (action === "clear-all-filter-values") {
-    // 一键清空：只清每一行已选的值，字段行本身还留着，不删行
+    // 一键清空：只清每一行已选的值，字段行本身还留着，不删行。
+    // ⚠ 要递归进分组，而且分组本身（op/negate/结构）必须原样保留——用户搭的逻辑不能被"清空值"顺手拆了
     const ctx = filterCtxOf(el); if (!ctx) return;
-    for (let i = 0; i < ctx.arr.length; i++) ctx.arr[i] = newFilterRow(ctx.arr[i].fieldId);
+    (function clearValues(list) {
+      for (let i = 0; i < list.length; i++) {
+        if (isFilterGroup(list[i])) clearValues(list[i].children);
+        else list[i] = newFilterRow(list[i].fieldId);
+      }
+    })(ctx.arr);
     afterFilterChange(ctx);
   }
   /* ---------- 分析页：分析范围面板 ---------- */
@@ -4334,7 +4586,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "write-back-analysis-combo") {
     if (viewingUserId) return;
     const c = findCombo(analysisComboId); if (!c) return;
-    c.conditions = analysisFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] }));
+    c.conditions = pruneFilterNodes(analysisFilters);
     analysisComboDirty = false;
     await saveAnalysisPrefsNow(); render();
   }
@@ -4343,7 +4595,7 @@ document.addEventListener("click", async (e) => {
     const c = normalizeCombo({
       id: newComboId(),
       name: T("combo.fromFilters", { date: new Date().toLocaleDateString(localeTag()) }),
-      conditions: analysisFilters.filter((f) => f.fieldId).map((f) => ({ ...f, values: [...(f.values || [])] })),
+      conditions: pruneFilterNodes(analysisFilters),
     });
     analysisPrefs.combos.push(c);
     comboEditingId = c.id;
@@ -4671,35 +4923,45 @@ document.addEventListener("change", async (e) => {
   }
   else if (e.target.dataset.filterField !== undefined) {
     const ctx = filterCtxOf(e.target); if (!ctx) return;
-    ctx.arr[parseInt(e.target.dataset.filterField, 10)] = newFilterRow(e.target.value);
+    // 换字段 = 整行重置，所以要按路径写回父数组的那一位，不能只改节点上的字段
+    const at = filterParentAt(ctx.arr, e.target.dataset.filterField);
+    if (!at) return;
+    at.list[at.index] = newFilterRow(e.target.value);
     afterFilterChange(ctx);
   }
   else if (e.target.dataset.filterRange !== undefined) {
     const ctx = filterCtxOf(e.target); if (!ctx) return;
-    const row = ctx.arr[parseInt(e.target.dataset.filterRange, 10)];
-    if (!row) return;
+    const row = filterNodeAt(ctx.arr, e.target.dataset.filterRange);
+    if (!row || isFilterGroup(row)) return;
     const val = e.target.dataset.timeInput !== undefined ? normalizeTimeValue(e.target.value) : e.target.value;
     if (e.target.dataset.bound === "start") row.rangeStart = val; else row.rangeEnd = val;
     afterFilterChange(ctx);
   }
   else if (e.target.dataset.filterText !== undefined) {
     const ctx = filterCtxOf(e.target); if (!ctx) return;
-    const row = ctx.arr[parseInt(e.target.dataset.filterText, 10)];
-    if (!row) return;
+    const row = filterNodeAt(ctx.arr, e.target.dataset.filterText);
+    if (!row || isFilterGroup(row)) return;
     row.textValue = e.target.value;
     afterFilterChange(ctx);
   }
   else if (e.target.dataset.action === "toggle-filter-negate") {
     const ctx = filterCtxOf(e.target); if (!ctx) return;
-    const row = ctx.arr[parseInt(e.target.dataset.idx, 10)];
-    if (!row) return;
+    const row = filterNodeAt(ctx.arr, e.target.dataset.idx);
+    if (!row || isFilterGroup(row)) return;
     row.negate = e.target.checked;
+    afterFilterChange(ctx);
+  }
+  else if (e.target.dataset.action === "toggle-filter-group-negate") {
+    const ctx = filterCtxOf(e.target); if (!ctx) return;
+    const g = filterNodeAt(ctx.arr, e.target.dataset.idx);
+    if (!isFilterGroup(g)) return;
+    g.negate = e.target.checked;
     afterFilterChange(ctx);
   }
   else if (e.target.dataset.action === "toggle-filter-and") {
     const ctx = filterCtxOf(e.target); if (!ctx) return;
-    const row = ctx.arr[parseInt(e.target.dataset.idx, 10)];
-    if (!row) return;
+    const row = filterNodeAt(ctx.arr, e.target.dataset.idx);
+    if (!row || isFilterGroup(row)) return;
     row.matchMode = e.target.checked ? "and" : "or";
     afterFilterChange(ctx);
   }
@@ -4768,7 +5030,7 @@ function stopAutoScroll() {
 document.addEventListener("dragstart", (e) => {
   const row = e.target.closest('.filterRow[draggable="true"]');
   if (row) {
-    dragFilterIdx = parseInt(row.dataset.filterIdx, 10);
+    dragFilterIdx = row.dataset.filterIdx;   // 现在是路径字符串（"2"），不再是下标数字
     e.dataTransfer.effectAllowed = "move";
     row.style.opacity = "0.4";
     return;
@@ -4842,12 +5104,18 @@ document.addEventListener("drop", (e) => {
   const row = e.target.closest('.filterRow[draggable="true"]');
   if (row && dragFilterIdx !== null) {
     e.preventDefault();
-    const targetIdx = parseInt(row.dataset.filterIdx, 10);
-    if (targetIdx !== dragFilterIdx) {
-      const [moved] = activeFilters.splice(dragFilterIdx, 1);
-      activeFilters.splice(targetIdx, 0, moved);
-      saveActiveFilters();
-      render();
+    const targetPath = row.dataset.filterIdx;
+    // 只允许同一个父级下换位。跨层拖拽（拖进/拖出分组）的语义说不清楚——
+    // "拖到分组标题上"到底是塞进去还是插在它前面，怎么定都会有人拖错，所以干脆不接
+    if (targetPath !== dragFilterIdx && filterPathParentKey(targetPath) === filterPathParentKey(dragFilterIdx)) {
+      const from = filterParentAt(activeFilters, dragFilterIdx);
+      const to = filterParentAt(activeFilters, targetPath);
+      if (from && to && from.list === to.list) {
+        const [moved] = from.list.splice(from.index, 1);
+        to.list.splice(to.index, 0, moved);
+        saveActiveFilters();
+        render();
+      }
     }
     dragFilterIdx = null;
     return;
