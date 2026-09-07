@@ -51,6 +51,14 @@ fields          jsonb —— 数组，每个元素一个字段定义
 card_fields     jsonb —— 数组，卡片视图上额外显示哪些字段（空数组=用内置默认）
 analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
 ```
+`review_prefs` 结构（复盘分组，缺项由 `normalizeReviewPrefs()` 补默认值）：
+```json
+{ "groups": [ { "id": "rg_xxx", "name": "常见错误", "mode": "live" } ] }
+```
+- 数组顺序就是分组的显示顺序；`mode` 决定这个分组属于回测还是实盘
+- **只有一级分组**，刻意不做二级：复盘是长文，两级会让「这篇到底在哪」变难找（组合那边是两级，别照抄过来）
+- 这一列也要手动加：`alter table journal_schema add column if not exists review_prefs jsonb default '{}'::jsonb;`（已经包含在 `docs/reviews-groups-migration.sql` 里）
+
 `analysis_prefs` 结构（缺任何一项都会在前端 `normalizeAnalysisPrefs()` 里补默认值，所以老数据/空列都能正常跑）：
 ```json
 {
@@ -92,13 +100,18 @@ title             text
 body              text —— markdown 原文（不是 HTML，渲染在前端做）
 week_start        date, 可空 —— 关联到哪一周（周一那天）；null = 自由帖
 linked_trade_ids  text[] —— 保存时从正文 [[trade:xxx]] 抽出来的冗余索引
+mode              text, 'backtest' / 'live'，默认 'live'
+group_id          text, 可空 —— 归属哪个分组，null/'' = 未分组
+sort_order        double precision, 可空 —— 手动拖拽排序；null = 没排过，按 created_at 倒序兜底
 created_at        timestamptz
 updated_at        timestamptz
 ```
-- **这张表没有 mode 列**：复盘只在实盘模式下使用（`TABS` 里按 `recordMode === "live"` 决定页签出不出现），所以不存在回测那一份
+- **回测和实盘各一套**（`mode` 列），跟 trades 一样。页签两边都显示，切模式时列表和分组一起换
+- 后三列由 `docs/reviews-groups-migration.sql` 补上。没跑的话前端置 `reviewGroupColumnsMissing`，退回「全部当实盘、不分组、按时间倒序」，并且**保存正文时会把这三列摘掉重存一次**——分组存不下来可以，正文不能因此丢
+- **分组归属放在行上（`group_id`），分组定义放在配置里（`journal_schema.review_prefs`）**。归属是数据，定义是个人配置；这么分之后不会出现「配置里记着某篇在 A 组、那行却已经被删了」这种对不上的情况。`reviewEffectiveGroupId()` 在归属的分组已经不存在时一律退回未分组，卡片不会凭空消失
 - `linked_trade_ids` 只是索引，**正文才是唯一真相**。改正文一定要重新抽一遍（`extractTradeRefs()`），别让两边对不上
 - RLS：跟 trades 一样，自己读写自己的 + 一条 admin 只读（`select using (is_admin())`）
-- 这张表要手动建，整段 SQL 在 `docs/reviews-migration.sql`。没跑也不影响其他功能：前端捕获 42P01/PGRST205 后置 `reviewsTableMissing`，只在复盘页显示一条提示
+- 这张表要手动建，整段 SQL 在 `docs/reviews-migration.sql`，之后再跑 `docs/reviews-groups-migration.sql`（补 mode/group_id/sort_order 三列和 review_prefs）。没跑也不影响其他功能：前端捕获 42P01/PGRST205 后置 `reviewsTableMissing`，只在复盘页显示一条提示
 
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
@@ -235,8 +248,14 @@ JS
   - 由此派生的规矩：**编辑器打开期间，任何状态变化都不许走 `render()`**，只能定点更新某个节点。已经这么做的有：预览区（`updateReviewPreview()`）、保存状态（`updateReviewSaveBadge()`）、关联周那一行（`refreshReviewWeekRow()`）、插入菜单（`renderSlashMenu()`）、交易选择器的结果区（`window.__tradePickerInput`，只换结果不换搜索框，否则输入框自己会被重建、光标丢失）。新加编辑器里的交互要照这个来
   - **⚠️ 预览区不能用 `box.innerHTML = ...` 整块换掉**（已经踩过一次）。整块替换会把里面的 `<img>` 全换成新元素，而新建的 `<img>` 在图片解码完成前高度是 0，浏览器恰好在这一刻做布局，`scrollHeight` 骤降、`scrollTop` 跟着被夹小；等图片异步恢复高度时滚动位置已经丢了。表现是「长文里一打字预览区就自己往上滚」，实测每次按键掉约 30px。`updateReviewPreview()` 现在的做法是：渲染结果和上次一样就直接 return（`lastPreviewHtml`）；要换就先建离屏树，把旧树里**已经加载完的** `<img>` 按 src 原样搬过去（移动 DOM 节点不会触发重新加载），再 `replaceChildren`，最后把 `scrollTop` 放回去。以后往预览区加任何异步撑高度的东西（视频、iframe、字体导致的回流）都要想到这条
   - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去
+  - 交易引用**不需要带 mode**：复盘按模式分开了，回测复盘里引用的必然是回测交易，而 `trades` 本来就只装当前模式那批，所以永远能对上。别因为「跨模式查不到」这个担心去给引用加 mode
   - **交易引用**语法是 `[[trade:t_xxx]]`，`tradeRefHtml()` 渲染成可点的胶囊（日期 · 模型 · 结果 · R），点击打开该笔交易的弹窗。**找不到那笔交易时显式标红「已删除的交易」，不静默消失**——组合引用失效字段那个老坑的同款处理
   - **只读 / 编辑两种模式**，由 `reviewEditMode` 控制，打开已有帖子默认只读（`openReviewEditor` 里置 false，新建的 `openNewReview` 置 true）。注意区分两个判定：`reviewCanEdit()` 是「有没有编辑权」（管理员看别人的数据时为 false，连编辑按钮都不出现），`reviewIsReadOnly()` 是「此刻是不是只读」。**编辑器里所有会改内容的入口都必须守 `reviewIsReadOnly()` 而不是 `viewingUserId`**，否则只读模式下工具栏快捷键还能改到正文。切换模式要 `renderReviewEditor(true)` 强制重建（两种模式骨架不一样），退出编辑前先 `await flushReviewSave()` 立刻落盘
+  - **分组的拖拽跟组合分组是同一套路子**：拖卡片落到另一张卡片上 = 插到它前面（同组内重排，跨组就是连搬带插）；落到分组区块的空白处 = 只改归属、排到该组末尾；拖分组标题落到另一个标题上 = 分组换位置。投放区靠 `[data-group-drop]`，白名单在 `DRAGGABLES` 里。「未分组」那个桶复用同一套外壳，但**标题不可拖**（它不是真分组），只能作为投放目标
+  - **⚠️ 挪进某个分组时要把目标桶整批重编号**，不能只给挪进来的那几条编号：桶里原有的可能 `sort_order` 还是 null，而 null 在显示顺序里排最后，只编号新来的会让「挪到末尾」反而显示在最前面
+  - **⚠️ 删分组不删里面的复盘**，退回未分组。组合那边是级联删的，别照抄——复盘是长文，顺手删掉一整组等于毁掉几个小时的记录
+  - 分组标题上的「在这里新建」建出来的帖子**默认不关联周**（分组基本是给「常见错误 / 猜想」这类跟某一周无关的条目用的），顶部那个「写复盘」仍然默认本周
+  - 搜索时**把结果拍平成一个列表、不按分组显示**，每条标出所属分组。否则搜到的东西可能藏在折叠着的分组里，用户会以为没搜到
   - 编辑器是 **textarea + 增强输入**，不是 contenteditable 块编辑器。这是刻意的：contenteditable 要自己处理选区和中文输入法组字，本项目是中文用户为主，风险不成比例。**所有 keydown 分支都必须先看 `e.isComposing`**，否则输入法选词时的回车会把没上屏的拼音切碎
   - 编辑器里的输入全走内联 `on*` 属性交给 `window.__reviewBodyInput` / `__reviewKeydown` / `__reviewPaste` / `__reviewTitleInput`，跟项目里 `window.__updateUrlPreview` / `__imgFallback` 一个路子
   - 改 textarea 内容统一走 `replaceRange()`；**整行整行地改**（缩进、列表、标题）走 `applyLineEdit()`——它会在原本有选区时把改完的几行继续选着，否则 Tab 之后选区一塌，紧接着的 Shift+Tab 只能退最后一行

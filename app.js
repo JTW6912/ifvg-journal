@@ -173,7 +173,8 @@ let changelog = [];
    跟 renderModal 的 modalRenderedForId 同一个套路——否则后台 render()
    会把正在写的长文冲掉。 */
 let reviews = [];
-let reviewsTableMissing = false;      // 没跑迁移 SQL 时置 true，页面上提示去跑
+let reviewsTableMissing = false;      // 整张表都没建时置 true，页面上提示去跑迁移 SQL
+let reviewGroupColumnsMissing = false; // 表在、但 mode/group_id/sort_order 这几列还没加
 let reviewSearch = "";
 let reviewConfirmDeleteId = null;
 let editingReview = null;             // { id, title, body, week_start, _isNew }
@@ -186,6 +187,28 @@ let reviewPreviewOpen = (function () { try { return localStorage.getItem("journa
 // 编辑器分两种模式：只读（只显示 markdown 渲染后的样子）和编辑（正文框 + 工具栏 + 预览）。
 // 打开已有帖子一律从只读开始——大多数时候是回头看，不是改；新建帖子当然直接进编辑。
 let reviewEditMode = false;
+/* ---------- 复盘分组 ----------
+   分组只有一级（没有二级分组），每篇复盘要么在某个分组里，要么在「未分组」。
+   分组定义存 journal_schema.review_prefs，跟组合分组存 analysis_prefs 是同一个路子；
+   每篇复盘归属哪个组、排第几，存在 journal_reviews 自己的 group_id / sort_order 列上。 */
+let reviewPrefs = defaultReviewPrefs();
+let reviewPrefsError = null;
+let reviewGroupModal = null;          // { mode: 'new' | 'rename', id, name }
+let reviewGroupConfirmDeleteId = null;
+let reviewPrefsSaveTimer = null;
+let dragReviewId = null;
+let dragReviewGroupId = null;
+// 哪些分组被收起来了，key 是 `${recordMode}:${groupId}`——回测和实盘各记各的
+let collapsedReviewGroups = (function () {
+  try {
+    const raw = JSON.parse(localStorage.getItem("journal_review_collapsed") || "[]");
+    return new Set(Array.isArray(raw) ? raw.filter((x) => typeof x === "string") : []);
+  } catch (e) { return new Set(); }
+})();
+function saveCollapsedReviewGroups() {
+  try { localStorage.setItem("journal_review_collapsed", JSON.stringify([...collapsedReviewGroups])); } catch (e) {}
+}
+function reviewGroupCollapseKey(gid) { return recordMode + ":" + gid; }
 let slashMenu = null;                 // { query, index, top, left, anchor } —— 正文里打 / 弹出来的插入菜单
 let tradePickerOpen = false;
 let tradePickerQuery = "";
@@ -1129,6 +1152,7 @@ async function loadAll() {
     }
     cardFields = (schemaRow && Array.isArray(schemaRow.card_fields)) ? schemaRow.card_fields : [];
     analysisPrefs = normalizeAnalysisPrefs(schemaRow && schemaRow.analysis_prefs);
+    reviewPrefs = normalizeReviewPrefs(schemaRow && schemaRow.review_prefs);
     const { data: tradeRows, error: e2 } = await sb.from("trades").select("*")
       .eq("user_id", uid).eq("mode", recordMode).order("created_at", { ascending: true });
     if (e2) throw e2;
@@ -1228,6 +1252,185 @@ async function removeChangelogEntry(id) {
 }
 
 /* ============================================================
+   复盘分组 —— 配置层
+
+   分组只有一级：一个分组里直接放复盘，没有二级分组。组合那边支持两级，
+   这里刻意不支持——复盘是长文，两级会让"这篇到底在哪"变得难找。
+
+   分组定义（id/名字/属于哪个模式/顺序）存 journal_schema.review_prefs，
+   跟 analysis_prefs 一样是个 jsonb 个人配置列；数组顺序就是显示顺序。
+   每篇复盘归属哪个组存在 journal_reviews.group_id 上——归属是数据不是配置，
+   放在行上才不会出现"配置里记着某篇在 A 组、行却已经被删了"这种对不上的情况。
+   ============================================================ */
+function defaultReviewPrefs() { return { groups: [] }; }
+function normalizeReviewPrefs(raw) {
+  const out = defaultReviewPrefs();
+  if (!raw || typeof raw !== "object") return out;
+  if (Array.isArray(raw.groups)) {
+    out.groups = raw.groups
+      .filter((g) => g && typeof g.id === "string")
+      .map((g) => ({
+        id: g.id,
+        name: typeof g.name === "string" ? g.name : "",
+        // 老数据没有 mode，一律算实盘（分组功能上线前复盘本来就只有实盘）
+        mode: g.mode === "backtest" ? "backtest" : "live",
+      }));
+  }
+  return out;
+}
+function newReviewGroupId() { return "rg_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* 当前模式下的分组。回测和实盘各看各的一套，互不干扰 */
+function reviewGroups() { return (reviewPrefs.groups || []).filter((g) => g.mode === recordMode); }
+function findReviewGroup(id) { return (reviewPrefs.groups || []).find((g) => g.id === id) || null; }
+/* 归属的分组已经被删掉时算未分组——引用失效要有个确定的落点，不能让整篇消失 */
+function reviewEffectiveGroupId(r) {
+  const gid = r.group_id || "";
+  if (!gid) return "";
+  const g = findReviewGroup(gid);
+  return g && g.mode === recordMode ? gid : "";
+}
+
+async function writeReviewPrefs() {
+  reviewPrefsSaveTimer = null;
+  if (viewingUserId || !sb || !session) return;
+  const { error } = await sb.from("journal_schema").update({ review_prefs: reviewPrefs }).eq("user_id", session.user.id);
+  if (error) {
+    console.error(error);
+    // 42703 = undefined_column，PGRST204 = PostgREST 缓存里没这一列，都说明迁移 SQL 还没跑
+    const missingColumn = error.code === "42703" || error.code === "PGRST204" || /review_prefs/.test(error.message || "");
+    reviewPrefsError = missingColumn ? T("reviewGroup.prefsMissing") : T("review.saveFailed", { msg: error.message });
+    render();
+  } else if (reviewPrefsError) {
+    reviewPrefsError = null;
+    render();
+  }
+}
+function queueSaveReviewPrefs() {
+  if (viewingUserId) return;
+  if (reviewPrefsSaveTimer) clearTimeout(reviewPrefsSaveTimer);
+  reviewPrefsSaveTimer = setTimeout(writeReviewPrefs, 600);
+}
+function flushReviewPrefs() {
+  if (!reviewPrefsSaveTimer) return;
+  clearTimeout(reviewPrefsSaveTimer);
+  writeReviewPrefs();
+}
+
+/* 分组的增删改。删分组**不删里面的复盘**——组合那边是级联删的，但复盘是长文，
+   顺手删掉一整组等于毁掉几个小时的记录，所以这里退回未分组。 */
+function addReviewGroup(name) {
+  reviewPrefs.groups.push({ id: newReviewGroupId(), name: name || "", mode: recordMode });
+  queueSaveReviewPrefs();
+}
+function renameReviewGroup(id, name) {
+  const g = findReviewGroup(id);
+  if (!g) return;
+  g.name = name || "";
+  queueSaveReviewPrefs();
+}
+async function removeReviewGroup(id) {
+  reviewPrefs.groups = (reviewPrefs.groups || []).filter((g) => g.id !== id);
+  queueSaveReviewPrefs();
+  const orphans = reviews.filter((r) => r.group_id === id);
+  if (orphans.length) await moveReviewsToGroup(orphans.map((r) => r.id), "");
+}
+/* 拖分组换位置：只在当前模式这一批里挪，别的模式那几条在数组里原地不动 */
+function moveReviewGroup(draggedId, targetId) {
+  const all = reviewPrefs.groups || [];
+  const mineIds = reviewGroups().map((g) => g.id);
+  const from = mineIds.indexOf(draggedId), to = mineIds.indexOf(targetId);
+  if (from === -1 || to === -1 || from === to) return;
+  mineIds.splice(to, 0, mineIds.splice(from, 1)[0]);
+  const byId = new Map(all.map((g) => [g.id, g]));
+  let k = 0;
+  reviewPrefs.groups = all.map((g) => (g.mode === recordMode ? byId.get(mineIds[k++]) : g));
+  queueSaveReviewPrefs();
+}
+
+/* ---------- 分组归属与排序（存在 journal_reviews 的列上）----------
+   sort_order 是 null 的复盘还没被排过，按 created_at 倒序兜底（新的在上面）。
+   一旦用户在某个桶里拖过一次，就把那个桶整批写成 0,1,2…，之后语义就确定了。
+   一个桶几十篇顶天了，一次 upsert 就够，不值得为它上分数索引那套。 */
+function sortReviewsForDisplay(list) {
+  return list.slice().sort((a, b) => {
+    const ao = a.sort_order, bo = b.sort_order;
+    const aHas = ao !== null && ao !== undefined, bHas = bo !== null && bo !== undefined;
+    if (aHas && bHas) return ao - bo;
+    if (aHas !== bHas) return aHas ? -1 : 1;          // 排过序的一律在前
+    return (b.created_at || "") < (a.created_at || "") ? -1 : 1;
+  });
+}
+
+/* 把若干篇复盘挪到某个分组，顺便把它们排到该组末尾 */
+async function moveReviewsToGroup(ids, groupId) {
+  if (viewingUserId || !sb || !session) return;
+  const target = groupId || null;
+  const moved = ids.map((id) => reviews.find((x) => x.id === id)).filter(Boolean);
+  if (!moved.length) return;
+  // 目标桶整批重编号，再把挪进来的接在后面。只给挪进来的那几条编号是不够的：
+  // 桶里原有的可能还是 null（从没排过），而 null 在显示顺序里排最后，
+  // 那样「挪到末尾」反而会显示在最前面
+  const bucket = sortReviewsForDisplay(reviews.filter((r) => reviewEffectiveGroupId(r) === (groupId || "") && !ids.includes(r.id)));
+  moved.forEach((r) => { r.group_id = target; });
+  const rows = bucket.concat(moved).map((r, i) => { r.sort_order = i; return reviewRowPayload(r); });
+  await upsertReviewRows(rows);
+}
+
+/* 在一个桶内换位置：把整桶重排成 0,1,2… 一次写回 */
+async function reorderReviewInBucket(draggedId, targetId) {
+  if (viewingUserId || !sb || !session) return;
+  const dragged = reviews.find((r) => r.id === draggedId);
+  const target = reviews.find((r) => r.id === targetId);
+  if (!dragged || !target) return;
+  const gid = reviewEffectiveGroupId(target);
+  // 跨桶拖到别的卡片上 = 先归到那个桶，再插到目标位置
+  const bucket = sortReviewsForDisplay(reviews.filter((r) => reviewEffectiveGroupId(r) === gid && r.id !== draggedId));
+  const at = bucket.findIndex((r) => r.id === targetId);
+  if (at === -1) return;
+  bucket.splice(at, 0, dragged);
+  dragged.group_id = gid || null;
+  const rows = bucket.map((r, i) => { r.sort_order = i; return reviewRowPayload(r); });
+  await upsertReviewRows(rows);
+}
+
+function reviewRowPayload(r) {
+  return {
+    id: r.id,
+    user_id: session.user.id,
+    title: r.title || "",
+    body: r.body || "",
+    week_start: r.week_start || null,
+    linked_trade_ids: r.linked_trade_ids || extractTradeRefs(r.body),
+    mode: r.mode || recordMode,
+    group_id: r.group_id || null,
+    sort_order: r.sort_order === undefined ? null : r.sort_order,
+    updated_at: r.updated_at || new Date().toISOString(),
+  };
+}
+
+/* 批量写。列不存在（迁移 SQL 没跑）时降级成只写老字段，并在页面上提示去跑 SQL，
+   否则用户会看到「拖了一下什么都没发生」而不知道为什么。 */
+async function upsertReviewRows(rows) {
+  const { error } = await sb.from("journal_reviews").upsert(rows);
+  if (!error) { reviewPrefsError = null; return true; }
+  if (isMissingReviewColumn(error)) {
+    reviewPrefsError = T("reviewGroup.prefsMissing");
+    render();
+    return false;
+  }
+  console.error(error);
+  reviewSaveError = T("review.saveFailed", { msg: error.message });
+  render();
+  return false;
+}
+function isMissingReviewColumn(err) {
+  if (!err) return false;
+  return err.code === "42703" || err.code === "PGRST204"
+    || /\b(mode|group_id|sort_order|review_prefs)\b/.test(err.message || "");
+}
+
+/* ============================================================
    复盘（REVIEWS）—— 数据层
    表可能还没建（用户没跑 docs/reviews-migration.sql），所有读写都要
    能优雅降级：置 reviewsTableMissing，页面提示去跑 SQL，别把整个 app 拖垮。
@@ -1243,8 +1446,17 @@ function newReviewId() { return "r_" + Date.now().toString(36) + Math.random().t
 async function loadReviews() {
   if (!sb || !session) return;
   const uid = viewingUserId || session.user.id;
-  const { data, error } = await sb.from("journal_reviews").select("*")
-    .eq("user_id", uid).order("created_at", { ascending: false });
+  // mode 这一列可能还没建（reviews-groups-migration.sql 没跑），那就退回「全部当实盘」
+  let q = sb.from("journal_reviews").select("*").eq("user_id", uid);
+  let { data, error } = await q.eq("mode", recordMode).order("created_at", { ascending: false });
+  if (error && isMissingReviewColumn(error) && !isMissingTableError(error)) {
+    reviewGroupColumnsMissing = true;
+    ({ data, error } = await sb.from("journal_reviews").select("*")
+      .eq("user_id", uid).order("created_at", { ascending: false }));
+    if (!error) data = recordMode === "live" ? (data || []) : [];
+  } else if (!error) {
+    reviewGroupColumnsMissing = false;
+  }
   if (error) {
     if (isMissingTableError(error)) { reviewsTableMissing = true; reviews = []; return; }
     console.error(error); reviews = []; return;
@@ -1272,9 +1484,19 @@ async function persistReview(rev, opts) {
     body: rev.body || "",
     week_start: rev.week_start || null,
     linked_trade_ids: extractTradeRefs(rev.body),
+    mode: rev.mode || recordMode,
+    group_id: rev.group_id || null,
+    sort_order: rev.sort_order === undefined ? null : rev.sort_order,
     updated_at: new Date().toISOString(),
   };
-  const { error } = await sb.from("journal_reviews").upsert(row);
+  let { error } = await sb.from("journal_reviews").upsert(row);
+  // 迁移 SQL 没跑：把新列摘掉重存一次，正文不能因为分组功能存不下来就丢
+  if (error && isMissingReviewColumn(error) && !isMissingTableError(error)) {
+    reviewGroupColumnsMissing = true;
+    const legacy = { ...row };
+    delete legacy.mode; delete legacy.group_id; delete legacy.sort_order;
+    ({ error } = await sb.from("journal_reviews").upsert(legacy));
+  }
   if (error) {
     if (isMissingTableError(error)) { reviewsTableMissing = true; reviewSaveError = T("review.tableMissing"); return false; }
     console.error(error);
@@ -2860,15 +3082,83 @@ function reviewMatchesSearch(r, q) {
   return ((r.title || "") + " " + (r.body || "")).toLowerCase().includes(s);
 }
 
+/* 一张复盘卡片。分组区块和搜索结果都用它，靠 showGroup 决定要不要标出所属分组 */
+function renderReviewCard(r, showGroup) {
+  const readOnly = !!viewingUserId;
+  const confirming = reviewConfirmDeleteId === r.id;
+  const excerpt = mdPlainExcerpt(r.body, 180);
+  const linked = (r.linked_trade_ids || []).length;
+  const gid = reviewEffectiveGroupId(r);
+  const g = gid ? findReviewGroup(gid) : null;
+  const dragAttrs = readOnly ? "" : `draggable="true"`;
+  return `<div class="reviewCard" ${dragAttrs} data-review-id="${esc(r.id)}" data-action="open-review" data-id="${esc(r.id)}">
+    <div class="reviewCardHead">
+      <div class="reviewCardTitle display">${esc(reviewTitleOf(r))}</div>
+      ${readOnly ? "" : (!confirming
+        ? `<button class="tinyBtn reviewCardDel" data-action="ask-delete-review" data-id="${esc(r.id)}" title="${esc(T("review.deleteThis"))}">${ICONS.trash}</button>`
+        : `<span class="reviewCardDelConfirm">
+            <button class="tinyBtn" data-action="confirm-delete-review" data-id="${esc(r.id)}" style="color:var(--neg);">✓</button>
+            <button class="tinyBtn" data-action="cancel-delete-review">${ICONS.x}</button>
+          </span>`)}
+    </div>
+    <div class="reviewCardMeta mono">
+      <span class="reviewWeekTag ${r.week_start ? "on" : ""}">${esc(r.week_start ? T("review.weekOf", { date: r.week_start }) : T("review.freePost"))}</span>
+      <span>${esc(T("review.edited", { time: fmtReviewTime(r.updated_at || r.created_at) }))}</span>
+      ${linked ? `<span class="reviewLinkTag">${ICONS.grid} ${esc(T("review.linkedTrades", { n: linked }))}</span>` : ""}
+      ${showGroup && g ? `<span class="reviewInGroupTag">${esc(T("reviewGroup.inGroup", { name: g.name || T("reviewGroup.ungrouped") }))}</span>` : ""}
+    </div>
+    ${excerpt ? `<div class="reviewCardExcerpt">${esc(excerpt)}</div>` : ""}
+  </div>`;
+}
+
+function renderReviewGroupDeleteConfirm(groupId) {
+  if (reviewGroupConfirmDeleteId !== groupId) return "";
+  const g = findReviewGroup(groupId);
+  if (!g) return "";
+  const n = reviews.filter((r) => reviewEffectiveGroupId(r) === groupId).length;
+  const warn = n ? T("reviewGroup.cascadeKeep", { n }) : T("reviewGroup.cascadeEmpty");
+  return `<div class="reviewGroupConfirm">
+    ${esc(T("reviewGroup.confirmDelete", { name: g.name || T("reviewGroup.ungrouped"), warn }))}
+    <button class="btn btn-danger" data-action="confirm-delete-review-group" data-group-id="${esc(groupId)}">${T("common.delete")}</button>
+    <button class="btn" data-action="cancel-delete-review-group">${T("common.cancel")}</button>
+  </div>`;
+}
+
+/* 一个分组区块。未分组那个桶复用同一套外壳，只是没有改名/删除/拖拽 */
+function renderReviewGroupSection(gid, name, list, isUngrouped) {
+  const readOnly = !!viewingUserId;
+  const key = reviewGroupCollapseKey(gid);
+  const collapsed = collapsedReviewGroups.has(key);
+  const dragAttrs = (readOnly || isUngrouped) ? "" : `draggable="true"`;
+  return `<div class="reviewGroupSection" data-group-drop="${esc(gid)}">
+    <div class="reviewGroupHeader" ${dragAttrs} data-group-id="${esc(gid)}"
+      data-action="toggle-review-group-collapse" data-gid="${esc(gid)}">
+      <span class="reviewGroupChev">${collapsed ? ICONS.chevDown : ICONS.chevUp}</span>
+      <span class="reviewGroupName ${isUngrouped ? "muted" : ""}">${esc(name)}</span>
+      <span class="reviewGroupCount mono">${esc(T("reviewGroup.count", { n: list.length }))}</span>
+      ${readOnly ? "" : `<span class="reviewGroupActions">
+        <button class="tinyBtn" data-action="new-review-in-group" data-group-id="${esc(isUngrouped ? "" : gid)}">${ICONS.plus} ${T("reviewGroup.newHere")}</button>
+        ${isUngrouped ? "" : `<button class="tinyBtn" data-action="rename-review-group" data-group-id="${esc(gid)}">${T("reviewGroup.rename")}</button>
+        <button class="tinyBtn" data-action="ask-delete-review-group" data-group-id="${esc(gid)}" style="color:var(--neg);">${T("common.delete")}</button>`}
+      </span>`}
+    </div>
+    ${renderReviewGroupDeleteConfirm(gid)}
+    ${collapsed ? "" : (list.length
+      ? `<div class="reviewList">${list.map((r) => renderReviewCard(r, false)).join("")}</div>`
+      : `<div class="reviewGroupEmpty">${esc(isUngrouped ? T("reviewGroup.dropHintUngrouped") : T("reviewGroup.dropHint"))}</div>`)}
+  </div>`;
+}
+
 function renderReviews() {
   const readOnly = !!viewingUserId;
   if (reviewsTableMissing) {
     return `<div class="notice error">${ICONS.alert}<span>${esc(T("review.tableMissing"))}</span></div>`;
   }
-  const list = reviews.filter((r) => reviewMatchesSearch(r, reviewSearch));
+  const groups = reviewGroups();
 
   let html = `<div class="reviewTop">
-    ${readOnly ? "" : `<button class="btn btn-primary" data-action="new-review">${ICONS.plus} ${T("review.new")}</button>`}
+    ${readOnly ? "" : `<button class="btn btn-primary" data-action="new-review">${ICONS.plus} ${T("review.new")}</button>
+    <button class="btn" data-action="add-review-group">${ICONS.plus} ${T("reviewGroup.new")}</button>`}
     <div class="reviewSearchBox">
       ${ICONS.search}
       <input class="input reviewSearchInput" type="text" placeholder="${esc(T("review.searchPlaceholder"))}"
@@ -2877,35 +3167,30 @@ function renderReviews() {
     <div class="reviewCount mono">${esc(T("review.count", { n: reviews.length }))}</div>
   </div>`;
 
-  if (!list.length) {
-    html += `<div class="notice">${ICONS.alert}<span>${esc(reviewSearch ? T("review.emptySearch") : T("review.empty"))}</span></div>`;
-    return html;
+  if (reviewGroupColumnsMissing) {
+    html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(T("reviewGroup.prefsMissing"))}</span></div>`;
+  } else if (reviewPrefsError) {
+    html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(reviewPrefsError)}</span></div>`;
   }
 
-  html += `<div class="reviewList">`;
-  list.forEach((r) => {
-    const confirming = reviewConfirmDeleteId === r.id;
-    const excerpt = mdPlainExcerpt(r.body, 180);
-    const linked = (r.linked_trade_ids || []).length;
-    html += `<div class="reviewCard" data-action="open-review" data-id="${esc(r.id)}">
-      <div class="reviewCardHead">
-        <div class="reviewCardTitle display">${esc(reviewTitleOf(r))}</div>
-        ${readOnly ? "" : (!confirming
-          ? `<button class="tinyBtn reviewCardDel" data-action="ask-delete-review" data-id="${esc(r.id)}" title="${esc(T("review.deleteThis"))}">${ICONS.trash}</button>`
-          : `<span class="reviewCardDelConfirm">
-              <button class="tinyBtn" data-action="confirm-delete-review" data-id="${esc(r.id)}" style="color:var(--neg);">✓</button>
-              <button class="tinyBtn" data-action="cancel-delete-review">${ICONS.x}</button>
-            </span>`)}
-      </div>
-      <div class="reviewCardMeta mono">
-        <span class="reviewWeekTag ${r.week_start ? "on" : ""}">${esc(r.week_start ? T("review.weekOf", { date: r.week_start }) : T("review.freePost"))}</span>
-        <span>${esc(T("review.edited", { time: fmtReviewTime(r.updated_at || r.created_at) }))}</span>
-        ${linked ? `<span class="reviewLinkTag">${ICONS.grid} ${esc(T("review.linkedTrades", { n: linked }))}</span>` : ""}
-      </div>
-      ${excerpt ? `<div class="reviewCardExcerpt">${esc(excerpt)}</div>` : ""}
-    </div>`;
+  // 搜索时拍平成一个列表：结果藏在折叠的分组里会让人以为没搜到
+  if (reviewSearch.trim()) {
+    const hits = sortReviewsForDisplay(reviews.filter((r) => reviewMatchesSearch(r, reviewSearch)));
+    if (!hits.length) return html + `<div class="notice">${ICONS.alert}<span>${esc(T("review.emptySearch"))}</span></div>`;
+    return html + `<div class="reviewSearchNote">${esc(T("reviewGroup.searchFlat"))}</div>`
+      + `<div class="reviewList">${hits.map((r) => renderReviewCard(r, true)).join("")}</div>`;
+  }
+
+  if (!reviews.length && !groups.length) {
+    return html + `<div class="notice">${ICONS.alert}<span>${esc(T("review.empty"))}</span></div>`;
+  }
+
+  const byGroup = {};
+  reviews.forEach((r) => { const gid = reviewEffectiveGroupId(r); (byGroup[gid] = byGroup[gid] || []).push(r); });
+  groups.forEach((g) => {
+    html += renderReviewGroupSection(g.id, g.name || T("reviewGroup.ungrouped"), sortReviewsForDisplay(byGroup[g.id] || []), false);
   });
-  html += `</div>`;
+  html += renderReviewGroupSection("__ungrouped__", T("reviewGroup.ungrouped"), sortReviewsForDisplay(byGroup[""] || []), true);
   return html;
 }
 
@@ -3536,7 +3821,12 @@ function insertTradeRef(id) {
 function openReviewEditor(id) {
   const r = reviews.find((x) => x.id === id);
   if (!r) return;
-  editingReview = { id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "", _isNew: false };
+  editingReview = {
+    id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "",
+    mode: r.mode || recordMode, group_id: r.group_id || null,
+    sort_order: r.sort_order === undefined ? null : r.sort_order,
+    _isNew: false,
+  };
   reviewEditMode = false;          // 打开已有帖子默认只读
   reviewSaveState = "idle";
   reviewSavedAt = null;
@@ -3545,8 +3835,16 @@ function openReviewEditor(id) {
   tradePickerOpen = false;
   renderReviewEditor(true);
 }
-function openNewReview() {
-  editingReview = { id: newReviewId(), title: "", body: "", week_start: thisMondayStr(), _isNew: true };
+function openNewReview(opts) {
+  const o = opts || {};
+  editingReview = {
+    id: newReviewId(), title: "", body: "",
+    week_start: o.weekStart !== undefined ? o.weekStart : thisMondayStr(),
+    mode: recordMode,
+    group_id: o.groupId || null,
+    sort_order: null,
+    _isNew: true,
+  };
   reviewEditMode = true;           // 新建当然直接进编辑，只读的空白页没有意义
   reviewSaveState = "idle";
   reviewSavedAt = null;
@@ -4089,15 +4387,37 @@ function comboGroupModalHtml() {
     </div>
   </div>`;
 }
+function reviewGroupModalHtml() {
+  const m = reviewGroupModal;
+  return `<div class="overlay" data-action="dismiss-review-group-overlay">
+    <div class="modal" style="max-width:420px;">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${esc(m.mode === "rename" ? T("reviewGroup.modalRename") : T("reviewGroup.modalNew"))}</div>
+        <button class="iconBtn" data-action="close-review-group-modal">${ICONS.x}</button>
+      </div>
+      <div class="modalBody">
+        <div class="field" style="margin-bottom:0;">
+          <div class="fieldLabel">${T("reviewGroup.nameLabel")}</div>
+          <input type="text" class="input" id="reviewGroupNameInput" value="${esc(m.name)}" placeholder="${esc(T("reviewGroup.namePlaceholder"))}" maxlength="40" autofocus />
+        </div>
+      </div>
+      <div class="modalFoot">
+        <button class="btn" data-action="close-review-group-modal">${T("common.cancel")}</button>
+        <button class="btn btn-primary" data-action="save-review-group-modal">${T("common.save")}</button>
+      </div>
+    </div>
+  </div>`;
+}
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : null)));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : null))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
   else if (want === "lightbox") root.innerHTML = lightboxHtml();
   else if (want === "combogroup") root.innerHTML = comboGroupModalHtml();
+  else if (want === "reviewgroup") root.innerHTML = reviewGroupModalHtml();
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else root.innerHTML = "";
 }
@@ -4157,7 +4477,7 @@ function render() {
     { id: "settings", label: T("tab.settings"), icon: ICONS.settings },
   ];
   // 复盘只在实盘模式下出现——回测那批数据不需要写周复盘，页签也就不该占位置
-  if (recordMode === "live") TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
+  TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   let body = "";
   try {
@@ -4745,6 +5065,45 @@ document.addEventListener("click", async (e) => {
   }
   /* ---------- 复盘 ---------- */
   else if (action === "new-review") { if (!viewingUserId) openNewReview(); }
+  else if (action === "new-review-in-group") {
+    // 在分组里新建的默认「不关联周」：分组基本是给「常见错误 / 猜想」这类
+    // 跟某一周无关的条目用的。顶部那个「写复盘」还是默认本周
+    if (!viewingUserId) openNewReview({ groupId: el.dataset.groupId || "", weekStart: "" });
+  }
+  else if (action === "add-review-group") {
+    if (viewingUserId) return;
+    reviewGroupModal = { mode: "new", id: null, name: "" };
+    render();
+  }
+  else if (action === "rename-review-group") {
+    if (viewingUserId) return;
+    const g = findReviewGroup(el.dataset.groupId);
+    if (g) { reviewGroupModal = { mode: "rename", id: g.id, name: g.name || "" }; render(); }
+  }
+  else if (action === "close-review-group-modal") { reviewGroupModal = null; render(); }
+  else if (action === "dismiss-review-group-overlay") { if (e.target === el) { reviewGroupModal = null; render(); } }
+  else if (action === "save-review-group-modal") {
+    const input = document.getElementById("reviewGroupNameInput");
+    const name = (input ? input.value : "").trim();
+    if (!name) { if (input) input.focus(); return; }
+    if (reviewGroupModal && reviewGroupModal.mode === "rename") renameReviewGroup(reviewGroupModal.id, name);
+    else addReviewGroup(name);
+    reviewGroupModal = null;
+    render();
+  }
+  else if (action === "ask-delete-review-group") { reviewGroupConfirmDeleteId = el.dataset.groupId; render(); }
+  else if (action === "cancel-delete-review-group") { reviewGroupConfirmDeleteId = null; render(); }
+  else if (action === "confirm-delete-review-group") {
+    reviewGroupConfirmDeleteId = null;
+    await removeReviewGroup(el.dataset.groupId);
+    render();
+  }
+  else if (action === "toggle-review-group-collapse") {
+    const key = reviewGroupCollapseKey(el.dataset.gid);
+    if (collapsedReviewGroups.has(key)) collapsedReviewGroups.delete(key); else collapsedReviewGroups.add(key);
+    saveCollapsedReviewGroups();
+    render();
+  }
   else if (action === "open-review") { openReviewEditor(el.dataset.id); }
   else if (action === "close-review-editor") { await closeReviewEditor(); }
   else if (action === "ask-delete-review") { reviewConfirmDeleteId = el.dataset.id; render(); }
@@ -4809,8 +5168,11 @@ document.addEventListener("click", async (e) => {
   else if (action === "set-record-mode") {
     if (recordMode === el.dataset.mode) return;
     recordMode = el.dataset.mode;
-    // 复盘页签只在实盘下存在，切回回测时得离开，否则会停在一个不存在的页签上
-    if (recordMode !== "live" && tab === "reviews") tab = "grid";
+    // 复盘现在回测/实盘各有一套，页签两边都在，不用再踢人；
+    // 但要把编辑器和分组的临时状态收干净，免得把实盘那篇的编辑器留在回测页面上
+    if (editingReview) { flushReviewSave(); editingReview = null; reviewEditorRenderedFor = null; renderReviewEditor(); }
+    flushReviewPrefs();
+    reviewSearch = ""; reviewConfirmDeleteId = null; reviewGroupConfirmDeleteId = null; reviewGroupModal = null;
     if (!viewingUserId) { try { localStorage.setItem("journal_record_mode", recordMode); } catch (e) {} }
     if (recordMode === "live") {
       const now = new Date();
@@ -5049,7 +5411,7 @@ let dragBdIdx = null;
 let dragBdCardId = null;
 let dragSettingsIdx = null;
 let dragOverEl = null;
-const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"], .comboGroupHeader[draggable="true"]';
+const DRAGGABLES = '.filterRow[draggable="true"], .tagChip[draggable="true"], .comboCard[draggable="true"], .bdRow[draggable="true"], .breakdownCard[draggable="true"], .settingsRow[draggable="true"], .comboGroupHeader[draggable="true"], .reviewCard[draggable="true"], .reviewGroupHeader[draggable="true"]';
 
 function clearDragOverHighlight() {
   if (dragOverEl) { dragOverEl.classList.remove("dragOverTarget"); dragOverEl = null; }
@@ -5110,6 +5472,20 @@ document.addEventListener("dragstart", (e) => {
     groupHeader.style.opacity = "0.4";
     return;
   }
+  const reviewCard = e.target.closest('.reviewCard[draggable="true"]');
+  if (reviewCard) {
+    dragReviewId = reviewCard.dataset.reviewId;
+    e.dataTransfer.effectAllowed = "move";
+    reviewCard.style.opacity = "0.4";
+    return;
+  }
+  const reviewGroupHeader = e.target.closest('.reviewGroupHeader[draggable="true"]');
+  if (reviewGroupHeader) {
+    dragReviewGroupId = reviewGroupHeader.dataset.groupId;
+    e.dataTransfer.effectAllowed = "move";
+    reviewGroupHeader.style.opacity = "0.4";
+    return;
+  }
   const bd = e.target.closest('.bdRow[draggable="true"]');
   if (bd) {
     dragBdIdx = parseInt(bd.dataset.bdIdx, 10);
@@ -5141,7 +5517,7 @@ document.addEventListener("dragover", (e) => {
   updateAutoScroll(e.clientY);
   let target = e.target.closest(DRAGGABLES);
   // 正在拖组合卡片时，分组/二级分组/未分组区域本身（不只是卡片）也是合法投放目标
-  if (!target && dragComboId !== null) target = e.target.closest('[data-group-drop]');
+  if (!target && (dragComboId !== null || dragReviewId !== null)) target = e.target.closest('[data-group-drop]');
   if (target) {
     e.preventDefault();
     if (dragOverEl && dragOverEl !== target) dragOverEl.classList.remove("dragOverTarget");
@@ -5219,6 +5595,36 @@ document.addEventListener("drop", (e) => {
     dragComboId = null;
     return;
   }
+  if (dragReviewId !== null) {
+    const id = dragReviewId;
+    dragReviewId = null;
+    // 先看是不是落在另一张卡片上：那是「插到它前面」，同桶就是重排，跨桶就是连搬带插
+    const targetCard = e.target.closest('.reviewCard[draggable="true"]');
+    if (targetCard && targetCard.dataset.reviewId !== id) {
+      e.preventDefault();
+      reorderReviewInBucket(id, targetCard.dataset.reviewId).then(render);
+      return;
+    }
+    // 落在某个分组区块的空白处：只改归属，排到该组末尾
+    const dropZone = e.target.closest('[data-group-drop]');
+    if (dropZone) {
+      e.preventDefault();
+      const gid = dropZone.dataset.groupDrop === "__ungrouped__" ? "" : dropZone.dataset.groupDrop;
+      const r = reviews.find((x) => x.id === id);
+      if (r && reviewEffectiveGroupId(r) !== gid) moveReviewsToGroup([id], gid).then(render);
+    }
+    return;
+  }
+  if (dragReviewGroupId !== null) {
+    const targetHeader = e.target.closest('.reviewGroupHeader[draggable="true"]');
+    if (targetHeader && targetHeader.dataset.groupId !== dragReviewGroupId) {
+      e.preventDefault();
+      moveReviewGroup(dragReviewGroupId, targetHeader.dataset.groupId);
+      render();
+    }
+    dragReviewGroupId = null;
+    return;
+  }
   if (dragGroupId !== null) {
     const targetHeader = e.target.closest('.comboGroupHeader[draggable="true"]');
     if (targetHeader && targetHeader.dataset.groupId !== dragGroupId) {
@@ -5279,7 +5685,7 @@ document.addEventListener("drop", (e) => {
   }
 });
 // 800ms 的 debounce 还没到就关页面的话，把没写完的分析设置补上
-window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); });
+window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); flushReviewPrefs(); });
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
@@ -5296,6 +5702,7 @@ document.addEventListener("keydown", (e) => {
     renderModal(); render();
     return;
   }
+  if (reviewGroupModal) { reviewGroupModal = null; render(); return; }
   if (editingReview) { closeReviewEditor(); return; }
   if (dayDetailDate) { dayDetailDate = null; render(); return; }
 });

@@ -167,9 +167,11 @@ global baseline** (`+9.2pp`). Small samples are labelled (`n < 10`).
   glance where your backtest sample has holes.
 - The Records page filters apply here too.
 
-### Reviews *(live mode only)*
+### Reviews
 
 Free-form posts for writing up a week — or anything else. Markdown, stored as plain text.
+**Backtest and live each get their own set**, so switching mode switches the whole list and
+its groups.
 
 - **Write a post** — title, body, and an optional **week tag** (This week / Last week / any
   date, normalised to that week's Monday). Posts are free-form: nothing forces one per week,
@@ -194,11 +196,17 @@ Free-form posts for writing up a week — or anything else. Markdown, stored as 
   result and R; click it to open that trade. If the trade is later deleted, the pill turns
   red and says so rather than silently vanishing.
 - **Live preview** (edit mode only) side by side, stacked on narrow screens, and hideable.
+- **Groups** — make as many named groups as you like (one level, no nesting) and drag posts
+  into them. Weekly write-ups can just sit in Ungrouped in date order, while collections you
+  keep adding to — recurring mistakes, ideas to test — get a group each. Group headers drag
+  to reorder, cards drag to reorder within a group or to move between groups. Every group
+  header has a "New here" button; posts started there land in that group and are not tagged
+  to a week. **Deleting a group does not delete the posts inside** — they go back to
+  Ungrouped.
 - **Autosave** — writes 1.2 s after you stop typing, with a saved/unsaved indicator, a local
   draft as a fallback, and a warning if you close the tab mid-save.
 
-Reviews are not split by backtest/live the way trades are — they live in **live mode only**,
-so the tab is hidden in backtest mode.
+Collapsed/expanded state is per device (and per mode); group names and order follow the account.
 
 ### Settings
 
@@ -328,9 +336,10 @@ The app runs fine without it — the analytics page just can't persist its setti
 a notice telling you to run this statement.
 
 The Reviews page needs its own table, created by running
-[`docs/reviews-migration.sql`](docs/reviews-migration.sql) once in the SQL editor. Until you
-do, the rest of the app is unaffected — the Reviews tab just shows a notice pointing at that
-file.
+[`docs/reviews-migration.sql`](docs/reviews-migration.sql) once in the SQL editor, followed by
+[`docs/reviews-groups-migration.sql`](docs/reviews-groups-migration.sql) for backtest/live
+separation and groups. Until you do, the rest of the app is unaffected — the Reviews tab just
+shows a notice pointing at whichever file is still missing.
 
 ### 2. Run it locally
 
