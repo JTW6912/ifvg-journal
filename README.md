@@ -208,7 +208,11 @@ its groups.
   the lightbox.
 - **Linked trades** — pick a trade from the picker (searchable by date, model, anything) and
   it drops a `[[trade:…]]` reference at the cursor. It renders as a pill showing date, model,
-  result and R; click it to open that trade. If the trade is later deleted, the pill turns
+  result and R. **Clicking it opens a read-only preview** — the screenshot uncropped plus
+  every field that trade has filled in, not an edit form; click the image for the full size,
+  and there's an explicit "Edit this trade" at the bottom if you actually want to change it.
+  Reading a review is reading, and a form full of inputs one click away is both heavy and
+  easy to change by accident. If the trade is later deleted, the pill turns
   red and says so rather than silently vanishing.
 - **Live preview** (edit mode only) side by side, stacked on narrow screens, and hideable.
 - **The two panes scroll together** — scroll the editor and the preview lands on the same

@@ -163,6 +163,7 @@ let loadError = null;
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth() + 1;
 let dayDetailDate = null;
+let tradePreviewId = null;      // 复盘正文里点交易胶囊弹出的只读预览
 let returnToDayDetail = null;
 let apiDraft = { url: "", key: "" };
 let changelog = [];
@@ -3019,6 +3020,10 @@ function renderChangelog() {
      3. 链接和图片的 URL 只放行 http(s):// 开头的（挡 javascript: / data:）
    任何时候都不要为了支持某个语法而把原始 HTML 放回去。
    ============================================================ */
+/* ⚠️ 只判断协议，**不做转义**：返回的是原样的字符串。
+   markdown 渲染器里能直接塞进属性，是因为那边整段在最开头就 esc() 过了。
+   如果你从别处（比如原始字段值）拿 URL 过来用，必须自己再 esc() 一次，
+   否则 `https://x.com/a" onmouseover="..."` 能从 href 里逃出去挂事件处理器。 */
 function mdSafeUrl(u) {
   const raw = String(u || "").trim();
   // esc() 把 & 变成了 &amp;，放进 HTML 属性里本来就该是这个形态，不用还原
@@ -4807,14 +4812,91 @@ function reviewGroupModalHtml() {
     </div>
   </div>`;
 }
+/* ============================================================
+   单笔交易的只读预览
+
+   复盘正文里点交易胶囊走这里，不是编辑弹窗。理由和 focus 视图那条一样：
+   看复盘的时候是在读，不是在改——一点就弹出一个满是输入框的表单，
+   既容易误改，也把「我只想看一眼那张图」这件事弄得很重。
+   所以这里只给截图 + 字段值，要改得点底下那个明确的「编辑这笔交易」。
+   ============================================================ */
+function tradePreviewHtml() {
+  const t = trades.find((x) => x.id === tradePreviewId);
+  if (!t) {
+    return `<div class="overlay" data-action="close-trade-preview">
+      <div class="modal" style="max-width:420px;">
+        <div class="modalHead">
+          <div class="display" style="font-size:16px;font-weight:600;">${esc(T("tradePreview.title"))}</div>
+          <button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button>
+        </div>
+        <div class="modalBody"><div class="notice">${ICONS.alert}<span>${esc(T("tradePreview.gone"))}</span></div></div>
+      </div>
+    </div>`;
+  }
+  const dateF = roleField("date"), modelF = roleField("model"), resultF = roleField("result"),
+    rF = roleField("r_multiple"), shotF = roleField("screenshot");
+  const result = resultF ? t[resultF.id] : "";
+  const rc = resultColor(result);
+  const shot = shotF ? t[shotF.id] : null;
+  const rVal = rF ? t[rF.id] : undefined;
+  const hasR = rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal));
+
+  // 表头已经把日期/模型/结果/R 显示出来了，下面的字段表就别再重复一遍
+  const shownInHead = [dateF, modelF, resultF, rF, shotF].filter(Boolean).map((f) => f.id);
+  const rows = schema.filter((f) => !shownInHead.includes(f.id)).map((f) => {
+    let v = tradeFieldValue(t, f);
+    if (Array.isArray(v)) v = v.length ? v.join(", ") : "";
+    if (v === undefined || v === null || String(v).trim() === "") return "";   // 空字段不占地方
+    const text = String(v);
+    // ⚠️ mdSafeUrl() 返回的是**没转义**的原串。它在 markdown 渲染器里够用，是因为
+    // 那边整段早就 esc() 过了；这里拿到的是原始字段值，必须自己再 esc 一次，
+    // 否则一个 `https://x.com/a" onmouseover="alert(1)` 就能从 href 里逃出来挂上事件处理器
+    const url = f.type === "url" ? mdSafeUrl(text) : null;
+    return `<div class="tpField${f.type === "textarea" || text.length > 40 ? " isLong" : ""}">
+      <div class="tpFieldLabel">${esc(f.label)}</div>
+      <div class="tpFieldVal">${url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(text)}</a>`
+        : esc(text)}</div>
+    </div>`;
+  }).join("");
+
+  return `<div class="overlay" data-action="close-trade-preview">
+    <div class="modal tradePreviewModal">
+      <div class="modalHead">
+        <div class="tpHead">
+          <span class="tpDate display">${esc((dateF && t[dateF.id]) || "—")}</span>
+          ${modelF && t[modelF.id] ? `<span class="tpModel">${esc(String(t[modelF.id]))}</span>` : ""}
+          ${result ? `<span class="tpResult" style="background:${rc};">${esc(result)}</span>` : ""}
+          ${hasR ? `<span class="tpR mono" style="color:${rc};">${(parseFloat(rVal) >= 0 ? "+" : "") + esc(String(rVal))}R</span>` : ""}
+        </div>
+        <button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button>
+      </div>
+      <div class="modalBody tradePreviewBody">
+        <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(shot)}"` : ""}>
+          ${shot
+            ? `<img src="${esc(shot)}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />
+               <span class="tpZoomHint">${esc(T("tradePreview.zoomHint"))}</span>`
+            : `<div class="tpShotEmpty">${ICONS.camera} ${esc(T("tradePreview.noShot"))}</div>`}
+        </div>
+        ${rows ? `<div class="tpFields">${rows}</div>` : `<div class="tpEmpty">${esc(T("tradePreview.empty"))}</div>`}
+      </div>
+      <div class="modalFoot">
+        ${viewingUserId ? "" : `<button class="btn" data-action="edit-trade-from-preview" data-id="${esc(t.id)}">${ICONS.pencil} ${esc(T("tradePreview.edit"))}</button>`}
+        <button class="btn btn-primary" data-action="close-trade-preview">${esc(T("common.close"))}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : null))));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : null)))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
   else if (want === "lightbox") root.innerHTML = lightboxHtml();
+  else if (want === "tradepreview") root.innerHTML = tradePreviewHtml();
   else if (want === "combogroup") root.innerHTML = comboGroupModalHtml();
   else if (want === "reviewgroup") root.innerHTML = reviewGroupModalHtml();
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
@@ -5577,7 +5659,20 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "pick-trade") { insertTradeRef(el.dataset.id); }
   else if (action === "open-trade-ref") {
+    // 只读预览，不是编辑表单：看复盘时是在读，一点就弹一堆输入框既容易误改也太重
+    tradePreviewId = el.dataset.id;
+    renderSecondaryModals(true);
+  }
+  else if (action === "close-trade-preview") {
+    if (el.classList.contains("overlay") && e.target !== el) return;   // 点内容不关闭（不能用 stopPropagation）
+    tradePreviewId = null;
+    renderSecondaryModals(true);
+  }
+  else if (action === "edit-trade-from-preview") {
+    if (viewingUserId) return;
     const t = trades.find((x) => x.id === el.dataset.id);
+    tradePreviewId = null;
+    renderSecondaryModals(true);
     if (t) { editingTrade = { ...t }; renderModal(true); }
   }
   else if (action === "preview-image") {
@@ -6148,6 +6243,7 @@ document.addEventListener("keydown", (e) => {
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
   if (slashMenu) { closeSlashMenu(); return; }
   if (tradePickerOpen) { closeTradePicker(); return; }
+  if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); return; }
   if (comboGroupModal) { comboGroupModal = null; render(); return; }
   if (profileModalOpen) { profileModalOpen = false; render(); return; }
   if (editingTrade) {

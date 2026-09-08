@@ -434,6 +434,12 @@ const I18N = {
     "review.picker.more": "只显示前 {n} 笔，想要别的就搜一下。",
     "review.tradeMissing": "已删除的交易",
     "review.tradeOpen": "点开看这笔交易",
+    "tradePreview.title": "交易详情",
+    "tradePreview.noShot": "这笔没有截图",
+    "tradePreview.zoomHint": "点图看原图",
+    "tradePreview.edit": "编辑这笔交易",
+    "tradePreview.empty": "这笔交易没有填任何字段。",
+    "tradePreview.gone": "这笔交易已经不在了，可能是被删掉了。",
 
     /* ---------- 月度 / 日历 ---------- */
     "calendar.noDateRole": "当前没有字段被标记为『日期』角色 — 去设置页给某个字段打上『日期』角色标签。",
@@ -1005,6 +1011,12 @@ const I18N = {
     "review.picker.more": "Showing the first {n} — search to find others.",
     "review.tradeMissing": "Deleted trade",
     "review.tradeOpen": "Open this trade",
+    "tradePreview.title": "Trade",
+    "tradePreview.noShot": "No screenshot on this trade",
+    "tradePreview.zoomHint": "Click to enlarge",
+    "tradePreview.edit": "Edit this trade",
+    "tradePreview.empty": "Nothing is filled in on this trade.",
+    "tradePreview.gone": "This trade is gone — it was probably deleted.",
 
     /* ---------- Monthly / calendar ---------- */
     "calendar.noDateRole": "No field is tagged with the 'Date' role — go to Settings and give a field the 'Date' role.",
