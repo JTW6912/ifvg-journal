@@ -204,6 +204,10 @@ its groups.
 - **`/` insert menu** — type `/` at the start of a line for headings, lists, to-dos, quote,
   code block, divider, table, image, link, and **Link a trade**. It filters as you type, in
   either language (`/table` and `/表格` both work).
+- **Text colour** — the A button in the toolbar (or `/colour`) paints the selection red,
+  green, yellow, blue or grey, plus a highlight background. Pick another colour to swap it
+  and "Clear colour" to drop it; neither ever nests. It is `{red|text}` in the source, and
+  the colours follow the light/dark theme.
 - **Images** are inserted by URL, the same way trade screenshots are. Click one to open it in
   the lightbox.
 - **Linked trades** — pick a trade from the picker (searchable by date, model, anything) and

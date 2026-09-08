@@ -87,6 +87,7 @@ const ICONS = {
   tbImage: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="16" rx="2.2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 17l4.5-4.5 3.5 3.5 3-3L20 17"/></svg>',
   tbHr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M3 12h18"/><path d="M6 7h12M6 17h12" opacity=".35"/></svg>',
   tbHeading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M5 5v14M15 5v14M5 12h10"/></svg>',
+  tbColor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M5 19h14"/><path d="M8 15L12 5l4 10"/><path d="M9.3 12.4h5.4"/></svg>',
   tbTable: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>',
 };
 
@@ -210,6 +211,8 @@ function saveCollapsedReviewGroups() {
   try { localStorage.setItem("journal_review_collapsed", JSON.stringify([...collapsedReviewGroups])); } catch (e) {}
 }
 function reviewGroupCollapseKey(gid) { return recordMode + ":" + gid; }
+let reviewColorMenuOpen = false;      // 工具栏那个颜色浮层
+let reviewColorSel = null;            // 点开浮层那一刻的选区，两次点击之间要留住
 let slashMenu = null;                 // { query, index, top, left, anchor } —— 正文里打 / 弹出来的插入菜单
 let tradePickerOpen = false;
 let tradePickerQuery = "";
@@ -3020,6 +3023,12 @@ function renderChangelog() {
      3. 链接和图片的 URL 只放行 http(s):// 开头的（挡 javascript: / data:）
    任何时候都不要为了支持某个语法而把原始 HTML 放回去。
    ============================================================ */
+/* 正文能上色的几种颜色。语法是 {red|文字}。
+   ⚠️ 颜色名走这份白名单，渲染出去的只有我们自己的类名（mdC-red 这种），
+   **绝不能把用户写的东西当成 CSS 塞进 style**——那等于把整套「先转义再排版」的
+   防线拆了。具体颜色值在 style.css 里按主题定义，深浅色都对得上。 */
+const MD_COLORS = ["red", "green", "yellow", "blue", "gray", "mark"];
+
 /* ⚠️ 只判断协议，**不做转义**：返回的是原样的字符串。
    markdown 渲染器里能直接塞进属性，是因为那边整段在最开头就 esc() 过了。
    如果你从别处（比如原始字段值）拿 URL 过来用，必须自己再 esc() 一次，
@@ -3041,6 +3050,12 @@ function mdInline(text) {
 
   // 交易引用要排在链接前面，否则 [[trade:x]] 会先被方括号规则啃掉
   out = out.replace(/\[\[trade:([A-Za-z0-9_-]+)\]\]/g, (m, id) => tradeRefHtml(id));
+
+  // 上色 {red|文字}。放在加粗/斜体之前，好让里面还能继续排版：
+  // {red|**粗的红字**} 会先变成 <span>**粗的红字**</span>，加粗规则随后再跑一遍
+  // 颜色名和 MD_COLORS 保持一致；写成字面量正则，省得为了拼字符串再套一层转义
+  out = out.replace(/\{(red|green|yellow|blue|gray|mark)\|([^}\n]+)\}/g,
+    (m, c, inner) => `<span class="mdC mdC-${c}">${inner}</span>`);
 
   // 图片在链接之前（语法上 ![]() 是 []() 的超集）
   out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, url) => {
@@ -3404,13 +3419,15 @@ const SLASH_ITEMS = [
   { cmd: "table", labelKey: "review.slash.table", keys: ["table", "表格", "biaoge"] },
   { cmd: "image", labelKey: "review.slash.image", keys: ["image", "img", "photo", "pic", "图片", "tupian"] },
   { cmd: "link",  labelKey: "review.slash.link",  keys: ["link", "url", "链接", "lianjie"] },
+  { cmd: "color", labelKey: "review.slash.color", keys: ["color", "颜色", "yanse", "红", "绿", "highlight", "高亮"] },
   { cmd: "trade", labelKey: "review.slash.trade", keys: ["trade", "交易", "jiaoyi", "复盘", "关联"] },
 ];
 const SLASH_MENU_WIDTH = 220;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
 const SLASH_MENU_MAX_H = 260;
 const SLASH_ICONS = {
   h1: "tbHeading", h2: "tbHeading", h3: "tbHeading", ul: "tbUl", ol: "tbOl", task: "tbTask",
-  quote: "tbQuote", code: "tbCode", hr: "tbHr", table: "tbTable", image: "tbImage", link: "tbLink", trade: "grid",
+  quote: "tbQuote", code: "tbCode", hr: "tbHr", table: "tbTable", image: "tbImage", link: "tbLink",
+  color: "tbColor", trade: "grid",
 };
 
 /* 「能不能编辑」和「此刻是不是在编辑」是两回事：
@@ -3459,6 +3476,11 @@ function reviewToolbarHtml() {
     ${b("link", "tbLink", "review.tb.link")}
     ${b("image", "tbImage", "review.tb.image")}
     ${b("hr", "tbHr", "review.tb.hr")}
+    <span class="tbSep"></span>
+    <span class="tbColorWrap">
+      <button class="tbBtn" data-action="toggle-review-color-menu" title="${esc(T("review.tb.color"))}">${ICONS.tbColor}${ICONS.chevDown}</button>
+      <span id="reviewColorRoot"></span>
+    </span>
     <span class="tbSep"></span>
     <button class="tbBtn tbTrade" data-action="review-tb" data-cmd="trade" title="${esc(T("review.tb.trade"))}">${ICONS.grid}<span class="tbLabel">${esc(T("review.tb.trade"))}</span></button>
     <span class="tbHint">${esc(T("review.tb.help"))}</span>
@@ -3547,6 +3569,7 @@ function renderReviewEditor(force) {
   </div>`;
 
   lastPreviewHtml = null;   // 预览区刚被重建，上一篇的缓存作废
+  reviewColorMenuOpen = false; reviewColorSel = null;
   const ta = document.getElementById("reviewBodyInput");
   if (ta && !readOnly) {
     ta.focus();
@@ -3908,6 +3931,63 @@ function wrapSelection(ta, mark, endMark) {
   replaceRange(ta, from, to, mark + sel + close, from + mark.length + sel.length + close.length);
 }
 
+/* 给选中的文字上色，或者换个颜色、清掉颜色（color 传空就是清除）。
+   三种情况都要处理好，不然「再点一次换个色」会套出 {red|{green|x}} 这种嵌套。 */
+function applyReviewColor(color) {
+  const ta = document.getElementById("reviewBodyInput");
+  if (!ta || reviewIsReadOnly()) return;
+  const sel = reviewColorSel || { from: ta.selectionStart, to: ta.selectionEnd };
+  let from = sel.from, to = sel.to;
+  let inner = ta.value.slice(from, to);
+
+  // 情况一：选中的正好是一整段 {c|...}
+  const whole = inner.match(/^\{([a-z]+)\|([\s\S]*)\}$/);
+  if (whole && MD_COLORS.includes(whole[1])) {
+    inner = whole[2];
+  } else {
+    // 情况二：选中的是里面的文字，外面那层要一起吃掉，否则会越套越深
+    const lead = ta.value.slice(0, from).match(/\{([a-z]+)\|$/);
+    if (lead && MD_COLORS.includes(lead[1]) && ta.value[to] === "}") {
+      from -= lead[0].length;
+      to += 1;
+    }
+  }
+
+  if (!color) {                                   // 清除颜色
+    replaceRange(ta, from, to, inner, from, from + inner.length);
+    return;
+  }
+  if (!inner) {                                   // 没选中：插个空壳，光标停在中间
+    const text = "{" + color + "|}";
+    replaceRange(ta, from, to, text, from + text.length - 1);
+    return;
+  }
+  const text = "{" + color + "|" + inner + "}";
+  replaceRange(ta, from, to, text, from, from + text.length);
+}
+
+/* 浮层只画进工具栏里的一个小根节点，不能走 renderReviewEditor——
+   那会把整个编辑器重建一遍，正在写的正文和光标全没了 */
+function renderReviewColorMenu() {
+  const root = document.getElementById("reviewColorRoot");
+  if (!root) return;
+  if (!reviewColorMenuOpen) { root.innerHTML = ""; return; }
+  root.innerHTML = `<div class="colorMenu">
+    ${MD_COLORS.map((c) => `<button class="colorSwatch" data-action="review-color" data-color="${c}" title="${esc(T("review.color." + c))}">
+      <span class="colorDot mdC-${c}">A</span><span class="colorName">${esc(T("review.color." + c))}</span>
+    </button>`).join("")}
+    <button class="colorSwatch colorClear" data-action="review-color" data-color="">
+      <span class="colorDot">${ICONS.x}</span><span class="colorName">${esc(T("review.color.clear"))}</span>
+    </button>
+  </div>`;
+}
+function closeReviewColorMenu() {
+  if (!reviewColorMenuOpen) return;
+  reviewColorMenuOpen = false;
+  reviewColorSel = null;
+  renderReviewColorMenu();
+}
+
 function insertBlock(ta, text) {
   const v = ta.value;
   const { start } = lineBoundsAt(v, ta.selectionStart);
@@ -3951,6 +4031,13 @@ function runReviewCommand(cmd) {
       const url = window.prompt(T("review.promptImage"), "https://");
       if (!url || !/^https?:\/\//i.test(url.trim())) return;
       insertBlock(ta, `![](${url.trim()})\n`);
+      break;
+    }
+    case "color": {
+      // 斜杠菜单里选「文字颜色」：把选区记下来，然后把工具栏那个浮层打开
+      reviewColorSel = { from: ta.selectionStart, to: ta.selectionEnd };
+      reviewColorMenuOpen = true;
+      renderReviewColorMenu();
       break;
     }
     case "trade": openTradePicker(); break;
@@ -5028,6 +5115,7 @@ function render() {
    ============================================================ */
 document.addEventListener("click", async (e) => {
   const el = e.target.closest("[data-action]");
+  if (reviewColorMenuOpen && !e.target.closest(".tbColorWrap")) closeReviewColorMenu();
   if (!el) {
     let changed = false;
     if (exportMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-export"]')) { exportMenuOpen = false; changed = true; }
@@ -5632,7 +5720,22 @@ document.addEventListener("click", async (e) => {
     reviewEditMode = !reviewEditMode;
     renderReviewEditor(true);                      // 两种模式的骨架不一样，必须强制重建
   }
-  else if (action === "review-tb") { runReviewCommand(el.dataset.cmd); }
+  else if (action === "review-tb") { closeReviewColorMenu(); runReviewCommand(el.dataset.cmd); }
+  else if (action === "toggle-review-color-menu") {
+    const ta = document.getElementById("reviewBodyInput");
+    if (reviewColorMenuOpen) { closeReviewColorMenu(); return; }
+    // 点工具栏按钮时 textarea 已经失焦，但 selectionStart/End 还留着，先抓下来
+    reviewColorSel = ta ? { from: ta.selectionStart, to: ta.selectionEnd } : null;
+    reviewColorMenuOpen = true;
+    renderReviewColorMenu();
+  }
+  else if (action === "review-color") {
+    const color = el.dataset.color || "";
+    reviewColorMenuOpen = false;
+    renderReviewColorMenu();
+    applyReviewColor(color);
+    reviewColorSel = null;
+  }
   else if (action === "slash-pick") {
     const item = SLASH_ITEMS.find((i) => i.cmd === el.dataset.cmd);
     if (item) applySlashItem(item);
@@ -6241,6 +6344,7 @@ document.addEventListener("keydown", (e) => {
   if (lightboxUrl) { lightboxUrl = null; render(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
+  if (reviewColorMenuOpen) { closeReviewColorMenu(); return; }
   if (slashMenu) { closeSlashMenu(); return; }
   if (tradePickerOpen) { closeTradePicker(); return; }
   if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); return; }

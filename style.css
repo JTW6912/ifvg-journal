@@ -4,6 +4,7 @@
   --pos:#4FA87A; --posSoft:rgba(79,168,122,.14);
   --neg:#C2564B; --negSoft:rgba(194,86,75,.14);
   --text:#E8E6DF; --muted:#8A9099; --mutedDark:#5B6169;
+  --info:#5B8DEF; --infoSoft:rgba(91,141,239,.16);
 }
 :root[data-theme="light"]{
   --bg:#F6F4EF; --surface:#FFFFFF; --surface2:#EFEBE1; --border:#E1DACB; --borderLight:#D2C9B4;
@@ -11,6 +12,7 @@
   --pos:#2E8F5C; --posSoft:rgba(46,143,92,.12);
   --neg:#B23A2C; --negSoft:rgba(178,58,44,.12);
   --text:#211D16; --muted:#6C6558; --mutedDark:#9B9385;
+  --info:#2C6BD6; --infoSoft:rgba(44,107,214,.14);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
@@ -459,6 +461,33 @@ textarea.input{resize:vertical;}
 .reviewLinkTag svg{width:11px;height:11px;}
 .reviewCardExcerpt{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.65;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* ---------- 正文上色 {red|文字} ----------
+   全部用主题变量，深浅色切换时跟着走；类名是渲染器白名单里出来的，
+   用户写不进任意 CSS。 */
+.mdC-red{color:var(--neg);}
+.mdC-green{color:var(--pos);}
+.mdC-yellow{color:var(--accent);}
+.mdC-blue{color:var(--info);}
+.mdC-gray{color:var(--mutedDark);}
+/* 高亮是背景色，文字颜色不动，才能和上面几种叠着用 */
+.mdC-mark{background:var(--accentSoft);box-shadow:0 0 0 2px var(--accentSoft);border-radius:2px;}
+
+/* 工具栏上的颜色浮层 */
+.tbColorWrap{position:relative;display:inline-flex;}
+.tbColorWrap .tbBtn svg:last-child{width:11px;height:11px;opacity:.6;margin-left:-2px;}
+.colorMenu{position:absolute;top:calc(100% + 6px);left:0;z-index:30;min-width:132px;padding:4px;
+  background:var(--surface);border:1px solid var(--borderLight);border-radius:9px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.colorSwatch{display:flex;align-items:center;gap:9px;width:100%;padding:6px 8px;background:transparent;
+  border:none;border-radius:6px;color:var(--text);font-size:12.5px;cursor:pointer;text-align:left;
+  font-family:'Inter',sans-serif;}
+.colorSwatch:hover{background:var(--surface2);}
+.colorDot{width:20px;height:20px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-weight:700;font-size:12px;background:var(--surface2);
+  border:1px solid var(--border);}
+.colorClear .colorDot{color:var(--mutedDark);}
+.colorClear .colorDot svg{width:11px;height:11px;}
 
 /* ---------- 单笔交易的只读预览（复盘里点交易胶囊弹出来的） ---------- */
 .tradePreviewModal{max-width:760px;display:flex;flex-direction:column;max-height:88vh;}
