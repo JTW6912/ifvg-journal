@@ -423,6 +423,15 @@ textarea.input{resize:vertical;}
 .settingsRowBody.open{display:block;}
 .fieldTypeTag{font-size:11px;color:var(--mutedDark);margin-left:10px;}
 .fieldRoleTag{font-size:11px;color:var(--accent);margin-left:8px;}
+/* 停用字段：设置页整行压暗，标签用中性灰——它不是错误状态，只是「不再录了」 */
+.fieldHiddenTag{font-size:11px;color:var(--mutedDark);margin-left:8px;border:1px solid var(--border);border-radius:4px;padding:1px 5px;}
+.settingsRow.isHidden{background:transparent;}
+.fieldHiddenBox{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.fieldHiddenText{flex:1;min-width:180px;font-size:11.5px;line-height:1.65;color:var(--mutedDark);}
+/* 录入弹窗里那段「填过的停用字段」，跟在录的字段之间要有一条明确的界 */
+.legacyFields{margin-top:22px;padding-top:16px;border-top:1px dashed var(--border);}
+.legacyFieldsHead{font-size:12px;font-weight:600;color:var(--mutedDark);margin-bottom:4px;}
+.legacyFieldsHint{font-size:11.5px;line-height:1.6;color:var(--mutedDark);margin-bottom:14px;}
 .tagChip{display:inline-flex;align-items:center;padding:4px 8px;border-radius:6px;background:var(--surface2);
   border:1px solid var(--border);color:var(--muted);font-size:12px;margin:0 6px 6px 0;}
 .tagChip span{margin-left:5px;cursor:pointer;}

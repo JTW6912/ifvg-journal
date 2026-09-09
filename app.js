@@ -509,6 +509,30 @@ function tradeFieldValue(t, field) {
 }
 
 /* ============================================================
+   字段停用（hidden）
+
+   字段上多一个 `hidden: true`，含义是「这个字段不再录了」——录入表单里不出现，
+   新交易在这个字段上一律留空。**不是删除**：schema 里那一行还在，trades.data 里
+   老数据一个字节都不动，拆解 / 组合 / 筛选 / 导出全都照旧认这个字段。
+
+   为什么要有它：一套字段用久了总会有几个被证明没信息量（拆解出来胜率跟大盘没差），
+   继续每笔都填是纯成本；但删掉列的话，当初「已确认无效」的证据本身也一起没了，
+   以后想复核那张拆解表就再也复核不了。停用是可逆的，删除不是——所以默认走停用。
+
+   一句话边界：hidden 只影响**写**（录入表单），不影响**读**（任何统计和展示）。
+   ============================================================ */
+// 录入表单用这份；统计那边一律还是用完整的 schema
+function activeSchema() { return schema.filter((f) => !f.hidden); }
+// 停用这几个角色会让统计直接失真（日期/结果/R 是所有胜率、PF、回撤的分母），单独确认一次
+const CORE_ROLES = ["date", "result", "r_multiple"];
+// 一笔交易在某字段上到底有没有填过东西——决定编辑老交易时要不要把停用字段翻出来
+function hasFieldValue(t, f) {
+  const v = t ? t[f.id] : undefined;
+  if (Array.isArray(v)) return v.length > 0;
+  return v !== undefined && v !== null && String(v).trim() !== "";
+}
+
+/* ============================================================
    ANALYSIS PREFS —— 分析页的拆解显示配置 / 组合 / 组合分组
    存在 journal_schema.analysis_prefs (jsonb) 这一列里，跨设备同步。
    分析页那套筛选条件(analysisFilters)不在这里——它是纯本地的"这次想看哪批交易"，
@@ -2214,9 +2238,9 @@ function pickableFields(pinnedRoles) {
    最放不下的东西——看图模式右边有一整栏，正好归它。
    一个长文本都没有的话退回前三个非常驻字段，总比空着强 */
 function defaultFocusFields() {
-  const longs = schema.filter((f) => f.type === "textarea" && !FOCUS_PINNED_ROLES.includes(f.role));
+  const longs = activeSchema().filter((f) => f.type === "textarea" && !FOCUS_PINNED_ROLES.includes(f.role));
   if (longs.length) return longs.map((f) => f.id);
-  return schema.filter((f) => !FOCUS_PINNED_ROLES.includes(f.role)).slice(0, 3).map((f) => f.id);
+  return activeSchema().filter((f) => !FOCUS_PINNED_ROLES.includes(f.role)).slice(0, 3).map((f) => f.id);
 }
 
 /* 图片高度是一个挂在 <html> 上的 CSS 变量，不是 inline style：
@@ -4538,12 +4562,13 @@ function renderSettings() {
   if (viewingUserId) {
     return `<div style="font-size:12.5px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
       ${esc(T("settings.readOnlyNote", { email: viewingUserEmail }))}</div>
-      ${schema.map((f) => `<div class="settingsRow" style="cursor:default;">
+      ${schema.map((f) => `<div class="settingsRow${f.hidden ? " isHidden" : ""}" style="cursor:default;">
         <div class="settingsRowHead" style="cursor:default;">
           <div style="flex:1;">
-            <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
+            <span class="mono" style="font-size:13.5px;color:${f.hidden ? "var(--mutedDark)" : "var(--text)"};">${esc(f.label)}</span>
             <span class="fieldTypeTag">${esc(fieldTypeLabel(f.type))}</span>
             ${f.role ? `<span class="fieldRoleTag">· ${esc(roleLabel(f.role))}</span>` : ""}
+            ${f.hidden ? `<span class="fieldHiddenTag">${esc(T("settings.hiddenTag"))}</span>` : ""}
           </div>
         </div>
         ${(f.options && f.options.length) ? `<div class="settingsRowBody open"><div class="chipGroup">${f.options.map((o) => `<span class="chip">${esc(o)}</span>`).join("")}</div></div>` : ""}
@@ -4553,13 +4578,14 @@ function renderSettings() {
     ${T("settings.fieldsHint")}</div>`;
   schema.forEach((f, i) => {
     const open = openSettingsRow === f.id;
-    html += `<div class="settingsRow" draggable="${open ? "false" : "true"}" data-field-idx="${i}">
+    html += `<div class="settingsRow${f.hidden ? " isHidden" : ""}" draggable="${open ? "false" : "true"}" data-field-idx="${i}">
       <div class="settingsRowHead" data-action="toggle-settings-row" data-id="${esc(f.id)}">
         <span class="dragHandle" title="${esc(T("common.dragToReorder"))}">⠿</span>
         <div style="flex:1;">
-          <span class="mono" style="font-size:13.5px;color:var(--text);">${esc(f.label)}</span>
+          <span class="mono" style="font-size:13.5px;color:${f.hidden ? "var(--mutedDark)" : "var(--text)"};">${esc(f.label)}</span>
           <span class="fieldTypeTag">${esc(fieldTypeLabel(f.type))}</span>
           ${f.role ? `<span class="fieldRoleTag">· ${esc(roleLabel(f.role))}</span>` : ""}
+          ${f.hidden ? `<span class="fieldHiddenTag">${esc(T("settings.hiddenTag"))}</span>` : ""}
         </div>
         ${open ? ICONS.chevUp : ICONS.chevDown}
       </div>
@@ -4579,6 +4605,11 @@ function renderSettings() {
           <div class="addOptRow"><input class="input" id="optdraft-${esc(f.id)}" placeholder="${esc(T("settings.newOptionPlaceholder"))}" />
           <button class="btn" data-action="add-option" data-id="${esc(f.id)}">${T("common.add")}</button></div>
         </div>` : ""}
+        <div class="fieldHiddenBox">
+          <div class="fieldHiddenText">${esc(f.hidden ? T("settings.hiddenOnDesc") : T("settings.hiddenOffDesc"))}</div>
+          <button class="btn" data-action="toggle-field-hidden" data-id="${esc(f.id)}">
+            ${f.hidden ? T("settings.unhideField") : T("settings.hideField")}</button>
+        </div>
         <button class="btn btn-danger" data-action="delete-field" data-id="${esc(f.id)}">${ICONS.trash} ${T("settings.deleteField")}</button>
       </div>
     </div>`;
@@ -4715,6 +4746,13 @@ function renderModal(force) {
   const isNew = editingTrade._isNew;
   const resumedDraft = editingTrade._resumedDraft;
   const readOnly = !!viewingUserId;
+  /* 停用字段在录入表单里不出现——新单在这些字段上就是留空，正是「以后不填了」要的效果。
+     但改**老**交易是另一回事：那时候填过的值还在库里，表单要是一律不显示，
+     这笔数据就变成只能看不能改的死值（想修个错别字都得去 Supabase 后台）。
+     所以：填过的停用字段照样翻出来，只是折到底下单独一段，跟在录的字段分开摆。*/
+  const activeF = activeSchema();
+  const legacyF = isNew ? [] : schema.filter((f) => f.hidden && hasFieldValue(editingTrade, f));
+  const fieldHtml = (f) => `<div class="field"><div class="fieldLabel">${esc(f.label)}</div>${fieldInputHtml(f)}</div>`;
   root.innerHTML = `<div class="overlay">
     <div class="modal">
       <div class="modalHead"><div class="display" style="font-size:17px;font-weight:600;">${readOnly ? T("modal.viewTrade") : isNew ? T("common.newTrade") : T("modal.editTrade")}</div>
@@ -4724,7 +4762,12 @@ function renderModal(force) {
         <button class="tinyBtn" data-action="clear-draft" style="color:var(--accent);text-decoration:underline;">${T("modal.clearDraft")}</button>
       </div>` : ""}
       <div class="modalBody ${readOnly ? "readOnlyFields" : ""}" ${readOnly ? 'style="opacity:.75;"' : ""}>
-        ${schema.map((f) => `<div class="field"><div class="fieldLabel">${esc(f.label)}</div>${fieldInputHtml(f)}</div>`).join("")}
+        ${activeF.map(fieldHtml).join("")}
+        ${legacyF.length ? `<div class="legacyFields">
+          <div class="legacyFieldsHead">${esc(T("modal.legacyFieldsTitle"))}</div>
+          <div class="legacyFieldsHint">${esc(T("modal.legacyFieldsHint"))}</div>
+          ${legacyF.map(fieldHtml).join("")}
+        </div>` : ""}
       </div>
       <div class="modalFoot"><button class="btn" data-action="close-modal">${readOnly ? T("common.close") : T("common.cancel")}</button>
         ${readOnly ? "" : `<button class="btn btn-primary" data-action="save-trade">${T("common.save")}</button>`}</div>
@@ -5887,6 +5930,19 @@ document.addEventListener("click", async (e) => {
   else if (action === "delete-field") {
     if (!confirm(T("settings.confirmDeleteField"))) return;
     await persistSchema(schema.filter((f) => f.id !== el.dataset.id));
+  }
+  else if (action === "toggle-field-hidden") {
+    const id = el.dataset.id;
+    const f = schema.find((x) => x.id === id);
+    if (!f) return;
+    // 停用日期/结果/R 会让所有统计从下一笔开始失真，确认一次再走；恢复显示不用问
+    if (!f.hidden && CORE_ROLES.includes(f.role) && !confirm(T("settings.confirmHideCore", { label: f.label }))) return;
+    await persistSchema(schema.map((x) => {
+      if (x.id !== id) return x;
+      const next = { ...x };
+      if (x.hidden) delete next.hidden; else next.hidden = true;   // 恢复时把键删掉，别留一堆 hidden:false
+      return next;
+    }));
   }
   else if (action === "remove-option") {
     const fieldId = el.dataset.id, opt = el.dataset.opt;

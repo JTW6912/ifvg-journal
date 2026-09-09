@@ -240,8 +240,23 @@ Collapsed/expanded state is per device (and per mode); group names and order fol
 ### Settings
 
 Manage the field schema: rename fields, change their type, edit the option pool
-(drag-to-reorder), assign an analysis role, delete, and drag whole fields into a new order.
-Changes take effect immediately in the entry form and across all statistics.
+(drag-to-reorder), assign an analysis role, retire, delete, and drag whole fields into a new
+order. Changes take effect immediately in the entry form and across all statistics.
+
+**Retiring a field (reversible)** — expand any field and hit "Retire this field". Once retired:
+
+- it disappears from the entry form, and new trades are simply blank there;
+- nothing already stored is touched — breakdowns, combos, filters and exports still see it;
+- editing an older trade that *did* fill it in shows those values in their own section at the
+  bottom of the form, still editable;
+- "Collect again" brings it straight back.
+
+Any long-running schema ends up with a few fields the breakdowns have proven carry no signal,
+and filling those in on every trade is pure cost. But **deleting** one also destroys the very
+evidence that proved it useless — that breakdown can never be re-checked. So retire whenever
+the goal is "stop filling this in", and keep deletion for fields that were a mistake to begin
+with. Retiring a field that carries a core role (date / result / R) asks for confirmation
+first, since new trades would then skew every statistic from the next entry on.
 
 **Field types:** `text` · `textarea` · `number` · `date` · `time` · `select` · `multiselect` · `url`
 

@@ -47,11 +47,22 @@ updated_at  timestamptz
 ### journal_schema（每个用户的字段配置）
 ```
 user_id         uuid, 主键, 引用 auth.users(id)
-fields          jsonb —— 数组，每个元素一个字段定义
+fields          jsonb —— 数组，每个元素一个字段定义 { id, label, type, role, options?, hidden? }
 card_fields     jsonb —— 数组，卡片视图上额外显示哪些字段（空数组=用内置默认）
 focus_fields    jsonb —— 数组，看图视图上额外显示哪些字段。⚠ 没有 default：null=没配过（用内置默认），[]=用户主动清空（一个都不显示），两者必须能区分
 analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
 ```
+- `fields[].hidden === true` = **停用**（不是删除，也不需要迁移，jsonb 里多一个键而已）。语义只有一条：
+  **hidden 只影响写，不影响读**。录入表单里不出现（`activeSchema()`），新交易在这个字段上留空；
+  其余所有地方——`breakdownCandidateFields()` / 组合 / 筛选 / 导出 / 卡片和看图的额外字段——一律用完整的
+  `schema`，老数据的统计口径完全不变。恢复时把 `hidden` 键整个删掉，不留 `hidden:false`
+  - 编辑**老**交易时，那些 hidden 且这笔填过值的字段（`hasFieldValue()`）会在表单底部单独一段翻出来。
+    不这么做的话，当初填过的值就变成只能看不能改的死值——想改个错别字都得去 Supabase 后台。
+    新建交易 (`_isNew`) 一律不显示这一段
+  - `save-trade` 遍历完整 schema 但只写 `if (inputEl)`，所以表单里没渲染的停用字段不会被空值覆盖；
+    `formDraft = { ...editingTrade }` 已经把老值带上了
+  - 停用带核心角色（date / result / r_multiple，见 `CORE_ROLES`）的字段会 confirm 一次：
+    新交易在这些字段上留空 = 胜率、PF、回撤从下一笔起全部失真
 - `focus_fields` 这一列也要手动加：`alter table journal_schema add column if not exists focus_fields jsonb;`（已经包含在 `docs/focus-mode-migration.sql` 里）。**不跑也不会坏**：看图模式照常能用，只是字段选择存不进去、不跨设备、刷新回默认
 - **为什么不跟 `card_fields` 共用一份**：卡片是缩略图墙、一屏几十张，字段多了就糊；看图模式一屏一笔、右边有整栏空间，正好把长文本挂上去。共用一份的话改一边另一边就被连累
 `review_prefs` 结构（复盘分组，缺项由 `normalizeReviewPrefs()` 补默认值）：
