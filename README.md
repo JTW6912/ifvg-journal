@@ -183,9 +183,11 @@ Free-form posts for writing up a week — or anything else. Markdown, stored as 
 **Backtest and live each get their own set**, so switching mode switches the whole list and
 its groups.
 
-- **Write a post** — title, body, and an optional **week tag** (This week / Last week / any
-  date, normalised to that week's Monday). Posts are free-form: nothing forces one per week,
-  and the week tag can be left off entirely.
+- **Write a post** — title, body, and an optional **day or week tag**: a Day / Week / None
+  switch, with Today / Yesterday / any date under Day, and This week / Last week / any date
+  under Week (which snaps to that week's Monday). The two are mutually exclusive —
+  switching clears the other. Posts stay free-form: nothing forces one a day or one a week,
+  and the tag can be left off entirely. "New review" defaults to today.
 - **Read and edit modes** — opening an existing post lands in **read mode by default**: the
   formatted body at full width, no toolbar and no input box, just something to read. Hit
   **`Edit`** in the top right to get the toolbar and the split view; **`Done`** saves
@@ -379,11 +381,13 @@ alter table journal_schema add column if not exists analysis_prefs jsonb default
 The app runs fine without it — the analytics page just can't persist its settings, and shows
 a notice telling you to run this statement.
 
-The Reviews page needs its own table, created by running
-[`docs/reviews-migration.sql`](docs/reviews-migration.sql) once in the SQL editor, followed by
-[`docs/reviews-groups-migration.sql`](docs/reviews-groups-migration.sql) for backtest/live
-separation and groups. Until you do, the rest of the app is unaffected — the Reviews tab just
-shows a notice pointing at whichever file is still missing.
+The Reviews page needs its own table. Run these in the SQL editor, in order:
+[`docs/reviews-migration.sql`](docs/reviews-migration.sql) (the table),
+[`docs/reviews-groups-migration.sql`](docs/reviews-groups-migration.sql) (backtest/live split
+and groups), and [`docs/reviews-day-migration.sql`](docs/reviews-day-migration.sql) (daily
+reviews). Until you do, the rest of the app is unaffected — the Reviews tab shows a notice
+pointing at whichever file is still missing, and **a post still saves either way**: the save
+drops whichever column is absent and retries.
 
 ### 2. Run it locally
 

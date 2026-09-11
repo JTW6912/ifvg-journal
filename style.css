@@ -242,6 +242,35 @@ a{color:var(--accent);}
 .filterNodeList{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;}
 .filterGroupFoot{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
 
+/* 重点发现：跨字段挑出最值得先看的几条，点一条跳到对应的拆解卡。
+   底下那行 findingsNote 是多重比较的提醒，字号刻意压小但不能省 —— 它是这块功能的安全带 */
+.findingsBox{border:1px solid var(--borderLight);border-radius:10px;background:var(--surface);
+  padding:12px 14px;margin-bottom:18px;}
+.findingsHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+.findingRow{display:flex;align-items:center;gap:10px;width:100%;padding:7px 8px;background:transparent;
+  border:none;border-radius:6px;cursor:pointer;text-align:left;color:var(--muted);
+  font-family:'Inter',sans-serif;font-size:12.5px;flex-wrap:wrap;}
+.findingRow:hover{background:var(--surface2);}
+.findingDir{font-size:10px;flex-shrink:0;}
+.findingDir.up{color:var(--pos);}
+.findingDir.down{color:var(--neg);}
+.findingWhat{color:var(--text);min-width:0;}
+.findingWhat b{font-weight:600;}
+.findingMeta{font-size:11px;color:var(--mutedDark);}
+.findingDiff{font-size:11.5px;margin-left:auto;}
+.findingDiff.up{color:var(--pos);}
+.findingDiff.down{color:var(--neg);}
+.findingsNote{font-size:10.5px;color:var(--mutedDark);line-height:1.7;margin-top:8px;
+  padding-top:8px;border-top:1px solid var(--border);}
+/* 过了 FDR 校正的行才有这个徽章。刻意不显示 p 值 —— 用途是排序，不是下结论 */
+.bdStrongTag{font-size:10px;border-radius:4px;padding:0 5px;white-space:nowrap;
+  font-family:'JetBrains Mono',monospace;}
+.bdStrongTag.up{color:var(--pos);background:var(--posSoft);border:1px solid var(--pos);}
+.bdStrongTag.down{color:var(--neg);background:var(--negSoft);border:1px solid var(--neg);}
+/* 从重点发现跳过去之后闪一下：一屏十几张卡，不闪的话用户不知道跳到哪张了 */
+.breakdownCard.bdFlash{animation:bdFlash 1.2s ease-out;}
+@keyframes bdFlash{0%{box-shadow:0 0 0 2px var(--accent);}100%{box-shadow:0 0 0 2px transparent;}}
+
 /* 样本太少的拆解行：不画色条、不标 delta、整行降权，免得 n=3 的胜率长得跟 n=80 一样有说服力 */
 .barRow.lowSample{opacity:.5;}
 .lowSampleTag{font-size:10px;color:var(--mutedDark);border:1px solid var(--border);border-radius:4px;padding:0 4px;
@@ -268,6 +297,10 @@ a{color:var(--accent);}
   border:none;cursor:pointer;color:var(--mutedDark);}
 .viewBtn.active{background:var(--accent);color:#191307;}
 .viewBtn svg{width:14px;height:14px;}
+/* 文字版的分段切换。.viewBtn 那个固定 30px 宽是给纯图标按钮定的，
+   直接拿来放「按显著性」四个字会被裁掉一半，所以这里放开宽度 */
+.viewToggle.textToggle .viewBtn{width:auto;padding:0 10px;font-size:11.5px;
+  font-family:'Inter',sans-serif;white-space:nowrap;}
 
 /* 贴顶的紧凑统计条：拆解区很长，差值要有个一直看得见的基准才有意义。
    position:sticky 是纯 CSS 的，不用挂滚动监听，也不用同步任何 JS 状态 */
@@ -574,6 +607,11 @@ textarea.input{resize:vertical;}
 .reviewWeekRow .tinyBtn.on{background:var(--accentSoft);border-color:var(--accent);color:var(--accent);}
 .reviewWeekRow .tinyBtn:disabled{opacity:.4;cursor:not-allowed;}
 .reviewWeekDate{width:auto;padding:3px 8px;font-size:11.5px;}
+/* 日/周/不关联 三选一，挤在一起像个分段控件，跟后面的快捷按钮区分开 */
+.reviewPeriodSeg{display:inline-flex;gap:0;border:1px solid var(--border);border-radius:11px;overflow:hidden;}
+.reviewPeriodSeg .tinyBtn{border:none;border-radius:0;padding:3px 11px;}
+.reviewPeriodSeg .tinyBtn+.tinyBtn{border-left:1px solid var(--border);}
+.reviewPeriodSeg .tinyBtn.on{background:var(--accent);color:#191307;font-weight:600;}
 .reviewReadOnly{color:var(--accent);font-size:11.5px;margin-left:auto;}
 
 /* ---------- 工具栏 ---------- */

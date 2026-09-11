@@ -143,6 +143,12 @@ function defaultSchema() {
 // 放到 TIME BUCKETS 那一段里会撞 TDZ，app.js 整个起不来
 const DEFAULT_TIME_BUCKETS = ["09:30", "09:45", "10:00", "10:30", "11:00", "12:00"];
 
+// 样本这么少的行不画色条、不标 delta、也不参与显著性排序：n=3 的 67% 是噪音，
+// 不能长得跟 n=80 的 67% 一样有说服力。这只是**默认值**，用户能在「拆解显示设置」里改
+// （实际生效的值一律走 currentMinSample()，别直接读这个常量）。
+// ⚠ 跟 DEFAULT_TIME_BUCKETS 同理，必须声明在 STATE 之前：defaultAnalysisPrefs() 在模块加载时就会读它
+const BREAKDOWN_MIN_SAMPLE = 5;
+
 /* ============================================================
    STATE
    ============================================================ */
@@ -177,6 +183,7 @@ let changelog = [];
 let reviews = [];
 let reviewsTableMissing = false;      // 整张表都没建时置 true，页面上提示去跑迁移 SQL
 let reviewGroupColumnsMissing = false; // 表在、但 mode/group_id/sort_order 这几列还没加
+let reviewDayColumnMissing = false;    // day_date 这一列还没加（日复盘用）
 let reviewSearch = "";
 let reviewConfirmDeleteId = null;
 let editingReview = null;             // { id, title, body, week_start, _isNew }
@@ -277,7 +284,12 @@ let expandedLowSample = new Set();     // 哪些拆解卡把「其他 N 项（�
 let expandedFilterChips = new Set();   // 筛选行里哪几行把全部选项 chip 展开了，key=chipKey(ctx, path)
 let expandedFilterGroups = new Set();  // 哪几个条件分组是展开的（默认折叠成一行摘要），key 同上。纯 UI 状态，不落库
 let comboViewMode = (function () { try { return localStorage.getItem("journal_combo_view") === "list" ? "list" : "card"; } catch (e) { return "card"; } })();
-let breakdownSort = (function () { try { const v = localStorage.getItem("journal_breakdown_sort"); return v === "delta" || v === "ev" ? v : "n"; } catch (e) { return "n"; } })();
+const BREAKDOWN_SORTS = ["n", "delta", "ev", "sig_r", "sig_wr"];
+let breakdownSort = (function () { try { const v = localStorage.getItem("journal_breakdown_sort"); return BREAKDOWN_SORTS.includes(v) ? v : "sig_r"; } catch (e) { return "sig_r"; } })();
+// 卡片之间怎么排：manual = 用户拖出来的顺序（analysisPrefs.breakdownOrder），sig = 按显著性自动排。
+// 这是"这台设备想怎么看"，跟 breakdownSort 一样存 localStorage，不占数据库
+let breakdownCardOrder = (function () { try { return localStorage.getItem("journal_bd_card_order") === "manual" ? "manual" : "sig"; } catch (e) { return "sig"; } })();
+function saveBreakdownCardOrder() { try { localStorage.setItem("journal_bd_card_order", breakdownCardOrder); } catch (e) {} }
 // 分析页两个大区块（组合 / 拆解）收起了哪些
 let collapsedAnalyticsSections = (function () {
   try {
@@ -545,7 +557,18 @@ function defaultAnalysisPrefs() {
     combos: [],
     comboGroups: [],        // {id, name, parentId} 扁平列表，parentId=null 是顶层分组，最多两层
     timeBuckets: DEFAULT_TIME_BUCKETS.slice(), // 时间字段拆解用的分段边界，见 TIME BUCKETS 那一段
+    minSample: BREAKDOWN_MIN_SAMPLE,           // 低于多少笔就不算数，见 currentMinSample()
   };
+}
+/* 「多少笔才算数」是方法论，不是设备偏好，所以跟 timeBuckets 一样进数据库跟着账号走，
+   不放 localStorage。一个旋钮同时管：拆解行的降权折叠、显著性排序的准入、近期表现那四格。 */
+function sanitizeMinSample(v) {
+  const n = parseInt(v, 10);
+  if (isNaN(n)) return BREAKDOWN_MIN_SAMPLE;
+  return Math.max(1, Math.min(999, n));
+}
+function currentMinSample() {
+  return sanitizeMinSample(analysisPrefs && analysisPrefs.minSample);
 }
 function normalizeAnalysisPrefs(raw) {
   const d = defaultAnalysisPrefs();
@@ -569,6 +592,7 @@ function normalizeAnalysisPrefs(raw) {
     combos: Array.isArray(raw.combos) ? raw.combos.map(normalizeCombo).filter(Boolean) : [],
     comboGroups,
     timeBuckets: sanitizeTimeBoundaries(raw.timeBuckets),
+    minSample: sanitizeMinSample(raw.minSample),
   };
 }
 function normalizeCombo(c) {
@@ -931,6 +955,63 @@ function timeBucketIndexOf(value, defs) {
   return -1;
 }
 
+/* ============================================================
+   显著性 —— 「这个值真的不一样，还是只是样本小在抖」
+   ⚠️ 不要用 |胜率 - 整体胜率| 来排序找发现。小样本天生波动大，n=3 打出 100% 太容易了，
+   于是按差值排的结果是：**数据里一点 edge 都没有的时候，仍然有约 2/3 的概率把 n≤5 的行顶到第一名**。
+   它找的不是发现，是最小的那个样本。换成下面的 z 检验后这个概率掉到 1/5 左右。
+
+   口径：**这一行 vs 其余所有交易（补集）**，不是 vs 整体。这一行本身是整体的一部分，
+   跟整体比会把差距稀释——某个值占了 70% 的交易时它跟整体必然接近，但跟另外那 30% 可能差很远。
+   「这个值 vs 其他值」才是真正要问的问题，也才是一个合法的两样本检验。
+   ============================================================ */
+// 两比例 z 检验。分子是胜率差，分母随样本变小而变大，所以同样的差值样本越大 z 越高
+function twoProportionZ(w1, l1, w2, l2) {
+  const n1 = w1 + l1, n2 = w2 + l2;
+  if (!n1 || !n2) return null;
+  const p1 = w1 / n1, p2 = w2 / n2, p = (w1 + w2) / (n1 + n2);
+  const se = Math.sqrt(p * (1 - p) * (1 / n1 + 1 / n2));
+  if (!se) return null;                       // 两边胜率都是 0% 或都是 100%：没有可比的波动
+  return (p1 - p2) / se;
+}
+// Welch t 检验（两组方差不等）。比较两组 R 的均值——交易者真正该看的是每笔期望收益，
+// 不是胜率：40% 胜率的 +3R 打法比 65% 胜率的 +0.3R 赚得多，而且胜率完全看不见 BE 的磨损
+function welchT(a, b) {
+  if (a.length < 2 || b.length < 2) return null;
+  const mean = (x) => x.reduce((s, v) => s + v, 0) / x.length;
+  const varOf = (x, m) => x.reduce((s, v) => s + (v - m) * (v - m), 0) / (x.length - 1);
+  const ma = mean(a), mb = mean(b);
+  const se = Math.sqrt(varOf(a, ma) / a.length + varOf(b, mb) / b.length);
+  if (!se) return null;
+  return (ma - mb) / se;
+}
+// 正态分布双尾 p 值。t 检验这里也借用正态近似：样本量到了这个功能的门槛（默认 5 笔起）
+// 之后两者差别对「排序」和「FDR 打标」都不构成影响，不值得为此背一张 t 分布表
+function twoSidedP(z) {
+  if (z === null || z === undefined || isNaN(z)) return 1;
+  // Abramowitz & Stegun 7.1.26 的 erf 近似，精度 1.5e-7，够用
+  const x = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return Math.max(0, Math.min(1, 1 - y));     // 1 - erf(|z|/√2) = 双尾 p
+}
+
+/* Benjamini–Hochberg FDR。
+   ⚠️ 这是这个功能最危险的地方：10 个字段 × 每个 5 个值 ≈ 50 个组合，按 p<0.05 这个常规标准，
+   **纯随机也会有 ~2.5 个看起来显著**。也就是说不加控制的话，每次都会递给用户一两个假发现，
+   而且长得跟真的一模一样。所以：分数只用来排序，「强信号」这个徽章只发给过了 BH 的行，
+   页面上还要常驻一句「本次检验了 N 个组合，预计有 ~X 个是随机波动」——丑话写在脸上。 */
+const FDR_Q = 0.10;
+function markFdrSignificant(rows) {
+  const cand = rows.filter((r) => r.sig && r.sig.p !== null && r.sig.p !== undefined);
+  const m = cand.length;
+  if (!m) return;
+  const sorted = cand.slice().sort((a, b) => a.sig.p - b.sig.p);
+  let cutoff = -1;
+  sorted.forEach((r, i) => { if (r.sig.p <= ((i + 1) / m) * FDR_Q) cutoff = i; });
+  sorted.forEach((r, i) => { r.sig.strong = i <= cutoff; });
+}
+
 /* ---------- 字段拆解 ---------- */
 // 能拆解的字段：所有 select/multiselect（只排掉「结果」角色——按 result 拆是自我循环，W 那行必然 100%），
 // 外加所有 time 字段（按上面那套时间段分桶）。跟项目其他地方一样只认 type/role，不认字段叫什么名字，
@@ -972,9 +1053,72 @@ function breakdownRowStats(value, list, resultF, rF) {
 }
 // 拆解行的排序。默认按笔数，找 edge 时按「离整体多远」或按 EV 更快。
 // 排序在渲染时做（要用到整批的胜率做基准），computeBreakdowns 里那次按 n 排只是给个稳定的初始顺序
+// 一行在当前排序模式下的显著性分数。够不到样本阈值的行 sig 里全是 null，score 返回 -Infinity 排到最后
+function rowSigScore(r, mode) {
+  const s = r.sig;
+  if (!s) return -Infinity;
+  const v = mode === "sig_wr" ? s.z : s.t;
+  return v === null || v === undefined || isNaN(v) ? -Infinity : Math.abs(v);
+}
+function isSigSort(mode) { return mode === "sig_r" || mode === "sig_wr"; }
+// 排序下拉选的是「按 R」还是「按胜率」时就用它；选的是笔数/差值/EV 这类非显著性排序时，
+// 卡片排序和重点发现仍然要有个口径——有 R 字段就按 R，没有就按胜率
+function sigMetric() {
+  if (isSigSort(breakdownSort)) return breakdownSort;
+  return roleField("r_multiple") ? "sig_r" : "sig_wr";
+}
+/* 一张卡的分数 = 卡里**最高**的那个 |z|，不是平均。
+   要回答的问题是「我该先看哪个字段」，答案就是「含有最突出那个值的字段」；
+   取平均会让一个爆点被同卡里几个平庸值稀释掉，正好把最该看的卡按下去 */
+function breakdownCardScore(b) {
+  const m = sigMetric();
+  return (b.rows || []).reduce((mx, r) => Math.max(mx, rowSigScore(r, m)), -Infinity);
+}
+function sortBreakdownCards(cards) {
+  if (breakdownCardOrder !== "sig") return cards;
+  return cards.slice().sort((a, b) => (breakdownCardScore(b) - breakdownCardScore(a)) || (b.rows.length - a.rows.length));
+}
+/* 「重点发现」：跨所有字段所有值，按 |z| 取最高的几条。
+   光重排卡片只做到「最值得看的字段排第一」，进了那张卡还得再找是哪一行；
+   这条摘要直接把「哪个字段的哪个值」摆到眼前，才是真正的一眼看到最该看的东西。 */
+const TOP_FINDINGS = 4;
+function topFindings(breakdowns) {
+  const m = sigMetric();
+  const minN = currentMinSample();
+  const all = [];
+  breakdowns.forEach((b) => (b.rows || []).forEach((r) => {
+    if (r.n < minN) return;                       // 够不到阈值的不进重点发现
+    const score = rowSigScore(r, m);
+    if (score === -Infinity) return;
+    all.push({ field: b.field, row: r, score, metric: m });
+  }));
+  all.sort((a, b) => b.score - a.score);
+  // ⚠️ 一个字段最多占一条。二值字段（BW / non-BW）的两行互为补集，是同一个发现的正反两面，
+  // 都列出来等于用两个名额说同一件事；多值字段的次强行也多半是被最强行挤出来的镜像。
+  // 这条摘要是「先看哪儿」的索引，名额应该花在不同字段上——想看全部的行点进卡片就有
+  const seen = new Set();
+  const picked = [];
+  all.forEach((f) => {
+    if (seen.has(f.field.id)) return;
+    seen.add(f.field.id);
+    picked.push(f);
+  });
+  return picked.slice(0, TOP_FINDINGS);
+}
+// 这一页一共检验了多少个组合、纯随机预计有几个会达到 p<0.05。
+// 丑话写在脸上：不写这句的话，用户会把排在最上面那条当成已经验证过的结论
+function findingsTestCount(breakdowns) {
+  const m = sigMetric();
+  let tested = 0;
+  breakdowns.forEach((b) => (b.rows || []).forEach((r) => { if (rowSigScore(r, m) !== -Infinity) tested++; }));
+  return { tested, expectedFalse: Math.round(tested * 0.05) };
+}
 function sortBreakdownRows(rows, baseWr) {
   const arr = rows.slice();
-  if (breakdownSort === "delta") {
+  if (isSigSort(breakdownSort)) {
+    // |z| / |t| 越大越靠前，方向（正面/反面发现）不影响排序，只影响行上的颜色
+    arr.sort((a, b) => (rowSigScore(b, breakdownSort) - rowSigScore(a, breakdownSort)) || (b.n - a.n));
+  } else if (breakdownSort === "delta") {
     const d = (r) => (r.wr === null || baseWr === null || baseWr === undefined ? -Infinity : Math.abs(r.wr - baseWr));
     arr.sort((a, b) => (d(b) - d(a)) || (b.n - a.n));
   } else if (breakdownSort === "ev") {
@@ -988,8 +1132,9 @@ function sortBreakdownRows(rows, baseWr) {
 // 一张拆解卡的行：样本够的正常画，样本不足的默认折成一行「其他 N 项」，点开才展开。
 // 折叠只在有 2 行以上可折时才做——折 1 行既不省高度又少了信息
 function breakdownRowsHtml(field, rows, baseWr) {
-  const strong = rows.filter((r) => r.n >= BREAKDOWN_MIN_SAMPLE);
-  const weak = rows.filter((r) => r.n < BREAKDOWN_MIN_SAMPLE);
+  const minN = currentMinSample();
+  const strong = rows.filter((r) => r.n >= minN);
+  const weak = rows.filter((r) => r.n < minN);
   let html = strong.map((r) => barRow(r, field.id, baseWr)).join("");
   if (!weak.length) return html;
   if (weak.length < 2) return html + weak.map((r) => barRow(r, field.id, baseWr)).join("");
@@ -999,14 +1144,19 @@ function breakdownRowsHtml(field, rows, baseWr) {
     html += `<button class="bdFoldRow" data-action="toggle-low-sample" data-field="${esc(field.id)}">${ICONS.chevUp} ${esc(T("breakdown.foldBack"))}</button>`;
   } else {
     const wn = weak.reduce((sum, r) => sum + r.n, 0);
-    html += `<button class="bdFoldRow" data-action="toggle-low-sample" data-field="${esc(field.id)}" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${ICONS.chevDown} ${esc(T("breakdown.folded", { k: weak.length, n: wn }))}</button>`;
+    html += `<button class="bdFoldRow" data-action="toggle-low-sample" data-field="${esc(field.id)}" title="${esc(T("breakdown.lowSampleTitle", { n: currentMinSample() }))}">${ICONS.chevDown} ${esc(T("breakdown.folded", { k: weak.length, n: wn }))}</button>`;
   }
   return html;
 }
 // 时间字段的拆解：按段分桶，空桶不出行（一张全是"—"的卡没意义），
 // 但顺序必须原样保留——时间轴打乱了就读不出「开盘那半小时最好、11 点以后最差」这种趋势。
 // ordered:true 就是告诉渲染层「这张卡别排序、别折叠」
-function computeTimeBreakdown(field, list, resultF, rF) {
+function computeTimeBreakdown(field, list, resultF, rF, minN) {
+  const min = minN || currentMinSample();
+  const sig = (sub) => {
+    const inSub = new Set(sub.map((t) => t.id));
+    return breakdownRowSignificance(sub, list.filter((t) => !inSub.has(t.id)), resultF, rF, min);
+  };
   const defs = timeBucketDefs();
   const buckets = defs.map(() => []);
   const other = [];
@@ -1020,16 +1170,55 @@ function computeTimeBreakdown(field, list, resultF, rF) {
   defs.forEach((d, i) => {
     if (!buckets[i].length) return;
     // 带上区间，行末的「+组合」才能建出 time 字段能用的区间条件（而不是 select 那种 values 条件）
-    rows.push({ ...breakdownRowStats(d.label, buckets[i], resultF, rF), rangeStart: d.start, rangeEnd: timeMinusOneMinute(d.end) });
+    rows.push({ ...breakdownRowStats(d.label, buckets[i], resultF, rF), sig: sig(buckets[i]), rangeStart: d.start, rangeEnd: timeMinusOneMinute(d.end) });
   });
   // 「其他时段」是所有段的补集，没法用一个连续区间表示，所以这行不给「+组合」按钮
-  if (other.length) rows.push({ ...breakdownRowStats(T("breakdown.timeOther"), other, resultF, rF), noCombo: true });
+  if (other.length) rows.push({ ...breakdownRowStats(T("breakdown.timeOther"), other, resultF, rF), sig: sig(other), noCombo: true });
   return { field, rows, ordered: true };
+}
+/* 给一行算显著性：这一行 vs 补集（当前范围里**不**含这个值的交易）。
+   多选字段一笔交易会落进好几行，行与行互相重叠，但「含这个值 / 不含这个值」仍然是一刀干净的二分，
+   所以每一行自己的检验是成立的——只是行之间不构成一个划分，这点不影响排序。
+
+   ⚠️ 阈值按「这个指标自己的分母」卡，不统一卡 n。因为 n 含 BE 而胜率只算 W/L：
+   一行 n=20 里有 18 个 BE 的话，它顶着 n=20 的外表混过 n≥5，但那个胜率其实只有 2 笔支撑。
+   胜率检验卡 W+L，R 检验卡「填了 R 的笔数」，显示层的折叠仍然卡 n（卡片上显示的就是 n）。 */
+function breakdownRowSignificance(sub, rest, resultF, rF, minN) {
+  const out = { z: null, t: null, p: null, pWr: null, pR: null, strong: false, dR: null, dWr: null };
+  const wl = (arr) => {
+    const w = arr.filter((t) => resultF && t[resultF.id] === "W").length;
+    const l = arr.filter((t) => resultF && t[resultF.id] === "L").length;
+    return [w, l];
+  };
+  if (resultF) {
+    const [w1, l1] = wl(sub), [w2, l2] = wl(rest);
+    if (w1 + l1 >= minN && w2 + l2 >= 1) {
+      out.z = twoProportionZ(w1, l1, w2, l2);
+      if (out.z !== null) {
+        out.pWr = twoSidedP(out.z);
+        out.dWr = (w1 / (w1 + l1)) * 100 - (w2 / (w2 + l2)) * 100;
+      }
+    }
+  }
+  if (rF) {
+    const rs = (arr) => arr.map((t) => parseFloat(t[rF.id])).filter((v) => !isNaN(v));
+    const a = rs(sub), b = rs(rest);
+    if (a.length >= minN && b.length >= 2) {
+      out.t = welchT(a, b);
+      if (out.t !== null) {
+        out.pR = twoSidedP(out.t);
+        const mean = (x) => x.reduce((s, v) => s + v, 0) / x.length;
+        out.dR = mean(a) - mean(b);
+      }
+    }
+  }
+  return out;
 }
 function computeBreakdowns(list) {
   const resultF = roleField("result"), rF = roleField("r_multiple");
-  return visibleBreakdownFields().map((f) => {
-    if (f.type === "time") return computeTimeBreakdown(f, list, resultF, rF);
+  const minN = currentMinSample();
+  const out = visibleBreakdownFields().map((f) => {
+    if (f.type === "time") return computeTimeBreakdown(f, list, resultF, rF, minN);
     const map = {};
     list.forEach((t) => {
       let vals = t[f.id];
@@ -1038,11 +1227,24 @@ function computeBreakdowns(list) {
       // 多选字段一笔交易会落进多行，所以各行 n 之和可能大于总笔数，这是预期行为
       vals.forEach((v) => { if (v === "" || v === null || v === undefined) return; if (!map[v]) map[v] = []; map[v].push(t); });
     });
-    const rows = Object.entries(map)
-      .map(([value, sub]) => breakdownRowStats(value, sub, resultF, rF))
-      .sort((a, b) => b.n - a.n);
+    const rows = Object.entries(map).map(([value, sub]) => {
+      const inSub = new Set(sub.map((t) => t.id));
+      const rest = list.filter((t) => !inSub.has(t.id));
+      const row = breakdownRowStats(value, sub, resultF, rF);
+      row.sig = breakdownRowSignificance(sub, rest, resultF, rF, minN);
+      return row;
+    }).sort((a, b) => b.n - a.n);
     return { field: f, rows };
   }).filter((b) => b.rows.length > 0);
+  // FDR 要在**所有字段所有行**这一整批上跑，不是每张卡各跑各的——
+  // 多重比较的分母是这一页总共检验了多少个组合。
+  // sig.p 是「当前口径下的 p 值」：胜率口径用 pWr，R 口径用 pR。用户切了排序口径，
+  // 该被校正的那一批也跟着换，所以这里现算，不在 breakdownRowSignificance 里写死
+  const m = sigMetric();
+  const all = out.reduce((acc, b) => acc.concat(b.rows), []);
+  all.forEach((r) => { if (r.sig) r.sig.p = m === "sig_wr" ? r.sig.pWr : r.sig.pR; });
+  markFdrSignificant(all);
+  return out;
 }
 /* ---------- 组合 ---------- */
 // 组合的完整筛选条件 = 用户自己加的条件（想只算 Taken / 排除人为错误，自己在下面加一行）。
@@ -1466,6 +1668,7 @@ function reviewRowPayload(r) {
     title: r.title || "",
     body: r.body || "",
     week_start: r.week_start || null,
+    day_date: r.day_date || null,
     linked_trade_ids: r.linked_trade_ids || extractTradeRefs(r.body),
     mode: r.mode || recordMode,
     group_id: r.group_id || null,
@@ -1477,13 +1680,9 @@ function reviewRowPayload(r) {
 /* 批量写。列不存在（迁移 SQL 没跑）时降级成只写老字段，并在页面上提示去跑 SQL，
    否则用户会看到「拖了一下什么都没发生」而不知道为什么。 */
 async function upsertReviewRows(rows) {
-  const { error } = await sb.from("journal_reviews").upsert(rows);
+  const error = await upsertReviewRowsHealing(rows);
   if (!error) { reviewPrefsError = null; return true; }
-  if (isMissingReviewColumn(error)) {
-    reviewPrefsError = T("reviewGroup.prefsMissing");
-    render();
-    return false;
-  }
+  if (isMissingReviewColumn(error)) { render(); return false; }   // 提示由 markReviewColumnMissing 那边的标志驱动
   console.error(error);
   reviewSaveError = T("review.saveFailed", { msg: error.message });
   render();
@@ -1492,7 +1691,33 @@ async function upsertReviewRows(rows) {
 function isMissingReviewColumn(err) {
   if (!err) return false;
   return err.code === "42703" || err.code === "PGRST204"
-    || /\b(mode|group_id|sort_order|review_prefs)\b/.test(err.message || "");
+    || /\b(mode|group_id|sort_order|day_date|review_prefs)\b/.test(err.message || "");
+}
+/* 从报错里抠出是哪一列没有。Postgres 说的是 column "day_date" of relation ...，
+   PostgREST 说的是 Could not find the 'day_date' column of ...，两种都认 */
+function missingColumnName(err) {
+  const m = (err && err.message || "").match(/["\u2018\u2019']([a-z_]+)["\u2018\u2019']/);
+  return m ? m[1] : null;
+}
+function markReviewColumnMissing(col) {
+  if (col === "day_date") reviewDayColumnMissing = true;
+  else reviewGroupColumnsMissing = true;
+}
+/* 缺哪一列就摘哪一列重存，最多试几轮。
+   正文绝不能因为某个新列还没建就存不下来——迁移 SQL 是可以晚点补的，写过的东西不是 */
+async function upsertReviewRowsHealing(rows) {
+  const payload = rows.map((r) => ({ ...r }));
+  let { error } = await sb.from("journal_reviews").upsert(payload);
+  let guard = 0;
+  while (error && isMissingReviewColumn(error) && !isMissingTableError(error) && guard < 5) {
+    const col = missingColumnName(error);
+    if (!col || !(col in payload[0])) break;
+    markReviewColumnMissing(col);
+    payload.forEach((r) => { delete r[col]; });
+    guard++;
+    ({ error } = await sb.from("journal_reviews").upsert(payload));
+  }
+  return error;
 }
 
 /* ============================================================
@@ -1503,6 +1728,12 @@ function isMissingReviewColumn(err) {
 const REVIEW_MISSING_CODES = ["42P01", "PGRST205", "PGRST202"];
 function isMissingTableError(err) {
   if (!err) return false;
+  // ⚠️ 先把「缺列」摘出去再判「缺表」。PostgREST 缺列时说的是
+  // Could not find the 'day_date' column of 'journal_reviews' in the schema cache——
+  // 里面同时有表名和 schema cache，只按那两个关键词匹配会把缺列误判成缺表，
+  // 于是自愈逻辑被跳过、正文直接存不下来（这个坑吃过一次）
+  if (err.code === "42703" || err.code === "PGRST204") return false;
+  if (/column/i.test(err.message || "")) return false;
   if (REVIEW_MISSING_CODES.includes(err.code)) return true;
   return /journal_reviews/.test(err.message || "") && /(does not exist|schema cache)/i.test(err.message || "");
 }
@@ -1548,20 +1779,15 @@ async function persistReview(rev, opts) {
     title: rev.title || "",
     body: rev.body || "",
     week_start: rev.week_start || null,
+    day_date: rev.day_date || null,
     linked_trade_ids: extractTradeRefs(rev.body),
     mode: rev.mode || recordMode,
     group_id: rev.group_id || null,
     sort_order: rev.sort_order === undefined ? null : rev.sort_order,
     updated_at: new Date().toISOString(),
   };
-  let { error } = await sb.from("journal_reviews").upsert(row);
-  // 迁移 SQL 没跑：把新列摘掉重存一次，正文不能因为分组功能存不下来就丢
-  if (error && isMissingReviewColumn(error) && !isMissingTableError(error)) {
-    reviewGroupColumnsMissing = true;
-    const legacy = { ...row };
-    delete legacy.mode; delete legacy.group_id; delete legacy.sort_order;
-    ({ error } = await sb.from("journal_reviews").upsert(legacy));
-  }
+  // 迁移 SQL 没跑：缺哪一列摘哪一列重存，正文不能因为某个新功能存不下来就丢
+  const error = await upsertReviewRowsHealing([row]);
   if (error) {
     if (isMissingTableError(error)) { reviewsTableMissing = true; reviewSaveError = T("review.tableMissing"); return false; }
     console.error(error);
@@ -2497,12 +2723,23 @@ function renderGrid() {
 /* ============================================================
    RENDER — ANALYTICS VIEW
    ============================================================ */
-// 样本这么少的行不画色条、不标 delta：n=3 的 67% 是噪音，不能长得跟 n=80 的 67% 一样有说服力
-const BREAKDOWN_MIN_SAMPLE = 5;
+/* 「强信号」徽章只发给过了 BH FDR 的行。
+   ⚠️ 刻意不显示 p 值、也不用「显著」当结论词：这个分数的用途是**排序**，不是下结论。
+   50 个组合里纯随机就有 ~2.5 个能达到 p<0.05，把 p 值摆出来只会让用户把噪音当证据。 */
+function strongTagHtml(row) {
+  if (!row.sig || !row.sig.strong) return "";
+  const m = sigMetric();
+  const d = m === "sig_wr" ? row.sig.dWr : row.sig.dR;
+  const up = d !== null && d !== undefined && d > 0;
+  const detail = m === "sig_wr"
+    ? T("breakdown.strongTitleWr", { d: (d >= 0 ? "+" : "") + (d || 0).toFixed(1) })
+    : T("breakdown.strongTitleR", { d: (d >= 0 ? "+" : "") + (d || 0).toFixed(2) });
+  return ` <span class="bdStrongTag ${up ? "up" : "down"}" title="${esc(detail)}">${esc(T(up ? "breakdown.strongUp" : "breakdown.strongDown"))}</span>`;
+}
 // baseWr = 这一批交易的整体胜率。传了就在每行右边标出「相对整体 +9.2pp」——
 // 拆解真正有信息量的是差值，绝对胜率高往往只是因为整批本来就高
 function barRow(row, fieldId, baseWr) {
-  const low = row.n < BREAKDOWN_MIN_SAMPLE;
+  const low = row.n < currentMinSample();
   const width = row.wr === null || low ? 0 : row.wr;
   const color = row.wr === null ? "var(--mutedDark)" : row.wr >= 60 ? "var(--pos)" : row.wr >= 45 ? "var(--accent)" : "var(--neg)";
   const rPart = row.hasR
@@ -2511,7 +2748,7 @@ function barRow(row, fieldId, baseWr) {
   const delta = !low && baseWr !== undefined && baseWr !== null && row.wr !== null ? " " + deltaText(row.wr, baseWr, "pp", 1) : "";
   return `<div class="barRow${low ? " lowSample" : ""}">
     <div class="barTop">
-      <span style="color:var(--text)">${esc(row.value)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</span>
+      <span style="color:var(--text)">${esc(row.value)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: currentMinSample() }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}${strongTagHtml(row)}</span>
       <span class="mono" style="color:var(--muted)">n=${row.n} · ${fmtPct(row.wr)}${delta}</span>
     </div>
     <div class="barTrack"><div class="barFill" style="width:${width}%;background:${color}"></div></div>
@@ -2849,6 +3086,40 @@ function renderCombosSection() {
   return html;
 }
 
+/* ---------- 分析页：重点发现 ----------
+   跨所有字段所有值，按 |z| / |t| 取最高的几条摆在拆解区最上面，点一条直接跳到对应的拆解卡。
+   ⚠️ 底下那句「检验了 N 个组合、预计 ~X 个是随机波动」不是免责套话，是这个功能的必要组成：
+   50 个组合按 p<0.05 纯随机就有 ~2.5 个达标，不写这句用户会把第一条当成已验证的结论。 */
+function renderTopFindings(breakdowns) {
+  const top = topFindings(breakdowns);
+  if (!top.length) return "";
+  const { tested, expectedFalse } = findingsTestCount(breakdowns);
+  const rows = top.map((f) => {
+    const m = f.metric;
+    const d = m === "sig_wr" ? f.row.sig.dWr : f.row.sig.dR;
+    const up = d > 0;
+    const diff = m === "sig_wr"
+      ? T("finding.diffWr", { d: (d >= 0 ? "+" : "") + d.toFixed(1) })
+      : T("finding.diffR", { d: (d >= 0 ? "+" : "") + d.toFixed(2) });
+    const metricText = m === "sig_wr" ? fmtPct(f.row.wr) : (f.row.hasR ? T("finding.ev", { v: fmtNum(f.row.ev, 2) }) : "—");
+    return `<button class="findingRow" data-action="scroll-to-breakdown" data-id="${esc(f.field.id)}" title="${esc(T("finding.jump", { label: f.field.label }))}">
+      <span class="findingDir ${up ? "up" : "down"}">${up ? "▲" : "▼"}</span>
+      <span class="findingWhat"><b>${esc(f.field.label)}</b> = ${esc(f.row.value)}</span>
+      <span class="findingMeta mono">${T("finding.n", { n: f.row.n })} · ${metricText}</span>
+      <span class="findingDiff mono ${up ? "up" : "down"}">${esc(diff)}</span>
+      ${f.row.sig.strong ? `<span class="bdStrongTag ${up ? "up" : "down"}">${esc(T("breakdown.strongTag"))}</span>` : ""}
+    </button>`;
+  }).join("");
+  return `<div class="findingsBox">
+    <div class="findingsHead">
+      <span class="sectionLabel" style="margin:0;">⟦ ${esc(T("finding.title"))} ⟧</span>
+      <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T(sigMetric() === "sig_wr" ? "finding.basisWr" : "finding.basisR"))}</span>
+    </div>
+    ${rows}
+    <div class="findingsNote">${esc(T("finding.caution", { n: tested, k: expectedFalse }))}</div>
+  </div>`;
+}
+
 /* ---------- 分析页：拆解显示配置 ---------- */
 function renderBreakdownPicker() {
   const hidden = analysisPrefs.breakdownHidden || [];
@@ -2866,6 +3137,11 @@ function renderBreakdownPicker() {
           <span style="font-size:11px;color:var(--mutedDark);">${esc(fieldTypeLabel(f.type))}${f.role ? " · " + esc(f.role) : ""}</span>
         </label>
       </div>`).join("")}
+    </div>
+    <div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
+      <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("breakdown.minSampleHint")}</div>
+      <input type="number" min="1" max="999" step="1" class="input mono" data-bind="min-sample" value="${currentMinSample()}" style="font-size:12.5px;max-width:120px;" />
+      <div style="font-size:11px;color:var(--mutedDark);margin-top:6px;line-height:1.6;">${T("breakdown.minSampleNote", { n: currentMinSample() })}</div>
     </div>
     ${hasTime ? `<div style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px;">
       <div style="font-size:11.5px;color:var(--mutedDark);margin-bottom:8px;">${T("breakdown.timeBucketsHint")}</div>
@@ -2886,10 +3162,10 @@ function renderBreakdownPicker() {
 function renderRecentPanel(stats) {
   const rows = recentWindowStats(stats.list);
   const cell = (label, s, isBase) => {
-    const low = !isBase && s.n > 0 && s.n < BREAKDOWN_MIN_SAMPLE;
+    const low = !isBase && s.n > 0 && s.n < currentMinSample();
     const delta = !isBase && !low && s.wr !== null && stats.wr !== null ? " " + deltaText(s.wr, stats.wr, "pp", 1) : "";
     return `<div class="recentBox${isBase ? " recentBase" : ""}${low ? " lowSample" : ""}">
-      <div class="recentLabel">${esc(label)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: BREAKDOWN_MIN_SAMPLE }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</div>
+      <div class="recentLabel">${esc(label)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: currentMinSample() }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</div>
       <div class="recentWr" style="color:${s.wr === null ? "var(--mutedDark)" : "var(--accent)"}">${fmtPct(s.wr)}${delta}</div>
       <div class="recentMeta mono">n=${s.n} · W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</div>
       ${s.hasR ? `<div class="recentMeta mono"><span style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span> · EV ${fmtNum(s.ev, 2)}</div>` : ""}
@@ -2964,24 +3240,33 @@ function renderAnalytics() {
     `<span class="anaSectionActions">
       <span style="font-size:11.5px;color:var(--mutedDark);">${T("breakdown.sortBy")}</span>
       <select class="select" data-bind="breakdown-sort" style="padding:4px 8px;font-size:12px;">
+        <option value="sig_r" ${breakdownSort === "sig_r" ? "selected" : ""}>${esc(T("breakdown.sortSigR"))}</option>
+        <option value="sig_wr" ${breakdownSort === "sig_wr" ? "selected" : ""}>${esc(T("breakdown.sortSigWr"))}</option>
         <option value="n" ${breakdownSort === "n" ? "selected" : ""}>${esc(T("breakdown.sortN"))}</option>
         <option value="delta" ${breakdownSort === "delta" ? "selected" : ""}>${esc(T("breakdown.sortDelta"))}</option>
         <option value="ev" ${breakdownSort === "ev" ? "selected" : ""}>${esc(T("breakdown.sortEv"))}</option>
       </select>
+      <span class="viewToggle textToggle" title="${esc(T("breakdown.cardOrderTitle"))}">
+        <button class="viewBtn ${breakdownCardOrder === "sig" ? "active" : ""}" data-action="set-bd-card-order" data-mode="sig">${esc(T("breakdown.cardOrderSig"))}</button>
+        <button class="viewBtn ${breakdownCardOrder === "manual" ? "active" : ""}" data-action="set-bd-card-order" data-mode="manual">${esc(T("breakdown.cardOrderManual"))}</button>
+      </span>
       ${!viewingUserId ? `<button class="btn ${breakdownPickerOpen ? "btn-primary" : ""}" data-action="toggle-breakdown-picker" style="padding:4px 10px;font-size:12px;">${ICONS.settings} ${T("breakdown.displaySettings")}</button>` : ""}
     </span>`);
 
   if (!bdCollapsed) {
     if (breakdownPickerOpen && !viewingUserId) html += renderBreakdownPicker();
+    html += renderTopFindings(allBreakdowns);
     if (breakdowns.length) {
       html += `<div class="breakdownGrid">`;
-      breakdowns.forEach((b) => {
-        const draggable = !viewingUserId ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
+      // ⚠️ 按显著性自动排的时候必须把拖拽关掉：拖了没反应还不报错是这个项目明令禁止的那类交互
+      sortBreakdownCards(breakdowns).forEach((b) => {
+        const canDrag = !viewingUserId && breakdownCardOrder === "manual";
+        const draggable = canDrag ? ` draggable="true" data-bd-card-id="${esc(b.field.id)}"` : "";
         // 多选字段一笔交易会落进多行，各行 n 之和大于总笔数——小样本下特别容易被当成 bug，标出来
         const multi = b.field.type === "multiselect";
-        html += `<div class="breakdownCard"${draggable}>
+        html += `<div class="breakdownCard" id="bd_${esc(b.field.id)}"${draggable}>
           <div class="breakdownTitle" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <span>${!viewingUserId ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}${b.ordered ? ` <span class="bdMultiTag" title="${esc(T("breakdown.timeTagTitle"))}">${esc(T("breakdown.timeTag"))}</span>` : ""}</span>
+            <span>${canDrag ? `<span style="cursor:grab;color:var(--mutedDark);" title="${esc(T("common.dragToReorder"))}">⠿</span> ` : ""}${esc(b.field.label)}${multi ? ` <span class="bdMultiTag" title="${esc(T("breakdown.multiTitle"))}">${esc(T("breakdown.multiTag"))}</span>` : ""}${b.ordered ? ` <span class="bdMultiTag" title="${esc(T("breakdown.timeTagTitle"))}">${esc(T("breakdown.timeTag"))}</span>` : ""}</span>
             ${!viewingUserId ? `<button class="tinyBtn" data-action="hide-breakdown-field" data-id="${esc(b.field.id)}" title="${esc(T("breakdown.hideField"))}">${ICONS.x}</button>` : ""}
           </div>
           ${b.ordered
@@ -3297,6 +3582,34 @@ function toDateStr(d) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 function thisMondayStr() { return toDateStr(mondayOf(new Date())); }
+function todayStr() { return toDateStr(new Date()); }
+function yesterdayStr() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toDateStr(d);
+}
+/* 用户在周模式下随手挑了个周三，也要归到那一周的周一去——
+   week_start 这个名字就意味着它必须是周一，不然筛选和显示都会对不上 */
+function mondayOfStr(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T00:00:00");
+  return isNaN(d.getTime()) ? "" : toDateStr(mondayOf(d));
+}
+
+/* 一篇复盘关联到什么：'day' / 'week' / ''（自由帖）。
+   day_date 优先——两个都填了（理论上不会，切换时会清另一个）也有确定的落点 */
+function reviewPeriodKind(r) {
+  if (r && r.day_date) return "day";
+  if (r && r.week_start) return "week";
+  return "";
+}
+/* 卡片和只读态上那枚标签 */
+function reviewPeriodTagText(r) {
+  const kind = reviewPeriodKind(r);
+  if (kind === "day") return r.day_date;
+  if (kind === "week") return T("review.weekOf", { date: r.week_start });
+  return T("review.freePost");
+}
 function lastMondayStr() {
   const m = mondayOf(new Date());
   m.setDate(m.getDate() - 7);
@@ -3335,7 +3648,7 @@ function renderReviewCard(r, showGroup) {
           </span>`)}
     </div>
     <div class="reviewCardMeta mono">
-      <span class="reviewWeekTag ${r.week_start ? "on" : ""}">${esc(r.week_start ? T("review.weekOf", { date: r.week_start }) : T("review.freePost"))}</span>
+      <span class="reviewWeekTag ${reviewPeriodKind(r) ? "on" : ""}">${esc(reviewPeriodTagText(r))}</span>
       <span>${esc(T("review.edited", { time: fmtReviewTime(r.updated_at || r.created_at) }))}</span>
       ${linked ? `<span class="reviewLinkTag">${ICONS.grid} ${esc(T("review.linkedTrades", { n: linked }))}</span>` : ""}
       ${showGroup && g ? `<span class="reviewInGroupTag">${esc(T("reviewGroup.inGroup", { name: g.name || T("reviewGroup.ungrouped") }))}</span>` : ""}
@@ -3402,7 +3715,11 @@ function renderReviews() {
 
   if (reviewGroupColumnsMissing) {
     html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(T("reviewGroup.prefsMissing"))}</span></div>`;
-  } else if (reviewPrefsError) {
+  }
+  if (reviewDayColumnMissing) {
+    html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(T("review.dayColumnMissing"))}</span></div>`;
+  }
+  if (!reviewGroupColumnsMissing && reviewPrefsError) {
     html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(reviewPrefsError)}</span></div>`;
   }
 
@@ -3530,17 +3847,30 @@ function updateReviewSaveBadge() {
 function reviewWeekRowInnerHtml() {
   if (!editingReview) return "";
   const readOnly = reviewIsReadOnly();
-  const week = editingReview.week_start || "";
-  // 只读态是拿来看的，一排禁用按钮纯属噪音——只留一枚说明关联到哪一周的标签
+  // 只读态是拿来看的，一排禁用按钮纯属噪音——只留一枚说明关联到哪天/哪周的标签
   if (readOnly) {
-    return `<span class="reviewWeekTag ${week ? "on" : ""}">${esc(week ? T("review.weekOf", { date: week }) : T("review.freePost"))}</span>`
+    return `<span class="reviewWeekTag ${reviewPeriodKind(editingReview) ? "on" : ""}">${esc(reviewPeriodTagText(editingReview))}</span>`
       + (viewingUserId ? `<span class="reviewReadOnly">${esc(T("review.readOnly"))}</span>` : "");
   }
-  return `<span class="reviewWeekLabel">${esc(T("review.linkedWeek"))}</span>
-    <button class="tinyBtn ${week === thisMondayStr() ? "on" : ""}" data-action="review-week" data-week="this">${esc(T("review.weekThis"))}</button>
-    <button class="tinyBtn ${week === lastMondayStr() ? "on" : ""}" data-action="review-week" data-week="last">${esc(T("review.weekLast"))}</button>
-    <input type="date" class="input reviewWeekDate" value="${esc(week)}" data-review-week-date />
-    <button class="tinyBtn ${week ? "" : "on"}" data-action="review-week" data-week="clear">${esc(T("review.weekClear"))}</button>`;
+  const kind = reviewPeriodKind(editingReview);
+  const day = editingReview.day_date || "";
+  const week = editingReview.week_start || "";
+  const seg = (k, labelKey) =>
+    `<button class="tinyBtn ${kind === k ? "on" : ""}" data-action="review-period" data-kind="${k}">${esc(T(labelKey))}</button>`;
+
+  let tail = "";
+  if (kind === "day") {
+    tail = `<button class="tinyBtn ${day === todayStr() ? "on" : ""}" data-action="review-day" data-day="today">${esc(T("review.dayToday"))}</button>
+      <button class="tinyBtn ${day === yesterdayStr() ? "on" : ""}" data-action="review-day" data-day="yesterday">${esc(T("review.dayYesterday"))}</button>
+      <input type="date" class="input reviewWeekDate" value="${esc(day)}" data-review-day-date />`;
+  } else if (kind === "week") {
+    tail = `<button class="tinyBtn ${week === thisMondayStr() ? "on" : ""}" data-action="review-week" data-week="this">${esc(T("review.weekThis"))}</button>
+      <button class="tinyBtn ${week === lastMondayStr() ? "on" : ""}" data-action="review-week" data-week="last">${esc(T("review.weekLast"))}</button>
+      <input type="date" class="input reviewWeekDate" value="${esc(week)}" data-review-week-date />`;
+  }
+  return `<span class="reviewWeekLabel">${esc(T("review.linkedPeriod"))}</span>
+    <span class="reviewPeriodSeg">${seg("day", "review.periodDay")}${seg("week", "review.periodWeek")}${seg("", "review.periodNone")}</span>
+    ${tail}`;
 }
 function refreshReviewWeekRow() {
   const row = document.getElementById("reviewWeekRow");
@@ -4337,7 +4667,7 @@ function openReviewEditor(id) {
   const r = reviews.find((x) => x.id === id);
   if (!r) return;
   editingReview = {
-    id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "",
+    id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "", day_date: r.day_date || "",
     mode: r.mode || recordMode, group_id: r.group_id || null,
     sort_order: r.sort_order === undefined ? null : r.sort_order,
     _isNew: false,
@@ -4354,7 +4684,10 @@ function openNewReview(opts) {
   const o = opts || {};
   editingReview = {
     id: newReviewId(), title: "", body: "",
-    week_start: o.weekStart !== undefined ? o.weekStart : thisMondayStr(),
+    // 顶部「写复盘」默认关联到今天：交易日记里按天复盘远比按周频繁，
+    // 想写周复盘点一下「周」就行。分组里新建仍然什么都不关联
+    week_start: o.weekStart !== undefined ? o.weekStart : "",
+    day_date: o.dayDate !== undefined ? o.dayDate : todayStr(),
     mode: recordMode,
     group_id: o.groupId || null,
     sort_order: null,
@@ -5642,6 +5975,19 @@ document.addEventListener("click", async (e) => {
     if (target && target.scrollIntoView) target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   else if (action === "scroll-top") { window.scrollTo({ top: 0, behavior: "smooth" }); }
+  else if (action === "set-bd-card-order") {
+    breakdownCardOrder = el.dataset.mode === "manual" ? "manual" : "sig";
+    saveBreakdownCardOrder(); render();
+  }
+  else if (action === "scroll-to-breakdown") {
+    const target = document.getElementById("bd_" + el.dataset.id);
+    if (target && target.scrollIntoView) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 跳过去之后闪一下，否则一屏十几张卡，用户不知道到底跳到哪张了
+      target.classList.add("bdFlash");
+      setTimeout(() => target.classList.remove("bdFlash"), 1200);
+    }
+  }
   else if (action === "hide-breakdown-field") {
     if (viewingUserId) return;
     const id = el.dataset.id;
@@ -5653,6 +5999,7 @@ document.addEventListener("click", async (e) => {
     analysisPrefs.breakdownHidden = [];
     analysisPrefs.breakdownOrder = [];
     analysisPrefs.timeBuckets = DEFAULT_TIME_BUCKETS.slice();
+    analysisPrefs.minSample = BREAKDOWN_MIN_SAMPLE;
     await saveAnalysisPrefsNow(); render();
   }
   else if (action === "add-changelog") {
@@ -5705,7 +6052,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "new-review-in-group") {
     // 在分组里新建的默认「不关联周」：分组基本是给「常见错误 / 猜想」这类
     // 跟某一周无关的条目用的。顶部那个「写复盘」还是默认本周
-    if (!viewingUserId) openNewReview({ groupId: el.dataset.groupId || "", weekStart: "" });
+    if (!viewingUserId) openNewReview({ groupId: el.dataset.groupId || "", weekStart: "", dayDate: "" });
   }
   else if (action === "add-review-group") {
     if (viewingUserId) return;
@@ -5791,9 +6138,33 @@ document.addEventListener("click", async (e) => {
     if (body) body.classList.toggle("noPreview", !reviewPreviewOpen);
     el.textContent = reviewPreviewOpen ? T("review.previewOn") : T("review.previewOff");
   }
+  else if (action === "review-period") {
+    if (!editingReview || reviewIsReadOnly()) return;
+    // 日和周互斥：切过去就把另一边清掉，免得两个都填着，显示和筛选说不清
+    const kind = el.dataset.kind;
+    if (kind === "day") {
+      editingReview.week_start = "";
+      if (!editingReview.day_date) editingReview.day_date = todayStr();
+    } else if (kind === "week") {
+      editingReview.day_date = "";
+      if (!editingReview.week_start) editingReview.week_start = thisMondayStr();
+    } else {
+      editingReview.day_date = ""; editingReview.week_start = "";
+    }
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+  }
+  else if (action === "review-day") {
+    if (!editingReview || reviewIsReadOnly()) return;
+    editingReview.week_start = "";
+    editingReview.day_date = el.dataset.day === "yesterday" ? yesterdayStr() : todayStr();
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+  }
   else if (action === "review-week") {
     if (!editingReview || reviewIsReadOnly()) return;
     const w = el.dataset.week;
+    editingReview.day_date = "";
     editingReview.week_start = w === "this" ? thisMondayStr() : w === "last" ? lastMondayStr() : "";
     scheduleReviewSave();
     refreshReviewWeekRow();
@@ -5991,16 +6362,31 @@ document.addEventListener("input", (e) => {
 document.addEventListener("change", async (e) => {
   if (e.target.dataset.reviewWeekDate !== undefined) {
     if (!editingReview || reviewIsReadOnly()) return;
-    editingReview.week_start = e.target.value || "";
+    // 随手挑的日子归到那一周的周一——week_start 这个名字要求它就是周一
+    editingReview.week_start = mondayOfStr(e.target.value);
+    editingReview.day_date = "";
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+    return;
+  }
+  if (e.target.dataset.reviewDayDate !== undefined) {
+    if (!editingReview || reviewIsReadOnly()) return;
+    editingReview.day_date = e.target.value || "";
+    editingReview.week_start = "";
     scheduleReviewSave();
     refreshReviewWeekRow();
     return;
   }
   if (e.target.dataset.bind === "breakdown-sort") {
     const v = e.target.value;
-    breakdownSort = v === "delta" || v === "ev" ? v : "n";
+    breakdownSort = BREAKDOWN_SORTS.includes(v) ? v : "sig_r";
     try { localStorage.setItem("journal_breakdown_sort", breakdownSort); } catch (err) {}
     render();
+  }
+  else if (e.target.dataset.bind === "min-sample") {
+    if (viewingUserId) return;
+    analysisPrefs.minSample = sanitizeMinSample(e.target.value);
+    await saveAnalysisPrefsNow(); render();
   }
   else if (e.target.dataset.bind === "time-buckets") {
     if (viewingUserId) return;
@@ -6323,6 +6709,9 @@ document.addEventListener("drop", (e) => {
       const [moved] = ids.splice(dragBdIdx, 1);
       ids.splice(targetIdx, 0, moved);
       analysisPrefs.breakdownOrder = ids;
+      // 拖这个动作本身就表达了「我要自己排」。还停在「按显著性」的话，
+      // 用户辛苦拖完顺序、关掉设置面板一看卡片纹丝不动，会以为拖拽坏了
+      if (breakdownCardOrder !== "manual") { breakdownCardOrder = "manual"; saveBreakdownCardOrder(); }
       saveAnalysisPrefsNow();
       render();
     }
