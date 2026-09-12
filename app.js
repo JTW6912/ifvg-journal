@@ -127,7 +127,7 @@ function defaultSchema() {
     { id: "model", label: T("defaultField.model"), type: "select", role: "model", options: ["ifvg"] },
     { id: "entry", label: T("defaultField.entry"), type: "multiselect", role: "", options: ["displacement", "IFVG", "CISD"] },
     { id: "taken", label: T("defaultField.taken"), type: "select", role: "taken", options: ["Taken", "Faded"] },
-    { id: "result", label: T("defaultField.result"), type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W"] },
+    { id: "result", label: T("defaultField.result"), type: "select", role: "result", options: ["W", "L", "BE", "BE -> L", "BE -> W", "Partial"] },
     { id: "r_multiple", label: T("defaultField.r_multiple"), type: "number", role: "r_multiple" },
     { id: "human_error", label: T("defaultField.human_error"), type: "select", role: "human_error", options: ["yes", "no"] },
     { id: "setup_grade_self", label: T("defaultField.setup_grade_self"), type: "select", role: "", options: ["A+", "A", "B+", "B", "C", "D"] },
@@ -469,9 +469,38 @@ function downloadFile(filename, content, mime) {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+/* ============================================================
+   结果口径 —— 一个 result 值到底算赢还是算输
+   胜率、日历的绿/红、拆解里的 W/L 全都只看 result 这一个字段，所以判定集中在这里。
+   别处一律走 resultBucket()，不要再写 t[resultF.id] === "W" 这种散落的字面量比较——
+   以前就是散着写的，用户往选项里加一个新值，得改十几处才认得出来。
+
+   partial = 没走到 full TP，但吃满了预设的那个固定 R。账面上它就是一笔赢单，
+   所以跟 W 放同一个桶：算进胜率的分子，颜色走 --pos。
+   ⚠ 日历格子的绿/红另说——那是按当天 R 总和定的，跟这里的赢/输桶无关。
+   partial 的 +1R 自然会把当天总和顶上去，但赢一笔亏一笔刚好打平的日子仍然是灰色。
+
+   BE 三兄弟各占一桶，别并进 win：SQ 的口径是 (w + bew) / (w + l + bew + bel)，
+   "保本后转赢"在那条公式里是单独一项，混进 win 会被重复数一次。
+
+   比较前统一 trim + 转小写，用户在设置页写成 "Partial"、"PARTIAL"、"be -> w" 都认。
+   ============================================================ */
+const RESULT_BUCKETS = {
+  "w": "win", "partial": "win",
+  "l": "loss",
+  "be": "be", "be -> w": "bewin", "be -> l": "beloss",
+};
+function resultBucket(v) {
+  return RESULT_BUCKETS[String(v === undefined || v === null ? "" : v).trim().toLowerCase()] || "other";
+}
+function isWinResult(v) { return resultBucket(v) === "win"; }
+function isLossResult(v) { return resultBucket(v) === "loss"; }
+// 三种 BE 都算"碰过保本"，拆解卡那列 be 用它
+function isAnyBEResult(v) { const b = resultBucket(v); return b === "be" || b === "bewin" || b === "beloss"; }
 function resultColor(v) {
-  if (v === "W" || v === "BE -> W") return "var(--pos)";
-  if (v === "L" || v === "BE -> L") return "var(--neg)";
+  const b = resultBucket(v);
+  if (b === "win" || b === "bewin") return "var(--pos)";
+  if (b === "loss" || b === "beloss") return "var(--neg)";
   return "var(--muted)";
 }
 
@@ -824,8 +853,8 @@ function maxDrawdownR(list, rF) {
 function headerStats() {
   const takenF = roleField("taken"), resultF = roleField("result"), rF = roleField("r_multiple");
   const list = takenF ? trades.filter((t) => t[takenF.id] === "Taken") : trades;
-  const w = resultF ? list.filter((t) => t[resultF.id] === "W").length : 0;
-  const l = resultF ? list.filter((t) => t[resultF.id] === "L").length : 0;
+  const w = resultF ? list.filter((t) => isWinResult(t[resultF.id])).length : 0;
+  const l = resultF ? list.filter((t) => isLossResult(t[resultF.id])).length : 0;
   let ev = null, hasR = false;
   if (rF) {
     const totalR = list.reduce((sum, t) => {
@@ -839,11 +868,11 @@ function headerStats() {
 function computeStats() {
   const resultF = roleField("result"), takenF = roleField("taken"), rF = roleField("r_multiple");
   const list = analysisFilteredTrades();
-  const isW = (t) => resultF && t[resultF.id] === "W";
-  const isL = (t) => resultF && t[resultF.id] === "L";
-  const isBEW = (t) => resultF && t[resultF.id] === "BE -> W";
-  const isBEL = (t) => resultF && t[resultF.id] === "BE -> L";
-  const isBE = (t) => resultF && t[resultF.id] === "BE";
+  const isW = (t) => !!resultF && isWinResult(t[resultF.id]);
+  const isL = (t) => !!resultF && isLossResult(t[resultF.id]);
+  const isBEW = (t) => !!resultF && resultBucket(t[resultF.id]) === "bewin";
+  const isBEL = (t) => !!resultF && resultBucket(t[resultF.id]) === "beloss";
+  const isBE = (t) => !!resultF && resultBucket(t[resultF.id]) === "be";
   const w = list.filter(isW).length, l = list.filter(isL).length;
   const bew = list.filter(isBEW).length, bel = list.filter(isBEL).length, be = list.filter(isBE).length;
   const wr = w + l ? (w / (w + l)) * 100 : null;
@@ -1034,9 +1063,9 @@ function visibleBreakdownFields() {
 // 一个选项值下面那批交易的统计。n 是全部笔数（含 BE 系列），胜率分母只算 W 和 L。
 function breakdownRowStats(value, list, resultF, rF) {
   const res = (t) => (resultF ? t[resultF.id] : "");
-  const w = list.filter((t) => res(t) === "W").length;
-  const l = list.filter((t) => res(t) === "L").length;
-  const be = list.filter((t) => { const v = res(t); return v === "BE" || v === "BE -> W" || v === "BE -> L"; }).length;
+  const w = list.filter((t) => isWinResult(res(t))).length;
+  const l = list.filter((t) => isLossResult(res(t))).length;
+  const be = list.filter((t) => isAnyBEResult(res(t))).length;
   const wr = w + l ? (w / (w + l)) * 100 : null;
   let totalR = null, ev = null, hasR = false;
   if (rF) {
@@ -1186,8 +1215,8 @@ function computeTimeBreakdown(field, list, resultF, rF, minN) {
 function breakdownRowSignificance(sub, rest, resultF, rF, minN) {
   const out = { z: null, t: null, p: null, pWr: null, pR: null, strong: false, dR: null, dWr: null };
   const wl = (arr) => {
-    const w = arr.filter((t) => resultF && t[resultF.id] === "W").length;
-    const l = arr.filter((t) => resultF && t[resultF.id] === "L").length;
+    const w = arr.filter((t) => resultF && isWinResult(t[resultF.id])).length;
+    const l = arr.filter((t) => resultF && isLossResult(t[resultF.id])).length;
     return [w, l];
   };
   if (resultF) {
@@ -1357,8 +1386,8 @@ function aggregateTradeStats(list) {
   const clean = list;
   let rSum = 0, hasR = false;
   if (rF) clean.forEach((t) => { if (t[rF.id] !== undefined && t[rF.id] !== "") { rSum += parseFloat(t[rF.id]) || 0; hasR = true; } });
-  const w = resultF ? clean.filter((t) => t[resultF.id] === "W").length : 0;
-  const l = resultF ? clean.filter((t) => t[resultF.id] === "L").length : 0;
+  const w = resultF ? clean.filter((t) => isWinResult(t[resultF.id])).length : 0;
+  const l = resultF ? clean.filter((t) => isLossResult(t[resultF.id])).length : 0;
   let tone = "neutral";
   if (hasR) tone = rSum > 0.0001 ? "pos" : rSum < -0.0001 ? "neg" : "neutral";
   else if (w + l > 0) tone = w > l ? "pos" : w < l ? "neg" : "neutral";
@@ -2328,11 +2357,11 @@ function filterNodeListHtml(arr, ctx) {
 function filteredSummaryStats(list) {
   const rF = roleField("r_multiple"), resultF = roleField("result");
   const clean = list;
-  const w = resultF ? clean.filter((t) => t[resultF.id] === "W").length : 0;
-  const l = resultF ? clean.filter((t) => t[resultF.id] === "L").length : 0;
-  const be = resultF ? clean.filter((t) => t[resultF.id] === "BE").length : 0;
-  const bew = resultF ? clean.filter((t) => t[resultF.id] === "BE -> W").length : 0;
-  const bel = resultF ? clean.filter((t) => t[resultF.id] === "BE -> L").length : 0;
+  const w = resultF ? clean.filter((t) => isWinResult(t[resultF.id])).length : 0;
+  const l = resultF ? clean.filter((t) => isLossResult(t[resultF.id])).length : 0;
+  const be = resultF ? clean.filter((t) => resultBucket(t[resultF.id]) === "be").length : 0;
+  const bew = resultF ? clean.filter((t) => resultBucket(t[resultF.id]) === "bewin").length : 0;
+  const bel = resultF ? clean.filter((t) => resultBucket(t[resultF.id]) === "beloss").length : 0;
   const wr = w + l ? (w / (w + l)) * 100 : null;
   let totalR = null, ev = null, hasR = false;
   if (rF) {
@@ -5218,7 +5247,7 @@ function dayDetailModalHtml() {
               ${shot
                 ? `<img class="dayDetailThumb" src="${esc(shot)}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(shot)}" data-fallback-url="${esc(shot)}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
                 : `<div class="dayDetailThumbEmpty">${ICONS.camera}</div>`}
-              <span class="mono" style="color:${rc};font-weight:600;width:28px;flex-shrink:0;">${esc(result || "—")}</span>
+              <span class="mono dayDetailResult" style="color:${rc};">${esc(result || "—")}</span>
               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${modelF ? esc(t[modelF.id] || "") : ""}</span>
               ${rF && t[rF.id] !== undefined && t[rF.id] !== "" ? `<span class="mono" style="color:${rc};flex-shrink:0;">${(parseFloat(t[rF.id]) >= 0 ? "+" : "") + t[rF.id]}R</span>` : ""}
             </div>

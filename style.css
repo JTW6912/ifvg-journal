@@ -419,6 +419,9 @@ a{color:var(--accent);}
 .dayDetailThumb{width:120px;height:75px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:pointer;background:var(--surface2);}
 .dayDetailThumbEmpty{width:120px;height:75px;border-radius:8px;flex-shrink:0;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--mutedDark);}
 .dayDetailRow:hover{background:var(--surface2);}
+/* 结果列宽度自适应：min-width 保住 "W" 这种单字母的对齐，max-width + ellipsis 兜住
+   用户自定义的长选项，不让它溢出去盖在模型名上 */
+.dayDetailResult{font-weight:600;min-width:28px;max-width:96px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .field{margin-bottom:14px;}
 .fieldLabel{font-size:12px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:.3px;}
 .input,textarea.input,select.input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;
