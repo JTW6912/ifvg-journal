@@ -1355,17 +1355,22 @@ function comboConditionsText(combo) {
 }
 const COMBO_SMALL_SAMPLE = 10;
 
-function computeMonthCoverageForYear(year) {
+// `list` 是已经过筛选面板的那一批记录——覆盖度跟着用户当前的条件走：
+// 筛「只看 A 信号」，看到的就是 A 信号的历史覆盖，而不是永远的全量覆盖。
+// 不传就退回全量，保持旧调用方的行为。
+function computeMonthCoverageForYear(year, list) {
   const dateF = roleField("date");
+  const src = list || trades;
   const monthsData = {};
-  for (let i = 1; i <= 12; i++) monthsData[String(i).padStart(2, "0")] = { first: false, second: false };
+  for (let i = 1; i <= 12; i++) monthsData[String(i).padStart(2, "0")] = { first: false, second: false, count: 0 };
   if (dateF) {
-    trades.forEach((t) => {
+    src.forEach((t) => {
       const raw = t[dateF.id];
       if (!raw) return;
       const d = new Date(raw);
       if (isNaN(d.getTime()) || d.getFullYear() !== year) return;
       const mo = String(d.getMonth() + 1).padStart(2, "0"), day = d.getDate();
+      monthsData[mo].count++;
       if (day >= 1 && day <= 10) monthsData[mo].first = true;
       if (day >= 20) monthsData[mo].second = true;
     });
@@ -4831,21 +4836,30 @@ function renderDayCalendar() {
   </div></div>`;
   return html;
 }
-function renderHistoryCoverage() {
+function renderHistoryCoverage(list) {
   const statusLabel = { complete: T("coverage.complete"), partial: T("coverage.partial"), empty: T("coverage.empty") };
   const curYear = new Date().getFullYear();
+  // 筛选面板给什么，这里就统计什么。这段覆盖度回答的是「我要的这种信号，
+  // 哪些月份真的回测过」，而不是「哪些月份我随便写过一笔」——后者在筛选后没意义
+  const src = list || trades;
+  const filterCount = countFilterConditions(activeFilters);
   let html = `<div class="calendarPanel" style="margin-top:20px;">
   <div class="sectionLabel" style="margin:0 0 12px;padding:0;border:none;">⟦ ${esc(T("coverage.title", { year: curYear }))} ⟧</div>
-  <div style="font-size:12.5px;color:var(--muted);margin-bottom:20px;line-height:1.7;">
+  <div style="font-size:12.5px;color:var(--muted);margin-bottom:${filterCount ? 10 : 20}px;line-height:1.7;">
     ${T("coverage.rule")}</div>`;
+  if (filterCount) {
+    html += `<div class="coverageScope">${esc(T("coverage.filtered", { n: filterCount, count: src.length }))}</div>`;
+  }
   for (let y = curYear; y >= 2020; y--) {
-    const monthsData = computeMonthCoverageForYear(y);
-    html += `<div class="monthYear">${y}</div><div class="monthGrid">`;
+    const monthsData = computeMonthCoverageForYear(y, src);
+    const yearCount = Object.values(monthsData).reduce((a, m) => a + m.count, 0);
+    const done = Object.values(monthsData).filter((m) => m.status === "complete").length;
+    html += `<div class="monthYear">${y}<span class="coverageYearMeta">${esc(T("coverage.yearMeta", { done, count: yearCount }))}</span></div><div class="monthGrid">`;
     for (let i = 1; i <= 12; i++) {
       const mo = String(i).padStart(2, "0");
       const m = monthsData[mo];
       const isSelected = calendarYear === y && calendarMonth === i;
-      html += `<div class="monthCell ${m.status} ${isSelected ? "selected" : ""}" data-action="jump-to-history-month" data-year="${y}" data-month="${i}" style="cursor:pointer;"><div class="monthCellDate">${y}-${mo}</div><div class="monthCellStatus">${statusLabel[m.status]}</div></div>`;
+      html += `<div class="monthCell ${m.status} ${isSelected ? "selected" : ""}" data-action="jump-to-history-month" data-year="${y}" data-month="${i}" style="cursor:pointer;" title="${esc(T("coverage.cellTitle", { n: m.count }))}"><div class="monthCellDate">${y}-${mo}</div><div class="monthCellStatus">${statusLabel[m.status]}${m.status !== "empty" ? ` · ${m.count}` : ""}</div></div>`;
     }
     html += `</div>`;
   }
@@ -4858,7 +4872,7 @@ function renderCalendar() {
   const filtered = trades.filter((t) => tradeMatchesFilters(t, activeFilters));
   let html = renderFilterOriginBanner() + `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
-  if (recordMode === "backtest") html += renderHistoryCoverage();
+  if (recordMode === "backtest") html += renderHistoryCoverage(filtered);
   return html;
 }
 
