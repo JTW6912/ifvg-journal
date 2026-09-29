@@ -2566,9 +2566,9 @@ function renderFocusList(pageItems, totalCount, roles) {
        在这儿会变成灾难——一边翻一边看，误触一次就弹一个编辑器出来。
        这里点图是看原图（lightbox），要改得点右下角那个明确的"编辑" */
     html += `<div class="focusRow${focusSidePos === "bottom" ? " sideBottom" : ""}${shot ? "" : " noShot"}${i === focusCursor ? " isCurrent" : ""}" data-focus-row="${i}">
-      <div class="focusShot"${shot ? ` data-action="preview-image" data-url="${esc(shot)}"` : ""}>
+      <div class="focusShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"` : ""}>
         ${shot
-          ? `<img src="${esc(shot)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="focusShotEmpty" onerror="window.__imgFallback(this)" />
+          ? `<img src="${esc(imgSrc(shot))}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="focusShotEmpty" onerror="window.__imgFallback(this)" />
              <span class="focusZoomHint">${esc(T("focus.zoomHint"))}</span>`
           : `<div class="focusShotEmpty">${ICONS.camera} ${esc(T("focus.noShot"))}</div>`}
       </div>
@@ -2728,9 +2728,9 @@ function renderGrid() {
     }
     html += `<div class="card" data-action="edit-trade" data-id="${esc(t.id)}">
       <div class="cardImg">
-        ${shot ? `<img src="${esc(shot)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="cardImgFallback" onerror="window.__imgFallback(this)" />`
+        ${shot ? `<img src="${esc(imgSrc(shot))}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="cardImgFallback" onerror="window.__imgFallback(this)" />`
                : `<div class="cardImgFallback">${ICONS.camera}</div>`}
-        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(shot)}" title="${esc(T("grid.viewLarge"))}">${ICONS.expand}</button>` : ""}
+        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(imgSrc(shot))}" title="${esc(T("grid.viewLarge"))}">${ICONS.expand}</button>` : ""}
         ${result ? `<span class="resultBadge" style="background:${rc}">${esc(result)}</span>` : ""}
       </div>
       <div class="cardBody">
@@ -3370,6 +3370,17 @@ const MD_COLORS = ["red", "green", "yellow", "blue", "gray", "mark"];
    markdown 渲染器里能直接塞进属性，是因为那边整段在最开头就 esc() 过了。
    如果你从别处（比如原始字段值）拿 URL 过来用，必须自己再 esc() 一次，
    否则 `https://x.com/a" onmouseover="..."` 能从 href 里逃出去挂事件处理器。 */
+/* TradingView 的「复制链接」给的是快照页面（…/x/8z0cHCrw/），不是图片。图片本体在
+   s3.tradingview.com/snapshots/{id 首字符小写}/{id}.png —— 就是那个页面 og:image 里的地址，实测过。
+   存的仍然是用户粘的原链接（点开能回到 TV 页面），只在「显示成图片」的地方换成直链。
+   FX Replay 那种（fxr-snapshots-….s3.amazonaws.com/xxx.png）本来就是图片直链，原样放行。 */
+const TV_SNAPSHOT_RE = /^https?:\/\/(?:[a-z-]+\.)?tradingview\.com\/x\/([A-Za-z0-9]+)\/?(?:[?#]\S*)?$/i;
+function imgSrc(u) {
+  const raw = String(u || "").trim();
+  const m = raw.match(TV_SNAPSHOT_RE);
+  return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : raw;
+}
+
 function mdSafeUrl(u) {
   const raw = String(u || "").trim();
   // esc() 把 & 变成了 &amp;，放进 HTML 属性里本来就该是这个形态，不用还原
@@ -3409,7 +3420,7 @@ function mdInline(text, forEditor) {
 
   // 图片在链接之前（语法上 ![]() 是 []() 的超集）
   out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, url) => {
-    const safe = mdSafeUrl(url);
+    const safe = mdSafeUrl(url) && imgSrc(mdSafeUrl(url));
     if (!safe) return m;
     if (forEditor) return hold(`<img src="${safe}" alt="${alt}" />`);
     return hold(`<img class="mdImg" src="${safe}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${safe}" data-fallback-url="${safe}" data-fallback-class="mdImgFallback" onerror="window.__imgFallback(this)" />`);
@@ -4319,7 +4330,7 @@ async function mountReviewTiptap(seq) {
         handleDoubleClickOn: (view, pos, node) => {
           if (node.type.name !== "image") return false;
           const u = mdSafeUrl(node.attrs.src);
-          if (u) { lightboxUrl = u; renderSecondaryModals(true); }   // 只画灯箱那一层，不用整页重绘
+          if (u) openLightbox(view.nodeDOM(pos) || view.dom, u);
           return true;
         },
         handleClick: (view, pos, e) => {
@@ -4480,7 +4491,7 @@ function reviewEditorKeydown(view, e) {
 
 const IMAGE_URL_RE = /^https?:\/\/\S+\.(png|jpe?g|gif|webp|avif|bmp|svg)([?#]\S*)?$/i;
 /* ---------- 粘贴 ----------
-   - 光秃秃一个图片链接 → 直接变成图片
+   - 光秃秃一个图片链接（含 TradingView 快照页链接）→ 直接变成图片
    - 纯文本里带 markdown 块语法（从别处复制来的笔记）→ 按 markdown 排好版再放进来
    - 剪贴板里是图片文件本身 → 不上传（图片一律走外部图床，不占数据库），提示一下
    其余情况（包括选中文字粘链接 = 加链接）交给 Tiptap 默认处理 */
@@ -4496,8 +4507,9 @@ function reviewEditorPaste(view, e) {
     return true;
   }
   const url = text.trim();
-  if (!html && ed.state.selection.empty && IMAGE_URL_RE.test(url)) {
-    ed.chain().focus().insertContent({ type: "image", attrs: { src: url } }).run();
+  // TradingView 快照页面链接也算图片（imgSrc 换成直链）
+  if (!html && ed.state.selection.empty && (IMAGE_URL_RE.test(url) || TV_SNAPSHOT_RE.test(url))) {
+    ed.chain().focus().insertContent({ type: "image", attrs: { src: imgSrc(url) } }).run();
     return true;
   }
   if (!html && /\n/.test(text) && /^\s{0,3}(#{1,6}\s|[-*+]\s|\d+[.)]\s|>|```|\|.*\|)/m.test(text)) {
@@ -4812,7 +4824,7 @@ function applyReviewPop() {
   const kind = reviewPop.kind;
   closeReviewPop();
   if (kind === "image") {
-    ed.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: url } }).run();
+    ed.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: imgSrc(url) } }).run();
   } else {
     ed.chain().focus().insertContentAt(pos, [
       { type: "text", text: url, marks: [{ type: "link", attrs: { href: url } }] },
@@ -4896,7 +4908,7 @@ function tradePickerResultsHtml() {
       ? (parseFloat(rVal) >= 0 ? "+" : "") + rVal + "R" : "";
     return `<button class="tradePickerRow" data-action="pick-trade" data-id="${esc(t.id)}">
       ${shot
-        ? `<img class="tradePickerThumb" src="${esc(shot)}" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="tradePickerThumbEmpty" onerror="window.__imgFallback(this)" />`
+        ? `<img class="tradePickerThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tradePickerThumbEmpty" onerror="window.__imgFallback(this)" />`
         : `<span class="tradePickerThumbEmpty">${ICONS.camera}</span>`}
       <span class="tradePickerDate mono">${esc((dateF && t[dateF.id]) || "—")}</span>
       <span class="tradePickerModel">${esc((modelF && t[modelF.id]) || "")}</span>
@@ -5280,7 +5292,7 @@ function fieldInputHtml(field) {
 }
 function urlPreviewHtml(val) {
   if (!val || !/^https?:\/\//.test(val)) return "";
-  return `<div class="thumbWrap"><img class="thumb" src="${esc(val)}" referrerpolicy="no-referrer" data-fallback-url="${esc(val)}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">${T("modal.urlPreviewHint")}</div>`;
+  return `<div class="thumbWrap"><img class="thumb" src="${esc(imgSrc(val))}" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(val))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">${T("modal.urlPreviewHint")}</div>`;
 }
 window.__updateUrlPreview = function (fieldId, val) {
   formDraft[fieldId] = val;
@@ -5481,10 +5493,82 @@ function profileModalHtml() {
 }
 let profileGenderDraft = null;
 function lightboxHtml() {
-  return `<div class="overlay" data-action="close-lightbox" style="padding:30px;">
+  const nav = lightboxNav;
+  const navHtml = nav ? `
+    <button class="lbNav lbPrev" data-action="lightbox-prev" ${nav.index === 0 ? "disabled" : ""} title="${esc(T("lightbox.prev"))}">‹</button>
+    <button class="lbNav lbNext" data-action="lightbox-next" ${nav.index === nav.urls.length - 1 ? "disabled" : ""} title="${esc(T("lightbox.next"))}">›</button>
+    <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${esc(T("lightbox.hint"))}</div>` : "";
+  // 有翻页时两侧留出按钮的位置，宽图铺满也不会压在按钮底下
+  return `<div class="overlay${nav ? " lbHasNav" : ""}" data-action="close-lightbox"${nav ? "" : ' style="padding:30px;"'}>
     <img src="${esc(lightboxUrl)}" referrerpolicy="no-referrer" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" onclick="event.stopPropagation()" />
     <button class="iconBtn" data-action="close-lightbox" style="position:absolute;top:20px;right:24px;background:rgba(0,0,0,.5);color:#fff;">${ICONS.x}</button>
+    ${navHtml}
   </div>`;
+}
+
+/* ---------- 看大图：←/→ 翻图，背后的页面跟着对齐 ----------
+   打开时把「同一处」能看大图的图收成一个列表：记录页 = 当前这一页（看图模式 / 卡片 / 表格），
+   复盘 = 这篇正文，弹窗 = 那个弹窗（当日明细之类）。←/→ 在里面翻，到头就停，不循环。
+   每翻一张就把背后的页面滚到那张图的位置（看图模式对齐到行首，并把 J/K 的当前行一起挪过去），
+   所以关掉灯箱时，页面已经停在最后看的那一张上。
+   列表里存的是 URL 而不是 DOM 节点：灯箱和弹窗共用 #secondaryModalRoot，打开灯箱时弹窗
+   那层会被换掉，节点引用就失效了；对齐时按位置重新去 DOM 里找。
+   ⚠ 打开/关闭灯箱只画 #secondaryModalRoot，不走 render()：render() 会重建 #app，
+   看图模式的 <img> 全部重建、高度塌掉，刚对齐好的滚动位置就丢了。 */
+let lightboxNav = null;   // { scope: 'app' | 'review' | 'modal', urls: [], index }
+
+function lightboxScopeOf(el) {
+  if (el && el.closest && el.closest("#reviewEditorRoot")) return "review";
+  if (el && el.closest && el.closest("#secondaryModalRoot")) return "modal";
+  return "app";
+}
+function lightboxTargets(scope) {
+  if (scope === "review") {
+    return [...document.querySelectorAll("#reviewEditorRoot .reviewDoc img")].filter((img) => mdSafeUrl(img.getAttribute("src")));
+  }
+  const root = document.getElementById(scope === "modal" ? "secondaryModalRoot" : "app");
+  return root ? [...root.querySelectorAll('[data-action="preview-image"][data-url]')] : [];
+}
+function lightboxTargetUrl(el) { return (el.dataset && el.dataset.url) || el.getAttribute("src") || ""; }
+
+function openLightbox(el, url) {
+  const safe = mdSafeUrl(url);
+  if (!safe) return;
+  const scope = lightboxScopeOf(el);
+  const targets = lightboxTargets(scope);
+  let index = targets.indexOf(el);
+  if (index < 0) index = targets.findIndex((t) => t.contains(el) || (el && el.contains && el.contains(t)));
+  lightboxNav = index >= 0 && targets.length > 1 ? { scope, urls: targets.map(lightboxTargetUrl), index } : null;
+  lightboxUrl = safe;
+  renderSecondaryModals(true);
+}
+function stepLightbox(delta) {
+  const nav = lightboxNav;
+  if (!nav || !lightboxUrl) return;
+  const next = nav.index + delta;
+  if (next < 0 || next >= nav.urls.length) return;
+  nav.index = next;
+  lightboxUrl = nav.urls[next];
+  renderSecondaryModals(true);
+  alignLightboxSource();
+}
+function closeLightbox() {
+  lightboxUrl = null;
+  renderSecondaryModals(true);   // 从弹窗里打开的，这一步会把弹窗画回来
+  alignLightboxSource();
+  lightboxNav = null;
+}
+/* 把背后页面滚到当前这张图。弹窗里的图要等灯箱关掉、弹窗画回来之后才找得到 */
+function alignLightboxSource() {
+  const nav = lightboxNav;
+  if (!nav || (nav.scope === "modal" && lightboxUrl)) return;
+  const targets = lightboxTargets(nav.scope);
+  let el = targets[nav.index];
+  if (!el || lightboxTargetUrl(el) !== nav.urls[nav.index]) el = targets.find((t) => lightboxTargetUrl(t) === nav.urls[nav.index]);
+  if (!el) return;
+  const row = el.closest("[data-focus-row]");
+  if (row) setFocusCursor(+row.dataset.focusRow, "auto");
+  else el.scrollIntoView({ behavior: "auto", block: "center" });
 }
 let secondaryModalState = null;
 function dayDetailModalHtml() {
@@ -5506,7 +5590,7 @@ function dayDetailModalHtml() {
           return `<div class="dayDetailRow">
             <div data-action="open-trade-from-day" data-id="${esc(t.id)}" style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;min-width:0;">
               ${shot
-                ? `<img class="dayDetailThumb" src="${esc(shot)}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(shot)}" data-fallback-url="${esc(shot)}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
+                ? `<img class="dayDetailThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(imgSrc(shot))}" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
                 : `<div class="dayDetailThumbEmpty">${ICONS.camera}</div>`}
               <span class="mono dayDetailResult" style="color:${rc};">${esc(result || "—")}</span>
               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${modelF ? esc(t[modelF.id] || "") : ""}</span>
@@ -5625,9 +5709,9 @@ function tradePreviewHtml() {
         <button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button>
       </div>
       <div class="modalBody tradePreviewBody">
-        <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(shot)}"` : ""}>
+        <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"` : ""}>
           ${shot
-            ? `<img src="${esc(shot)}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(shot)}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />
+            ? `<img src="${esc(imgSrc(shot))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />
                <span class="tpZoomHint">${esc(T("tradePreview.zoomHint"))}</span>`
             : `<div class="tpShotEmpty">${ICONS.camera} ${esc(T("tradePreview.noShot"))}</div>`}
         </div>
@@ -6494,14 +6578,10 @@ document.addEventListener("click", async (e) => {
     renderSecondaryModals(true);
     if (t) { editingTrade = { ...t }; renderModal(true); }
   }
-  else if (action === "preview-image") {
-    lightboxUrl = el.dataset.url;
-    render();
-  }
-  else if (action === "close-lightbox") {
-    lightboxUrl = null;
-    render();
-  }
+  else if (action === "preview-image") { openLightbox(el, el.dataset.url); }
+  else if (action === "close-lightbox") { closeLightbox(); }
+  else if (action === "lightbox-prev") { stepLightbox(-1); }
+  else if (action === "lightbox-next") { stepLightbox(1); }
   else if (action === "logout") { userMenuOpen = false; await doLogout(); }
   else if (action === "set-record-mode") {
     if (recordMode === el.dataset.mode) return;
@@ -7076,19 +7156,35 @@ function focusKeyNav(e) {
   e.preventDefault();
   const next = Math.max(0, Math.min(rows.length - 1, focusCursor + delta));
   if (next === focusCursor) return true;   // 已经在头/尾，别白渲染一次
-  focusCursor = next;
-  rows.forEach((r, i) => r.classList.toggle("isCurrent", i === focusCursor));
-  rows[focusCursor].scrollIntoView({ behavior: "smooth", block: "start" });
-  // 只更新序号条，不重渲染整页——重渲染会把所有 <img> 拆了重建，滚动中途图会闪
-  const bar = document.querySelector(".focusIndex");
-  if (bar) bar.textContent = T("focus.position", { cur: focusCursor + 1, total: rows.length, n: focusIndexTotal }) + " · " + T("focus.navHint");
+  setFocusCursor(next, "smooth");
   return true;
 }
+/* 看图模式挪到第 i 行并对齐到行首。J/K 和看大图时的 ←/→ 共用。
+   只更新 class 和序号条，不重渲染整页——重渲染会把所有 <img> 拆了重建，滚动中途图会闪 */
+function setFocusCursor(i, behavior) {
+  const rows = document.querySelectorAll("[data-focus-row]");
+  if (!rows[i]) return;
+  focusCursor = i;
+  rows.forEach((r, k) => r.classList.toggle("isCurrent", k === focusCursor));
+  rows[focusCursor].scrollIntoView({ behavior: behavior || "auto", block: "start" });
+  const bar = document.querySelector(".focusIndex");
+  if (bar) bar.textContent = T("focus.position", { cur: focusCursor + 1, total: rows.length, n: focusIndexTotal }) + " · " + T("focus.navHint");
+}
+
+/* 看大图时 ←/→ 翻上一张/下一张。用捕获阶段抢在最前面：
+   复盘编辑器里双击图片打开灯箱时，焦点还在编辑器里，不拦的话方向键会先去挪编辑器的光标 */
+document.addEventListener("keydown", (e) => {
+  if (!lightboxUrl || e.isComposing) return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  e.preventDefault();
+  e.stopPropagation();
+  stepLightbox(e.key === "ArrowRight" ? 1 : -1);
+}, true);
 
 document.addEventListener("keydown", (e) => {
   if (focusKeyNav(e)) return;
   if (e.key !== "Escape") return;
-  if (lightboxUrl) { lightboxUrl = null; render(); return; }
+  if (lightboxUrl) { closeLightbox(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
   if (reviewPop) { closeReviewPop(true); return; }

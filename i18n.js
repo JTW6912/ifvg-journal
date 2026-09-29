@@ -435,6 +435,9 @@ const I18N = {
 
     /* ---------- 插入菜单 ---------- */
     "review.slash.title": "插入",
+    "lightbox.prev": "上一张 (←)",
+    "lightbox.next": "下一张 (→)",
+    "lightbox.hint": "← → 翻图 · Esc 关闭",
     "review.slash.text": "正文",
     "review.back": "复盘",
     "review.loadingEditor": "编辑器加载中…",
@@ -1064,6 +1067,9 @@ const I18N = {
 
     /* ---------- Insert menu ---------- */
     "review.slash.title": "Insert",
+    "lightbox.prev": "Previous (←)",
+    "lightbox.next": "Next (→)",
+    "lightbox.hint": "← → to browse · Esc to close",
     "review.slash.text": "Text",
     "review.back": "Reviews",
     "review.loadingEditor": "Loading editor…",

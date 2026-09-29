@@ -79,7 +79,10 @@ backtest sample of hundreds of trades without polluting your real track record.
 - **Sorting** by trade date / created / updated, ascending or descending.
 - **Draft protection** — a half-filled *new* trade is saved to local storage, so closing the
   tab by accident doesn't lose it. (Edits to existing trades are not drafted, by design.)
-- Screenshot URLs per trade, lazy-loaded thumbnails, click for a full-size lightbox.
+- Screenshot URLs per trade, lazy-loaded thumbnails, click for a full-size lightbox. **TradingView snapshot links**
+  (`tradingview.com/x/…`) are shown as the chart image itself; direct image links (e.g. FX Replay) work as-is.
+  In the lightbox, **← / →** step through the other images on the same page (or post, or dialog), and the page
+  behind scrolls along so it's sitting on the last one you looked at when you close it.
 
 ### Analytics
 

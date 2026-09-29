@@ -521,6 +521,18 @@ textarea.input{resize:vertical;}
 /* 高亮是背景色，文字颜色不动，才能和上面几种叠着用 */
 .mdC-mark{background:var(--accentSoft);box-shadow:0 0 0 2px var(--accentSoft);border-radius:2px;}
 
+/* 看大图时的左右翻页和计数条（灯箱本体是 lightboxHtml 里的内联样式） */
+.lbNav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;border:none;border-radius:10px;
+  background:rgba(0,0,0,.5);color:#fff;font-size:34px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.lbNav:hover:not(:disabled){background:rgba(0,0,0,.75);}
+.lbNav:disabled{opacity:.25;cursor:default;}
+.overlay.lbHasNav{padding:30px 72px 52px;}
+.lbPrev{left:16px;}
+.lbNext{right:16px;}
+.lbCount{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);padding:5px 12px;border-radius:14px;
+  background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;white-space:nowrap;pointer-events:none;}
+@media(max-width:640px){.overlay.lbHasNav{padding:30px 44px 52px;}.lbNav{width:34px;height:52px;font-size:26px;}.lbPrev{left:6px;}.lbNext{right:6px;}}
+
 /* 颜色面板里的一格（格式栏和插入菜单共用） */
 .colorSwatch{display:flex;align-items:center;gap:9px;width:100%;padding:6px 8px;background:transparent;
   border:none;border-radius:6px;color:var(--text);font-size:12.5px;cursor:pointer;text-align:left;
