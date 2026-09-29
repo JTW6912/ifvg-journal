@@ -345,7 +345,6 @@ const I18N = {
     "comboGroup.dropHintUngroup": "拖到这里可以把组合从分组里移出来",
 
     /* ---------- 分析设置保存 ---------- */
-    "prefs.saveErrorMissingColumn": "分析设置没能保存到数据库——journal_schema 表还缺 analysis_prefs 这一列，去 Supabase SQL Editor 跑一次：alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;",
     "prefs.saveError": "分析设置保存失败：{msg}",
     "combo.newName": "新组合 {n}",
     "combo.fromFilters": "来自筛选 {date}",
@@ -374,7 +373,6 @@ const I18N = {
     "review.periodNone": "不关联",
     "review.dayToday": "今天",
     "review.dayYesterday": "昨天",
-    "review.dayColumnMissing": "「日复盘」要用一列新字段，还没建。去 Supabase 后台 → SQL Editor 里把 docs/reviews-day-migration.sql 整段跑一次，刷新就好了。",
     "review.weekThis": "本周",
     "review.weekLast": "上周",
     "review.weekClear": "不关联",
@@ -384,7 +382,6 @@ const I18N = {
     "review.edited": "修改于 {time}",
     "review.confirmDelete": "删除这篇复盘？删了找不回来。",
     "review.deleteThis": "删除这篇",
-    "review.tableMissing": "复盘要用一张新表，还没建。去 Supabase 后台 → SQL Editor 里把 docs/reviews-migration.sql 整段跑一次，刷新就好了。",
     "review.saveFailed": "保存失败：{msg}",
     "review.readOnly": "只读查看中，改不了。",
 
@@ -407,7 +404,6 @@ const I18N = {
     "reviewGroup.modalRename": "给分组改名",
     "reviewGroup.nameLabel": "分组名字",
     "reviewGroup.namePlaceholder": "比如：常见错误 / 猜想待验证",
-    "reviewGroup.prefsMissing": "分组要用两列新字段，还没建。去 Supabase 后台 → SQL Editor 里把 docs/reviews-groups-migration.sql 整段跑一次，刷新就好了。",
     "reviewGroup.searchFlat": "搜索结果跨所有分组，暂时不按分组显示。",
     "reviewGroup.inGroup": "在「{name}」里",
     "review.saving": "保存中…",
@@ -590,6 +586,7 @@ const I18N = {
 
     /* ---------- 通用错误 ---------- */
     "error.loadData": "读取数据失败，请稍后刷新重试。如果一直这样，联系管理员检查一下数据库设置。",
+    "error.dbOutdated": "数据库结构比这个版本旧（缺表或缺列）。去 Supabase 后台 → SQL Editor，按文件名顺序把 supabase/migrations 里的 SQL 各跑一遍，然后刷新页面。",
     "error.saveTrade": "保存失败: {msg}",
     "error.publish": "发布失败：{msg}",
     "error.action": "操作失败：{msg}",
@@ -976,7 +973,6 @@ const I18N = {
     "comboGroup.dropHintUngroup": "Drop here to pull a combo back out of its group",
 
     /* ---------- Saving analysis settings ---------- */
-    "prefs.saveErrorMissingColumn": "Analysis settings couldn't be saved — the journal_schema table is missing the analysis_prefs column. Run this once in the Supabase SQL Editor: alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;",
     "prefs.saveError": "Couldn't save analysis settings: {msg}",
     "combo.newName": "New combo {n}",
     "combo.fromFilters": "From filters {date}",
@@ -1005,7 +1001,6 @@ const I18N = {
     "review.periodNone": "None",
     "review.dayToday": "Today",
     "review.dayYesterday": "Yesterday",
-    "review.dayColumnMissing": "Daily reviews need one new column that doesn\u2019t exist yet. Go to Supabase \u2192 SQL Editor and run docs/reviews-day-migration.sql once, then reload.",
     "review.weekThis": "This week",
     "review.weekLast": "Last week",
     "review.weekClear": "No week",
@@ -1016,7 +1011,6 @@ const I18N = {
     "review.edited": "Edited {time}",
     "review.confirmDelete": "Delete this review? It won't come back.",
     "review.deleteThis": "Delete this review",
-    "review.tableMissing": "Reviews need a new table that doesn't exist yet. Go to Supabase → SQL Editor and run docs/reviews-migration.sql once, then reload.",
     "review.saveFailed": "Save failed: {msg}",
     "review.readOnly": "Read-only view — you can't edit this.",
 
@@ -1039,7 +1033,6 @@ const I18N = {
     "reviewGroup.modalRename": "Rename group",
     "reviewGroup.nameLabel": "Group name",
     "reviewGroup.namePlaceholder": "e.g. Recurring mistakes / Ideas to test",
-    "reviewGroup.prefsMissing": "Groups need a couple of new columns that don’t exist yet. Go to Supabase → SQL Editor and run docs/reviews-groups-migration.sql once, then reload.",
     "reviewGroup.searchFlat": "Search spans every group, so results are shown as one flat list.",
     "reviewGroup.inGroup": "in “{name}”",
     "review.saving": "Saving…",
@@ -1227,6 +1220,7 @@ const I18N = {
 
     /* ---------- Generic errors ---------- */
     "error.loadData": "Couldn't load your data. Refresh and try again — if it keeps happening, ask an admin to check the database settings.",
+    "error.dbOutdated": "The database is older than this version (a table or column is missing). In Supabase → SQL Editor, run the files in supabase/migrations in filename order, then reload.",
     "error.saveTrade": "Save failed: {msg}",
     "error.publish": "Couldn't post: {msg}",
     "error.action": "That didn't work: {msg}",

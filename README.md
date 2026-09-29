@@ -302,7 +302,7 @@ Two things are deliberately *not* translated:
   and shared by both languages, so statistics stay comparable no matter which language a
   trade was entered in.
 
-Language sync needs one migration — see [docs/i18n-migration.sql](docs/i18n-migration.sql).
+Language sync needs one migration — see [`supabase/migrations`](supabase/migrations) (`20260901000000_journal_features.sql`).
 Without it the app still works and remembers your language per browser; it just won't follow
 you across devices.
 
@@ -365,27 +365,18 @@ admins additionally get **read-only** access to everyone's. Privileged writes go
 
 ### 1. Supabase project
 
-Create a project, then create the tables above with their RLS policies and helper
-functions. The exact structure — columns, types, policies, triggers — is documented in
-[PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) §3; the repository does not ship an init script, so
-either build it from that document or ask the maintainer for the SQL.
+Create a project, then apply the SQL in [`supabase/migrations/`](supabase/migrations) **in
+filename order** (Supabase dashboard → SQL Editor, or `supabase db push` with the CLI):
 
-If you are upgrading an existing deployment, `analysis_prefs` is added with:
+| File | What it does |
+| --- | --- |
+| `20260804000000_baseline.sql` | The four base tables (`profiles`, `trades`, `journal_schema`, `changelog`), RLS policies, and the `security definer` helpers. **Fresh projects only** — it was reconstructed from [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) §3, not diffed against a live database. On an existing deployment mark it applied instead: `supabase migration repair --status applied 20260804000000`. |
+| `20260901000000_journal_features.sql` | Language sync, focus mode, analytics prefs, and the whole Reviews feature (table, backtest/live split, groups, daily reviews). Idempotent. |
+| `20260929000000_scale.sql` | A `trades` index for the paged loader, and `admin_trade_counts()` so the admin panel counts trades in the database. Idempotent. |
 
-```sql
-alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;
-```
-
-The app runs fine without it — the analytics page just can't persist its settings, and shows
-a notice telling you to run this statement.
-
-The Reviews page needs its own table. Run these in the SQL editor, in order:
-[`docs/reviews-migration.sql`](docs/reviews-migration.sql) (the table),
-[`docs/reviews-groups-migration.sql`](docs/reviews-groups-migration.sql) (backtest/live split
-and groups), and [`docs/reviews-day-migration.sql`](docs/reviews-day-migration.sql) (daily
-reviews). Until you do, the rest of the app is unaffected — the Reviews tab shows a notice
-pointing at whichever file is still missing, and **a post still saves either way**: the save
-drops whichever column is absent and retries.
+The frontend does **not** degrade around a missing table or column any more: if the database is
+older than the code, a banner tells you to run the migrations. The first admin is promoted by
+hand (`update profiles set role = 'admin' where email = '…'`).
 
 ### 2. Run it locally
 
@@ -397,6 +388,7 @@ Fill in your Project URL and anon/publishable key from **Supabase dashboard → 
 API**, then serve the folder over HTTP (auth won't work from `file://`):
 
 ```bash
+npm run bundle   # src/*.js → app.js (re-run after edits, or `npm run dev` to watch)
 python -m http.server 8000
 ```
 

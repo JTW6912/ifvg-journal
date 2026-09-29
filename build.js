@@ -1,6 +1,10 @@
 // Vercel 构建时执行：把环境变量 SUPABASE_URL / SUPABASE_ANON_KEY 写成 config.js
 // 本地开发不需要跑这个，直接复制 config.example.js 为 config.js 手动填值即可。
 const fs = require("fs");
+const { bundle } = require("./bundle");
+
+// 先把 src/*.js 拼成 app.js（Vercel 上 app.js 不进仓库，全靠这一步生成）
+bundle();
 
 // .trim() 顺手去掉 Vercel 环境变量里可能被粘贴带进来的 BOM/空白字符
 // （BOM 是 JS 字符串 whitespace 判定的一部分，trim() 能连它一起去掉）

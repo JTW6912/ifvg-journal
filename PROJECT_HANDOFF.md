@@ -10,7 +10,10 @@
 
 ## 二、技术栈
 
-- **前端**：`index.html` 只是外壳，实际代码拆成 `app.js`（全部逻辑）/ `style.css` / `i18n.js`（中英词典），没有框架，没有打包步骤
+- **前端**：`index.html` 只是外壳。**源码在 `src/*.js`（按文件名数字前缀的顺序）**，`bundle.js` 把它们原样拼成 `app.js`——同一个全局作用域，跟以前单文件时行为完全一致，不是 ES module。`app.js` 是产物（已 gitignore），**别直接改它**。另有 `style.css` / `i18n.js`（中英词典）。没有框架
+  - 本地：`npm run bundle` 拼一次，或者 `npm run dev` 监听 `src/`。Vercel 构建时 `build.js` 会先跑 bundle 再生成 `config.js`
+  - 浏览器报错只给 `app.js` 的行号；文件里每个 src 文件前都有一行 `/* >>> src/xx.js */` 路标，往上找最近的一个就知道在哪个文件
+  - `npm test` 跑 `test/*.test.js`（node 自带 test runner，零依赖）。`test/load.js` 把 `i18n.js` + 全部 src（除了 `16-init.js`）拼成一个脚本丢进 vm——必须是一个脚本，函数声明要提升到整个文件。目前覆盖：统计引擎、筛选树、markdown 渲染、分页加载、保存/删除的本地更新
 - **后端**：Supabase（Postgres 数据库 + Auth 认证），没有自己写的服务器，前端直接调 Supabase JS client
 - **部署**：Vercel（免费版），已接 Git —— `git push origin master` 之后自动部署
 - **备份/运维**：GitHub Actions 定时任务（跑在一个独立的私有仓库里，跟主项目代码仓库分开）
@@ -63,7 +66,7 @@ analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
     `formDraft = { ...editingTrade }` 已经把老值带上了
   - 停用带核心角色（date / result / r_multiple，见 `CORE_ROLES`）的字段会 confirm 一次：
     新交易在这些字段上留空 = 胜率、PF、回撤从下一笔起全部失真
-- `focus_fields` 这一列也要手动加：`alter table journal_schema add column if not exists focus_fields jsonb;`（已经包含在 `docs/focus-mode-migration.sql` 里）。**不跑也不会坏**：看图模式照常能用，只是字段选择存不进去、不跨设备、刷新回默认
+- `focus_fields` 这一列在 `supabase/migrations/20260901000000_journal_features.sql` 里。**没有 default，是刻意的**：null = 没配过（用内置默认），[] = 用户主动清空。
 - **为什么不跟 `card_fields` 共用一份**：卡片是缩略图墙、一屏几十张，字段多了就糊；看图模式一屏一笔、右边有整栏空间，正好把长文本挂上去。共用一份的话改一边另一边就被连累
 `review_prefs` 结构（复盘分组，缺项由 `normalizeReviewPrefs()` 补默认值）：
 ```json
@@ -71,7 +74,7 @@ analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
 ```
 - 数组顺序就是分组的显示顺序；`mode` 决定这个分组属于回测还是实盘
 - **只有一级分组**，刻意不做二级：复盘是长文，两级会让「这篇到底在哪」变难找（组合那边是两级，别照抄过来）
-- 这一列也要手动加：`alter table journal_schema add column if not exists review_prefs jsonb default '{}'::jsonb;`（已经包含在 `docs/reviews-groups-migration.sql` 里）
+- 这一列在 `supabase/migrations/20260901000000_journal_features.sql` 里。
 
 `analysis_prefs` 结构（缺任何一项都会在前端 `normalizeAnalysisPrefs()` 里补默认值，所以老数据/空列都能正常跑）：
 ```json
@@ -84,11 +87,7 @@ analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
 }
 ```
 - **`breakdownHidden` 存的是「隐藏哪些」不是「显示哪些」**，`breakdownOrder` 也只存用户排过序的那部分——这样以后新加的字段会自动出现在拆解列表末尾，不会因为不在白名单里被吞掉
-- 这一列要手动加（项目没有迁移工具）：
-  ```sql
-  alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;
-  ```
-  RLS 不用动，沿用这张表原有的策略。没跑这条 SQL 的话 app 仍然能用，只是分析页的配置存不下来，前端会捕获 42703/PGRST204 并在页面上提示去跑这条 SQL
+- 这一列在 `supabase/migrations/20260901000000_journal_features.sql` 里，RLS 沿用这张表原有的策略。
 字段对象结构：
 ```json
 { "id": "date", "label": "日期", "type": "date", "role": "date", "options": [...] }
@@ -122,13 +121,12 @@ created_at        timestamptz
 updated_at        timestamptz
 ```
 - **回测和实盘各一套**（`mode` 列），跟 trades 一样。页签两边都显示，切模式时列表和分组一起换
-- 缺列时的自愈走 `upsertReviewRowsHealing()`：**从报错里抠出是哪一列没有，摘掉那一列重存，最多五轮**。这样只缺 day_date 时不会连分组信息一起丢掉。迁移 SQL 可以晚点补，写过的正文不能丢
-- **⚠️⚠️ `isMissingTableError()` 必须先把「缺列」摘出去再判「缺表」**（已经踩过一次）。PostgREST 缺列时说的是 `Could not find the 'day_date' column of 'journal_reviews' in the schema cache`——里面同时有表名和 schema cache，只按那两个关键词匹配会把缺列误判成缺表，于是自愈整个被跳过、正文直接存不下来
+- **前端不再对缺表 / 缺列做降级**（以前有 `upsertReviewRowsHealing()`「摘列重存」那一整套，已经删了）。库比代码旧时，`isSchemaOutdatedError()`（42P01 / 42703 / PGRST204 / PGRST205）→ `noteDbError()` 置 `dbOutdated`，页面顶部常驻一条「去跑 `supabase/migrations`」。理由：降级写进去的数据是残缺的，比直接报错更难收拾；也省掉了「缺列被误判成缺表」那个坑
 - **分组归属放在行上（`group_id`），分组定义放在配置里（`journal_schema.review_prefs`）**。归属是数据，定义是个人配置；这么分之后不会出现「配置里记着某篇在 A 组、那行却已经被删了」这种对不上的情况。`reviewEffectiveGroupId()` 在归属的分组已经不存在时一律退回未分组，卡片不会凭空消失
 - `linked_trade_ids` 只是索引，**正文才是唯一真相**。改正文一定要重新抽一遍（`extractTradeRefs()`），别让两边对不上
 - RLS：跟 trades 一样，自己读写自己的 + 一条 admin 只读（`select using (is_admin())`）
 - **关联到哪一天/哪一周由 `reviewPeriodKind()` 唯一判定**：`day_date` 有值就是日复盘，否则看 `week_start`，都没有就是自由帖。**day_date 优先**——万一两列都有值（正常切换会清另一个，但脏数据难说）也有个确定的落点，不会两处显示不一致
-- 这张表要手动建，整段 SQL 在 `docs/reviews-migration.sql`，之后再跑 `docs/reviews-groups-migration.sql`（补 mode/group_id/sort_order 三列和 review_prefs）和 `docs/reviews-day-migration.sql`（补 day_date）。没跑也不影响其他功能：前端捕获 42P01/PGRST205 后置 `reviewsTableMissing`，只在复盘页显示一条提示
+- 建表和后加的列（mode / group_id / sort_order / day_date）都在 `supabase/migrations/20260901000000_journal_features.sql`，可重复执行
 
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
@@ -345,12 +343,19 @@ JS
 - **绝对不能**把 `service_role`/secret key 放进任何前端代码——那个 key 能绕过所有 RLS，等于数据库最高权限
 - 如果这份代码要开源：`index.html` 顶部的真实 key 要换回占位符（`PASTE_YOUR_SUPABASE_URL_HERE` 这种），让每个部署者填自己的凭证，避免大家共用同一个数据库
 
+## 八·五、数据加载的约定（别再退回去）
+
+- **拿全表一律走 `fetchAllRows(makeQuery)`**（`src/07-data-layer.js`）。PostgREST 一次最多回 1000 行，多的**静默截断、没有报错**；回测很容易过千笔，胜率 / PF / 回撤 / 显著性会悄悄基于残缺数据算。makeQuery 每页要返回**新的**、带好 `order` 的查询，order 里必须有 `id` 兜底；总数靠第一页 `count: "exact"`，不能靠「这页不满就停」（服务端 Max rows 被调小时会误停）
+- **保存 / 删除只改本地数组，不 `loadAll()`**（`persistTrade` / `removeTrade` / 更新日志）。保存用 `upsert(...).select().single()` 拿回服务端的 created_at / updated_at；保存途中用户切了回测/实盘，这笔不能混进另一批。切模式只走 `reloadModeData()`（交易 + 复盘），不重拉字段配置和更新日志
+- **`render()` 分区重绘**（`patchAppShell`）：顶栏 / 只读横幅 / 页签 / 错误提示 / 页签内容五块，每块只在自己的 HTML 跟上次不同才动。所以：**别绕过 render() 直接改这五块里的 innerHTML**（缓存会跟 DOM 对不上）；另外只要这一块里有表单控件被用户改过而 HTML 没记录，仍会整块重写——跟以前行为一致，不是 bug
+- 管理后台数笔数优先走 RPC `admin_trade_counts()`，函数没建就退回分页数全表
+
 ## 九、还没做 / 已知风险点
 
 - **拖拽排序功能（筛选卡片、字段选项池、组合卡片、拆解字段列表）从没在真实浏览器里跑过完整测试**，只做过静态代码检查 + node 里的逻辑测试，可能有边界情况没覆盖到。**组合的「列表视图」尤其没试过拖**——属性和类名都对得上（拖拽处理器只认 `.comboCard[draggable="true"]` 和 `data-combo-id`），但 HTML5 拖放没法脚本模拟，值得手动验一次
 - **README.md / README.zh-CN.md 有约 8 处过时**：还在写「统计口径两个开关」「R 捕获率」「口径和模型筛选是本设备的本地设置」。功能已经换成「分析范围」筛选面板 + 最大回撤，文档还没跟上
 - **管理员"只读查看他人数据"退出后状态还原**的完整链路也没有真机测试过
-- 代码已经拆成 `app.js` / `style.css` / `i18n.js`，但 `app.js` 仍然是一个四千多行的大文件，多人协作会有合并冲突。要不要再往下拆成模块是个待定项，建议单独作为一轮任务处理，不要和其他任务混在一起做
-- **复盘功能没有在真实数据库上跑过**：`docs/reviews-migration.sql` 还没在 Supabase 上执行过，所以「建表 → 写入 → 读回 → RLS 拦不拦得住别人」这条完整链路是未验证的。前端逻辑（编辑器、markdown 渲染、插入菜单、交易选择器、只读态、ESC 分层、后台 render 不冲掉正文）已经在浏览器里逐条验过，用的是内存假数据
+- 源码已经按章节拆进 `src/*.js`（拼接式，同一个全局作用域，不是 ES module）。**137 个顶层 `let` 全局状态还在**——真要模块化，得先把状态收进一个对象，那是单独一轮任务，别和别的混在一起。目前只有纯函数有测试，DOM / 事件层没有
+- **复盘功能没有在真实数据库上跑过**：`supabase/migrations/20260901000000_journal_features.sql` 还没在 Supabase 上执行过，所以「建表 → 写入 → 读回 → RLS 拦不拦得住别人」这条完整链路是未验证的。前端逻辑（编辑器、markdown 渲染、插入菜单、交易选择器、只读态、ESC 分层、后台 render 不冲掉正文）已经在浏览器里逐条验过，用的是内存假数据
 - **复盘的 markdown 渲染器是自己写的子集**，支持标题/粗斜体/删除线/行内码/代码块/列表/待办/引用/分割线/链接/图片/表格/反斜杠转义。刻意没引 marked + DOMPurify（编辑器用的 Tiptap 在 vendor/ 里，但渲染和存储格式仍然是这份自己写的 markdown）。**代价是它只认这些语法**，写别的（脚注、嵌套引用、HTML 标签）会原样显示。安全性上按"先转义再排版"设计并过了一轮攻击串测试，但它终究是自己写的，以后加语法时要重新审一遍
 - `max_rr` 这个角色还留在角色下拉里，但**已经没有任何功能挂在它上面**了（它原来只驱动"R捕获率"，那项统计已经被"最大回撤"取代）。保留是为了不让老数据里 `role: "max_rr"` 的字段变成下拉框里认不出的空值

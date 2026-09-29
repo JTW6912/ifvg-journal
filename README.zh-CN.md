@@ -248,7 +248,7 @@ EV 和盈亏比，外加**每行相对当前这批交易整体胜率的差值**�
 - **选项值**（`London`、`Taken`、`W`/`L`/`BE` 等）。这些存在数据库里、两种语言共用，
   这样不管交易是用哪种语言录入的，统计口径都是一致的、可比的。
 
-语言跨设备同步需要跑一次迁移，见 [docs/i18n-migration.sql](docs/i18n-migration.sql)。
+语言跨设备同步需要跑一次迁移，见 [`supabase/migrations`](supabase/migrations)（`20260901000000_journal_features.sql`）。
 不跑也能用，只是语言只记在当前浏览器里，不会跟着账号走。
 
 ### 管理后台 *(仅 admin 可见)*
@@ -307,24 +307,17 @@ EV 和盈亏比，外加**每行相对当前这批交易整体胜率的差值**�
 
 ### 1. 建 Supabase 项目
 
-新建项目，然后按上面的结构把这几张表建好，配好 RLS 策略和辅助函数。具体的列、类型、策略、触发器写在
-[PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) 第三节；仓库里没有附带初始化脚本，按那份文档建表，
-或者找项目维护者要 SQL。
+新建项目，然后**按文件名顺序**把 [`supabase/migrations/`](supabase/migrations) 里的 SQL 跑一遍
+（Supabase 后台 → SQL Editor，或者用 CLI 的 `supabase db push`）：
 
-如果是升级已有部署，`analysis_prefs` 这一列要手动加：
+| 文件 | 内容 |
+| --- | --- |
+| `20260804000000_baseline.sql` | 四张基础表（`profiles`、`trades`、`journal_schema`、`changelog`）、RLS 策略和 `security definer` 辅助函数。**只给全新项目用**——它是按 [PROJECT_HANDOFF.md](PROJECT_HANDOFF.md) 第三节重建的，没有跟线上库逐条比对过。已有部署请把它标成已应用：`supabase migration repair --status applied 20260804000000`。 |
+| `20260901000000_journal_features.sql` | 语言同步、看图模式、分析页配置，以及整个复盘功能（表、回测/实盘分开、分组、日复盘）。可重复执行。 |
+| `20260929000000_scale.sql` | 给分页加载用的 `trades` 索引，以及 `admin_trade_counts()`（管理后台在库里数每个用户的笔数）。可重复执行。 |
 
-```sql
-alter table journal_schema add column if not exists analysis_prefs jsonb default '{}'::jsonb;
-```
-
-没跑这条 SQL 应用照样能用，只是分析页的配置存不下来，页面上会提示你去跑它。
-
-复盘功能要用自己的一张表，在 SQL Editor 里按顺序跑这三段：
-[`docs/reviews-migration.sql`](docs/reviews-migration.sql)（建表）、
-[`docs/reviews-groups-migration.sql`](docs/reviews-groups-migration.sql)（回测/实盘分开 + 分组）、
-[`docs/reviews-day-migration.sql`](docs/reviews-day-migration.sql)（日复盘）。
-没跑的话其他功能完全不受影响，复盘页会显示一条提示指向还差的那个文件；
-**正文也不会因为某一列还没建就存不下来**——保存时会把缺的那列摘掉重存。
+前端**不再**对缺表、缺列做任何降级：数据库比代码旧时，页面顶部会有一条提示，让你去跑迁移。
+第一个管理员要手动提权（`update profiles set role = 'admin' where email = '…'`）。
 
 ### 2. 本地运行
 
@@ -336,6 +329,7 @@ cp config.example.js config.js
 然后用 HTTP 方式把这个文件夹跑起来（`file://` 下认证会失败）：
 
 ```bash
+npm run bundle   # src/*.js → app.js（改完要重新跑一次，或者 `npm run dev` 监听）
 python -m http.server 8000
 ```
 
