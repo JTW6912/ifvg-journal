@@ -188,30 +188,32 @@ its groups.
   under Week (which snaps to that week's Monday). The two are mutually exclusive —
   switching clears the other. Posts stay free-form: nothing forces one a day or one a week,
   and the tag can be left off entirely. "New review" defaults to today.
-- **Read and edit modes** — opening an existing post lands in **read mode by default**: the
-  formatted body at full width, no toolbar and no input box, just something to read. Hit
-  **`Edit`** in the top right to get the toolbar and the split view; **`Done`** saves
-  immediately (no waiting on the autosave debounce) and drops back to reading. New posts open
-  straight into edit mode.
-- **Editor** — a plain textarea with the ergonomics on top, not a block editor: press Enter
-  inside a list and the next bullet appears (numbers increment, to-dos repeat, an empty item
-  exits the list); Tab / Shift+Tab indent a whole selection and keep it selected. Pasting a
-  bare image URL turns it into an image, and pasting a link over selected text turns it into
-  a link.
+- **One page, what you see is what you get** — the editor works like Notion: a full-page
+  sheet with a big title, and the body is already formatted as you type. There is no preview
+  pane and no separate read mode; open your own post and just start writing. Type `# ` for a
+  heading, `- ` for a bullet, `1. ` for a numbered list, `[] ` for a to-do (tick it right
+  there), `> ` for a quote, ```` ``` ```` for a code block, `---` for a divider; `**bold**`,
+  `*italic*`, `~~strike~~` and `` `code` `` convert as you close them. Enter continues a list,
+  Enter on an empty item leaves it, Tab / Shift+Tab nest and un-nest. Click the empty space
+  below the text to keep writing at the end.
+- **Select text for the formatting bar** — bold, italic, strikethrough, inline code, link,
+  colour, heading 1/2. With the cursor inside a link it offers open / edit / remove; inside a
+  table it offers add / delete row and column and delete table.
 - **Shortcuts** — with `Ctrl/Cmd`: `B` bold, `I` italic, `E` inline code, `K` link, `S` save
-  now. Add `Shift` for: `X` strikethrough, `1`/`2`/`3` headings, `8` bullets, `7` numbers,
-  `9` to-do, `.` quote. Hover any toolbar button to see its key.
-  **`Ctrl/Cmd+Z` and `Ctrl/Cmd+Shift+Z` are the browser's own undo and redo** — every edit
-  the toolbar, shortcuts, list continuation and Tab make can be stepped back through.
-- **`/` insert menu** — type `/` at the start of a line for headings, lists, to-dos, quote,
-  code block, divider, table, image, link, and **Link a trade**. It filters as you type, in
+  now, `Shift+S` strikethrough, `Alt+1`/`2`/`3` headings, `Shift+8` bullets, `Shift+7`
+  numbers, `Shift+9` to-do, `Shift+B` quote. `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` undo and redo
+  everything, including formatting.
+- **`/` insert menu** — type `/` at the start of a line or after a space (with a Chinese IME,
+  `、` at the start of a line works too) for text, headings, lists, to-dos, quote, code block,
+  divider, table, image, link, text colour, and **Link a trade**. It filters as you type, in
   either language (`/table` and `/表格` both work).
-- **Text colour** — the A button in the toolbar (or `/colour`) paints the selection red,
-  green, yellow, blue or grey, plus a highlight background. Pick another colour to swap it
-  and "Clear colour" to drop it; neither ever nests. It is `{red|text}` in the source, and
-  the colours follow the light/dark theme.
-- **Images** are inserted by URL, the same way trade screenshots are. Click one to open it in
-  the lightbox.
+- **Text colour** — red, green, yellow, blue or grey, plus a highlight background. Picking
+  another colour swaps it; "Clear colour" drops it. It is stored as `{red|text}` and the
+  colours follow the light/dark theme.
+- **Images live on an external image host, never in the database.** Insert one with
+  `/image` and its URL, or paste a bare image link. Pasting an image file directly only shows
+  a reminder to upload it to an image host first. Double-click an image for the lightbox.
+- **Pasting markdown** from elsewhere (notes, another tool) is formatted on the way in.
 - **Linked trades** — pick a trade from the picker (searchable by date, model, anything) and
   it drops a `[[trade:…]]` reference at the cursor. It renders as a pill showing date, model,
   result and R. **Clicking it opens a read-only preview** — the screenshot uncropped plus
@@ -220,13 +222,6 @@ its groups.
   Reading a review is reading, and a form full of inputs one click away is both heavy and
   easy to change by accident. If the trade is later deleted, the pill turns
   red and says so rather than silently vanishing.
-- **Live preview** (edit mode only) side by side, stacked on narrow screens, and hideable.
-- **The two panes scroll together** — scroll the editor and the preview lands on the same
-  passage, and the block your cursor sits in gets a gold rule in the preview (jump somewhere
-  far away and the preview brings it back into view). The alignment is per block rather than
-  proportional: once a post has images or tables the two sides differ in height by hundreds
-  of pixels and a proportional scroll lines up with nothing. Scrolling the preview by hand
-  is left alone until you touch the editor again.
 - **Groups** — make as many named groups as you like (one level, no nesting) and drag posts
   into them. Weekly write-ups can just sit in Ungrouped in date order, while collections you
   keep adding to — recurring mistakes, ideas to test — get a group each. Group headers drag

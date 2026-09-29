@@ -192,10 +192,6 @@ let reviewSaveState = "idle";         // 'idle' | 'dirty' | 'saving' | 'saved'
 let reviewSavedAt = null;
 let reviewSaveTimer = null;
 let reviewSaveError = null;
-let reviewPreviewOpen = (function () { try { return localStorage.getItem("journal_review_preview") !== "false"; } catch (e) { return true; } })();
-// 编辑器分两种模式：只读（只显示 markdown 渲染后的样子）和编辑（正文框 + 工具栏 + 预览）。
-// 打开已有帖子一律从只读开始——大多数时候是回头看，不是改；新建帖子当然直接进编辑。
-let reviewEditMode = false;
 /* ---------- 复盘分组 ----------
    分组只有一级（没有二级分组），每篇复盘要么在某个分组里，要么在「未分组」。
    分组定义存 journal_schema.review_prefs，跟组合分组存 analysis_prefs 是同一个路子；
@@ -218,9 +214,7 @@ function saveCollapsedReviewGroups() {
   try { localStorage.setItem("journal_review_collapsed", JSON.stringify([...collapsedReviewGroups])); } catch (e) {}
 }
 function reviewGroupCollapseKey(gid) { return recordMode + ":" + gid; }
-let reviewColorMenuOpen = false;      // 工具栏那个颜色浮层
-let reviewColorSel = null;            // 点开浮层那一刻的选区，两次点击之间要留住
-let slashMenu = null;                 // { query, index, top, left, anchor } —— 正文里打 / 弹出来的插入菜单
+let slashMenu = null;                 // { from, query, index } —— 正文里打 / 弹出来的插入菜单
 let tradePickerOpen = false;
 let tradePickerQuery = "";
 /* localStorage 里读出来的枚举一律过一遍白名单：
@@ -3382,17 +3376,30 @@ function mdSafeUrl(u) {
   return /^https?:\/\//i.test(raw) ? raw : null;
 }
 
-/* 行内规则。传进来的 text 必须已经是 esc() 过的。 */
-function mdInline(text) {
-  // 行内代码先抽成占位符，免得里面的 * _ [ 被当成语法
-  const codes = [];
-  let out = String(text).replace(/`([^`\n]+)`/g, (m, c) => {
-    codes.push(c);
-    return " CODE" + (codes.length - 1) + " ";
-  });
+/* 反斜杠转义：\* \# \[ 这种显示成字面字符。所见即所得编辑器里打出一个真正的 *，
+   存回 markdown 时只能写成 \*，不然下次打开就被当成斜体了。
+   esc() 之后 > < & 已经变成实体，所以实体也要能被转义（\&gt; 是一个字面的 >，
+   用在行首时防止被当成引用）。 */
+const MD_ESCAPABLE_RE = /\\(&gt;|&lt;|&amp;|[\\`*_{}\[\]()#+\-.!~|])/g;
 
-  // 交易引用要排在链接前面，否则 [[trade:x]] 会先被方括号规则啃掉
-  out = out.replace(/\[\[trade:([A-Za-z0-9_-]+)\]\]/g, (m, id) => tradeRefHtml(id));
+/* 行内规则。传进来的 text 必须已经是 esc() 过的。
+   forEditor：输出给 Tiptap 解析用的 HTML（交易引用只留 id 壳子，图片不挂点击/兜底属性），
+   不是给人看的。两边共用同一套规则，保证「编辑器里看到的」和「只读时看到的」是同一个东西。 */
+function mdInline(text, forEditor) {
+  // 占位符用私有区字符包起来，正文里不可能打出来，不会跟用户文字撞上
+  const slots = [];
+  const hold = (html) => { slots.push(html); return "\uE000" + (slots.length - 1) + "\uE001"; };
+
+  // 行内代码先抽走，免得里面的 * _ [ 被当成语法。前面是反斜杠的反引号是字面字符，不开代码
+  let out = String(text).replace(/(?<!\\)`([^`\n]+)`/g, (m, c) => hold(`<code>${c}</code>`));
+  // 然后是转义字符：抽走之后，后面的加粗/链接规则就看不到这些 * [ 了
+  out = out.replace(MD_ESCAPABLE_RE, (m, c) => hold(c));
+
+  // 交易引用要排在链接前面，否则 [[trade:x]] 会先被方括号规则啃掉。
+  // 生成出来的 HTML（交易胶囊、图片、链接标签）都存进占位符：里面的 URL、模型名
+  // 可能带 * 或 _，留在明面上会被后面的加粗/斜体规则插进 <em>，把属性改坏
+  out = out.replace(/\[\[trade:([A-Za-z0-9_-]+)\]\]/g, (m, id) =>
+    hold(forEditor ? `<span data-trade-ref="${id}"></span>` : tradeRefHtml(id)));
 
   // 上色 {red|文字}。放在加粗/斜体之前，好让里面还能继续排版：
   // {red|**粗的红字**} 会先变成 <span>**粗的红字**</span>，加粗规则随后再跑一遍
@@ -3404,13 +3411,14 @@ function mdInline(text) {
   out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, url) => {
     const safe = mdSafeUrl(url);
     if (!safe) return m;
-    return `<img class="mdImg" src="${safe}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${safe}" data-fallback-url="${safe}" data-fallback-class="mdImgFallback" onerror="window.__imgFallback(this)" />`;
+    if (forEditor) return hold(`<img src="${safe}" alt="${alt}" />`);
+    return hold(`<img class="mdImg" src="${safe}" alt="${alt}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${safe}" data-fallback-url="${safe}" data-fallback-class="mdImgFallback" onerror="window.__imgFallback(this)" />`);
   });
 
   out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, url) => {
     const safe = mdSafeUrl(url);
     if (!safe) return m;
-    return `<a href="${safe}" target="_blank" rel="noopener noreferrer nofollow">${label}</a>`;
+    return hold(`<a href="${safe}" target="_blank" rel="noopener noreferrer nofollow">`) + label + hold("</a>");
   });
 
   out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
@@ -3418,7 +3426,10 @@ function mdInline(text) {
   out = out.replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g, "$1<em>$2</em>");
   out = out.replace(/~~([^~\n]+)~~/g, "<del>$1</del>");
 
-  return out.replace(/ CODE(\d+) /g, (m, i) => `<code>${codes[+i]}</code>`);
+  // \u5360\u4F4D\u7B26\u53EF\u4EE5\u5957\u5360\u4F4D\u7B26\uFF08\u56FE\u7247\u7684 alt \u91CC\u6709\u8F6C\u4E49\u5B57\u7B26\u4E4B\u7C7B\uFF09\uFF0C\u6240\u4EE5\u9012\u5F52\u8FD8\u539F\u3002
+  // \u540E\u5B58\u7684\u53EA\u4F1A\u5F15\u7528\u5148\u5B58\u7684\uFF0C\u4E0D\u4F1A\u6210\u73AF
+  const restore = (str) => str.replace(/\uE000(\d+)\uE001/g, (m, i) => restore(slots[+i]));
+  return restore(out);
 }
 
 /* [[trade:xxx]] 渲染成一个可点的小胶囊。
@@ -3446,24 +3457,31 @@ function tradeRefHtml(id) {
     + `</span>`;
 }
 
+/* 按没被转义的 | 切格子。\| 是单元格里的字面竖线（编辑器存表格时会这么写） */
 function mdTableRowCells(line) {
   let inner = line.trim();
   if (inner.startsWith("|")) inner = inner.slice(1);
-  if (inner.endsWith("|")) inner = inner.slice(0, -1);
-  return inner.split("|").map((c) => c.trim());
+  if (inner.endsWith("|") && !inner.endsWith("\\|")) inner = inner.slice(0, -1);
+  return inner.split(/(?<!\\)\|/).map((c) => c.trim());
 }
 function mdIsTableDivider(line) {
   return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line || "");
 }
 
-function renderMarkdown(src) {
+/* markdown → HTML。
+   forEditor = true 时输出给 Tiptap 解析（见 mdToEditorHtml），结构上有两处不同：
+   待办要写成 Tiptap 认的 <ul data-type="taskList">，而且待办和普通条目不能混在同一个列表里；
+   引用里的每一行包进 <p>。其余完全一样——同一套规则，编辑器里和只读时看到的才会是同一个东西。 */
+function renderMarkdown(src, forEditor) {
   if (!src || !String(src).trim()) return "";
   const lines = esc(src).replace(/\r\n?/g, "\n").split("\n");
+  const inl = (t) => mdInline(t, forEditor);
   let html = "";
   let i = 0;
-  // 支持一层缩进嵌套。子列表要放进上一个 <li> 里面才是合法结构，
+  // 子列表要放进上一个 <li> 里面才是合法结构，
   // 所以开子列表时把刚写完的 </li> 撕掉，收子列表时再补回去。
-  const listStack = []; // [{ kind: 'ul'|'ol', nested: boolean }]
+  const listStack = []; // [{ kind: 'ul'|'ol'|'task', nested: boolean }]
+  const MAX_LIST_DEPTH = 4;
 
   // 这两个直接写 html，不返回字符串：`html += openList()` 会先读走 html 的旧值，
   // 函数内部对 html 的截断就白做了
@@ -3471,25 +3489,18 @@ function renderMarkdown(src) {
     let nested = false;
     if (listStack.length && html.endsWith("</li>")) { html = html.slice(0, -5); nested = true; }
     listStack.push({ kind, nested });
-    html += `<${kind} class="mdList">`;
+    html += kind === "task" ? `<ul data-type="taskList" class="mdList">` : `<${kind} class="mdList">`;
   }
   function closeOneList() {
     const l = listStack.pop();
-    html += `</${l.kind}>` + (l.nested ? "</li>" : "");
+    html += `</${l.kind === "ol" ? "ol" : "ul"}>` + (l.nested ? "</li>" : "");
   }
   function closeLists(toDepth) {
     while (listStack.length > toDepth) closeOneList();
   }
 
-  // 每个块都带上它在源码里的起始行号（data-md-line）。编辑区和预览区的滚动联动
-  // 全靠这个把两边对上——没有它就只能按比例硬滚，图片和表格一多就完全对不齐。
-  // 值是渲染时算出来的行号，不是用户输入，不影响「先转义再排版」那条铁律。
-  let blockLine = 0;
-  const at = () => ` data-md-line="${blockLine}"`;
-
   while (i < lines.length) {
     const line = lines[i];
-    blockLine = i;
 
     // 代码块 ```
     if (/^\s*```/.test(line)) {
@@ -3498,7 +3509,7 @@ function renderMarkdown(src) {
       i++;
       while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i++; }
       i++; // 吃掉收尾的 ```
-      html += `<pre class="mdPre"${at()}><code>${buf.join("\n")}</code></pre>`;
+      html += `<pre class="mdPre"><code>${buf.join("\n")}</code></pre>`;
       continue;
     }
 
@@ -3509,10 +3520,10 @@ function renderMarkdown(src) {
       i += 2;
       const body = [];
       while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim()) { body.push(mdTableRowCells(lines[i])); i++; }
-      html += `<div class="mdTableWrap"${at()}><table class="mdTable"><thead><tr>`
-        + head.map((c) => `<th>${mdInline(c)}</th>`).join("")
+      html += `<div class="mdTableWrap"><table class="mdTable"><thead><tr>`
+        + head.map((c) => `<th>${inl(c)}</th>`).join("")
         + `</tr></thead><tbody>`
-        + body.map((r) => `<tr>` + head.map((_, ci) => `<td>${mdInline(r[ci] || "")}</td>`).join("") + `</tr>`).join("")
+        + body.map((r) => `<tr>` + head.map((_, ci) => `<td>${inl(r[ci] || "")}</td>`).join("") + `</tr>`).join("")
         + `</tbody></table></div>`;
       continue;
     }
@@ -3521,14 +3532,14 @@ function renderMarkdown(src) {
     if (!line.trim()) { closeLists(0); i++; continue; }
 
     // 分割线
-    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { closeLists(0); html += `<hr class="mdHr"${at()} />`; i++; continue; }
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { closeLists(0); html += `<hr class="mdHr" />`; i++; continue; }
 
     // 标题 # ~ ######
     const h = line.match(/^\s{0,3}(#{1,6})\s+(.*)$/);
     if (h) {
       closeLists(0);
       const lv = Math.min(h[1].length, 6);
-      html += `<h${lv} class="mdH mdH${lv}"${at()}>${mdInline(h[2].trim())}</h${lv}>`;
+      html += `<h${lv} class="mdH mdH${lv}">${inl(h[2].trim())}</h${lv}>`;
       i++; continue;
     }
 
@@ -3537,27 +3548,31 @@ function renderMarkdown(src) {
       closeLists(0);
       const buf = [];
       while (i < lines.length && /^\s{0,3}&gt;\s?/.test(lines[i])) { buf.push(lines[i].replace(/^\s{0,3}&gt;\s?/, "")); i++; }
-      html += `<blockquote class="mdQuote"${at()}>${buf.map((b) => mdInline(b)).join("<br />")}</blockquote>`;
+      const inner = buf.map((b) => inl(b)).join("<br />");
+      html += `<blockquote class="mdQuote">${forEditor ? `<p>${inner}</p>` : inner}</blockquote>`;
       continue;
     }
 
-    // 列表（含待办）。缩进 >=2 空格算第二层
+    // 列表（含待办）。每 2 个空格缩进算一层
     const li = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
     if (li) {
-      const depth = Math.min(Math.floor(li[1].replace(/\t/g, "  ").length / 2), 1) + 1;
-      const kind = /^\d/.test(li[2]) ? "ol" : "ul";
+      const depth = Math.min(Math.floor(li[1].replace(/\t/g, "  ").length / 2), MAX_LIST_DEPTH - 1) + 1;
+      let kind = /^\d/.test(li[2]) ? "ol" : "ul";
       let content = li[3];
       let taskHtml = "";
-      const task = content.match(/^\[( |x|X)\]\s+(.*)$/);
+      let done = false;
+      const task = kind === "ul" && content.match(/^\[( |x|X)\](?:\s+(.*))?$/);
       if (task) {
-        const done = task[1].toLowerCase() === "x";
-        content = task[2];
+        done = task[1].toLowerCase() === "x";
+        content = task[2] || "";
         taskHtml = `<span class="mdTask ${done ? "done" : ""}"></span>`;
+        if (forEditor) kind = "task";
       }
       while (listStack.length > depth) closeOneList();
       while (listStack.length < depth) openList(kind);
       if (listStack[depth - 1].kind !== kind) { closeOneList(); openList(kind); }
-      html += `<li${taskHtml ? ' class="mdTaskItem"' : ""}${at()}>${taskHtml}${mdInline(content)}</li>`;
+      if (forEditor && task) html += `<li data-type="taskItem" data-checked="${done}">${inl(content)}</li>`;
+      else html += `<li${taskHtml ? ' class="mdTaskItem"' : ""}>${taskHtml}${inl(content)}</li>`;
       i++; continue;
     }
 
@@ -3570,7 +3585,19 @@ function renderMarkdown(src) {
       && !/^\s{0,3}&gt;\s?/.test(lines[i])
       && !/^(\s*)([-*+]|\d+[.)])\s+/.test(lines[i])
       && !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i])) { para.push(lines[i]); i++; }
-    html += `<p class="mdP"${at()}>${para.map((l) => mdInline(l)).join("<br />")}</p>`;
+    if (forEditor) {
+      // 编辑器里图片是块级节点，不能放在段落里：包在 <p> 里的话 Tiptap 会把它拎出来，
+      // 原地留下一个空段落（正文里凭空多一行空白）。所以单独成行的图片直接输出
+      let buf = [];
+      const flush = () => { if (buf.length) { html += `<p>${buf.join("<br />")}</p>`; buf = []; } };
+      para.forEach((l) => {
+        const h = inl(l);
+        if (/^\s*<img [^>]*\/>\s*$/.test(h)) { flush(); html += h; } else buf.push(h);
+      });
+      flush();
+    } else {
+      html += `<p class="mdP">${para.map((l) => inl(l)).join("<br />")}</p>`;
+    }
   }
   closeLists(0);
   return html;
@@ -3579,16 +3606,20 @@ function renderMarkdown(src) {
 /* 列表页摘要用：把 markdown 语法剥干净，只留人话 */
 function mdPlainExcerpt(src, max) {
   const t = String(src || "")
+    // 转义过的字符先换成私有区字符藏起来，免得下面「去掉 * _ ~」把字面的星号也删了
+    .replace(/\\([\\`*_{}\[\]()#+\-.!~|>])/g, (m, c) => String.fromCharCode(0xE100 + c.charCodeAt(0)))
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/\[\[trade:[A-Za-z0-9_-]+\]\]/g, "[trade]")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "[img]")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\{(?:red|green|yellow|blue|gray|mark)\|([^}\n]+)\}/g, "$1")
     .replace(/^\s{0,3}#{1,6}\s+/gm, "")
     .replace(/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/gm, " ")   // 表格分隔行
-    .replace(/^\s*([-*+]|\d+[.)])\s+(\[[ xX]\]\s+)?/gm, "")                  // 列表标记 + 待办方框
+    .replace(/^\s*([-*+]|\d+[.)])\s+(\[[ xX]\]\s*)?/gm, "")                  // 列表标记 + 待办方框
     .replace(/^\s{0,3}>\s?/gm, "")
     .replace(/^\s*-{3,}\s*$/gm, " ")
     .replace(/[*_~`|]/g, "")
+    .replace(/[-]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xE100))
     .replace(/\s+/g, " ")
     .trim();
   const lim = max || 150;
@@ -3735,6 +3766,8 @@ function renderReviews() {
     return `<div class="notice error">${ICONS.alert}<span>${esc(T("review.tableMissing"))}</span></div>`;
   }
   const groups = reviewGroups();
+  // 进了复盘页多半要打开某一篇：趁这会儿在后台把编辑器的库拉下来，点开时就是秒开
+  if (!readOnly && !tiptapLib) loadTiptap().catch(() => {});
 
   let html = `<div class="reviewTop">
     ${readOnly ? "" : `<button class="btn btn-primary" data-action="new-review">${ICONS.plus} ${T("review.new")}</button>
@@ -3779,9 +3812,43 @@ function renderReviews() {
 }
 
 /* ============================================================
-   复盘编辑器 —— 自己的根节点 + 重绘守卫
+   复盘编辑器 —— Notion 式所见即所得（Tiptap / ProseMirror）
+
+   以前是「左边 textarea 写 markdown、右边实时预览」，外加只读/编辑两种模式。
+   现在只有一张纸：打 `# ` 就变标题、`- [ ] ` 就变待办、选中文字浮出格式栏、
+   打 / 调出插入菜单。只读只留给管理员查看别人数据的时候。
+
+   几条关键约定：
+   - **库里存的还是 markdown**（journal_reviews.body 一个字都不用迁移）。
+     打开时 markdown → renderMarkdown(src, true) → Tiptap 解析；
+     每次编辑后 getJSON() → docToMarkdown() → 存回去。两个方向共用 renderMarkdown
+     那一套规则，所以卡片摘要、搜索、extractTradeRefs、管理员只读视图全都不用改。
+   - **安全防线不变**：喂给 Tiptap 的 HTML 来自 renderMarkdown（先 esc() 再排版），
+     Tiptap 本身又只认 schema 里定义过的节点——两道白名单。链接和图片只放行 http(s)。
+   - **编辑器有自己的根节点 #reviewEditorRoot**，reviewEditorRenderedFor 守卫防止后台
+     render() 把它重建。编辑器开着的时候任何状态变化都不许走 render() 重建它，
+     浮层（格式栏、插入菜单、小弹框）都画进 #reviewFloatRoot 里定点更新。
+   - **中文输入法**：交给 ProseMirror 处理组字（这正是用成熟库而不是自己写
+     contenteditable 的理由）。我们自己的 keydown 分支一律先看 isComposing / view.composing。
+   - 撤销/重做是 ProseMirror 自己的历史栈，Ctrl+Z 天然可用。
+   - Tiptap 打成了同源的 vendor/tiptap.js，第一次打开编辑器时才 import()；
+     加载失败就退回纯文本框写 markdown，内容照常保存，不会把人卡住。
    ============================================================ */
+const TIPTAP_URL = "./vendor/tiptap.js?v=3.31.3";
+let tiptapLib = null;
+let tiptapLoading = null;
+function loadTiptap() {
+  if (tiptapLib) return Promise.resolve(tiptapLib);
+  if (!tiptapLoading) {
+    tiptapLoading = import(TIPTAP_URL)
+      .then((m) => { tiptapLib = m; return m; })
+      .catch((err) => { tiptapLoading = null; throw err; });   // 失败了下次还能重试
+  }
+  return tiptapLoading;
+}
+
 const SLASH_ITEMS = [
+  { cmd: "text",  labelKey: "review.slash.text",  keys: ["text", "p", "paragraph", "正文", "zhengwen", "wenzi"] },
   { cmd: "h1",    labelKey: "review.slash.h1",    keys: ["h1", "heading", "title", "标题", "biaoti"] },
   { cmd: "h2",    labelKey: "review.slash.h2",    keys: ["h2", "subheading", "小标题"] },
   { cmd: "h3",    labelKey: "review.slash.h3",    keys: ["h3", "小小标题"] },
@@ -3797,18 +3864,18 @@ const SLASH_ITEMS = [
   { cmd: "color", labelKey: "review.slash.color", keys: ["color", "颜色", "yanse", "红", "绿", "highlight", "高亮"] },
   { cmd: "trade", labelKey: "review.slash.trade", keys: ["trade", "交易", "jiaoyi", "复盘", "关联"] },
 ];
-const SLASH_MENU_WIDTH = 220;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
-const SLASH_MENU_MAX_H = 260;
+const SLASH_MENU_WIDTH = 230;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
+const SLASH_MENU_MAX_H = 300;
 const SLASH_ICONS = {
-  h1: "tbHeading", h2: "tbHeading", h3: "tbHeading", ul: "tbUl", ol: "tbOl", task: "tbTask",
+  text: "pencil", h1: "tbHeading", h2: "tbHeading", h3: "tbHeading", ul: "tbUl", ol: "tbOl", task: "tbTask",
   quote: "tbQuote", code: "tbCode", hr: "tbHr", table: "tbTable", image: "tbImage", link: "tbLink",
   color: "tbColor", trade: "grid",
 };
 
-/* 「能不能编辑」和「此刻是不是在编辑」是两回事：
-   管理员只读查看别人的数据时前者就是 false，连编辑按钮都不该出现。 */
+/* 只有「有没有编辑权」一种判定了：管理员只读查看别人的数据时为 false。
+   reviewIsReadOnly() 留着是因为关联日/周那几个处理器在用，语义一样。 */
 function reviewCanEdit() { return !viewingUserId; }
-function reviewIsReadOnly() { return !reviewCanEdit() || !reviewEditMode; }
+function reviewIsReadOnly() { return !reviewCanEdit(); }
 
 function slashFilteredItems() {
   const q = ((slashMenu && slashMenu.query) || "").toLowerCase();
@@ -3817,50 +3884,11 @@ function slashFilteredItems() {
     it.keys.some((k) => k.toLowerCase().includes(q)) || T(it.labelKey).toLowerCase().includes(q));
 }
 
-/* 工具栏按钮的快捷键，顺便写进 title 里，用户不用去别处翻 */
-const REVIEW_SHORTCUTS = {
-  bold: "B", italic: "I", strike: "Shift+X", h1: "Shift+1", h2: "Shift+2",
-  ul: "Shift+8", ol: "Shift+7", task: "Shift+9", quote: "Shift+.",
-  code: "E", link: "K",
-};
 function isMacLike() {
   const p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   return /mac|iphone|ipad/i.test(p);
 }
-function shortcutHint(cmd) {
-  const k = REVIEW_SHORTCUTS[cmd];
-  return k ? ` (${isMacLike() ? "⌘" : "Ctrl"}+${k})` : "";
-}
-function reviewToolbarHtml() {
-  const b = (cmd, icon, titleKey, label) =>
-    `<button class="tbBtn" data-action="review-tb" data-cmd="${cmd}" title="${esc(T(titleKey) + shortcutHint(cmd))}">${ICONS[icon]}${label ? `<span class="tbLabel">${label}</span>` : ""}</button>`;
-  return `<div class="reviewToolbar">
-    ${b("bold", "tbBold", "review.tb.bold")}
-    ${b("italic", "tbItalic", "review.tb.italic")}
-    ${b("strike", "tbStrike", "review.tb.strike")}
-    <span class="tbSep"></span>
-    ${b("h1", "tbHeading", "review.tb.h1", "1")}
-    ${b("h2", "tbHeading", "review.tb.h2", "2")}
-    <span class="tbSep"></span>
-    ${b("ul", "tbUl", "review.tb.ul")}
-    ${b("ol", "tbOl", "review.tb.ol")}
-    ${b("task", "tbTask", "review.tb.task")}
-    ${b("quote", "tbQuote", "review.tb.quote")}
-    ${b("code", "tbCode", "review.tb.code")}
-    <span class="tbSep"></span>
-    ${b("link", "tbLink", "review.tb.link")}
-    ${b("image", "tbImage", "review.tb.image")}
-    ${b("hr", "tbHr", "review.tb.hr")}
-    <span class="tbSep"></span>
-    <span class="tbColorWrap">
-      <button class="tbBtn" data-action="toggle-review-color-menu" title="${esc(T("review.tb.color"))}">${ICONS.tbColor}${ICONS.chevDown}</button>
-      <span id="reviewColorRoot"></span>
-    </span>
-    <span class="tbSep"></span>
-    <button class="tbBtn tbTrade" data-action="review-tb" data-cmd="trade" title="${esc(T("review.tb.trade"))}">${ICONS.grid}<span class="tbLabel">${esc(T("review.tb.trade"))}</span></button>
-    <span class="tbHint">${esc(T("review.tb.help"))}</span>
-  </div>`;
-}
+function modKeyLabel() { return isMacLike() ? "⌘" : "Ctrl"; }
 
 function reviewSaveBadgeHtml() {
   if (reviewSaveError) return `<span class="reviewSaveBadge err">${ICONS.alert} ${esc(reviewSaveError)}</span>`;
@@ -3876,15 +3904,14 @@ function updateReviewSaveBadge() {
   if (n) n.innerHTML = reviewSaveBadgeHtml();
 }
 
-/* 关联周那一行。单独拆出来是因为改周只需要换这一行——
+/* 关联日/周那一行。单独拆出来是因为改周只需要换这一行——
    重绘整个编辑器会把正在写的正文和光标一起冲掉。 */
 function reviewWeekRowInnerHtml() {
   if (!editingReview) return "";
-  const readOnly = reviewIsReadOnly();
   // 只读态是拿来看的，一排禁用按钮纯属噪音——只留一枚说明关联到哪天/哪周的标签
-  if (readOnly) {
+  if (reviewIsReadOnly()) {
     return `<span class="reviewWeekTag ${reviewPeriodKind(editingReview) ? "on" : ""}">${esc(reviewPeriodTagText(editingReview))}</span>`
-      + (viewingUserId ? `<span class="reviewReadOnly">${esc(T("review.readOnly"))}</span>` : "");
+      + `<span class="reviewReadOnly">${esc(T("review.readOnly"))}</span>`;
   }
   const kind = reviewPeriodKind(editingReview);
   const day = editingReview.day_date || "";
@@ -3911,245 +3938,475 @@ function refreshReviewWeekRow() {
   if (row) row.innerHTML = reviewWeekRowInnerHtml();
 }
 
-function renderReviewEditor(force) {
-  const root = document.getElementById("reviewEditorRoot");
-  if (!root) return;
-  if (!editingReview) { reviewEditorRenderedFor = null; root.innerHTML = ""; return; }
-  // 已经在显示这一篇就不重绘——否则正在写的正文和光标位置全没了
-  if (!force && reviewEditorRenderedFor === editingReview.id) return;
-  reviewEditorRenderedFor = editingReview.id;
+/* ============================================================
+   markdown ⇄ 编辑器
+   ============================================================ */
 
-  const canEdit = reviewCanEdit();
-  const readOnly = reviewIsReadOnly();
-  root.innerHTML = `<div class="reviewEditorOverlay">
-    <div class="reviewEditor">
-      <div class="reviewEditorHead">
-        ${readOnly
-          ? `<div class="reviewTitleStatic display">${esc(reviewTitleOf(editingReview))}</div>`
-          : `<input class="reviewTitleInput display" type="text" id="reviewTitleInput"
-              placeholder="${esc(T("review.titlePlaceholder"))}" value="${esc(editingReview.title || "")}"
-              oninput="window.__reviewTitleInput(this)" />`}
-        <div class="reviewHeadRight">
-          <span id="reviewSaveSlot">${canEdit ? reviewSaveBadgeHtml() : ""}</span>
-          ${readOnly ? "" : `<button class="btn" data-action="toggle-review-preview">${esc(reviewPreviewOpen ? T("review.previewOn") : T("review.previewOff"))}</button>`}
-          ${canEdit ? `<button class="btn ${reviewEditMode ? "" : "btn-primary"}" data-action="toggle-review-edit-mode" title="${esc(reviewEditMode ? T("review.modeDoneTitle") : T("review.modeEditTitle"))}">${reviewEditMode ? ICONS.check : ICONS.pencil} ${esc(reviewEditMode ? T("review.modeDone") : T("review.modeEdit"))}</button>` : ""}
-          <button class="iconBtn" data-action="close-review-editor" title="${esc(T("review.editorClose"))}">${ICONS.x}</button>
-        </div>
-      </div>
-      <div class="reviewWeekRow" id="reviewWeekRow">${reviewWeekRowInnerHtml()}</div>
-      ${readOnly ? "" : reviewToolbarHtml()}
-      <div class="reviewEditorBody ${readOnly ? "readOnly" : reviewPreviewOpen ? "" : "noPreview"}">
-        <div class="reviewPane">
-          <textarea class="reviewBodyInput" id="reviewBodyInput" spellcheck="false"
-            placeholder="${esc(T("review.bodyPlaceholder"))}"
-            oninput="window.__reviewBodyInput(this)"
-            onkeydown="window.__reviewKeydown(event, this)"
-            onkeyup="window.__reviewCaretKey()"
-            onclick="window.__reviewCaretMoved()"
-            onscroll="window.__reviewEditorScroll()"
-            onpaste="window.__reviewPaste(event, this)">${esc(editingReview.body || "")}</textarea>
-          <div id="slashMenuRoot"></div>
-        </div>
-        <div class="reviewPreviewPane mdBody" id="reviewPreview" onscroll="window.__reviewPreviewScroll()">${renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`}</div>
-      </div>
-      <div id="tradePickerRoot"></div>
-    </div>
-  </div>`;
+/* 打开时：markdown → 编辑器能解析的 HTML。和只读渲染是同一套规则 */
+function mdToEditorHtml(src) {
+  return renderMarkdown(src, true) || "<p></p>";
+}
 
-  lastPreviewHtml = null;   // 预览区刚被重建，上一篇的缓存作废
-  reviewColorMenuOpen = false; reviewColorSel = null;
-  const ta = document.getElementById("reviewBodyInput");
-  if (ta && !readOnly) {
-    ta.focus();
-    const end = ta.value.length;
-    ta.setSelectionRange(end, end);
-    suppressPreviewSyncUntil = 0;
-    highlightCaretBlock();
+/* 普通文字里要加反斜杠的字符。原则是「只转义真会被误读的」，
+   省得存下来的 markdown 满屏反斜杠（搜索和摘要都直接读这份原文）。 */
+function mdEscapeText(text, ctx) {
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], prev = text[i - 1] || "", next = text[i + 1] || "";
+    let e = false;
+    if (c === "\\" || c === "`" || c === "*" || c === "[") e = true;
+    else if (c === "_") e = !/\w/.test(prev) || !/\w/.test(next);          // 单词中间的 a_b_c 不会被当斜体
+    else if (c === "~") e = prev === "~" || next === "~" || ctx.strike;       // 只有连着的 ~~ 才是语法
+    else if (c === "{") e = /^(red|green|yellow|blue|gray|mark)\|/.test(text.slice(i + 1));
+    else if (c === "}") e = ctx.color;                                         // 颜色里的 } 会提前收尾
+    else if (c === "]") e = ctx.link;                                          // 链接文字里的 ] 同理
+    else if (c === "|") e = ctx.table;
+    out += e ? "\\" + c : c;
   }
+  return out;
+}
+
+/* 段落每一行的开头：长得像块语法的要转义，不然 「1. 先看大周期」这种正文
+   存回去就变成了编号列表 */
+function mdEscapeLineStart(line) {
+  return line
+    .replace(/^(\s{0,3})(#{1,6}(\s|$))/, "$1\\$2")
+    .replace(/^(\s*)([-+](\s|$))/, "$1\\$2")
+    .replace(/^(\s*)(-{3,}\s*)$/, "$1\\$2")
+    .replace(/^(\s*\d+)([.)])(\s|$)/, "$1\\$2$3")
+    .replace(/^(\s{0,3})>/, "$1\\>");
+}
+
+/* 链接/图片地址：只放行 http(s)，并把会截断 markdown 语法的字符编码掉 */
+function mdUrlOut(u) {
+  const safe = mdSafeUrl(u);
+  if (!safe) return null;
+  return safe.replace(/\s/g, "%20").replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/\}/g, "%7D");
+}
+
+/* 行内 mark 在 markdown 里的嵌套顺序（外 → 内）。颜色必须在最外面：
+   渲染器先跑上色规则，{red|**x**} 能继续加粗，反过来就不行。代码必须在最里面。 */
+const MD_MARK_ORDER = ["mdColor", "link", "bold", "italic", "strike", "code"];
+function mdNormalizeMark(m) {
+  if (m.type === "link") {
+    const href = mdUrlOut(m.attrs && m.attrs.href);
+    return href ? { type: "link", attrs: { href } } : null;
+  }
+  if (m.type === "mdColor") {
+    const c = m.attrs && m.attrs.color;
+    return MD_COLORS.includes(c) ? { type: "mdColor", attrs: { color: c } } : null;
+  }
+  return MD_MARK_ORDER.includes(m.type) ? { type: m.type, attrs: {} } : null;
+}
+function mdMarkDelims(m) {
+  switch (m.type) {
+    case "mdColor": return ["{" + m.attrs.color + "|", "}"];
+    case "link": return ["[", "](" + m.attrs.href + ")"];
+    case "bold": return ["**", "**"];
+    case "italic": return ["*", "*"];
+    case "strike": return ["~~", "~~"];
+    case "code": return ["`", "`"];
+  }
+  return ["", ""];
+}
+
+/* 一串行内节点 → markdown。oneLine：换行变空格（标题、列表项、表格格子只能占一行） */
+function mdInlineFromNodes(nodes, ctx) {
+  ctx = ctx || {};
+  let out = "";
+  const stack = [];   // 当前开着的 mark，外 → 内
+  const same = (a, b) => a.type === b.type && (a.attrs.href || a.attrs.color || "") === (b.attrs.href || b.attrs.color || "");
+  const closeTo = (k) => { while (stack.length > k) out += stack.pop().close; };
+  const has = (t) => stack.some((s) => s.mark.type === t);
+  (nodes || []).forEach((n) => {
+    if (n.type === "text") {
+      const marks = (n.marks || []).map(mdNormalizeMark).filter(Boolean)
+        .sort((a, b) => MD_MARK_ORDER.indexOf(a.type) - MD_MARK_ORDER.indexOf(b.type));
+      let k = 0;
+      while (k < stack.length && k < marks.length && same(stack[k].mark, marks[k])) k++;
+      closeTo(k);
+      for (let j = k; j < marks.length; j++) {
+        const [open, close] = mdMarkDelims(marks[j]);
+        out += open;
+        stack.push({ mark: marks[j], close });
+      }
+      const text = String(n.text || "");
+      if (has("code")) out += text.replace(/`/g, "'").replace(/\n/g, " ");   // 行内代码里放不了反引号
+      else {
+        const esced = mdEscapeText(text, { strike: has("strike"), color: has("mdColor"), link: has("link"), table: ctx.table });
+        out += ctx.oneLine ? esced.replace(/\n/g, " ") : esced;
+      }
+    } else if (n.type === "hardBreak") {
+      // 所有行内语法都不能跨行，换行前把开着的 mark 全关掉，下一段文字会重新打开
+      closeTo(0);
+      out += ctx.oneLine ? " " : "\n";
+    } else if (n.type === "tradeRef") {
+      closeTo(0);
+      const id = n.attrs && n.attrs.id;
+      if (id && /^[A-Za-z0-9_-]+$/.test(id)) out += "[[trade:" + id + "]]";
+    } else if (n.type === "image") {
+      closeTo(0);
+      const u = mdUrlOut(n.attrs && n.attrs.src);
+      if (u) out += "![" + mdEscapeText(String((n.attrs && n.attrs.alt) || ""), { link: true }) + "](" + u + ")";
+    }
+  });
+  closeTo(0);
+  return out;
+}
+
+function mdListFromNode(list, depth) {
+  const pad = "  ".repeat(depth);
+  let num = (list.attrs && list.attrs.start) || 1;
+  return (list.content || []).map((item) => {
+    const kids = item.content || [];
+    const first = kids[0] && kids[0].type === "paragraph" ? kids[0] : null;
+    const marker = list.type === "orderedList" ? (num++) + "." : "-";
+    const box = list.type === "taskList" ? (item.attrs && item.attrs.checked ? "[x] " : "[ ] ") : "";
+    const lines = [pad + marker + " " + box + (first ? mdInlineFromNodes(first.content, { oneLine: true }).trim() : "")];
+    kids.slice(first ? 1 : 0).forEach((k) => {
+      if (k.type === "bulletList" || k.type === "orderedList" || k.type === "taskList") {
+        const sub = mdListFromNode(k, depth + 1);
+        if (sub) lines.push(sub);
+      } else if (k.type === "paragraph") {
+        // schema 里列表项只允许「一段 + 子列表」，这里只是兜底：多出来的段落并进第一行
+        const t = mdInlineFromNodes(k.content, { oneLine: true }).trim();
+        if (t) lines[0] += " " + t;
+      }
+    });
+    return lines.join("\n");
+  }).join("\n");
+}
+
+function mdTableFromNode(t) {
+  const rows = (t.content || []).map((r) => (r.content || []).map((cell) =>
+    (cell.content || []).map((p) => mdInlineFromNodes(p.content, { oneLine: true, table: true }).trim())
+      .filter(Boolean).join(" ")));
+  if (!rows.length) return "";
+  const cols = Math.max(1, ...rows.map((r) => r.length));
+  const line = (r) => "| " + Array.from({ length: cols }, (_, i) => r[i] || "").join(" | ") + " |";
+  return [line(rows[0]), "| " + Array(cols).fill("---").join(" | ") + " |", ...rows.slice(1).map(line)].join("\n");
+}
+
+function mdBlockFromNode(n) {
+  switch (n.type) {
+    case "paragraph": {
+      const txt = mdInlineFromNodes(n.content).replace(/^\n+|\n+$/g, "");
+      if (!txt.trim()) return "";
+      return txt.split("\n").map(mdEscapeLineStart).join("\n");
+    }
+    case "heading": {
+      const txt = mdInlineFromNodes(n.content, { oneLine: true }).trim();
+      if (!txt) return "";
+      const lv = Math.min(Math.max((n.attrs && n.attrs.level) || 1, 1), 6);
+      return "#".repeat(lv) + " " + txt;
+    }
+    case "blockquote": {
+      const lines = [];
+      (n.content || []).forEach((p, i) => {
+        if (i) lines.push("");
+        mdInlineFromNodes(p.content).replace(/^\n+|\n+$/g, "").split("\n").forEach((l) => lines.push(l));
+      });
+      if (!lines.some((l) => l.trim())) return "";
+      return lines.map((l) => (l ? "> " + l : ">")).join("\n");
+    }
+    case "bulletList": case "orderedList": case "taskList": return mdListFromNode(n, 0);
+    case "codeBlock": return "```\n" + (n.content || []).map((c) => c.text || "").join("") + "\n```";
+    case "horizontalRule": return "---";
+    case "image": return mdInlineFromNodes([n]);
+    case "table": return mdTableFromNode(n);
+  }
+  return n.content ? mdInlineFromNodes(n.content) : "";
+}
+
+/* 编辑器文档 → markdown（存库的就是这个） */
+function docToMarkdown(doc) {
+  return ((doc && doc.content) || []).map(mdBlockFromNode).filter((s) => s.trim()).join("\n\n");
 }
 
 /* ============================================================
-   编辑区 ⇄ 预览区滚动联动
-
-   目标：写到正文哪一段，右边预览就停在哪一段。
-
-   做法是「按块对齐」而不是「按比例硬滚」：renderMarkdown 给每个块打了
-   data-md-line（它在源码里的起始行号），这里把编辑区里同样这些行的 y 坐标量出来，
-   两张表一一对应，中间的位置线性插值。按比例硬滚在纯文字时勉强能看，
-   一旦正文里有图片或表格——两边高度差几百像素——就完全对不上了。
-
-   量 y 用的是老办法：做一个字体、宽度、padding 都和 textarea 一致的隐藏 div，
-   把正文按块切成若干 span 塞进去，读每个 span 的 offsetTop。一次量完全部，
-   并按「正文 + 宽度」缓存，滚动时不会反复量。
-
-   联动是单向的（编辑区带动预览区）。反向联动要处理两边互相触发的死循环，
-   收益不值那个复杂度；用户手动滚预览时不会被打断，等下次动编辑区再重新对齐。
+   Tiptap 扩展：自定义的两样东西（颜色、交易引用）+ 收紧几个节点的内容
    ============================================================ */
-let mdOffsetCache = { text: null, width: 0, tops: null, lineNums: null };
-let previewSyncRaf = null;
-let suppressPreviewSyncUntil = 0;   // 用户刚手动滚过预览，这段时间内不抢他的滚动位置
-let lastProgrammaticScrollAt = 0;   // 自己设的 scrollTop 也会派发 scroll 事件，得认出来
-let activeMdLineEl = null;
-
-/* 所有对预览区滚动位置的程序性修改都走这里，好让 scroll 处理器认出「这一下是我自己干的」。
-   scroll 事件的 isTrusted 永远是 true，区分不了来源，只能靠时间戳。 */
-function setPreviewScrollTop(box, v) {
-  const next = Math.min(Math.max(v, 0), Math.max(box.scrollHeight - box.clientHeight, 0));
-  if (Math.abs(box.scrollTop - next) < 1) return;
-  lastProgrammaticScrollAt = Date.now();
-  box.scrollTop = next;
+function mdColorFromClass(el) {
+  const m = /\bmdC-([a-z]+)\b/.exec((el && el.className) || "");
+  return m && MD_COLORS.includes(m[1]) ? m[1] : null;
 }
+function reviewExtensions(L) {
+  // 列表项里只允许「一段文字 + 子列表」，引用里只允许段落，表格格子里也只放段落——
+  // markdown 那边只表达得了这些，schema 放宽了的话写出来的东西存不回去
+  const listItemContent = "paragraph (bulletList | orderedList | taskList)*";
+  const httpOnly = (url) => /^https?:\/\//i.test(String(url || "").trim());
 
-/* 块在预览区「内容坐标系」里的位置（可以直接和 scrollTop 比）。
-   不用 el.offsetTop - box.offsetTop：那个只在两者共用同一个定位祖先时才成立，
-   哪天给预览区加个 position:relative 就会静默错位。 */
-function blockOffsetInPreview(el, box) {
-  return el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
-}
-
-/* 预览区里所有带行号的块，按出现顺序（也就是行号升序） */
-function previewBlocks() {
-  const box = document.getElementById("reviewPreview");
-  if (!box) return [];
-  return [...box.querySelectorAll("[data-md-line]")];
-}
-
-/* 把编辑区里这些行的 y 坐标量出来。lineNums 必须升序 */
-function measureEditorLineTops(ta, lineNums) {
-  if (mdOffsetCache.text === ta.value && mdOffsetCache.width === ta.clientWidth
-      && mdOffsetCache.lineNums && mdOffsetCache.lineNums.join() === lineNums.join()) {
-    return mdOffsetCache.tops;
-  }
-  const cs = getComputedStyle(ta);
-  const div = document.createElement("div");
-  ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "wordSpacing",
-    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"].forEach((k) => { div.style[k] = cs[k]; });
-  div.style.position = "absolute";
-  div.style.top = "0";
-  div.style.left = "-9999px";
-  div.style.visibility = "hidden";
-  div.style.whiteSpace = "pre-wrap";
-  div.style.wordWrap = "break-word";
-  div.style.boxSizing = "border-box";
-  div.style.border = "none";
-  div.style.width = ta.clientWidth + "px";
-
-  const srcLines = ta.value.split("\n");
-  const spans = lineNums.map((ln, idx) => {
-    const to = idx + 1 < lineNums.length ? lineNums[idx + 1] : srcLines.length;
-    const span = document.createElement("span");
-    // textContent 不解析 HTML，正文里的 < & 在这里没有任何危险
-    span.textContent = srcLines.slice(ln, to).join("\n") + (to < srcLines.length ? "\n" : "");
-    div.appendChild(span);
-    return span;
+  const MdColor = L.Mark.create({
+    name: "mdColor",
+    addAttributes() {
+      return { color: { default: "red", parseHTML: (el) => mdColorFromClass(el), renderHTML: () => ({}) } };
+    },
+    parseHTML() { return [{ tag: "span.mdC", getAttrs: (el) => (mdColorFromClass(el) ? null : false) }]; },
+    // 只输出我们自己的类名，颜色值在 style.css 里——绝不把属性值当 CSS 塞进 style
+    renderHTML({ mark }) {
+      const c = MD_COLORS.includes(mark.attrs.color) ? mark.attrs.color : "red";
+      return ["span", { class: "mdC mdC-" + c }, 0];
+    },
   });
-  document.body.appendChild(div);
-  const tops = spans.map((sp) => sp.offsetTop);
-  document.body.removeChild(div);
 
-  mdOffsetCache = { text: ta.value, width: ta.clientWidth, tops, lineNums: lineNums.slice() };
-  return tops;
-}
-
-/* 编辑区滚到哪，预览就滚到对应的块。中间位置在相邻两块之间线性插值 */
-function syncPreviewToEditor() {
-  if (Date.now() < suppressPreviewSyncUntil) return;
-  const ta = document.getElementById("reviewBodyInput");
-  const box = document.getElementById("reviewPreview");
-  if (!ta || !box || reviewIsReadOnly() || !reviewPreviewOpen) return;
-  const blocks = previewBlocks();
-  if (blocks.length < 2) return;
-
-  const lineNums = blocks.map((b) => +b.dataset.mdLine);
-  const tops = measureEditorLineTops(ta, lineNums);
-  if (!tops || tops.length !== blocks.length) return;
-
-  const y = ta.scrollTop;
-  let k = 0;
-  while (k + 1 < tops.length && tops[k + 1] <= y) k++;
-  const t0 = tops[k], t1 = k + 1 < tops.length ? tops[k + 1] : t0 + 1;
-  const frac = t1 > t0 ? Math.min(Math.max((y - t0) / (t1 - t0), 0), 1) : 0;
-
-  const p0 = blockOffsetInPreview(blocks[k], box);
-  const p1 = k + 1 < blocks.length ? blockOffsetInPreview(blocks[k + 1], box) : p0;
-  setPreviewScrollTop(box, p0 + (p1 - p0) * frac);
-}
-
-/* 光标所在的块高亮一下，顺便在它跑出预览可视区时把它带回来。
-   只在真的看不见时才滚——每敲一个字就把预览拽一下，比不联动更烦人。 */
-function highlightCaretBlock() {
-  const ta = document.getElementById("reviewBodyInput");
-  const box = document.getElementById("reviewPreview");
-  if (!ta || !box || reviewIsReadOnly() || !reviewPreviewOpen) return;
-  const line = ta.value.slice(0, ta.selectionStart).split("\n").length - 1;
-  let el = null;
-  previewBlocks().forEach((b) => { if (+b.dataset.mdLine <= line) el = b; });
-  if (activeMdLineEl && activeMdLineEl !== el) activeMdLineEl.classList.remove("mdActiveBlock");
-  activeMdLineEl = el;
-  if (!el) return;
-  el.classList.add("mdActiveBlock");
-  if (Date.now() < suppressPreviewSyncUntil) return;
-  const elTop = blockOffsetInPreview(el, box);
-  const elBottom = elTop + el.offsetHeight;
-  if (elTop < box.scrollTop || elBottom > box.scrollTop + box.clientHeight) {
-    setPreviewScrollTop(box, elTop - box.clientHeight * 0.3);
-  }
-}
-
-/* 滚动事件很密，合并到一帧里做一次 */
-function queuePreviewSync() {
-  if (previewSyncRaf) return;
-  previewSyncRaf = requestAnimationFrame(() => {
-    previewSyncRaf = null;
-    syncPreviewToEditor();
+  const TradeRef = L.Node.create({
+    name: "tradeRef",
+    group: "inline",
+    inline: true,
+    atom: true,
+    selectable: true,
+    marks: "",
+    addAttributes() {
+      return {
+        id: {
+          default: "",
+          parseHTML: (el) => { const v = el.getAttribute("data-trade-ref") || ""; return /^[A-Za-z0-9_-]+$/.test(v) ? v : ""; },
+          renderHTML: (a) => ({ "data-trade-ref": a.id }),
+        },
+      };
+    },
+    parseHTML() { return [{ tag: "span[data-trade-ref]" }]; },
+    renderHTML({ HTMLAttributes }) { return ["span", HTMLAttributes]; },
+    renderText({ node }) { return "[[trade:" + node.attrs.id + "]]"; },
+    // 显示成和只读视图一样的胶囊。胶囊上带着 data-action="open-trade-ref"，
+    // 点击冒泡到 document 的委托里，照常弹出只读预览
+    addNodeView() {
+      return ({ node }) => {
+        const dom = document.createElement("span");
+        dom.className = "tradeRefHost";
+        dom.innerHTML = tradeRefHtml(node.attrs.id);
+        return { dom, ignoreMutation: () => true };
+      };
+    },
   });
+
+  return [
+    L.StarterKit.configure({
+      blockquote: false,
+      listItem: false,
+      underline: false,          // markdown 里没有下划线，放进来的话 Ctrl+U 划的线存不下来
+      heading: { levels: [1, 2, 3, 4, 5, 6] },
+      link: {
+        openOnClick: false,      // 编辑时点链接是想改字，打开走格式栏里的按钮或 Ctrl+点击
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: "https",
+        isAllowedUri: (url) => httpOnly(url),
+        shouldAutoLink: (url) => httpOnly(url),
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer nofollow" },
+      },
+    }),
+    L.Blockquote.extend({ content: "paragraph+" }),
+    L.ListItem.extend({ content: listItemContent }),
+    L.TaskList,
+    L.TaskItem.extend({ content: listItemContent }).configure({ nested: true }),
+    L.Image.extend({
+      // 粘贴进来的 HTML 里可能有 data:/blob: 的图，这里只认 http(s)，图片一律走外部图床
+      parseHTML() { return [{ tag: "img[src]", getAttrs: (el) => (mdSafeUrl(el.getAttribute("src")) ? null : false) }]; },
+    }).configure({ inline: false, allowBase64: false, HTMLAttributes: { class: "mdImg", referrerpolicy: "no-referrer" } }),
+    L.Table.configure({ resizable: false, HTMLAttributes: { class: "mdTable" } }),
+    L.TableRow,
+    L.TableHeader.extend({ content: "paragraph+" }),
+    L.TableCell.extend({ content: "paragraph+" }),
+    L.Placeholder.configure({
+      placeholder: ({ node }) => (node.type.name === "heading" ? T("review.ph.heading") : T("review.ph.line")),
+    }),
+    MdColor,
+    TradeRef,
+  ];
 }
-window.__reviewEditorScroll = function () { queuePreviewSync(); };
-/* 用户自己滚预览时先让开，别跟他抢；等他回去动编辑区再重新对齐 */
-window.__reviewPreviewScroll = function () {
-  if (Date.now() - lastProgrammaticScrollAt < 150) return;   // 这一下是上面自己设的
-  suppressPreviewSyncUntil = Date.now() + 1200;
+
+/* ============================================================
+   挂载 / 卸载
+   ============================================================ */
+let reviewTiptap = null;
+let reviewMountSeq = 0;     // 每次重建编辑器外壳 +1；异步加载回来发现对不上就放弃挂载
+
+function destroyReviewTiptap() {
+  if (reviewTiptap) { try { reviewTiptap.destroy(); } catch (e) {} }
+  reviewTiptap = null;
+  slashMenu = null;
+  slashDismissedFrom = null;
+  reviewPop = null;
+  bubbleMode = "main";
+  bubbleKey = null;
+}
+
+function renderReviewEditor(force) {
+  const root = document.getElementById("reviewEditorRoot");
+  if (!root) return;
+  if (!editingReview) { destroyReviewTiptap(); reviewEditorRenderedFor = null; root.innerHTML = ""; return; }
+  // 已经在显示这一篇就不重绘——否则正在写的正文和光标位置全没了
+  if (!force && reviewEditorRenderedFor === editingReview.id) return;
+  reviewEditorRenderedFor = editingReview.id;
+  destroyReviewTiptap();
+  const seq = ++reviewMountSeq;
+
+  const readOnly = reviewIsReadOnly();
+  const staticBody = renderMarkdown(editingReview.body);
+  root.innerHTML = `<div class="reviewEditorOverlay" id="reviewScroller" onscroll="window.__reviewScroll()">
+    <div class="reviewTopBar">
+      <div class="reviewCrumbs">
+        <button class="reviewCrumbBtn" data-action="close-review-editor">${esc(T("review.back"))}</button>
+        <span class="reviewCrumbSep">/</span>
+        <span class="reviewCrumbTitle" id="reviewCrumbTitle">${esc(reviewTitleOf(editingReview))}</span>
+      </div>
+      <div class="reviewTopRight">
+        <span id="reviewSaveSlot">${readOnly ? "" : reviewSaveBadgeHtml()}</span>
+        <button class="iconBtn" data-action="close-review-editor" title="${esc(T("review.editorClose"))}">${ICONS.x}</button>
+      </div>
+    </div>
+    <div class="reviewPage">
+      ${readOnly
+        ? `<div class="reviewTitleStatic display">${esc(reviewTitleOf(editingReview))}</div>`
+        : `<input class="reviewTitleInput display" type="text" id="reviewTitleInput"
+            placeholder="${esc(T("review.titlePlaceholder"))}" value="${esc(editingReview.title || "")}"
+            oninput="window.__reviewTitleInput(this)" onkeydown="window.__reviewTitleKey(event)" />`}
+      <div class="reviewWeekRow" id="reviewWeekRow">${reviewWeekRowInnerHtml()}</div>
+      ${readOnly
+        ? `<div class="mdBody reviewDoc">${staticBody || `<div class="reviewDocEmpty">${esc(T("review.previewEmpty"))}</div>`}</div>`
+        : `<div id="reviewDocMount" class="reviewDocMount">
+            <div class="mdBody reviewDoc reviewDocLoading">${staticBody}</div>
+            <div class="reviewLoadingNote">${esc(T("review.loadingEditor"))}</div>
+          </div>
+          <div class="reviewDocTail" onclick="window.__reviewFocusEnd()"></div>`}
+    </div>
+    ${readOnly ? "" : `<div class="reviewHintBar">${esc(T("review.hintBar", { mod: modKeyLabel() }))}</div>`}
+    <div id="reviewFloatRoot" onmousedown="window.__reviewFloatMouseDown(event)">
+      <div id="reviewBubble" class="reviewBubble" hidden></div>
+      <div id="reviewPop" class="reviewPop" hidden></div>
+      <div id="slashMenuRoot"></div>
+      <div id="reviewToast" class="reviewToast" hidden></div>
+    </div>
+    <div id="tradePickerRoot"></div>
+  </div>`;
+
+  if (readOnly) return;
+  if (editingReview._isNew && !(editingReview.title || "").trim()) {
+    const ti = document.getElementById("reviewTitleInput");
+    if (ti) ti.focus();
+  }
+  mountReviewTiptap(seq);
+}
+
+async function mountReviewTiptap(seq) {
+  let L;
+  try {
+    L = await loadTiptap();
+  } catch (err) {
+    console.error(err);
+    if (seq === reviewMountSeq) mountReviewFallback();
+    return;
+  }
+  // 加载期间用户可能已经关掉、换了一篇，或者外壳被强制重建过
+  if (seq !== reviewMountSeq || !editingReview) return;
+  const mount = document.getElementById("reviewDocMount");
+  if (!mount) return;
+  mount.innerHTML = "";
+  const titleHadFocus = document.activeElement && document.activeElement.id === "reviewTitleInput";
+  try {
+    reviewTiptap = new L.Editor({
+      element: mount,
+      extensions: reviewExtensions(L),
+      content: mdToEditorHtml(editingReview.body),
+      editorProps: {
+        attributes: { class: "mdBody reviewDoc", spellcheck: "false" },
+        // 光标滚进视野时，上面让出 sticky 顶栏、下面让出提示条，不然正在打的那行会被挡住
+        scrollThreshold: { top: 70, bottom: 90, left: 0, right: 0 },
+        scrollMargin: { top: 70, bottom: 90, left: 0, right: 0 },
+        handleKeyDown: (view, e) => reviewEditorKeydown(view, e),
+        handlePaste: (view, e) => reviewEditorPaste(view, e),
+        handleDoubleClickOn: (view, pos, node) => {
+          if (node.type.name !== "image") return false;
+          const u = mdSafeUrl(node.attrs.src);
+          if (u) { lightboxUrl = u; renderSecondaryModals(true); }   // 只画灯箱那一层，不用整页重绘
+          return true;
+        },
+        handleClick: (view, pos, e) => {
+          // Ctrl/⌘ + 点击链接 = 在新标签页打开（普通点击是在改字）
+          const a = e.target && e.target.closest && e.target.closest("a[href]");
+          if (!a || !(e.ctrlKey || e.metaKey)) return false;
+          const u = mdSafeUrl(a.getAttribute("href"));
+          if (u) window.open(u, "_blank", "noopener,noreferrer");
+          return true;
+        },
+      },
+      onUpdate: ({ editor }) => {
+        if (!editingReview) return;
+        editingReview.body = docToMarkdown(editor.getJSON());
+        scheduleReviewSave();
+        syncSlashMenu();
+        updateBubble();
+      },
+      onSelectionUpdate: () => { syncSlashMenu(); updateBubble(); },
+      onFocus: () => updateBubble(),
+      onBlur: ({ event }) => {
+        // 焦点挪进了格式栏里的输入框（改链接）——那不算离开
+        const to = event && event.relatedTarget;
+        if (to && to.closest && to.closest("#reviewFloatRoot")) return;
+        if (slashMenu) closeSlashMenu(true);
+        setTimeout(updateBubble, 0);
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    reviewTiptap = null;
+    mountReviewFallback();
+    return;
+  }
+  if (titleHadFocus) { const ti = document.getElementById("reviewTitleInput"); if (ti) ti.focus(); }
+}
+
+/* 编辑器没加载出来（断网、被拦截）：退回纯文本框，直接写 markdown。
+   丑一点，但写的东西照样存得下来，不能因为一个库把人卡在门外 */
+function mountReviewFallback() {
+  const mount = document.getElementById("reviewDocMount");
+  if (!mount || !editingReview) return;
+  mount.innerHTML = `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(T("review.editorLoadFailed"))}</span></div>
+    <textarea class="input reviewFallbackInput" spellcheck="false" oninput="window.__reviewFallbackInput(this)">${esc(editingReview.body || "")}</textarea>`;
+}
+window.__reviewFallbackInput = function (ta) {
+  if (!editingReview) return;
+  editingReview.body = ta.value;
+  scheduleReviewSave();
 };
 
-/* ⚠️ 这里不能简单地 `box.innerHTML = ...`。
-   整块替换会把预览区里的 <img> 全部换成新元素，而新建的 <img> 在图片解码完成前
-   高度是 0 —— 浏览器恰好在这一刻做布局，scrollHeight 骤降，scrollTop 跟着被夹小；
-   等图片异步恢复高度时滚动位置已经丢了。每按一次键削掉几十像素，长文里就表现为
-   「一打字预览区就自己往上滚」。
-   所以：内容没变就不动 DOM；要换就把已经加载好的 <img> 原样搬到新树里，最后把
-   滚动位置放回去。 */
-let lastPreviewHtml = null;
-function updateReviewPreview() {
-  const box = document.getElementById("reviewPreview");
-  if (!box || !editingReview) return;
-  const html = renderMarkdown(editingReview.body) || `<div class="reviewPreviewEmpty">${esc(T("review.previewEmpty"))}</div>`;
-  if (html === lastPreviewHtml) return;
-  lastPreviewHtml = html;
+/* 点正文下面的空白：跳到文末接着写。文末是表格、图片、列表这些的话先补一个空段落——
+   不然光标会钻进最后一个表格格子里。空段落不会写进 markdown，没有副作用 */
+window.__reviewFocusEnd = function () {
+  const ed = reviewTiptap;
+  if (!ed) return;
+  const last = ed.state.doc.lastChild;
+  if (!last || last.type.name !== "paragraph" || last.content.size) {
+    ed.chain().insertContentAt(ed.state.doc.content.size, { type: "paragraph" }).focus("end").run();
+  } else {
+    ed.commands.focus("end");
+  }
+};
+window.__reviewScroll = function () { positionReviewFloats(); };
+window.addEventListener("resize", () => { if (reviewTiptap) positionReviewFloats(); });
 
-  const top = box.scrollTop;
-  const next = document.createElement("div");
-  next.innerHTML = html;
+/* 浮层里的按钮不能抢走编辑器的焦点（选区会丢）；输入框例外，它本来就要焦点 */
+window.__reviewFloatMouseDown = function (e) {
+  if (!(e.target.closest && e.target.closest("input"))) e.preventDefault();
+};
 
-  // 按 src 建索引，把旧树里已经加载完的图片节点复用过去（移动节点不会触发重新加载）。
-  // 同一张图可能在正文里出现多次，所以每个 src 存一队，逐个取用。
-  const loaded = new Map();
-  box.querySelectorAll("img").forEach((img) => {
-    if (!img.complete || !img.naturalHeight) return;
-    if (!loaded.has(img.src)) loaded.set(img.src, []);
-    loaded.get(img.src).push(img);
-  });
-  next.querySelectorAll("img").forEach((img) => {
-    const queue = loaded.get(img.src);
-    if (!queue || !queue.length) return;
-    const old = queue.shift();
-    old.alt = img.alt;                 // alt 可能被改过，其余属性由 src 唯一决定
-    img.replaceWith(old);
-  });
+function positionReviewFloats() {
+  if (slashMenu) renderSlashMenu();
+  if (reviewPop) positionReviewPop();
+  positionBubble();
+}
 
-  box.replaceChildren(...next.childNodes);
-  activeMdLineEl = null;          // 上一轮的高亮节点已经被换掉了
-  lastProgrammaticScrollAt = Date.now();
-  box.scrollTop = top;
+/* 浮层都是 position:fixed，坐标直接用 ProseMirror 算的视口坐标 */
+function placeFloat(el, anchorTop, anchorBottom, centerX, preferAbove) {
+  const w = el.offsetWidth, h = el.offsetHeight;
+  const minTop = 56;   // 顶栏下面
+  let top = preferAbove ? anchorTop - h - 8 : anchorBottom + 6;
+  if (preferAbove && top < minTop) top = anchorBottom + 8;
+  if (!preferAbove && top + h > window.innerHeight - 8 && anchorTop - h - 6 > minTop) top = anchorTop - h - 6;
+  const left = Math.min(Math.max(centerX - (preferAbove ? w / 2 : 0), 8), Math.max(window.innerWidth - w - 8, 8));
+  el.style.top = Math.round(top) + "px";
+  el.style.left = Math.round(left) + "px";
 }
 
 /* ---------- 自动保存 ----------
@@ -4182,403 +4439,129 @@ async function flushReviewSave() {
   return ok;
 }
 
-/* ---------- textarea 上的输入处理 ----------
-   全部走内联 on* 属性交给这几个 window.__ 函数，跟项目里
-   window.__updateUrlPreview / window.__imgFallback 一个路子。 */
 window.__reviewTitleInput = function (el) {
   if (!editingReview) return;
   editingReview.title = el.value;
+  const crumb = document.getElementById("reviewCrumbTitle");
+  if (crumb) crumb.textContent = reviewTitleOf(editingReview);
   scheduleReviewSave();
 };
-window.__reviewBodyInput = function (ta) {
-  if (!editingReview) return;
-  editingReview.body = ta.value;
-  // execCommand 会顺带派发一次 input。那一路的收尾由 replaceRange 自己做，
-  // 而且**绝对不能在这里跑 syncSlashMenu**——程序性插入之后光标前面可能正好是个 "/"，
-  // 会莫名其妙把插入菜单又弹出来
-  if (programmaticEdit) return;
-  updateReviewPreview();
-  scheduleReviewSave();
-  syncSlashMenu(ta);
-  highlightCaretBlock();
-};
-/* 鼠标点进正文：光标跳走了，插入菜单没有意义了，关掉 */
-window.__reviewCaretMoved = function () {
-  if (slashMenu) closeSlashMenu();
-  highlightCaretBlock();
-};
-/* 键盘抬起：只更新「现在写的是哪一段」的高亮。
-   ⚠️ 这里绝对不能关插入菜单——按键顺序是 keydown → input → keyup，
-   打 `/` 时 input 刚把菜单弹出来，紧接着的 keyup 会立刻把它关掉。
-   菜单的开关由 syncSlashMenu(input 时) 和 __reviewKeydown(方向键/回车/Esc) 负责。 */
-window.__reviewCaretKey = function () {
-  highlightCaretBlock();
-};
-window.__reviewPaste = function (e, ta) {
-  const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
-  if (!/^https?:\/\/\S+$/i.test(text.trim())) return;   // 不是纯链接就走默认粘贴
-  const url = text.trim();
-  const hasSel = ta.selectionStart !== ta.selectionEnd;
-  const isImage = /\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?|#|$)/i.test(url);
-  if (!hasSel && !isImage) return;                      // 光秃秃粘个普通链接，保持原样最省事
-  e.preventDefault();
-  if (isImage && !hasSel) {
-    replaceRange(ta, ta.selectionStart, ta.selectionEnd, `![](${url})`, null);
-  } else {
-    const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd) || T("review.linkText");
-    replaceRange(ta, ta.selectionStart, ta.selectionEnd, `[${sel}](${url})`, null);
+/* 标题里按回车 / 下箭头：跳进正文开头，跟 Notion 一样 */
+window.__reviewTitleKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if ((e.key === "Enter" || e.key === "ArrowDown") && reviewTiptap) {
+    e.preventDefault();
+    // Tiptap 的 focus() 要等下一帧才真正挪焦点，这之间打的字还会落在标题里——先同步聚焦
+    reviewTiptap.view.focus();
+    reviewTiptap.commands.focus("start");
   }
 };
 
-/* 统一的「改 textarea 内容」入口：改完同步状态、预览、光标。
-
-   ⚠️⚠️ 这里必须走 execCommand，不能写 `ta.value = ...`（已经踩过一次）。
-   给 textarea 的 value 直接赋值会把浏览器的**原生撤销栈整个清空**，而回车续列表、
-   Tab 缩进、工具栏、插入菜单、粘贴全都经过这个函数——结果就是编辑器里 Ctrl+Z
-   完全失效。execCommand("insertText") 会被浏览器当成一次真实编辑记进撤销栈，
-   Ctrl+Z / Ctrl+Shift+Z 就都是原生行为，一行都不用自己实现。
-   （execCommand 标准上标了 deprecated，但这是目前唯一能保住 textarea 撤销栈的
-   办法，各家浏览器也都还支持；真失败了下面有兜底。） */
-let programmaticEdit = false;
-function replaceRange(ta, from, to, text, selStart, selEnd) {
-  ta.focus();
-  ta.setSelectionRange(from, to);
-  programmaticEdit = true;
-  let ok = false;
-  try {
-    // 空串 + 有选区 = 删除；insertText 传空串在各家表现不一致，分开处理
-    if (text === "") ok = from === to ? true : document.execCommand("delete");
-    else ok = document.execCommand("insertText", false, text);
-  } catch (err) { ok = false; }
-  if (!ok) {
-    // 兜底：万一哪天 execCommand 真没了，功能不能跟着废，代价是这一步撤销不了
-    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
-  }
-  programmaticEdit = false;
-
-  const a = (selStart === null || selStart === undefined) ? from + text.length : selStart;
-  const b = (selEnd === null || selEnd === undefined) ? a : selEnd;
-  ta.setSelectionRange(a, b);
-  if (editingReview) editingReview.body = ta.value;
-  updateReviewPreview();
-  scheduleReviewSave();
-  highlightCaretBlock();
-}
-
-/* 整行整行地改（缩进、列表、标题都走这里）。
-   本来选中了多行，就把改完的这几行继续选着——否则 Tab 之后选区一塌，
-   紧接着的 Shift+Tab 只能退最后一行。没选中就只按长度差挪一下光标。 */
-function applyLineEdit(ta, s, en, text) {
-  const hadRange = ta.selectionStart !== ta.selectionEnd;
-  const caret = ta.selectionStart;
-  const delta = text.length - (en - s);
-  if (hadRange) replaceRange(ta, s, en, text, s, s + text.length);
-  else replaceRange(ta, s, en, text, Math.max(s, caret + delta));
-}
-
-function lineBoundsAt(value, pos) {
-  const start = value.lastIndexOf("\n", pos - 1) + 1;
-  let end = value.indexOf("\n", pos);
-  if (end === -1) end = value.length;
-  return { start, end };
-}
-
-/* 给选中的每一行加/去掉前缀（列表、引用、标题都走这个） */
-function toggleLinePrefix(ta, prefix, numbered) {
-  const v = ta.value;
-  const s = lineBoundsAt(v, ta.selectionStart).start;
-  const e = lineBoundsAt(v, ta.selectionEnd).end;
-  const lines = v.slice(s, e).split("\n");
-  const stripRe = /^(\s*)(#{1,6}\s+|[-*+]\s+\[[ xX]\]\s+|[-*+]\s+|\d+[.)]\s+|>\s?)?/;
-  const allHave = lines.every((l) => !l.trim() || l.replace(/^\s*/, "").startsWith(numbered ? "" : prefix.trim()));
-  const out = lines.map((l, i) => {
-    const m = l.match(stripRe);
-    const indent = m[1] || "";
-    const bare = l.slice((m[0] || "").length);
-    if (allHave && !numbered && m[2] && m[2].trim() === prefix.trim()) return indent + bare;   // 再点一次 = 去掉
-    return indent + (numbered ? (i + 1) + ". " : prefix) + bare;
-  });
-  const text = out.join("\n");
-  applyLineEdit(ta, s, e, text);
-}
-
-function wrapSelection(ta, mark, endMark) {
-  const close = endMark === undefined ? mark : endMark;
-  const from = ta.selectionStart, to = ta.selectionEnd;
-  const sel = ta.value.slice(from, to);
-  // 已经包着同样的标记就脱掉，再点一次能取消
-  if (sel && ta.value.slice(from - mark.length, from) === mark && ta.value.slice(to, to + close.length) === close) {
-    const inner = sel;
-    replaceRange(ta, from - mark.length, to + close.length, inner, from - mark.length + inner.length);
-    return;
-  }
-  if (!sel) {
-    replaceRange(ta, from, to, mark + close, from + mark.length);   // 空选中：把光标停在中间
-    return;
-  }
-  replaceRange(ta, from, to, mark + sel + close, from + mark.length + sel.length + close.length);
-}
-
-/* 给选中的文字上色，或者换个颜色、清掉颜色（color 传空就是清除）。
-   三种情况都要处理好，不然「再点一次换个色」会套出 {red|{green|x}} 这种嵌套。 */
-function applyReviewColor(color) {
-  const ta = document.getElementById("reviewBodyInput");
-  if (!ta || reviewIsReadOnly()) return;
-  const sel = reviewColorSel || { from: ta.selectionStart, to: ta.selectionEnd };
-  let from = sel.from, to = sel.to;
-  let inner = ta.value.slice(from, to);
-
-  // 情况一：选中的正好是一整段 {c|...}
-  const whole = inner.match(/^\{([a-z]+)\|([\s\S]*)\}$/);
-  if (whole && MD_COLORS.includes(whole[1])) {
-    inner = whole[2];
-  } else {
-    // 情况二：选中的是里面的文字，外面那层要一起吃掉，否则会越套越深
-    const lead = ta.value.slice(0, from).match(/\{([a-z]+)\|$/);
-    if (lead && MD_COLORS.includes(lead[1]) && ta.value[to] === "}") {
-      from -= lead[0].length;
-      to += 1;
-    }
-  }
-
-  if (!color) {                                   // 清除颜色
-    replaceRange(ta, from, to, inner, from, from + inner.length);
-    return;
-  }
-  if (!inner) {                                   // 没选中：插个空壳，光标停在中间
-    const text = "{" + color + "|}";
-    replaceRange(ta, from, to, text, from + text.length - 1);
-    return;
-  }
-  const text = "{" + color + "|" + inner + "}";
-  replaceRange(ta, from, to, text, from, from + text.length);
-}
-
-/* 浮层只画进工具栏里的一个小根节点，不能走 renderReviewEditor——
-   那会把整个编辑器重建一遍，正在写的正文和光标全没了 */
-function renderReviewColorMenu() {
-  const root = document.getElementById("reviewColorRoot");
-  if (!root) return;
-  if (!reviewColorMenuOpen) { root.innerHTML = ""; return; }
-  root.innerHTML = `<div class="colorMenu">
-    ${MD_COLORS.map((c) => `<button class="colorSwatch" data-action="review-color" data-color="${c}" title="${esc(T("review.color." + c))}">
-      <span class="colorDot mdC-${c}">A</span><span class="colorName">${esc(T("review.color." + c))}</span>
-    </button>`).join("")}
-    <button class="colorSwatch colorClear" data-action="review-color" data-color="">
-      <span class="colorDot">${ICONS.x}</span><span class="colorName">${esc(T("review.color.clear"))}</span>
-    </button>
-  </div>`;
-}
-function closeReviewColorMenu() {
-  if (!reviewColorMenuOpen) return;
-  reviewColorMenuOpen = false;
-  reviewColorSel = null;
-  renderReviewColorMenu();
-}
-
-function insertBlock(ta, text) {
-  const v = ta.value;
-  const { start } = lineBoundsAt(v, ta.selectionStart);
-  const atLineStart = ta.selectionStart === start;
-  const lead = atLineStart ? "" : "\n";
-  replaceRange(ta, ta.selectionStart, ta.selectionEnd, lead + text);
-}
-
-function runReviewCommand(cmd) {
-  const ta = document.getElementById("reviewBodyInput");
-  if (!ta || reviewIsReadOnly()) return;
-  switch (cmd) {
-    case "bold": wrapSelection(ta, "**"); break;
-    case "italic": wrapSelection(ta, "*"); break;
-    case "strike": wrapSelection(ta, "~~"); break;
-    case "h1": toggleLinePrefix(ta, "# "); break;
-    case "h2": toggleLinePrefix(ta, "## "); break;
-    case "h3": toggleLinePrefix(ta, "### "); break;
-    case "ul": toggleLinePrefix(ta, "- "); break;
-    case "ol": toggleLinePrefix(ta, "1. ", true); break;
-    case "task": toggleLinePrefix(ta, "- [ ] "); break;
-    case "quote": toggleLinePrefix(ta, "> "); break;
-    case "code": {
-      const multi = ta.value.slice(ta.selectionStart, ta.selectionEnd).includes("\n");
-      if (multi) {
-        const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd);
-        replaceRange(ta, ta.selectionStart, ta.selectionEnd, "```\n" + sel + "\n```");
-      } else wrapSelection(ta, "`");
-      break;
-    }
-    case "hr": insertBlock(ta, "\n---\n"); break;
-    case "table": insertBlock(ta, "\n| A | B |\n| --- | --- |\n|  |  |\n"); break;
-    case "link": {
-      const url = window.prompt(T("review.promptLink"), "https://");
-      if (!url || !/^https?:\/\//i.test(url.trim())) return;
-      const sel = ta.value.slice(ta.selectionStart, ta.selectionEnd) || T("review.linkText");
-      replaceRange(ta, ta.selectionStart, ta.selectionEnd, `[${sel}](${url.trim()})`);
-      break;
-    }
-    case "image": {
-      const url = window.prompt(T("review.promptImage"), "https://");
-      if (!url || !/^https?:\/\//i.test(url.trim())) return;
-      insertBlock(ta, `![](${url.trim()})\n`);
-      break;
-    }
-    case "color": {
-      // 斜杠菜单里选「文字颜色」：把选区记下来，然后把工具栏那个浮层打开
-      reviewColorSel = { from: ta.selectionStart, to: ta.selectionEnd };
-      reviewColorMenuOpen = true;
-      renderReviewColorMenu();
-      break;
-    }
-    case "trade": openTradePicker(); break;
-  }
-}
-
-/* ---------- 键盘：回车续列表 / Tab 缩进 / 常用快捷键 ----------
-   ⚠️ 所有分支都要先看 e.isComposing —— 中文输入法选词时按回车/空格
-   走的是同一个 keydown，不挡住的话会把没上屏的拼音切碎。 */
-window.__reviewKeydown = function (e, ta) {
-  if (reviewIsReadOnly()) return;
-
-  if (slashMenu && !e.isComposing) {
+/* ---------- 编辑器里的键盘 ----------
+   返回 true = 这一下我们处理了（ProseMirror 会顺手 preventDefault）。
+   Escape 不在这里处理：交给 document 上那条 ESC 链，按层级一层层关。 */
+function reviewEditorKeydown(view, e) {
+  if (e.isComposing || view.composing || e.keyCode === 229) return false;
+  if (slashMenu) {
     const items = slashFilteredItems();
-    if (e.key === "ArrowDown") { e.preventDefault(); slashMenu.index = (slashMenu.index + 1) % Math.max(items.length, 1); renderSlashMenu(); return; }
-    if (e.key === "ArrowUp") { e.preventDefault(); slashMenu.index = (slashMenu.index - 1 + Math.max(items.length, 1)) % Math.max(items.length, 1); renderSlashMenu(); return; }
-    if (e.key === "Enter" || e.key === "Tab") {
-      if (items.length) { e.preventDefault(); applySlashItem(items[slashMenu.index] || items[0]); return; }
-    }
-    if (e.key === "Escape") { e.preventDefault(); closeSlashMenu(); return; }
+    const n = Math.max(items.length, 1);
+    if (e.key === "ArrowDown") { slashMenu.index = (slashMenu.index + 1) % n; renderSlashMenu(); return true; }
+    if (e.key === "ArrowUp") { slashMenu.index = (slashMenu.index - 1 + n) % n; renderSlashMenu(); return true; }
+    if ((e.key === "Enter" || e.key === "Tab") && items.length) { applySlashItem(items[slashMenu.index] || items[0]); return true; }
   }
-
   const mod = e.ctrlKey || e.metaKey;
-  if (mod && !e.altKey && !e.isComposing) {
+  if (mod && !e.altKey && !e.shiftKey) {
     const k = e.key.toLowerCase();
-    // ⚠️ 撤销/重做一律放行，交给浏览器原生处理——我们自己不维护撤销栈，
-    // 拦下来只会把它弄坏。（能撤销的前提是所有编辑都走 replaceRange 的 execCommand）
-    if (k === "z" || k === "y") return;
-    if (!e.shiftKey) {
-      if (k === "b") { e.preventDefault(); runReviewCommand("bold"); return; }
-      if (k === "i") { e.preventDefault(); runReviewCommand("italic"); return; }
-      if (k === "k") { e.preventDefault(); runReviewCommand("link"); return; }
-      if (k === "e") { e.preventDefault(); runReviewCommand("code"); return; }
-      if (k === "s") { e.preventDefault(); flushReviewSave(); return; }
-    } else {
-      // 数字键判 e.code：Shift+7 在多数布局上 e.key 是 "&" 而不是 "7"
-      const byCode = { Digit1: "h1", Digit2: "h2", Digit3: "h3", Digit7: "ol", Digit8: "ul", Digit9: "task" }[e.code];
-      if (byCode) { e.preventDefault(); runReviewCommand(byCode); return; }
-      if (k === "x") { e.preventDefault(); runReviewCommand("strike"); return; }
-      if (e.code === "Period" || k === ">") { e.preventDefault(); runReviewCommand("quote"); return; }
-    }
+    if (k === "s") { flushReviewSave(); return true; }
+    if (k === "k") { openLinkEditor(); return true; }
   }
+  return false;
+}
 
-  if (e.key === "Tab" && !e.isComposing) {
-    e.preventDefault();
-    const v = ta.value;
-    const s = lineBoundsAt(v, ta.selectionStart).start;
-    const en = lineBoundsAt(v, ta.selectionEnd).end;
-    const lines = v.slice(s, en).split("\n");
-    const out = e.shiftKey ? lines.map((l) => l.replace(/^ {1,2}/, "")) : lines.map((l) => "  " + l);
-    const text = out.join("\n");
-    applyLineEdit(ta, s, en, text);
+const IMAGE_URL_RE = /^https?:\/\/\S+\.(png|jpe?g|gif|webp|avif|bmp|svg)([?#]\S*)?$/i;
+/* ---------- 粘贴 ----------
+   - 光秃秃一个图片链接 → 直接变成图片
+   - 纯文本里带 markdown 块语法（从别处复制来的笔记）→ 按 markdown 排好版再放进来
+   - 剪贴板里是图片文件本身 → 不上传（图片一律走外部图床，不占数据库），提示一下
+   其余情况（包括选中文字粘链接 = 加链接）交给 Tiptap 默认处理 */
+function reviewEditorPaste(view, e) {
+  const ed = reviewTiptap;
+  const cd = e.clipboardData;
+  if (!ed || !cd) return false;
+  if (ed.isActive("codeBlock")) return false;
+  const text = cd.getData("text/plain") || "";
+  const html = cd.getData("text/html") || "";
+  if (!text.trim() && !html && [...(cd.files || [])].some((f) => /^image\//.test(f.type))) {
+    showReviewToast(T("review.pasteImageHint"));
+    return true;
+  }
+  const url = text.trim();
+  if (!html && ed.state.selection.empty && IMAGE_URL_RE.test(url)) {
+    ed.chain().focus().insertContent({ type: "image", attrs: { src: url } }).run();
+    return true;
+  }
+  if (!html && /\n/.test(text) && /^\s{0,3}(#{1,6}\s|[-*+]\s|\d+[.)]\s|>|```|\|.*\|)/m.test(text)) {
+    ed.chain().focus().insertContent(mdToEditorHtml(text)).run();
+    return true;
+  }
+  return false;
+}
+
+let reviewToastTimer = null;
+function showReviewToast(msg) {
+  const el = document.getElementById("reviewToast");
+  if (!el) return;
+  el.textContent = msg;
+  el.hidden = false;
+  clearTimeout(reviewToastTimer);
+  reviewToastTimer = setTimeout(() => { el.hidden = true; }, 3200);
+}
+
+/* ============================================================
+   斜杠插入菜单：行首或空格后面打 / （中文输入法下是 、，只认行首）
+   ============================================================ */
+let slashDismissedFrom = null;   // 用户按 Esc 关掉过的那个 /，没删掉之前别再弹
+
+function slashContext() {
+  const ed = reviewTiptap;
+  if (!ed || ed.view.composing) return null;
+  const sel = ed.state.selection;
+  if (!sel.empty) return null;
+  const $f = sel.$from;
+  if (!$f.parent.isTextblock || $f.parent.type.name === "codeBlock") return null;
+  const before = $f.parent.textBetween(0, $f.parentOffset, null, "￼");
+  const m = before.match(/(^|\s)([\/、])([^\s\/、]{0,20})$/);
+  if (!m) return null;
+  if (m[2] === "、" && before.length !== m[2].length + m[3].length) return null;
+  return { from: $f.pos - m[3].length - 1, query: m[3] };
+}
+function syncSlashMenu() {
+  const ctx = slashContext();
+  if (!ctx) {
+    slashDismissedFrom = null;
+    if (slashMenu) closeSlashMenu();
     return;
   }
-
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-    const v = ta.value;
-    const { start } = lineBoundsAt(v, ta.selectionStart);
-    const line = v.slice(start, ta.selectionStart);
-    const m = line.match(/^(\s*)([-*+]|\d+[.)])\s+(\[[ xX]\]\s+)?(.*)$/);
-    if (!m) return;
-    const [, indent, marker, task, rest] = m;
-    if (!rest.trim()) {
-      // 空的列表项上按回车 = 退出列表（把这一行的标记清掉）
-      e.preventDefault();
-      replaceRange(ta, start, ta.selectionStart, "");
-      return;
-    }
-    e.preventDefault();
-    let nextMarker = marker;
-    if (/^\d/.test(marker)) {
-      const n = parseInt(marker, 10) + 1;
-      nextMarker = n + marker.replace(/^\d+/, "");
-    }
-    const nextTask = task ? "[ ] " : "";
-    replaceRange(ta, ta.selectionStart, ta.selectionEnd, "\n" + indent + nextMarker + " " + nextTask);
-  }
-};
-
-/* ---------- 斜杠插入菜单 ---------- */
-function syncSlashMenu(ta) {
-  const caret = ta.selectionStart;
-  if (!slashMenu) {
-    // 行首或空白后面刚打了个 / 才弹，写 and/or 这种就不该跳出来
-    if (caret > 0 && ta.value[caret - 1] === "/" && (caret === 1 || /[\s\n]/.test(ta.value[caret - 2]))) {
-      slashMenu = { start: caret - 1, query: "", index: 0 };
-      renderSlashMenu();
-    }
-    return;
-  }
-  if (caret <= slashMenu.start || ta.value[slashMenu.start] !== "/") { closeSlashMenu(); return; }
-  const q = ta.value.slice(slashMenu.start + 1, caret);
-  if (/\s/.test(q) || q.length > 20) { closeSlashMenu(); return; }
-  slashMenu.query = q;
-  slashMenu.index = 0;
+  if (ctx.from === slashDismissedFrom) return;
+  const isNew = !slashMenu || slashMenu.from !== ctx.from;
+  slashMenu = { from: ctx.from, query: ctx.query, index: isNew || slashMenu.query !== ctx.query ? 0 : slashMenu.index };
+  // 打了好几个字都匹配不上，多半不是想插东西，收起来
+  if (!slashFilteredItems().length && ctx.query.length >= 4) { closeSlashMenu(true); return; }
+  updateBubble();
   renderSlashMenu();
 }
-function closeSlashMenu() {
+function closeSlashMenu(dismiss) {
+  if (dismiss && slashMenu) slashDismissedFrom = slashMenu.from;
   slashMenu = null;
   const root = document.getElementById("slashMenuRoot");
   if (root) root.innerHTML = "";
 }
-function applySlashItem(item) {
-  const ta = document.getElementById("reviewBodyInput");
-  if (!ta || !item || !slashMenu) return;
-  const from = slashMenu.start;
-  const to = ta.selectionStart;
-  closeSlashMenu();
-  replaceRange(ta, from, to, "");   // 先把 /query 本身删掉
-  runReviewCommand(item.cmd);
-}
-
-/* textarea 里光标的像素位置：做一个样式一致的隐藏 div，把光标前的文字塞进去量 */
-function caretCoords(ta, index) {
-  const cs = getComputedStyle(ta);
-  const div = document.createElement("div");
-  ["fontFamily", "fontSize", "fontWeight", "lineHeight", "letterSpacing", "wordSpacing",
-    "paddingTop", "paddingRight", "paddingBottom", "paddingLeft"].forEach((k) => { div.style[k] = cs[k]; });
-  div.style.position = "absolute";
-  div.style.top = "0";
-  div.style.left = "-9999px";
-  div.style.visibility = "hidden";
-  div.style.whiteSpace = "pre-wrap";
-  div.style.wordWrap = "break-word";
-  div.style.boxSizing = "border-box";
-  div.style.border = "none";
-  div.style.width = ta.clientWidth + "px";
-  div.textContent = ta.value.slice(0, index);
-  const span = document.createElement("span");
-  span.textContent = ta.value.slice(index) || ".";
-  div.appendChild(span);
-  document.body.appendChild(div);
-  const top = span.offsetTop;
-  const left = span.offsetLeft;
-  const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.5;
-  document.body.removeChild(div);
-  return { top: top - ta.scrollTop, left: left - ta.scrollLeft, lineHeight: lh };
-}
-
 function renderSlashMenu() {
   const root = document.getElementById("slashMenuRoot");
-  const ta = document.getElementById("reviewBodyInput");
-  if (!root || !ta || !slashMenu) return;
+  const ed = reviewTiptap;
+  if (!root || !ed || !slashMenu) return;
   const items = slashFilteredItems();
-  const pos = caretCoords(ta, slashMenu.start);
-  const maxLeft = Math.max(ta.clientWidth - SLASH_MENU_WIDTH - 8, 0);
-  const left = Math.min(Math.max(pos.left, 0), maxLeft);
-  // 菜单默认挂在光标那一行下面；下面塞不下就翻到上面去，别让它掉出编辑区
-  const menuH = Math.min(items.length * 32 + 34, SLASH_MENU_MAX_H);
-  const below = pos.top + pos.lineHeight;
-  const rawTop = (below + menuH > ta.clientHeight && pos.top - menuH > 0) ? pos.top - menuH - 2 : below;
-  const top = Math.max(Math.min(rawTop, ta.clientHeight - menuH), 0);
-  root.innerHTML = `<div class="slashMenu" style="top:${top}px;left:${left}px;">
+  root.innerHTML = `<div class="slashMenu">
     <div class="slashMenuHead">${esc(T("review.slash.title"))}${slashMenu.query ? ` · ${esc(slashMenu.query)}` : ""}</div>
     ${items.length
       ? items.map((it, i) => `<button class="slashItem ${i === slashMenu.index ? "active" : ""}" data-action="slash-pick" data-cmd="${it.cmd}">
@@ -4586,17 +4569,284 @@ function renderSlashMenu() {
         </button>`).join("")
       : `<div class="slashEmpty">${esc(T("review.slash.empty"))}</div>`}
   </div>`;
+  const menu = root.firstElementChild;
+  let c;
+  try { c = ed.view.coordsAtPos(slashMenu.from); } catch (e) { return; }
+  placeFloat(menu, c.top, c.bottom, c.left, false);
+  const act = menu.querySelector(".slashItem.active");
+  if (act) act.scrollIntoView({ block: "nearest" });
+}
+function applySlashItem(item) {
+  const ed = reviewTiptap;
+  if (!ed || !item || !slashMenu) return;
+  const from = slashMenu.from;
+  const to = ed.state.selection.from;
+  closeSlashMenu();
+  // 先把 /query 本身删掉。⚠️ 这里不能带 .focus()：Tiptap 的 focus 是下一帧才生效的，
+  // 接下来要弹的图片/链接小框、交易选择器的输入框刚拿到焦点，就会被它抢回编辑器
+  ed.chain().deleteRange({ from, to }).run();
+  runReviewCommand(item.cmd);
+}
+
+function runReviewCommand(cmd) {
+  const ed = reviewTiptap;
+  if (!ed || reviewIsReadOnly()) return;
+  const c = ed.chain().focus();
+  switch (cmd) {
+    case "text": c.setParagraph().run(); break;
+    case "h1": c.setHeading({ level: 1 }).run(); break;
+    case "h2": c.setHeading({ level: 2 }).run(); break;
+    case "h3": c.setHeading({ level: 3 }).run(); break;
+    case "ul": c.toggleBulletList().run(); break;
+    case "ol": c.toggleOrderedList().run(); break;
+    case "task": c.toggleTaskList().run(); break;
+    case "quote": c.setParagraph().toggleBlockquote().run(); break;
+    case "code": c.toggleCodeBlock().run(); break;
+    case "hr": c.setHorizontalRule().run(); break;
+    case "table": c.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); break;
+    case "image": openReviewPop("image"); break;
+    case "link": openLinkEditor(); break;
+    case "color":
+      if (ed.state.selection.empty) openReviewPop("color");
+      else { bubbleMode = "color"; updateBubble(); }
+      break;
+    case "trade": openTradePicker(); break;
+  }
+}
+
+/* ============================================================
+   选中文字浮出的格式栏（也负责：光标在链接里 → 链接操作；光标在表格里 → 行列操作）
+   ============================================================ */
+let bubbleMode = "main";    // 'main' | 'color' | 'link'
+let bubbleKey = null;       // 内容没变就只挪位置，不重建（改链接时输入框不能被重建）
+let bubbleKind = null;      // 'text' | 'link' | 'table'，定位时要用
+
+function bubbleContext() {
+  const ed = reviewTiptap;
+  if (!ed || slashMenu || reviewPop) return null;
+  const root = document.getElementById("reviewFloatRoot");
+  const focusInside = root && root.contains(document.activeElement);
+  if (!ed.isFocused && !focusInside) return null;
+  const sel = ed.state.selection;
+  if (sel.node) return null;                                    // 选中的是整张图/交易胶囊
+  if (ed.isActive("codeBlock")) return null;
+  const isCellSel = "$anchorCell" in sel;   // 表格里拖选了好几格（类名会被压缩掉，只能认属性）
+  if (!sel.empty && !isCellSel) return "text";
+  if (bubbleMode === "link") return "text";                     // 从 Ctrl+K 进来、选区可能是空的
+  if (ed.isActive("link")) return "link";
+  if (ed.isActive("table")) return "table";
+  return null;
+}
+
+function bubbleHtml(kind) {
+  const ed = reviewTiptap;
+  // attrs 里写死 data-action="..."（不拼接）：交接文档那条 grep 对账只认字面量
+  const btn = (attrs, inner, title, on) =>
+    `<button class="bubbleBtn ${on ? "on" : ""}" ${attrs} title="${esc(title)}">${inner}</button>`;
+  const mod = modKeyLabel();
+  if (bubbleMode === "color") {
+    const cur = (ed.getAttributes("mdColor") || {}).color;
+    return MD_COLORS.map((c) => `<button class="colorSwatch ${cur === c ? "on" : ""}" data-action="rv-color" data-color="${c}" title="${esc(T("review.color." + c))}">
+        <span class="colorDot mdC-${c}">A</span><span class="colorName">${esc(T("review.color." + c))}</span></button>`).join("")
+      + `<button class="colorSwatch" data-action="rv-color" data-color=""><span class="colorDot">${ICONS.x}</span><span class="colorName">${esc(T("review.color.clear"))}</span></button>`;
+  }
+  if (bubbleMode === "link") {
+    const href = (ed.getAttributes("link") || {}).href || "";
+    return `<input class="bubbleInput" id="reviewLinkInput" type="text" placeholder="${esc(T("review.promptLink"))}"
+        value="${esc(href)}" onkeydown="window.__reviewLinkKey(event)" />
+      ${btn('data-action="rv-link-apply"', ICONS.check, T("review.pop.ok"))}
+      ${href ? btn('data-action="rv-link-remove"', ICONS.trash, T("review.bubble.linkRemove")) : ""}`;
+  }
+  if (kind === "link") {
+    const href = (ed.getAttributes("link") || {}).href || "";
+    return `<span class="bubbleHref" title="${esc(href)}">${esc(href.replace(/^https?:\/\//, ""))}</span>
+      ${btn('data-action="rv-link-open"', ICONS.expand, T("review.bubble.linkOpen"))}
+      ${btn('data-action="rv-bubble" data-mode="link"', ICONS.pencil, T("review.bubble.linkEdit"))}
+      ${btn('data-action="rv-link-remove"', ICONS.trash, T("review.bubble.linkRemove"))}`;
+  }
+  if (kind === "table") {
+    const op = (o, label) => `<button class="bubbleBtn bubbleText" data-action="rv-table" data-op="${o}">${esc(T(label))}</button>`;
+    return op("addRow", "review.table.addRow") + op("addCol", "review.table.addCol")
+      + `<span class="bubbleSep"></span>` + op("delRow", "review.table.delRow") + op("delCol", "review.table.delCol")
+      + `<span class="bubbleSep"></span>` + `<button class="bubbleBtn bubbleText danger" data-action="rv-table" data-op="delTable">${esc(T("review.table.delTable"))}</button>`;
+  }
+  return btn('data-action="rv-mark" data-cmd="bold"', ICONS.tbBold, T("review.tb.bold") + ` (${mod}+B)`, ed.isActive("bold"))
+    + btn('data-action="rv-mark" data-cmd="italic"', ICONS.tbItalic, T("review.tb.italic") + ` (${mod}+I)`, ed.isActive("italic"))
+    + btn('data-action="rv-mark" data-cmd="strike"', ICONS.tbStrike, T("review.tb.strike") + ` (${mod}+Shift+S)`, ed.isActive("strike"))
+    + btn('data-action="rv-mark" data-cmd="code"', ICONS.tbCode, T("review.tb.code") + ` (${mod}+E)`, ed.isActive("code"))
+    + `<span class="bubbleSep"></span>`
+    + btn('data-action="rv-bubble" data-mode="link"', ICONS.tbLink, T("review.tb.link") + ` (${mod}+K)`, ed.isActive("link"))
+    + btn('data-action="rv-bubble" data-mode="color"', ICONS.tbColor + ICONS.chevDown, T("review.tb.color"), ed.isActive("mdColor"))
+    + `<span class="bubbleSep"></span>`
+    + btn('data-action="rv-mark" data-cmd="h1"', ICONS.tbHeading + `<span class="tbLabel">1</span>`, T("review.tb.h1"), ed.isActive("heading", { level: 1 }))
+    + btn('data-action="rv-mark" data-cmd="h2"', ICONS.tbHeading + `<span class="tbLabel">2</span>`, T("review.tb.h2"), ed.isActive("heading", { level: 2 }));
+}
+
+function updateBubble() {
+  const el = document.getElementById("reviewBubble");
+  if (!el) return;
+  const kind = bubbleContext();
+  bubbleKind = kind;
+  if (!kind) {
+    el.hidden = true;
+    bubbleKey = null;
+    const fr = document.getElementById("reviewFloatRoot");
+    if (bubbleMode !== "main" && !(fr && fr.contains(document.activeElement))) bubbleMode = "main";
+    return;
+  }
+  const html = bubbleHtml(kind);
+  // 改链接时输入框正在打字，这时候重建会把输入框连同光标一起换掉——那一段不动
+  const editingLink = bubbleMode === "link" && !el.hidden && el.querySelector("#reviewLinkInput");
+  if (!editingLink && (html !== bubbleKey || el.hidden)) el.innerHTML = html;
+  bubbleKey = html;
+  el.className = "reviewBubble" + (bubbleMode === "color" ? " isColor" : "");
+  el.hidden = false;
+  positionBubble();
+}
+function positionBubble() {
+  const el = document.getElementById("reviewBubble");
+  const ed = reviewTiptap;
+  if (!el || el.hidden || !ed) return;
+  const { from, to } = ed.state.selection;
+  // 表格操作栏挂在整张表的上方——跟着光标的话会正好盖住表头
+  if (bubbleKind === "table") {
+    let dom = null;
+    try { dom = ed.view.domAtPos(from).node; } catch (e) {}
+    const table = dom && (dom.nodeType === 1 ? dom : dom.parentElement);
+    const t = table && table.closest("table");
+    if (t) {
+      const r = t.getBoundingClientRect();
+      placeFloat(el, r.top, r.bottom, r.left + el.offsetWidth / 2, true);
+      return;
+    }
+  }
+  let a, b;
+  try { a = ed.view.coordsAtPos(from); b = ed.view.coordsAtPos(to); } catch (e) { return; }
+  placeFloat(el, Math.min(a.top, b.top), Math.max(a.bottom, b.bottom), (a.left + b.right) / 2, true);
+}
+
+/* Ctrl+K 或格式栏里的链接按钮：有选区就给选区加链接，没选区就弹小框插一个 */
+function openLinkEditor() {
+  const ed = reviewTiptap;
+  if (!ed) return;
+  if (ed.state.selection.empty && !ed.isActive("link")) { openReviewPop("link"); return; }
+  if (ed.state.selection.empty) ed.chain().extendMarkRange("link").run();
+  bubbleMode = "link";
+  updateBubble();
+  const input = document.getElementById("reviewLinkInput");
+  if (input) { input.focus(); input.select(); }
+}
+function applyLinkFromBubble() {
+  const ed = reviewTiptap;
+  const input = document.getElementById("reviewLinkInput");
+  if (!ed || !input) return;
+  const url = input.value.trim();
+  bubbleMode = "main";
+  if (!url) ed.chain().focus().extendMarkRange("link").unsetLink().run();
+  else if (!mdSafeUrl(url)) { bubbleMode = "link"; showReviewToast(T("review.pop.invalid")); input.focus(); return; }
+  else ed.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+  updateBubble();
+}
+window.__reviewLinkKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter") { e.preventDefault(); applyLinkFromBubble(); }
+};
+
+/* ============================================================
+   没选区时的小弹框：插图片 / 插链接 / 接下来打的字用什么颜色
+   ============================================================ */
+let reviewPop = null;   // { kind: 'image' | 'link' | 'color', pos }
+
+function openReviewPop(kind) {
+  const ed = reviewTiptap;
+  if (!ed) return;
+  reviewPop = { kind, pos: ed.state.selection.from };
+  updateBubble();
+  const el = document.getElementById("reviewPop");
+  if (!el) return;
+  if (kind === "color") {
+    el.innerHTML = MD_COLORS.map((c) => `<button class="colorSwatch" data-action="rv-color" data-color="${c}">
+        <span class="colorDot mdC-${c}">A</span><span class="colorName">${esc(T("review.color." + c))}</span></button>`).join("")
+      + `<button class="colorSwatch" data-action="rv-color" data-color=""><span class="colorDot">${ICONS.x}</span><span class="colorName">${esc(T("review.color.clear"))}</span></button>`;
+    el.className = "reviewPop isColor";
+  } else {
+    el.innerHTML = `<div class="reviewPopLabel">${esc(T(kind === "image" ? "review.promptImage" : "review.promptLink"))}</div>
+      <div class="reviewPopRow">
+        <input class="bubbleInput" id="reviewPopInput" type="text" placeholder="https://…" onkeydown="window.__reviewPopKey(event)" />
+        <button class="btn btn-primary" data-action="rv-pop-apply">${esc(T("review.pop.insert"))}</button>
+      </div>
+      <div class="reviewPopErr" id="reviewPopErr"></div>`;
+    el.className = "reviewPop";
+  }
+  el.hidden = false;
+  positionReviewPop();
+  const input = document.getElementById("reviewPopInput");
+  if (input) input.focus();
+}
+function positionReviewPop() {
+  const el = document.getElementById("reviewPop");
+  const ed = reviewTiptap;
+  if (!el || el.hidden || !ed || !reviewPop) return;
+  let c;
+  try { c = ed.view.coordsAtPos(Math.min(reviewPop.pos, ed.state.doc.content.size)); } catch (e) { return; }
+  placeFloat(el, c.top, c.bottom, c.left, false);
+}
+function closeReviewPop(refocus) {
+  reviewPop = null;
+  const el = document.getElementById("reviewPop");
+  if (el) { el.hidden = true; el.innerHTML = ""; }
+  if (refocus && reviewTiptap) reviewTiptap.commands.focus();
+}
+function applyReviewPop() {
+  const ed = reviewTiptap;
+  const input = document.getElementById("reviewPopInput");
+  if (!ed || !reviewPop || !input) return;
+  const url = input.value.trim();
+  if (!mdSafeUrl(url)) {
+    const err = document.getElementById("reviewPopErr");
+    if (err) err.textContent = T("review.pop.invalid");
+    input.focus();
+    return;
+  }
+  const pos = Math.min(reviewPop.pos, ed.state.doc.content.size);
+  const kind = reviewPop.kind;
+  closeReviewPop();
+  if (kind === "image") {
+    ed.chain().focus().insertContentAt(pos, { type: "image", attrs: { src: url } }).run();
+  } else {
+    ed.chain().focus().insertContentAt(pos, [
+      { type: "text", text: url, marks: [{ type: "link", attrs: { href: url } }] },
+      { type: "text", text: " " },
+    ]).run();
+  }
+}
+window.__reviewPopKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter") { e.preventDefault(); applyReviewPop(); }
+};
+
+/* 颜色：有选区就给选区上色；没选区（从插入菜单进来）就设成「接下来打的字」的颜色 */
+function applyReviewColor(color) {
+  const ed = reviewTiptap;
+  if (!ed) return;
+  const fromPop = !!reviewPop;
+  closeReviewPop();
+  bubbleMode = "main";
+  const c = ed.chain().focus();
+  if (!color) c.unsetMark("mdColor").run();
+  else c.setMark("mdColor", { color }).run();
+  if (!fromPop) updateBubble();
 }
 
 /* ---------- 交易选择器 ----------
    只渲染进 #tradePickerRoot，绝不碰编辑器本体；搜索时也只换结果区，
    否则输入框自己会被重建、光标丢失。 */
-let tradePickerCaret = null;
+let tradePickerRange = null;
 const TRADE_PICKER_LIMIT = 40;
 
 function openTradePicker() {
-  const ta = document.getElementById("reviewBodyInput");
-  tradePickerCaret = ta ? { from: ta.selectionStart, to: ta.selectionEnd } : null;
+  const ed = reviewTiptap;
+  tradePickerRange = ed ? { from: ed.state.selection.from, to: ed.state.selection.to } : null;
   tradePickerOpen = true;
   tradePickerQuery = "";
   renderTradePicker();
@@ -4605,8 +4855,7 @@ function closeTradePicker() {
   tradePickerOpen = false;
   const root = document.getElementById("tradePickerRoot");
   if (root) root.innerHTML = "";
-  const ta = document.getElementById("reviewBodyInput");
-  if (ta) ta.focus();
+  if (reviewTiptap) reviewTiptap.commands.focus();
 }
 /* 选择器自己的搜索，不复用记录页的 tradeMatchesSearch()——那个只搜
    text/textarea/url，而在这里最常搜的恰恰是日期和模型（select 类型）。 */
@@ -4687,13 +4936,16 @@ window.__tradePickerInput = function (el) {
   if (box) box.innerHTML = tradePickerResultsHtml();   // 只换结果，输入框留着
 };
 function insertTradeRef(id) {
-  const ta = document.getElementById("reviewBodyInput");
+  const ed = reviewTiptap;
   closeTradePicker();
-  if (!ta) return;
-  const from = tradePickerCaret ? tradePickerCaret.from : ta.selectionStart;
-  const to = tradePickerCaret ? tradePickerCaret.to : ta.selectionEnd;
-  tradePickerCaret = null;
-  replaceRange(ta, from, to, `[[trade:${id}]] `);
+  if (!ed || !/^[A-Za-z0-9_-]+$/.test(id || "")) return;
+  const size = ed.state.doc.content.size;
+  const r = tradePickerRange || { from: ed.state.selection.from, to: ed.state.selection.to };
+  tradePickerRange = null;
+  ed.chain().focus().insertContentAt({ from: Math.min(r.from, size), to: Math.min(r.to, size) }, [
+    { type: "tradeRef", attrs: { id } },
+    { type: "text", text: " " },
+  ]).run();
 }
 
 /* ---------- 打开 / 关闭编辑器 ---------- */
@@ -4706,11 +4958,9 @@ function openReviewEditor(id) {
     sort_order: r.sort_order === undefined ? null : r.sort_order,
     _isNew: false,
   };
-  reviewEditMode = false;          // 打开已有帖子默认只读
   reviewSaveState = "idle";
   reviewSavedAt = null;
   reviewSaveError = null;
-  slashMenu = null;
   tradePickerOpen = false;
   renderReviewEditor(true);
 }
@@ -4727,16 +4977,13 @@ function openNewReview(opts) {
     sort_order: null,
     _isNew: true,
   };
-  reviewEditMode = true;           // 新建当然直接进编辑，只读的空白页没有意义
   reviewSaveState = "idle";
   reviewSavedAt = null;
   reviewSaveError = null;
-  slashMenu = null;
   tradePickerOpen = false;
   renderReviewEditor(true);
 }
 async function closeReviewEditor() {
-  closeSlashMenu();
   tradePickerOpen = false;
   const wasNew = editingReview && editingReview._isNew;
   const isBlank = editingReview && !(editingReview.title || "").trim() && !(editingReview.body || "").trim();
@@ -5534,7 +5781,11 @@ function render() {
    ============================================================ */
 document.addEventListener("click", async (e) => {
   const el = e.target.closest("[data-action]");
-  if (reviewColorMenuOpen && !e.target.closest(".tbColorWrap")) closeReviewColorMenu();
+  // 复盘编辑器的小弹框、格式栏的二级面板：点到浮层外面就收起来
+  if (reviewTiptap && !e.target.closest("#reviewFloatRoot")) {
+    if (reviewPop) closeReviewPop();
+    if (bubbleMode !== "main") { bubbleMode = "main"; updateBubble(); }
+  }
   if (!el) {
     let changed = false;
     if (exportMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-export"]')) { exportMenuOpen = false; changed = true; }
@@ -6146,40 +6397,49 @@ document.addEventListener("click", async (e) => {
     }
     render();
   }
-  else if (action === "toggle-review-edit-mode") {
-    if (!editingReview || !reviewCanEdit()) return;
-    closeSlashMenu();
-    if (reviewEditMode) await flushReviewSave();   // 退出编辑就立刻落盘，不等 debounce
-    reviewEditMode = !reviewEditMode;
-    renderReviewEditor(true);                      // 两种模式的骨架不一样，必须强制重建
+  else if (action === "rv-mark") {
+    const ed = reviewTiptap;
+    if (!ed) return;
+    const cmd = el.dataset.cmd;
+    const c = ed.chain().focus();
+    if (cmd === "bold") c.toggleBold().run();
+    else if (cmd === "italic") c.toggleItalic().run();
+    else if (cmd === "strike") c.toggleStrike().run();
+    else if (cmd === "code") c.toggleCode().run();
+    else if (cmd === "h1") c.toggleHeading({ level: 1 }).run();
+    else if (cmd === "h2") c.toggleHeading({ level: 2 }).run();
   }
-  else if (action === "review-tb") { closeReviewColorMenu(); runReviewCommand(el.dataset.cmd); }
-  else if (action === "toggle-review-color-menu") {
-    const ta = document.getElementById("reviewBodyInput");
-    if (reviewColorMenuOpen) { closeReviewColorMenu(); return; }
-    // 点工具栏按钮时 textarea 已经失焦，但 selectionStart/End 还留着，先抓下来
-    reviewColorSel = ta ? { from: ta.selectionStart, to: ta.selectionEnd } : null;
-    reviewColorMenuOpen = true;
-    renderReviewColorMenu();
+  else if (action === "rv-bubble") {
+    if (el.dataset.mode === "link") { openLinkEditor(); return; }
+    bubbleMode = bubbleMode === el.dataset.mode ? "main" : el.dataset.mode;
+    updateBubble();
   }
-  else if (action === "review-color") {
-    const color = el.dataset.color || "";
-    reviewColorMenuOpen = false;
-    renderReviewColorMenu();
-    applyReviewColor(color);
-    reviewColorSel = null;
+  else if (action === "rv-color") { applyReviewColor(el.dataset.color || ""); }
+  else if (action === "rv-link-apply") { applyLinkFromBubble(); }
+  else if (action === "rv-link-open") {
+    const u = reviewTiptap && mdSafeUrl((reviewTiptap.getAttributes("link") || {}).href);
+    if (u) window.open(u, "_blank", "noopener,noreferrer");
   }
+  else if (action === "rv-link-remove") {
+    if (!reviewTiptap) return;
+    bubbleMode = "main";
+    reviewTiptap.chain().focus().extendMarkRange("link").unsetLink().run();
+  }
+  else if (action === "rv-table") {
+    const ed = reviewTiptap;
+    if (!ed) return;
+    const c = ed.chain().focus();
+    const op = el.dataset.op;
+    if (op === "addRow") c.addRowAfter().run();
+    else if (op === "addCol") c.addColumnAfter().run();
+    else if (op === "delRow") c.deleteRow().run();
+    else if (op === "delCol") c.deleteColumn().run();
+    else if (op === "delTable") c.deleteTable().run();
+  }
+  else if (action === "rv-pop-apply") { applyReviewPop(); }
   else if (action === "slash-pick") {
     const item = SLASH_ITEMS.find((i) => i.cmd === el.dataset.cmd);
     if (item) applySlashItem(item);
-  }
-  else if (action === "toggle-review-preview") {
-    reviewPreviewOpen = !reviewPreviewOpen;
-    try { localStorage.setItem("journal_review_preview", String(reviewPreviewOpen)); } catch (err) {}
-    // 只换一个 class 和一个按钮文案，不重建编辑器——正文和光标要留在原地
-    const body = document.querySelector(".reviewEditorBody");
-    if (body) body.classList.toggle("noPreview", !reviewPreviewOpen);
-    el.textContent = reviewPreviewOpen ? T("review.previewOn") : T("review.previewOff");
   }
   else if (action === "review-period") {
     if (!editingReview || reviewIsReadOnly()) return;
@@ -6212,7 +6472,6 @@ document.addEventListener("click", async (e) => {
     scheduleReviewSave();
     refreshReviewWeekRow();
   }
-  else if (action === "open-trade-picker") { openTradePicker(); }
   else if (action === "close-trade-picker") {
     if (el.classList.contains("tradePickerOverlay") && e.target !== el) return;  // 点内容不关闭（不能用 stopPropagation）
     closeTradePicker();
@@ -6832,8 +7091,9 @@ document.addEventListener("keydown", (e) => {
   if (lightboxUrl) { lightboxUrl = null; render(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
-  if (reviewColorMenuOpen) { closeReviewColorMenu(); return; }
-  if (slashMenu) { closeSlashMenu(); return; }
+  if (reviewPop) { closeReviewPop(true); return; }
+  if (slashMenu) { closeSlashMenu(true); return; }
+  if (reviewTiptap && bubbleMode !== "main") { bubbleMode = "main"; updateBubble(); if (reviewTiptap) reviewTiptap.commands.focus(); return; }
   if (tradePickerOpen) { closeTradePicker(); return; }
   if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); return; }
   if (comboGroupModal) { comboGroupModal = null; render(); return; }

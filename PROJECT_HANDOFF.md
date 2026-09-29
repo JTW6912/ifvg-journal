@@ -285,41 +285,38 @@ JS
   - **⚠️ 回滚代价**：组合存在数据库里。一旦存了带分组的组合，如果代码回滚到没有这段的版本，旧代码会把分组节点当成一条 `fieldId` 为空的条件 → `resolveField` 返回 null → `tradeMatchesFilter` 直接 `return true` → **那个组合悄悄变成「匹配全部交易」，数字突然变好看且毫无提示**。回滚点打在 tag `pre-filter-tree`
 - **⚠️ `tradeMatchesFilter()` 找不到字段时 `return true`**：意味着删掉字段后，引用它的组合会静默降级成「匹配全部交易」，数字突然变好看却没有任何提示。所以 `comboIssues()` 会在渲染前把失效字段/失效选项挑出来标红并禁掉统计。新增任何「保存下来的条件」类功能都要考虑这个陷阱
 - **管理后台**（仅 admin 可见）：API 连接配置、用户管理（禁用/启用、设权限、查看上次在线时间+交易总数）、**只读查看任意用户的数据**（不影响自己的登录状态和本地设置，退出后自动恢复原状）
-- **复盘页（仅实盘模式）**：用户自己发帖，markdown 正文，可以把帖子关联到某一周，也可以在正文里关联到具体某笔交易。下面几条是这块最容易改坏的地方：
-  - **⚠️ 编辑器有自己的根节点 `#reviewEditorRoot`（index.html 里第 4 个根），不在 `#app` 里面**。因为 `render()` 每次都整体重建 `#app` 的 innerHTML，而复盘是一篇能写二十分钟的长文——放进 `#app` 的话，任何后台异步操作触发的 `render()` 都会清空 textarea、丢光标、丢撤销栈。`renderReviewEditor(force)` 里用 `reviewEditorRenderedFor` 做守卫，跟 `renderModal` 的 `modalRenderedForId` 完全同一个套路
-  - 由此派生的规矩：**编辑器打开期间，任何状态变化都不许走 `render()`**，只能定点更新某个节点。已经这么做的有：预览区（`updateReviewPreview()`）、保存状态（`updateReviewSaveBadge()`）、关联周那一行（`refreshReviewWeekRow()`）、插入菜单（`renderSlashMenu()`）、交易选择器的结果区（`window.__tradePickerInput`，只换结果不换搜索框，否则输入框自己会被重建、光标丢失）。新加编辑器里的交互要照这个来
-  - **编辑区和预览区滚动联动**：`renderMarkdown` 给每个块打了 `data-md-line`（它在源码里的起始行号），联动就是把编辑区里这些行的 y 坐标量出来（隐藏 div 镜像，按「正文 + 宽度」缓存），和预览里对应块的位置一一对上，中间线性插值。**不要退化成按比例硬滚**——正文里有图片或表格时两边高度能差几百像素，按比例对不上任何东西
-  - 联动是**单向的**（编辑区带动预览区）。反向联动要处理两边互相触发的死循环，收益不值那个复杂度
-  - **⚠️ scroll 事件的 `isTrusted` 永远是 true**，区分不了「用户滚的」和「我自己设的 scrollTop」。所以对预览滚动位置的程序性修改一律走 `setPreviewScrollTop()`，它会打一个时间戳，`__reviewPreviewScroll` 靠 150ms 窗口把自己引发的那次滤掉。用户真的手动滚了预览就抑制联动 1.2 秒，别跟他抢
-  - **⚠️⚠️ textarea 的 `onkeyup` 绝对不能关插入菜单**（已经踩过一次）。按键顺序是 keydown → input → keyup，打 `/` 时 input 刚把菜单弹出来，紧接着的 keyup 会立刻关掉它，表现是「斜杠菜单一闪就没」。所以拆成两个：`__reviewCaretMoved`（点击用，关菜单 + 更新高亮）和 `__reviewCaretKey`（keyup 用，只更新高亮）
-  - 高亮当前块用的是两层 `box-shadow` 叠出来的竖条，**不要改成 border/padding**：那会改变块的尺寸，联动量出来的位置就跟着跳了
-  - **⚠️ 预览区不能用 `box.innerHTML = ...` 整块换掉**（已经踩过一次）。整块替换会把里面的 `<img>` 全换成新元素，而新建的 `<img>` 在图片解码完成前高度是 0，浏览器恰好在这一刻做布局，`scrollHeight` 骤降、`scrollTop` 跟着被夹小；等图片异步恢复高度时滚动位置已经丢了。表现是「长文里一打字预览区就自己往上滚」，实测每次按键掉约 30px。`updateReviewPreview()` 现在的做法是：渲染结果和上次一样就直接 return（`lastPreviewHtml`）；要换就先建离屏树，把旧树里**已经加载完的** `<img>` 按 src 原样搬过去（移动 DOM 节点不会触发重新加载），再 `replaceChildren`，最后把 `scrollTop` 放回去。以后往预览区加任何异步撑高度的东西（视频、iframe、字体导致的回流）都要想到这条
-  - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去
+- **复盘页**：用户自己发帖，markdown 正文，可以把帖子关联到某一天/某一周，也可以在正文里关联到具体某笔交易。回测/实盘各一套。下面几条是这块最容易改坏的地方：
+  - **编辑器是 Notion 式所见即所得（Tiptap 3 / ProseMirror），2026-09 从「textarea + 右侧预览」改过来的**。打 `# ` 变标题、`- [ ] ` 变待办、选中文字浮出格式栏、打 `/`（中文输入法下行首的 `、` 也算）调出插入菜单。没有「只读 / 编辑」两种模式了：自己的帖子打开就能写，只读只留给管理员查看别人数据（`reviewCanEdit()` 为 false 时直接用 `renderMarkdown()` 出静态页，不创建编辑器）
+  - **⚠️⚠️ 库里存的仍然是 markdown，`journal_reviews.body` 没有迁移**。打开时 `mdToEditorHtml()`（= `renderMarkdown(src, true)`）→ Tiptap 解析；每次编辑 `docToMarkdown(editor.getJSON())` 存回去。两个方向共用 `renderMarkdown` / `mdInline` 那一套规则，所以卡片摘要、搜索、`extractTradeRefs()`、管理员只读视图都不用改。**改渲染器或序列化器之后一定要跑往返测试**：markdown → 编辑器 → markdown 两轮结果要一致，而且 `renderMarkdown(原文) === renderMarkdown(往返后)`。在浏览器控制台里 `await loadTiptap()` 之后 `new L.Editor({ element, extensions: reviewExtensions(L), content: mdToEditorHtml(md) })` 就能测，不用登录
+  - 往返里会被**规范化**的东西（内容不丢，只是写法变了）：`*`/`+` 列表符号统一成 `-`、有序列表重新从 1 编号、段落中间单独一行的图片被拎成独立块、连续空行合并。第一次编辑老帖子时 body 会因此变一下，这是预期的
+  - **反斜杠转义**是这次新加的语法（`MD_ESCAPABLE_RE`）：编辑器里打出字面的 `*` `[` `#` 之类，存回去必须写成 `\*` `\[`，否则下次打开就变成语法了。`mdEscapeText()` 只转义真会被误读的字符，`mdEscapeLineStart()` 负责段落行首长得像块语法的情况（`1. ` `- ` `# ` `> ` `---`）。别为了「markdown 看着干净」把这两个函数删掉
+  - **schema 故意收紧了**：列表项里只允许「一段 + 子列表」，引用里只允许段落，表格格子里只放段落，图片是块级节点，下划线扩展关掉了。原因是 markdown 那边只表达得了这些——放宽了的话能在编辑器里做出来、却存不回去。要加新块类型，先想清楚 markdown 怎么写、渲染器认不认
+  - 自定义的两样：`mdColor` mark（`{red|文字}`，只输出 `mdC-xxx` 类名）、`tradeRef` 行内原子节点（`[[trade:id]]`，用 node view 画成和只读视图一样的胶囊，id 只收 `[A-Za-z0-9_-]`）。都在 `reviewExtensions()` 里
+  - **Tiptap 打成了同源的 `vendor/tiptap.js`**（约 430KB，gzip 后 135KB），入口和重新生成命令在 `vendor/tiptap-entry.mjs`。app.js 里 `loadTiptap()` 第一次打开编辑器时才 `import()`，进复盘页时会在后台预取。**升级 Tiptap 时所有 @tiptap 包必须同一个版本**，并且改 `TIPTAP_URL` 的 `?v=`。加载失败会退回纯文本框（`mountReviewFallback()`）直接写 markdown，照常自动保存
+  - **⚠️ 编辑器有自己的根节点 `#reviewEditorRoot`（index.html 里第 4 个根），不在 `#app` 里面**，`renderReviewEditor(force)` 用 `reviewEditorRenderedFor` 守卫，跟 `renderModal` 的 `modalRenderedForId` 同一个套路。编辑器打开期间任何状态变化都不许走会重建它的路径，只能定点更新：保存状态 `updateReviewSaveBadge()`、关联日/周那一行 `refreshReviewWeekRow()`、浮层都画进 `#reviewFloatRoot`（格式栏 `updateBubble()`、插入菜单 `renderSlashMenu()`、小弹框 `openReviewPop()`、提示条 `showReviewToast()`）、交易选择器只换结果区
+  - 重建外壳时（`renderReviewEditor(true)`、关闭、切模式）一定会先 `destroyReviewTiptap()`；异步加载回来靠 `reviewMountSeq` 判断还该不该挂载，防止连点两篇时挂出两个编辑器
+  - **⚠️ Tiptap 的 `.focus()` 命令是下一帧才真正挪焦点的**（踩过两次）。在它之后同步打开的输入框（图片/链接小框、交易选择器）会被它把焦点抢回去。所以 `applySlashItem()` 删 `/query` 那一步**不带** `.focus()`；标题里回车跳正文先同步 `view.focus()` 再 `commands.focus("start")`
+  - 浮层（格式栏、小弹框、插入菜单）都是 `position:fixed`，坐标直接用 `view.coordsAtPos()`，外壳滚动时 `__reviewScroll` 重新定位。浮层容器上的 `__reviewFloatMouseDown` 对按钮 `preventDefault`——点按钮不能让编辑器失焦，否则选区没了；输入框例外。编辑器 `onBlur` 时如果焦点是进了浮层里的输入框（改链接），不算离开
+  - 键盘：我们自己的 `reviewEditorKeydown()` 只管插入菜单的上下/回车和 `Ctrl+S` / `Ctrl+K`，**第一行必须先看 `e.isComposing || view.composing`**，否则输入法选词时的回车会被插入菜单吃掉。其余快捷键（加粗、标题、列表、撤销……）全是 Tiptap 自带的。**Escape 不在编辑器里处理**，交给 document 上那条 ESC 链
+  - 粘贴（`reviewEditorPaste()`）：光秃秃一个图片链接 → 图片；纯文本里带 markdown 块语法 → 按 markdown 排好版再插；剪贴板里是图片文件本身 → **不上传**，弹提示让用户走外部图床（用户明确要求图片不进数据库）。其余交给 Tiptap（选中文字粘链接 = 加链接）
+  - 双击图片看大图（`handleDoubleClickOn` → `renderSecondaryModals(true)`）；单击是选中它（方便删）。Ctrl/⌘ + 点击链接在新标签页打开
+  - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去。编辑器那边是第二道白名单：Tiptap 只认 schema 里定义过的节点，链接 `isAllowedUri`、图片的 parseHTML 都只放行 http(s)
+  - `mdInline()` 里生成出来的 HTML（交易胶囊、图片、链接标签、行内代码、转义字符）一律先存进私有区字符包着的占位符（`hold()`），最后递归还原。留在明面上的话，URL 或模型名里的 `*` `_` 会被后面的加粗/斜体规则插进 `<em>`，把属性改坏
   - 交易引用**不需要带 mode**：复盘按模式分开了，回测复盘里引用的必然是回测交易，而 `trades` 本来就只装当前模式那批，所以永远能对上。别因为「跨模式查不到」这个担心去给引用加 mode
   - **点交易胶囊弹的是只读预览（`tradePreviewHtml`），不是编辑弹窗**。跟 focus 视图那条规矩一致：读的时候不该一点就出来一堆输入框。预览挂在 `#secondaryModalRoot`，在 `want` 链里排在 lightbox 后面——这样在预览里点图看原图、关掉原图还能退回预览。要改走底部明确的「编辑这笔交易」
   - **⚠️ 预览里渲染 url 类型字段时必须 `esc(mdSafeUrl(...))`**（已经踩过一次）。`mdSafeUrl()` 只判协议、**不转义**；它在 markdown 渲染器里够用是因为那边整段开头就 esc() 过了，而这里拿的是原始字段值，少一次 esc 就能让 `https://x.com/a" onmouseover="alert(1)` 从 href 里逃出去挂上事件处理器
-  - **正文上色**语法是 `{red|文字}`，颜色名走 `MD_COLORS` 白名单，渲染出去的只有我们自己的类名（`mdC-red` 这种），具体色值在 style.css 里按主题定义。**绝不能把用户写的东西当成 CSS 塞进 style**——那等于把「先转义再排版」那条防线拆了
-  - 上色规则放在加粗/斜体**之前**，这样 `{red|**粗红字**}` 里面还能继续排版；内容不允许跨行（`[^}\n]+`），免得一个没闭合的 `{` 把整篇吞掉
-  - 换色/清除走 `applyReviewColor()`，它会把已有的那层 `{c|...}` 先吃掉再包新的——不然连点两次颜色就会套出 `{green|{red|x}}`。选中内层文字和选中整段两种情况都要认
-  - **⚠️ 颜色浮层只能画进工具栏里的 `#reviewColorRoot`**，不能走 `renderReviewEditor()`：那会把整个编辑器重建一遍，正在写的正文和光标全没了。跟插入菜单是同一条规矩
-  - 点工具栏按钮时 textarea 已经失焦，但 `selectionStart/End` 还留着；即便如此，打开浮层那一刻还是把选区抓进 `reviewColorSel` 存着，因为选颜色是**两次点击**，中间隔着一次浮层渲染
-  - **交易引用**语法是 `[[trade:t_xxx]]`，`tradeRefHtml()` 渲染成可点的胶囊（日期 · 模型 · 结果 · R），点击打开该笔交易的弹窗。**找不到那笔交易时显式标红「已删除的交易」，不静默消失**——组合引用失效字段那个老坑的同款处理
-  - **只读 / 编辑两种模式**，由 `reviewEditMode` 控制，打开已有帖子默认只读（`openReviewEditor` 里置 false，新建的 `openNewReview` 置 true）。注意区分两个判定：`reviewCanEdit()` 是「有没有编辑权」（管理员看别人的数据时为 false，连编辑按钮都不出现），`reviewIsReadOnly()` 是「此刻是不是只读」。**编辑器里所有会改内容的入口都必须守 `reviewIsReadOnly()` 而不是 `viewingUserId`**，否则只读模式下工具栏快捷键还能改到正文。切换模式要 `renderReviewEditor(true)` 强制重建（两种模式骨架不一样），退出编辑前先 `await flushReviewSave()` 立刻落盘
+  - **正文上色**语法是 `{red|文字}`，颜色名走 `MD_COLORS` 白名单，渲染出去的只有我们自己的类名（`mdC-red` 这种），具体色值在 style.css 里按主题定义。**绝不能把用户写的东西当成 CSS 塞进 style**。上色规则放在加粗/斜体**之前**，所以序列化时颜色必须是最外层的 mark（`MD_MARK_ORDER`）；内容不允许跨行，序列化遇到换行会先把所有 mark 关掉
+  - **交易引用**语法是 `[[trade:t_xxx]]`，`tradeRefHtml()` 渲染成可点的胶囊（日期 · 模型 · 结果 · R）。**找不到那笔交易时显式标红「已删除的交易」，不静默消失**——组合引用失效字段那个老坑的同款处理
   - **分组的拖拽跟组合分组是同一套路子**：拖卡片落到另一张卡片上 = 插到它前面（同组内重排，跨组就是连搬带插）；落到分组区块的空白处 = 只改归属、排到该组末尾；拖分组标题落到另一个标题上 = 分组换位置。投放区靠 `[data-group-drop]`，白名单在 `DRAGGABLES` 里。「未分组」那个桶复用同一套外壳，但**标题不可拖**（它不是真分组），只能作为投放目标
   - **⚠️ 挪进某个分组时要把目标桶整批重编号**，不能只给挪进来的那几条编号：桶里原有的可能 `sort_order` 还是 null，而 null 在显示顺序里排最后，只编号新来的会让「挪到末尾」反而显示在最前面
   - **⚠️ 删分组不删里面的复盘**，退回未分组。组合那边是级联删的，别照抄——复盘是长文，顺手删掉一整组等于毁掉几个小时的记录
-  - 分组标题上的「在这里新建」建出来的帖子**默认不关联周**（分组基本是给「常见错误 / 猜想」这类跟某一周无关的条目用的），顶部那个「写复盘」仍然默认本周
+  - 分组标题上的「在这里新建」建出来的帖子**默认不关联日/周**（分组基本是给「常见错误 / 猜想」这类跟某一天无关的条目用的），顶部那个「写复盘」默认关联今天
   - 搜索时**把结果拍平成一个列表、不按分组显示**，每条标出所属分组。否则搜到的东西可能藏在折叠着的分组里，用户会以为没搜到
-  - 编辑器是 **textarea + 增强输入**，不是 contenteditable 块编辑器。这是刻意的：contenteditable 要自己处理选区和中文输入法组字，本项目是中文用户为主，风险不成比例。**所有 keydown 分支都必须先看 `e.isComposing`**，否则输入法选词时的回车会把没上屏的拼音切碎
-  - 编辑器里的输入全走内联 `on*` 属性交给 `window.__reviewBodyInput` / `__reviewKeydown` / `__reviewPaste` / `__reviewTitleInput`，跟项目里 `window.__updateUrlPreview` / `__imgFallback` 一个路子
-  - **⚠️⚠️ 改 textarea 内容必须走 `replaceRange()` 里的 `execCommand`，绝对不能写 `ta.value = ...`**（已经踩过一次）。给 value 直接赋值会把浏览器的**原生撤销栈整个清空**，而回车续列表、Tab、工具栏、插入菜单、粘贴全都经过这个函数，结果是编辑器里 Ctrl+Z 完全失效。`execCommand("insertText")` 会被当成一次真实编辑记进撤销栈，撤销/重做于是全是原生行为，一行都不用自己实现。空串 + 有选区要用 `execCommand("delete")`，insertText 传空串各家表现不一致。execCommand 标准上标了 deprecated，但这是目前唯一能保住 textarea 撤销栈的办法，代码里留了直接赋值的兜底
-  - 由此派生：`__reviewKeydown` 里 **`Ctrl+Z` / `Ctrl+Y` 一律 return 放行**，我们不维护自己的撤销栈，拦下来只会把原生的弄坏
-  - 还有一条：execCommand 会顺带派发一次 `input`，所以 `replaceRange` 期间置 `programmaticEdit`，让 `__reviewBodyInput` 直接返回。**关键是不能在那一路跑 `syncSlashMenu`**——程序性插入之后光标前面可能正好是个 `/`，会莫名其妙把插入菜单又弹出来
-  - 改 textarea 内容统一走 `replaceRange()`；**整行整行地改**（缩进、列表、标题）走 `applyLineEdit()`——它会在原本有选区时把改完的几行继续选着，否则 Tab 之后选区一塌，紧接着的 Shift+Tab 只能退最后一行
   - 交易选择器的搜索**没有复用记录页的 `tradeMatchesSearch()`**，另写了 `tradePickerMatches()`。前者只搜 text/textarea/url，而这里最常搜的恰恰是日期和模型（select 类型）
-  - **⚠️ 插入菜单、交易选择器这些浮层里全是按钮，不要用 `stopPropagation` 包容器**（见第四节那条踩过两次的坑）。「点背景关闭、点内容不关闭」用 `e.target === el` 判断，`close-trade-picker` 就是这么写的
-  - 层级：`.reviewEditorOverlay` 是 `z-index:90`，**故意低于 `.overlay` 的 100**——从复盘里点开一笔交易时，交易弹窗要盖在编辑器上面。ESC 的处理顺序是 灯箱 → 插入菜单 → 交易选择器 → 交易弹窗 → 复盘编辑器
+  - **⚠️ 格式栏、插入菜单、交易选择器这些浮层里全是按钮，不要用 `stopPropagation` 包容器**（见第四节那条踩过两次的坑）。「点背景关闭、点内容不关闭」用 `e.target === el` 判断，`close-trade-picker` 就是这么写的；「点浮层外面收起」在 click 委托最开头统一处理
+  - 层级：`.reviewEditorOverlay` 是 `z-index:90`，**故意低于 `.overlay` 的 100**——从复盘里点开一笔交易时，交易弹窗要盖在编辑器上面。ESC 的处理顺序是 灯箱 → 图片/链接小框 → 插入菜单 → 格式栏的二级面板 → 交易选择器 → 交易预览 → …… → 交易弹窗 → 复盘编辑器
   - 自动保存：停手 1.2 秒写库（`scheduleReviewSave` / `flushReviewSave`），同时每次输入镜像一份到 localStorage（`journal_review_draft`，跟交易草稿各存各的），另有 `beforeunload` 兜底。**新建的空白帖子直接关掉不会落库**，免得攒一堆空行
+  - 还没做、值得做的：左侧 ⋮⋮ 拖动块（官方 drag-handle 扩展依赖 yjs 协作那一套，太重，得自己写一个）；TradingView 快照页链接自动换成图片直链
 
 - **更新日志页**：全局共享，仅 admin 能发布/删除
 - **深色/浅色主题**、图片懒加载
@@ -350,5 +347,5 @@ JS
 - **管理员"只读查看他人数据"退出后状态还原**的完整链路也没有真机测试过
 - 代码已经拆成 `app.js` / `style.css` / `i18n.js`，但 `app.js` 仍然是一个四千多行的大文件，多人协作会有合并冲突。要不要再往下拆成模块是个待定项，建议单独作为一轮任务处理，不要和其他任务混在一起做
 - **复盘功能没有在真实数据库上跑过**：`docs/reviews-migration.sql` 还没在 Supabase 上执行过，所以「建表 → 写入 → 读回 → RLS 拦不拦得住别人」这条完整链路是未验证的。前端逻辑（编辑器、markdown 渲染、插入菜单、交易选择器、只读态、ESC 分层、后台 render 不冲掉正文）已经在浏览器里逐条验过，用的是内存假数据
-- **复盘的 markdown 渲染器是自己写的子集**，支持标题/粗斜体/删除线/行内码/代码块/列表/待办/引用/分割线/链接/图片/表格。刻意没引 marked + DOMPurify（项目除 supabase-js 外零依赖）。**代价是它只认这些语法**，写别的（脚注、嵌套引用、HTML 标签）会原样显示。安全性上按"先转义再排版"设计并过了一轮攻击串测试，但它终究是自己写的，以后加语法时要重新审一遍
+- **复盘的 markdown 渲染器是自己写的子集**，支持标题/粗斜体/删除线/行内码/代码块/列表/待办/引用/分割线/链接/图片/表格/反斜杠转义。刻意没引 marked + DOMPurify（编辑器用的 Tiptap 在 vendor/ 里，但渲染和存储格式仍然是这份自己写的 markdown）。**代价是它只认这些语法**，写别的（脚注、嵌套引用、HTML 标签）会原样显示。安全性上按"先转义再排版"设计并过了一轮攻击串测试，但它终究是自己写的，以后加语法时要重新审一遍
 - `max_rr` 这个角色还留在角色下拉里，但**已经没有任何功能挂在它上面**了（它原来只驱动"R捕获率"，那项统计已经被"最大回撤"取代）。保留是为了不让老数据里 `role: "max_rr"` 的字段变成下拉框里认不出的空值
