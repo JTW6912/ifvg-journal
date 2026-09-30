@@ -913,6 +913,18 @@ function positionBubble() {
   placeFloat(el, Math.min(a.top, b.top), Math.max(a.bottom, b.bottom), (a.left + b.right) / 2, true);
 }
 
+/* 看大图时翻到哪张，编辑器里就选中哪张（金色描边）。不滚动、不抢焦点：
+   位置由灯箱那边对齐好了，焦点还留在编辑器里 */
+function selectReviewImage(img) {
+  const ed = reviewTiptap;
+  if (!ed || !img) return;
+  try {
+    const pos = ed.view.posAtDOM(img, 0);
+    const node = ed.state.doc.nodeAt(pos);
+    if (node && node.type.name === "image") ed.commands.setNodeSelection(pos);
+  } catch (e) {}
+}
+
 /* Ctrl+K 或格式栏里的链接按钮：有选区就给选区加链接，没选区就弹小框插一个 */
 function openLinkEditor() {
   const ed = reviewTiptap;

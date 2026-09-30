@@ -157,6 +157,18 @@ function alignLightboxSource() {
   const row = el.closest("[data-focus-row]");
   if (row) setFocusCursor(+row.dataset.focusRow, "auto");
   else el.scrollIntoView({ behavior: "auto", block: "center" });
+  markLightboxSource(el, nav.scope);
+}
+/* 「选中」状态也要跟着翻过去，不然关掉灯箱时看着像回到了最开始那张：
+   - 复盘编辑器里双击图片会把那张图选中（金色描边），这是 ProseMirror 的节点选区；
+   - 其它地方是键盘焦点：点开大图的那个放大按钮一直留着焦点，按过方向键 / Esc 之后
+     浏览器会给它画上焦点框（:focus-visible 认的是「最近一次是键盘操作」）。
+   能拿焦点的就把焦点挪到当前这张的按钮上，拿不了的（看图模式的图、当日明细的缩略图）
+   就把旧焦点放掉。都不滚动——位置上面已经对齐好了 */
+function markLightboxSource(el, scope) {
+  if (scope === "review") { selectReviewImage(el); return; }
+  if (el.matches("button, a[href], [tabindex]")) el.focus({ preventScroll: true });
+  else if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
 }
 let secondaryModalState = null;
 function dayDetailModalHtml() {
