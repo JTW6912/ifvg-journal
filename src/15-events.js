@@ -1351,6 +1351,7 @@ document.addEventListener("keydown", (e) => {
 window.addEventListener("beforeunload", (e) => {
   if (!editingReview || viewingUserId) return;
   if (syncReviewBody()) saveReviewDraft();   // 正文是停手 300ms 才转 markdown 的，草稿先补上最后几下
+  flushReviewFolds();                        // 尽力而为：页面关掉时请求不一定发得出去
   if (reviewSaveState !== "dirty" && reviewSaveState !== "saving") return;
   e.preventDefault();
   e.returnValue = "";

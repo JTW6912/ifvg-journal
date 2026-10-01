@@ -412,6 +412,7 @@ let reviewMountSeq = 0;     // 每次重建编辑器外壳 +1；异步加载回�
 
 function destroyReviewTiptap() {
   syncReviewBody();   // 还没来得及转成 markdown 的最后几下，先落到 editingReview.body 里
+  if (reviewFoldSaveTimer) writeReviewFolds();   // 折叠状态同理（同步取完再销毁编辑器）
   resetReviewOutline();
   if (reviewTiptap) { try { reviewTiptap.destroy(); } catch (e) {} }
   reviewTiptap = null;
@@ -497,6 +498,7 @@ async function mountReviewTiptap(seq) {
   if (!mount) return;
   mount.innerHTML = "";
   const titleHadFocus = document.activeElement && document.activeElement.id === "reviewTitleInput";
+  reviewFoldsInDb = JSON.stringify(editingReview.folded_headings || []);
   try {
     reviewTiptap = new L.Editor({
       element: mount,
@@ -532,7 +534,7 @@ async function mountReviewTiptap(seq) {
         updateBubble();
       },
       // 改了字、折了/展开了一节、光标挪进折叠区被自动展开——都可能让目录变，统一停手再刷新
-      onTransaction: () => scheduleReviewOutline(),
+      onTransaction: () => { scheduleReviewOutline(); scheduleReviewFoldSave(); },
       onSelectionUpdate: () => { syncSlashMenu(); updateBubble(); },
       onFocus: () => updateBubble(),
       onBlur: ({ event }) => {
@@ -658,10 +660,12 @@ async function flushReviewSave() {
   const startedAt = reviewEditRev;
   reviewSaveState = "saving";
   updateReviewSaveBadge();
+  const wasNew = rev._isNew;
   const ok = await persistReview(rev);
   if (rev !== editingReview) return ok;   // 保存途中已经关掉 / 换了一篇
   if (ok) {
     rev._isNew = false;
+    if (wasNew) writeReviewFolds();   // 新帖刚插进库：之前折的那几节现在才能写
     if (startedAt === reviewEditRev) {
       reviewSaveState = "saved";
       reviewSavedAt = Date.now();
@@ -1210,6 +1214,7 @@ function openReviewEditor(id) {
     id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "", day_date: r.day_date || "",
     mode: r.mode || recordMode, group_id: r.group_id || null,
     sort_order: r.sort_order === undefined ? null : r.sort_order,
+    folded_headings: Array.isArray(r.folded_headings) ? r.folded_headings : [],
     _isNew: false,
   };
   reviewSaveState = "idle";
@@ -1249,6 +1254,7 @@ async function closeReviewEditor() {
     clearReviewDraft();
   } else {
     await flushReviewSave();
+    await flushReviewFolds();
   }
   editingReview = null;
   reviewEditorRenderedFor = null;

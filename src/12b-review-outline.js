@@ -9,7 +9,8 @@
    - 目录画进 #reviewOutline 原地更新，不走 render()——跟编辑器其它浮层同一个规矩。
    - 缩进按相对层级算：整篇最高只用到 H2，H2 就顶格。
 
-   折叠：纯显示层，不进文档、不进撤销栈、更不写进 markdown，关掉编辑器再打开就全展开。
+   折叠：纯显示层，不进文档、不进撤销栈、更不写进 markdown。折了哪几节单独存在
+   journal_reviews.folded_headings 上，下次打开还是折着（见下面 writeReviewFolds）。
    ProseMirror 插件状态里记着「哪几个标题折起来了」（位置，随编辑映射），再用 node
    decoration 给它下面、直到同级或更高级标题之前的块挂上 foldHidden。
    光标一旦落进被藏起来的地方（撤销、方向键、目录跳转），就自动展开那一节，
@@ -233,9 +234,40 @@ function foldLayout(doc, folds) {
     const end = j < blocks.length ? blocks[j].pos : doc.content.size;
     // 空标题、或者下面什么都没有的标题，没东西可折
     const foldable = end > start && !!b.node.textContent.trim();
-    heads.push({ pos: b.pos, start, end, foldable, folded: foldable && want.has(b.pos) });
+    heads.push({
+      pos: b.pos, start, end, foldable, folded: foldable && want.has(b.pos),
+      level: lv, text: b.node.textContent.replace(/\s+/g, " ").trim(),
+    });
   }
   return { blocks, heads };
+}
+
+/* 存库用的「标题身份」：级别 + 文字 + 同级同名标题里的第几个。不存位置——
+   前面多写一段，位置全变，文字不变。heads: [{ pos, level, text, folded }] */
+function foldKeysOf(heads) {
+  const seen = {};
+  const out = [];
+  heads.forEach((h) => {
+    const k = h.level + ":" + h.text;
+    const n = seen[k] = seen[k] === undefined ? 0 : seen[k] + 1;
+    if (h.folded) out.push({ l: h.level, t: h.text, n });
+  });
+  return out;
+}
+/* 反过来：库里那份 → 现在这篇文档里对应标题的位置。对不上的（标题改了字、删了）直接忽略 */
+function foldPositionsFromKeys(heads, keys) {
+  const want = new Set((Array.isArray(keys) ? keys : [])
+    .filter((k) => k && Number.isInteger(k.l) && typeof k.t === "string" && Number.isInteger(k.n))
+    .map((k) => k.l + ":" + k.n + ":" + k.t));
+  if (!want.size) return [];
+  const seen = {};
+  const out = [];
+  heads.forEach((h) => {
+    const k = h.level + ":" + h.text;
+    const n = seen[k] = seen[k] === undefined ? 0 : seen[k] + 1;
+    if (want.has(h.level + ":" + n + ":" + h.text)) out.push(h.pos);
+  });
+  return out;
 }
 
 function reviewFoldExtension(L) {
@@ -263,7 +295,9 @@ function reviewFoldExtension(L) {
       return [new L.Plugin({
         key,
         state: {
-          init: (_, state) => build(state.doc, []),
+          // 打开时按库里存的折叠状态折好（editingReview 在创建编辑器之前就已经是这一篇了）
+          init: (_, state) => build(state.doc,
+            foldPositionsFromKeys(foldLayout(state.doc, []).heads, editingReview && editingReview.folded_headings)),
           apply: (tr, prev, _old, state) => {
             const meta = tr.getMeta(key);
             if (!tr.docChanged && !meta && !tr.selectionSet) return prev;
@@ -323,4 +357,46 @@ function reviewFoldMouseDown(view, e) {
   e.preventDefault();
   try { toggleReviewFold(view.posAtDOM(h, 0) - 1); } catch (err) {}
   return true;
+}
+
+/* ---------- 折叠状态存库 ----------
+   单独 update 这一列，不走 persistReview：不碰 updated_at（折一下不算「编辑过」，列表里的
+   「编辑于」不该跳），也不跟正文保存绑在一起。停手 800ms 写一次，内容和库里一样就不写。
+   新帖还没插进库时先只记在 editingReview 上，第一次保存成功后 flushReviewSave 会补写。 */
+let reviewFoldSaveTimer = null;
+let reviewFoldFor = null;        // 排这次保存时是哪一篇——跟 reviewBodyFor 同一个道理
+let reviewFoldsInDb = "[]";      // 库里现在那份（JSON），打开编辑器时设
+
+function scheduleReviewFoldSave() {
+  if (!editingReview || viewingUserId) return;
+  reviewFoldFor = editingReview;
+  clearTimeout(reviewFoldSaveTimer);
+  reviewFoldSaveTimer = setTimeout(writeReviewFolds, 800);
+}
+function flushReviewFolds() {
+  return reviewFoldSaveTimer ? writeReviewFolds() : Promise.resolve();
+}
+async function writeReviewFolds() {
+  clearTimeout(reviewFoldSaveTimer);
+  reviewFoldSaveTimer = null;
+  const rev = reviewFoldFor || editingReview;
+  reviewFoldFor = null;
+  const st = reviewFoldState();
+  if (!rev || !st || viewingUserId || !sb || !session) return;
+  const keys = foldKeysOf(st.heads);   // 同步取，取完编辑器被销毁也不要紧
+  rev.folded_headings = keys;
+  const json = JSON.stringify(keys);
+  if (json === reviewFoldsInDb || rev._isNew) return;
+  const { error } = await sb.from("journal_reviews").update({ folded_headings: keys }).eq("id", rev.id).eq("user_id", session.user.id);
+  if (error) {
+    console.error(error);
+    if (rev === editingReview) {
+      reviewSaveError = noteDbError(error) ? T("error.dbOutdated") : T("review.saveFailed", { msg: error.message });
+      updateReviewSaveBadge();
+    }
+    return;
+  }
+  if (rev === editingReview) reviewFoldsInDb = json;
+  const r = reviews.find((x) => x.id === rev.id);
+  if (r) r.folded_headings = keys;
 }

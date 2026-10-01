@@ -117,6 +117,7 @@ linked_trade_ids  text[] —— 保存时从正文 [[trade:xxx]] 抽出来的冗
 mode              text, 'backtest' / 'live'，默认 'live'
 group_id          text, 可空 —— 归属哪个分组，null/'' = 未分组
 sort_order        double precision, 可空 —— 手动拖拽排序；null = 没排过，按 created_at 倒序兜底
+folded_headings   jsonb, 默认 [] —— 正文里折起来的那几节：[{ l: 级别, t: 标题文字, n: 同级同名里第几个 }]。按文字认不按位置；前端单独 update 这一列、不碰 updated_at
 created_at        timestamptz
 updated_at        timestamptz
 ```
@@ -126,7 +127,7 @@ updated_at        timestamptz
 - `linked_trade_ids` 只是索引，**正文才是唯一真相**。改正文一定要重新抽一遍（`extractTradeRefs()`），别让两边对不上
 - RLS：跟 trades 一样，自己读写自己的 + 一条 admin 只读（`select using (is_admin())`）
 - **关联到哪一天/哪一周由 `reviewPeriodKind()` 唯一判定**：`day_date` 有值就是日复盘，否则看 `week_start`，都没有就是自由帖。**day_date 优先**——万一两列都有值（正常切换会清另一个，但脏数据难说）也有个确定的落点，不会两处显示不一致
-- 建表和后加的列（mode / group_id / sort_order / day_date）都在 `supabase/migrations/20260901000000_journal_features.sql`，可重复执行
+- 建表和后加的列（mode / group_id / sort_order / day_date）都在 `supabase/migrations/20260901000000_journal_features.sql`，可重复执行；`folded_headings` 在 `20261001000000_review_folds.sql`
 
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
@@ -298,7 +299,7 @@ JS
   - 键盘：我们自己的 `reviewEditorKeydown()` 只管插入菜单的上下/回车和 `Ctrl+S` / `Ctrl+K`，**第一行必须先看 `e.isComposing || view.composing`**，否则输入法选词时的回车会被插入菜单吃掉。其余快捷键（加粗、标题、列表、撤销……）全是 Tiptap 自带的。**Escape 不在编辑器里处理**，交给 document 上那条 ESC 链
   - 粘贴（`reviewEditorPaste()`）：光秃秃一个图片链接 → 图片；纯文本里带 markdown 块语法 → 按 markdown 排好版再插；剪贴板里是图片文件本身 → **不上传**，弹提示让用户走外部图床（用户明确要求图片不进数据库）。其余交给 Tiptap（选中文字粘链接 = 加链接）
   - 自动保存靠 `reviewEditRev` 判断「保存途中有没有又改过」：对不上就保持 dirty、补回本地草稿，排着的那次保存照常写。以前是直接标成已保存，排着的保存一看不是 dirty 就跳过，最后几下只留在 localStorage 里
-  - **目录和折叠章节在 `src/12b-review-outline.js`**。目录直接读正文 DOM 里顶层的 h1–h6（编辑态、只读态、加载中三种情况共用），宽屏（≥1240px）钉在右边、收没收记在 `journal_review_outline`，窄屏是顶栏按钮的下拉面板。折叠是 ProseMirror 插件 + node decoration（所以 `vendor/tiptap.js` 多导出了 `Decoration` / `DecorationSet`），**纯显示，不进文档、不进撤销栈、不写进 markdown**；光标落进折叠区就自动展开。**别直接改编辑器 DOM 的 class**（ProseMirror 的 MutationObserver 会当成内容变了重新解析），目录跳转后的闪烁是另画一层 `.outlineFlash`
+  - **目录和折叠章节在 `src/12b-review-outline.js`**。目录直接读正文 DOM 里顶层的 h1–h6（编辑态、只读态、加载中三种情况共用），宽屏（≥1240px）钉在右边、收没收记在 `journal_review_outline`，窄屏是顶栏按钮的下拉面板。折叠是 ProseMirror 插件 + node decoration（所以 `vendor/tiptap.js` 多导出了 `Decoration` / `DecorationSet`），**纯显示，不进文档、不进撤销栈、不写进 markdown**；光标落进折叠区就自动展开。折了哪几节存在 `folded_headings`（`writeReviewFolds()`，停手 800ms 单独 update；新帖等第一次保存成功后补写），打开时插件 `init` 按标题文字对回位置。**别直接改编辑器 DOM 的 class**（ProseMirror 的 MutationObserver 会当成内容变了重新解析），目录跳转后的闪烁是另画一层 `.outlineFlash`
   - 双击图片看大图（`handleDoubleClickOn` → `renderSecondaryModals(true)`）；单击是选中它（方便删）。Ctrl/⌘ + 点击链接在新标签页打开
   - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去。编辑器那边是第二道白名单：Tiptap 只认 schema 里定义过的节点，链接 `isAllowedUri`、图片的 parseHTML 都只放行 http(s)
   - `mdInline()` 里生成出来的 HTML（交易胶囊、图片、链接标签、行内代码、转义字符）一律先存进私有区字符包着的占位符（`hold()`），最后递归还原。留在明面上的话，URL 或模型名里的 `*` `_` 会被后面的加粗/斜体规则插进 `<em>`，把属性改坏
