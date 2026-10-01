@@ -21,7 +21,7 @@
    - Tiptap 打成了同源的 vendor/tiptap.js，第一次打开编辑器时才 import()；
      加载失败就退回纯文本框写 markdown，内容照常保存，不会把人卡住。
    ============================================================ */
-const TIPTAP_URL = "./vendor/tiptap.js?v=3.31.3";
+const TIPTAP_URL = "./vendor/tiptap.js?v=3.31.3-2";   // -2：多导出了 Decoration / DecorationSet（折叠章节要用）
 let tiptapLib = null;
 let tiptapLoading = null;
 function loadTiptap() {
@@ -400,6 +400,7 @@ function reviewExtensions(L) {
     }),
     MdColor,
     TradeRef,
+    reviewFoldExtension(L),
   ];
 }
 
@@ -410,6 +411,8 @@ let reviewTiptap = null;
 let reviewMountSeq = 0;     // 每次重建编辑器外壳 +1；异步加载回来发现对不上就放弃挂载
 
 function destroyReviewTiptap() {
+  syncReviewBody();   // 还没来得及转成 markdown 的最后几下，先落到 editingReview.body 里
+  resetReviewOutline();
   if (reviewTiptap) { try { reviewTiptap.destroy(); } catch (e) {} }
   reviewTiptap = null;
   slashMenu = null;
@@ -440,6 +443,7 @@ function renderReviewEditor(force) {
       </div>
       <div class="reviewTopRight">
         <span id="reviewSaveSlot">${readOnly ? "" : reviewSaveBadgeHtml()}</span>
+        <button class="iconBtn reviewOutlineBtn" id="reviewOutlineBtn" data-action="review-outline-toggle" hidden>${ICONS.outline}</button>
         <button class="iconBtn" data-action="close-review-editor" title="${esc(T("review.editorClose"))}">${ICONS.x}</button>
       </div>
     </div>
@@ -458,7 +462,8 @@ function renderReviewEditor(force) {
           </div>
           <div class="reviewDocTail" onclick="window.__reviewFocusEnd()"></div>`}
     </div>
-    ${readOnly ? "" : `<div class="reviewHintBar">${esc(T("review.hintBar", { mod: modKeyLabel() }))}</div>`}
+    <nav class="reviewOutline" id="reviewOutline" hidden onmousedown="event.preventDefault()"></nav>
+    ${readOnly ? "" : `<div class="reviewHintBar">${esc(T("review.hintBar", { mod: modKeyLabel(), alt: isMacLike() ? "⌥" : "Alt" }))}</div>`}
     <div id="reviewFloatRoot" onmousedown="window.__reviewFloatMouseDown(event)">
       <div id="reviewBubble" class="reviewBubble" hidden></div>
       <div id="reviewPop" class="reviewPop" hidden></div>
@@ -467,6 +472,7 @@ function renderReviewEditor(force) {
     </div>
     <div id="tradePickerRoot"></div>
   </div>`;
+  refreshReviewOutline();   // 只读态、编辑器加载中显示的静态正文也有目录
 
   if (readOnly) return;
   if (editingReview._isNew && !(editingReview.title || "").trim()) {
@@ -502,6 +508,7 @@ async function mountReviewTiptap(seq) {
         scrollThreshold: { top: 70, bottom: 90, left: 0, right: 0 },
         scrollMargin: { top: 70, bottom: 90, left: 0, right: 0 },
         handleKeyDown: (view, e) => reviewEditorKeydown(view, e),
+        handleDOMEvents: { mousedown: (view, e) => reviewFoldMouseDown(view, e) },
         handlePaste: (view, e) => reviewEditorPaste(view, e),
         handleDoubleClickOn: (view, pos, node) => {
           if (node.type.name !== "image") return false;
@@ -518,13 +525,14 @@ async function mountReviewTiptap(seq) {
           return true;
         },
       },
-      onUpdate: ({ editor }) => {
+      onUpdate: () => {
         if (!editingReview) return;
-        editingReview.body = docToMarkdown(editor.getJSON());
-        scheduleReviewSave();
+        markReviewBodyChanged();
         syncSlashMenu();
         updateBubble();
       },
+      // 改了字、折了/展开了一节、光标挪进折叠区被自动展开——都可能让目录变，统一停手再刷新
+      onTransaction: () => scheduleReviewOutline(),
       onSelectionUpdate: () => { syncSlashMenu(); updateBubble(); },
       onFocus: () => updateBubble(),
       onBlur: ({ event }) => {
@@ -542,6 +550,7 @@ async function mountReviewTiptap(seq) {
     return;
   }
   if (titleHadFocus) { const ti = document.getElementById("reviewTitleInput"); if (ti) ti.focus(); }
+  refreshReviewOutline();
 }
 
 /* 编辑器没加载出来（断网、被拦截）：退回纯文本框，直接写 markdown。
@@ -551,6 +560,7 @@ function mountReviewFallback() {
   if (!mount || !editingReview) return;
   mount.innerHTML = `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(T("review.editorLoadFailed"))}</span></div>
     <textarea class="input reviewFallbackInput" spellcheck="false" oninput="window.__reviewFallbackInput(this)">${esc(editingReview.body || "")}</textarea>`;
+  refreshReviewOutline();
 }
 window.__reviewFallbackInput = function (ta) {
   if (!editingReview) return;
@@ -570,7 +580,7 @@ window.__reviewFocusEnd = function () {
     ed.commands.focus("end");
   }
 };
-window.__reviewScroll = function () { positionReviewFloats(); };
+window.__reviewScroll = function () { positionReviewFloats(); onReviewOutlineScroll(); };
 window.addEventListener("resize", () => { if (reviewTiptap) positionReviewFloats(); });
 
 /* 浮层里的按钮不能抢走编辑器的焦点（选区会丢）；输入框例外，它本来就要焦点 */
@@ -599,7 +609,38 @@ function placeFloat(el, anchorTop, anchorBottom, centerX, preferAbove) {
 /* ---------- 自动保存 ----------
    停手 1.2 秒写数据库，同时每次输入都镜像一份到 localStorage 兜底。
    全程不调 render()，否则编辑器会被重建。 */
+let reviewEditRev = 0;   // 每改一下 +1。保存回来时对不上 = 保存途中又改过，不能标成「已保存」
+
+/* 正文：打字时不再每一下都 getJSON() → docToMarkdown() → 写 localStorage——长复盘
+   （几十张图、好几张表）每个键都整篇转一遍会发涩。停手 300ms 才转一次，再接上面的 1.2 秒。
+   任何要读 editingReview.body 的地方（保存、关闭、离开页面）先调 syncReviewBody()。 */
+let reviewBodyTimer = null;
+let reviewBodyFor = null;
+function markReviewBodyChanged() {
+  reviewEditRev++;
+  reviewBodyFor = editingReview;
+  reviewSaveState = "dirty";
+  reviewSaveError = null;
+  updateReviewSaveBadge();
+  clearTimeout(reviewSaveTimer);   // 正文还没转好之前别去写库，转好了会重新排
+  reviewSaveTimer = null;
+  clearTimeout(reviewBodyTimer);
+  reviewBodyTimer = setTimeout(() => { if (syncReviewBody()) scheduleReviewSave(); }, 300);
+}
+/* 返回 true = 正文更新到了当前这篇上 */
+function syncReviewBody() {
+  if (!reviewBodyTimer) return false;
+  clearTimeout(reviewBodyTimer);
+  reviewBodyTimer = null;
+  const target = reviewBodyFor;
+  reviewBodyFor = null;
+  if (!target || !reviewTiptap) return false;
+  target.body = docToMarkdown(reviewTiptap.getJSON());
+  return target === editingReview;
+}
+
 function scheduleReviewSave() {
+  reviewEditRev++;
   reviewSaveState = "dirty";
   reviewSaveError = null;
   updateReviewSaveBadge();
@@ -608,17 +649,29 @@ function scheduleReviewSave() {
   reviewSaveTimer = setTimeout(() => { flushReviewSave(); }, 1200);
 }
 async function flushReviewSave() {
+  if (syncReviewBody()) saveReviewDraft();
   clearTimeout(reviewSaveTimer);
   reviewSaveTimer = null;
   if (!editingReview || viewingUserId) return true;
   if (reviewSaveState !== "dirty") return true;
+  const rev = editingReview;
+  const startedAt = reviewEditRev;
   reviewSaveState = "saving";
   updateReviewSaveBadge();
-  const ok = await persistReview(editingReview);
+  const ok = await persistReview(rev);
+  if (rev !== editingReview) return ok;   // 保存途中已经关掉 / 换了一篇
   if (ok) {
-    editingReview._isNew = false;
-    reviewSaveState = "saved";
-    reviewSavedAt = Date.now();
+    rev._isNew = false;
+    if (startedAt === reviewEditRev) {
+      reviewSaveState = "saved";
+      reviewSavedAt = Date.now();
+    } else {
+      // 保存途中又改过：以前这里会直接标成「已保存」，排着的那次保存一看不是 dirty 就跳过了，
+      // 最后几下只留在本地草稿里。现在保持 dirty，排着的保存照常写；persistReview 刚清掉的草稿也补回来
+      reviewSaveState = "dirty";
+      saveReviewDraft();
+      if (!reviewSaveTimer && !reviewBodyTimer) reviewSaveTimer = setTimeout(() => { flushReviewSave(); }, 1200);
+    }
   } else {
     reviewSaveState = "dirty";
   }
@@ -632,6 +685,7 @@ window.__reviewTitleInput = function (el) {
   const crumb = document.getElementById("reviewCrumbTitle");
   if (crumb) crumb.textContent = reviewTitleOf(editingReview);
   scheduleReviewSave();
+  scheduleReviewOutline();   // 目录最上面那一项就是标题
 };
 /* 标题里按回车 / 下箭头：跳进正文开头，跟 Notion 一样 */
 window.__reviewTitleKey = function (e) {
@@ -1184,6 +1238,7 @@ function openNewReview(opts) {
   renderReviewEditor(true);
 }
 async function closeReviewEditor() {
+  syncReviewBody();   // 下面判断「是不是空白页」要看最新的正文
   tradePickerOpen = false;
   const wasNew = editingReview && editingReview._isNew;
   const isBlank = editingReview && !(editingReview.title || "").trim() && !(editingReview.body || "").trim();

@@ -606,6 +606,8 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "open-review") { openReviewEditor(el.dataset.id); }
   else if (action === "close-review-editor") { await closeReviewEditor(); }
+  else if (action === "review-outline-toggle") { toggleReviewOutline(); }
+  else if (action === "review-outline-go") { reviewOutlineGo(+el.dataset.idx); }
   else if (action === "ask-delete-review") { reviewConfirmDeleteId = el.dataset.id; render(); }
   else if (action === "cancel-delete-review") { reviewConfirmDeleteId = null; render(); }
   else if (action === "confirm-delete-review") {
@@ -1329,6 +1331,7 @@ document.addEventListener("keydown", (e) => {
   if (slashMenu) { closeSlashMenu(true); return; }
   if (reviewTiptap && bubbleMode !== "main") { bubbleMode = "main"; updateBubble(); if (reviewTiptap) reviewTiptap.commands.focus(); return; }
   if (tradePickerOpen) { closeTradePicker(); return; }
+  if (closeReviewOutlinePop()) return;
   if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); return; }
   if (comboGroupModal) { comboGroupModal = null; render(); return; }
   if (profileModalOpen) { profileModalOpen = false; render(); return; }
@@ -1347,6 +1350,7 @@ document.addEventListener("keydown", (e) => {
    但还是先拦一下，让用户自己决定。 */
 window.addEventListener("beforeunload", (e) => {
   if (!editingReview || viewingUserId) return;
+  if (syncReviewBody()) saveReviewDraft();   // 正文是停手 300ms 才转 markdown 的，草稿先补上最后几下
   if (reviewSaveState !== "dirty" && reviewSaveState !== "saving") return;
   e.preventDefault();
   e.returnValue = "";

@@ -710,11 +710,63 @@ textarea.input{resize:vertical;}
 .slashItem:hover svg,.slashItem.active svg{color:var(--accent);}
 .slashEmpty{padding:9px;font-size:12px;color:var(--mutedDark);}
 
+/* ---------- 目录 ----------
+   宽屏（≥1240px，跟 12b-review-outline.js 的 OUTLINE_WIDE_MQ 对齐）钉在正文右边；
+   窄屏是顶栏按钮下面的下拉面板（.isPop）。布局由 JS 挂不挂 isPop 决定，显不显示看 hidden */
+.reviewOutlineBtn[hidden]{display:none;}
+.reviewOutlineBtn.on{color:var(--accent);background:var(--accentSoft);}
+.reviewOutline{position:fixed;z-index:6;display:flex;flex-direction:column;min-height:0;}
+.reviewOutline[hidden]{display:none;}
+.reviewOutline:not(.isPop){top:96px;left:calc(50% + 404px);width:min(220px, calc(50vw - 420px));max-height:calc(100vh - 150px);}
+.reviewOutline.isPop{z-index:20;top:52px;right:12px;width:min(300px, calc(100vw - 24px));max-height:min(62vh, 480px);
+  background:var(--surface);border:1px solid var(--borderLight);border-radius:9px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:4px;}
+.outlineHead{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 6px 10px;
+  font-size:10.5px;letter-spacing:.6px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;text-transform:uppercase;}
+.outlineClose{background:transparent;border:none;color:var(--mutedDark);cursor:pointer;padding:4px;border-radius:5px;display:flex;}
+.outlineClose:hover{background:var(--surface2);color:var(--text);}
+.outlineClose svg{width:12px;height:12px;}
+.outlineList{position:relative;overflow-y:auto;min-height:0;scrollbar-width:thin;}
+.outlineItem{display:flex;align-items:center;gap:6px;width:100%;background:transparent;border:none;border-left:2px solid var(--border);
+  color:var(--muted);cursor:pointer;text-align:left;font-size:12.5px;line-height:1.45;padding:4px 8px 4px 10px;
+  font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;}
+.outlineItem span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.outlineItem:hover{color:var(--text);background:var(--surface2);}
+.outlineItem.active{color:var(--accent);border-left-color:var(--accent);}
+.outlineItem.d1{padding-left:22px;}
+.outlineItem.d2{padding-left:34px;font-size:12px;}
+.outlineItem.d3{padding-left:46px;font-size:12px;}
+.outlineItem.isHidden{opacity:.5;}
+.outlineTop{color:var(--text);font-weight:600;margin-bottom:4px;}
+.outlineTop svg{width:12px;height:12px;flex-shrink:0;color:var(--mutedDark);}
+.reviewOutline.isPop .outlineItem{border-left-color:transparent;border-radius:6px;padding-top:6px;padding-bottom:6px;}
+.reviewOutline.isPop .outlineItem.active{background:var(--accentSoft);}
+/* 点目录跳过去之后，目标标题后面闪一下。另画一层而不是改标题的 class（见 12b 文件头的说明） */
+.reviewPage{position:relative;}
+.outlineFlash{position:absolute;left:12px;right:12px;z-index:-1;border-radius:8px;background:var(--accentSoft);
+  pointer-events:none;opacity:0;}
+.outlineFlash.on{animation:outlineFlash 1.4s ease-out;}
+@keyframes outlineFlash{0%,30%{opacity:1;}100%{opacity:0;}}
+@media(prefers-reduced-motion:reduce){.outlineFlash.on{animation-duration:.6s;}}
+
+/* ---------- 折叠章节 ----------
+   箭头是标题的 ::after（::before 被 Placeholder 的空行提示占了），画在标题左边的留白里。
+   被折起来的块由插件挂 foldHidden，纯显示，不进文档 */
+.reviewDoc .foldHidden{display:none !important;}
+.reviewDoc>.hasFold{position:relative;}
+.reviewDoc>.hasFold::after{content:"";position:absolute;left:-24px;top:calc(.675em - 10px);width:20px;height:20px;cursor:pointer;
+  background:var(--mutedDark);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center/14px 14px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center/14px 14px no-repeat;
+  opacity:0;transition:opacity .12s ease,transform .15s ease;}
+.reviewDoc>.hasFold:hover::after{opacity:.85;}
+.reviewDoc>.isFolded::after{opacity:1;transform:rotate(-90deg);background:var(--accent);}
+@media(hover:none){.reviewDoc>.hasFold::after{opacity:.45;}}
+
 @media(max-width:640px){
   .reviewPage{padding:28px 16px 0;}
   .reviewTitleInput,.reviewTitleStatic{font-size:26px;}
   .reviewHintBar{display:none;}
   .reviewPop{min-width:0;width:calc(100vw - 32px);}
+  .reviewDoc>.hasFold::after{left:-18px;width:16px;-webkit-mask-size:13px 13px;mask-size:13px 13px;}
+  .outlineFlash{left:6px;right:6px;}
   .bubbleInput{width:170px;}
 }
 

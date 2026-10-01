@@ -23,3 +23,4 @@ export { Image } from "@tiptap/extension-image";
 export { Table, TableRow, TableCell, TableHeader } from "@tiptap/extension-table";
 export { Placeholder } from "@tiptap/extensions";
 export { Plugin, PluginKey, NodeSelection, TextSelection } from "@tiptap/pm/state";
+export { Decoration, DecorationSet } from "@tiptap/pm/view";

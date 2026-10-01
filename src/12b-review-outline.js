@@ -1,0 +1,326 @@
+/* ============================================================
+   复盘正文的「目录」和「折叠章节」
+
+   目录：直接从正文 DOM 里读顶层的 h1–h6。编辑态读的是 Tiptap 的 DOM，只读态和编辑器
+   加载中读的是 renderMarkdown 出来的静态 HTML——两边都是 .reviewDoc 下面一排块元素，
+   读法一样，所以三种情况共用这一套。
+   - 宽屏（≥1240px）钉在正文右边，可以收起，收没收记在 localStorage；
+     窄屏放不下，收进顶栏的按钮，点开是下拉面板，点完一项自动收起。
+   - 目录画进 #reviewOutline 原地更新，不走 render()——跟编辑器其它浮层同一个规矩。
+   - 缩进按相对层级算：整篇最高只用到 H2，H2 就顶格。
+
+   折叠：纯显示层，不进文档、不进撤销栈、更不写进 markdown，关掉编辑器再打开就全展开。
+   ProseMirror 插件状态里记着「哪几个标题折起来了」（位置，随编辑映射），再用 node
+   decoration 给它下面、直到同级或更高级标题之前的块挂上 foldHidden。
+   光标一旦落进被藏起来的地方（撤销、方向键、目录跳转），就自动展开那一节，
+   免得在看不见的地方打字。所以在折起来的标题末尾按回车，新行开在标题正下方、这一节随之展开——
+   markdown 里标题下面到下一个同级标题之前都算这一节，没法像 Notion 那样把新行开在节外面。
+   ⚠️ 别直接改编辑器 DOM 的 class：ProseMirror 的 MutationObserver 会当成用户改了内容、
+   重新解析那个节点。所以目录跳转后「闪一下」是另画一层高亮，不碰标题元素本身。
+   ============================================================ */
+const OUTLINE_WIDE_MQ = "(min-width: 1240px)";   // 跟 style.css 里 .reviewOutline 的断点对齐
+const OUTLINE_PIN_KEY = "journal_review_outline";
+const OUTLINE_SCROLL_GAP = 72;                     // 跳过去时标题上面留多少：让出 48px 的 sticky 顶栏再多一点
+
+let reviewOutlinePinned = (function () {
+  try { return localStorage.getItem(OUTLINE_PIN_KEY) !== "off"; } catch (e) { return true; }
+})();
+let reviewOutlinePopOpen = false;   // 窄屏的下拉面板
+let reviewOutlineHeads = [];        // [{ el, level, text, hidden }]
+let reviewOutlineKey = null;        // 目录内容没变就不重画（保住 hover 和目录自己的滚动位置）
+let reviewOutlineActive = -2;
+let reviewOutlineTimer = null;
+let reviewOutlineRaf = 0;
+let reviewFlashTimer = null;
+
+function outlineIsWide() { return !!(window.matchMedia && window.matchMedia(OUTLINE_WIDE_MQ).matches); }
+function outlinePrefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+function resetReviewOutline() {
+  clearTimeout(reviewOutlineTimer);
+  reviewOutlineTimer = null;
+  reviewOutlinePopOpen = false;
+  reviewOutlineHeads = [];
+  reviewOutlineKey = null;
+  reviewOutlineActive = -2;
+}
+
+function collectReviewHeadings() {
+  const doc = document.querySelector("#reviewScroller .reviewDoc");
+  if (!doc) return [];
+  const out = [];
+  for (const el of doc.children) {
+    if (!/^H[1-6]$/.test(el.tagName)) continue;
+    const text = (el.textContent || "").replace(/\s+/g, " ").trim();
+    if (!text) continue;   // 刚打了 # 还没写字的空标题
+    out.push({ el, level: +el.tagName[1], text, hidden: el.classList.contains("foldHidden") });
+  }
+  return out;
+}
+
+/* 打字时停手 150ms 再刷新目录，不是每敲一个键都重算 */
+function scheduleReviewOutline(ms) {
+  clearTimeout(reviewOutlineTimer);
+  reviewOutlineTimer = setTimeout(refreshReviewOutline, ms == null ? 150 : ms);
+}
+
+function refreshReviewOutline() {
+  clearTimeout(reviewOutlineTimer);
+  reviewOutlineTimer = null;
+  const nav = document.getElementById("reviewOutline");
+  const btn = document.getElementById("reviewOutlineBtn");
+  if (!nav || !editingReview) return;
+  const heads = collectReviewHeadings();
+  reviewOutlineHeads = heads;
+  const has = heads.length > 0;
+  if (!has) reviewOutlinePopOpen = false;
+  const wide = outlineIsWide();
+  const show = has && (wide ? reviewOutlinePinned : reviewOutlinePopOpen);
+  if (btn) {
+    btn.hidden = !has;
+    btn.classList.toggle("on", show);
+    btn.title = T(show ? "review.outline.hide" : "review.outline.show");
+  }
+  nav.hidden = !show;
+  nav.classList.toggle("isPop", !wide);
+  if (!show) { reviewOutlineKey = null; return; }
+
+  const title = reviewTitleOf(editingReview);
+  const key = [wide, title, ...heads.map((h) => h.level + (h.hidden ? "h" : "") + ":" + h.text)].join("\u0000");
+  if (key !== reviewOutlineKey) {
+    reviewOutlineKey = key;
+    reviewOutlineActive = -2;
+    const min = Math.min(...heads.map((h) => h.level));
+    nav.innerHTML = `<div class="outlineHead">
+        <span>${esc(T("review.outline.title"))}</span>
+        <button class="outlineClose" data-action="review-outline-toggle" title="${esc(T("review.outline.hide"))}">${ICONS.x}</button>
+      </div>
+      <div class="outlineList" id="reviewOutlineList">
+        <button class="outlineItem outlineTop" data-action="review-outline-go" data-idx="-1" title="${esc(T("review.outline.top"))}">${ICONS.up}<span>${esc(title)}</span></button>
+        ${heads.map((h, i) => `<button class="outlineItem d${Math.min(h.level - min, 3)}${h.hidden ? " isHidden" : ""}" data-action="review-outline-go" data-idx="${i}"
+            title="${esc(h.hidden ? T("review.outline.inFold", { text: h.text }) : h.text)}"><span>${esc(h.text)}</span></button>`).join("")}
+      </div>`;
+  }
+  updateReviewOutlineActive();
+}
+
+/* 滚动时高亮「现在在哪一节」：最后一个顶到顶栏下面那条线的标题 */
+function updateReviewOutlineActive() {
+  const nav = document.getElementById("reviewOutline");
+  const sc = document.getElementById("reviewScroller");
+  if (!nav || nav.hidden || !sc || !reviewOutlineHeads.length) return;
+  const scRect = sc.getBoundingClientRect();
+  const line = scRect.top + OUTLINE_SCROLL_GAP + 16;
+  let idx = -1;
+  const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
+  reviewOutlineHeads.forEach((h, i) => {
+    if (h.hidden || !h.el.isConnected) return;
+    const top = h.el.getBoundingClientRect().top;
+    // 滚到底了，最后几节可能永远顶不到那条线——那就算屏幕里能看到的最后一个
+    if (top <= line || (atBottom && top < scRect.bottom - 40)) idx = i;
+  });
+  if (idx === reviewOutlineActive) return;
+  reviewOutlineActive = idx;
+  nav.querySelectorAll(".outlineItem").forEach((b) => b.classList.toggle("active", +b.dataset.idx === idx));
+  // 目录太长自己出滚动条时，让高亮那项留在可视范围里。不用 scrollIntoView：它会连外层一起滚
+  const list = document.getElementById("reviewOutlineList");
+  const act = nav.querySelector(".outlineItem.active");
+  if (!list || !act) return;
+  const top = act.offsetTop, bottom = top + act.offsetHeight;
+  if (top < list.scrollTop) list.scrollTop = top - 8;
+  else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight + 8;
+}
+function onReviewOutlineScroll() {
+  if (reviewOutlineRaf) return;
+  reviewOutlineRaf = requestAnimationFrame(() => { reviewOutlineRaf = 0; updateReviewOutlineActive(); });
+}
+
+function toggleReviewOutline() {
+  if (outlineIsWide()) {
+    reviewOutlinePinned = !reviewOutlinePinned;
+    try { localStorage.setItem(OUTLINE_PIN_KEY, reviewOutlinePinned ? "on" : "off"); } catch (e) {}
+  } else {
+    reviewOutlinePopOpen = !reviewOutlinePopOpen;
+  }
+  refreshReviewOutline();
+}
+function closeReviewOutlinePop() {
+  if (!reviewOutlinePopOpen) return false;
+  reviewOutlinePopOpen = false;
+  refreshReviewOutline();
+  return true;
+}
+
+/* 点目录里的一项：平滑滚过去，再让那个标题闪一下，方便眼睛找到 */
+function reviewOutlineGo(idx) {
+  const sc = document.getElementById("reviewScroller");
+  if (!sc) return;
+  const behavior = outlinePrefersReducedMotion() ? "auto" : "smooth";
+  if (idx < 0) {
+    sc.scrollTo({ top: 0, behavior });
+    closeReviewOutlinePop();
+    return;
+  }
+  const h = reviewOutlineHeads[idx];
+  if (!h) return;
+  let el = h.el;
+  if (h.hidden) {
+    // 藏在折起来的章节里：先把外面那层展开，不然 display:none 的元素没有位置可滚
+    revealReviewFold(el);
+    refreshReviewOutline();
+    if (!el.isConnected) {
+      const again = reviewOutlineHeads.find((x) => x.text === h.text && x.level === h.level);
+      if (!again) return;
+      el = again.el;
+    }
+  }
+  const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - OUTLINE_SCROLL_GAP;
+  sc.scrollTo({ top: Math.max(0, top), behavior });
+  flashReviewHeading(el);
+  closeReviewOutlinePop();
+}
+
+function flashReviewHeading(el) {
+  const page = document.querySelector("#reviewScroller .reviewPage");
+  if (!page || !el) return;
+  let fl = document.getElementById("reviewOutlineFlash");
+  if (!fl) {
+    fl = document.createElement("div");
+    fl.id = "reviewOutlineFlash";
+    fl.className = "outlineFlash";
+    page.appendChild(fl);
+  }
+  const pr = page.getBoundingClientRect(), r = el.getBoundingClientRect();
+  fl.style.top = Math.round(r.top - pr.top - 4) + "px";
+  fl.style.height = Math.round(r.height + 8) + "px";
+  fl.classList.remove("on");
+  void fl.offsetWidth;   // 连点同一项也要重新播一遍动画
+  fl.classList.add("on");
+  clearTimeout(reviewFlashTimer);
+  reviewFlashTimer = setTimeout(() => fl.classList.remove("on"), 1400);
+}
+
+/* 窄屏的下拉面板：点外面就收起 */
+document.addEventListener("mousedown", (e) => {
+  if (!reviewOutlinePopOpen) return;
+  const t = e.target;
+  if (t && t.closest && (t.closest("#reviewOutline") || t.closest("#reviewOutlineBtn"))) return;
+  closeReviewOutlinePop();
+});
+/* 拖窗口宽窄会在「侧栏」和「下拉」之间切换 */
+window.addEventListener("resize", () => { if (editingReview) scheduleReviewOutline(80); });
+
+/* ============================================================
+   折叠章节（ProseMirror 插件）
+   ============================================================ */
+let reviewFoldKey = null;
+
+/* 算出每个顶层标题管到哪儿：从它后面一直到下一个同级或更高级的标题 */
+function foldLayout(doc, folds) {
+  const blocks = [];
+  doc.forEach((node, offset) => blocks.push({ node, pos: offset }));
+  const want = new Set(folds);
+  const heads = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i];
+    if (b.node.type.name !== "heading") continue;
+    const lv = b.node.attrs.level || 1;
+    let j = i + 1;
+    while (j < blocks.length && !(blocks[j].node.type.name === "heading" && (blocks[j].node.attrs.level || 1) <= lv)) j++;
+    const start = b.pos + b.node.nodeSize;
+    const end = j < blocks.length ? blocks[j].pos : doc.content.size;
+    // 空标题、或者下面什么都没有的标题，没东西可折
+    const foldable = end > start && !!b.node.textContent.trim();
+    heads.push({ pos: b.pos, start, end, foldable, folded: foldable && want.has(b.pos) });
+  }
+  return { blocks, heads };
+}
+
+function reviewFoldExtension(L) {
+  const key = new L.PluginKey("reviewFold");
+  reviewFoldKey = key;
+  const build = (doc, folds) => {
+    const { blocks, heads } = foldLayout(doc, folds);
+    const decos = [];
+    const hidden = heads.filter((h) => h.folded).map((h) => [h.start, h.end]);
+    heads.forEach((h) => {
+      if (h.foldable) decos.push(L.Decoration.node(h.pos, h.start, { class: h.folded ? "hasFold isFolded" : "hasFold" }));
+    });
+    if (hidden.length) {
+      blocks.forEach((b) => {
+        if (hidden.some(([s, e]) => b.pos >= s && b.pos < e)) {
+          decos.push(L.Decoration.node(b.pos, b.pos + b.node.nodeSize, { class: "foldHidden" }));
+        }
+      });
+    }
+    return { folds: heads.filter((h) => h.folded).map((h) => h.pos), heads, deco: L.DecorationSet.create(doc, decos) };
+  };
+  return L.Extension.create({
+    name: "reviewFold",
+    addProseMirrorPlugins() {
+      return [new L.Plugin({
+        key,
+        state: {
+          init: (_, state) => build(state.doc, []),
+          apply: (tr, prev, _old, state) => {
+            const meta = tr.getMeta(key);
+            if (!tr.docChanged && !meta && !tr.selectionSet) return prev;
+            let folds = prev.folds;
+            if (tr.docChanged) folds = folds.map((p) => tr.mapping.map(p));
+            if (meta && meta.toggle != null) {
+              folds = folds.includes(meta.toggle) ? folds.filter((p) => p !== meta.toggle) : folds.concat(meta.toggle);
+            }
+            let next = tr.docChanged || meta ? build(state.doc, [...new Set(folds)]) : prev;
+            // 光标（或目录要跳去的位置）落在藏起来的地方：把包着它的那几层全展开
+            const targets = [state.selection.from];
+            if (meta && meta.reveal != null) targets.push(meta.reveal);
+            const drop = next.heads.filter((h) => h.folded && targets.some((p) => p >= h.start && p < h.end)).map((h) => h.pos);
+            if (drop.length) next = build(state.doc, next.folds.filter((p) => !drop.includes(p)));
+            return next;
+          },
+        },
+        props: { decorations: (state) => key.getState(state).deco },
+      })];
+    },
+  });
+}
+
+function reviewFoldState() {
+  const ed = reviewTiptap;
+  return ed && reviewFoldKey ? reviewFoldKey.getState(ed.state) : null;
+}
+
+function toggleReviewFold(headPos) {
+  const ed = reviewTiptap;
+  const st = reviewFoldState();
+  if (!ed || !st || !tiptapLib) return;
+  const h = st.heads.find((x) => x.pos === headPos);
+  if (!h || !h.foldable) return;
+  const tr = ed.state.tr.setMeta(reviewFoldKey, { toggle: headPos });
+  if (!h.folded) {
+    // 光标在要折起来的那一段里：先挪到标题末尾，不然马上又会被「光标进了折叠区就展开」弹开
+    const sel = ed.state.selection;
+    if (sel.to > h.start && sel.from < h.end) tr.setSelection(tiptapLib.TextSelection.create(tr.doc, h.start - 1));
+  }
+  ed.view.dispatch(tr);
+}
+
+function revealReviewFold(el) {
+  const ed = reviewTiptap;
+  if (!ed || !reviewFoldKey) return;
+  try { ed.view.dispatch(ed.state.tr.setMeta(reviewFoldKey, { reveal: ed.view.posAtDOM(el, 0) })); } catch (e) {}
+}
+
+/* 标题左边的小箭头是 ::after 画的、挂在标题元素上，点它时 target 就是标题本身；
+   点在标题文字的左边界外面 = 点的是箭头 */
+function reviewFoldMouseDown(view, e) {
+  if (e.button !== 0) return false;
+  const h = e.target && e.target.closest && e.target.closest(".hasFold");
+  if (!h || h.parentElement !== view.dom) return false;
+  if (e.clientX >= h.getBoundingClientRect().left) return false;
+  e.preventDefault();
+  try { toggleReviewFold(view.posAtDOM(h, 0) - 1); } catch (err) {}
+  return true;
+}
