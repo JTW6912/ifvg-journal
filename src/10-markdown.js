@@ -63,6 +63,9 @@ function mdInline(text, forEditor) {
   // 可能带 * 或 _，留在明面上会被后面的加粗/斜体规则插进 <em>，把属性改坏
   out = out.replace(/\[\[trade:([A-Za-z0-9_-]+)\]\]/g, (m, id) =>
     hold(forEditor ? `<span data-trade-ref="${id}"></span>` : tradeRefHtml(id)));
+  // 页面引用（模型库的系统 / 策略 / 错题，或者另一篇复盘）。跟交易引用同一个套路
+  out = out.replace(/\[\[page:([A-Za-z0-9_-]+)\]\]/g, (m, id) =>
+    hold(forEditor ? `<span data-page-ref="${id}"></span>` : pageRefHtml(id)));
 
   // 上色 {red|文字}。放在加粗/斜体之前，好让里面还能继续排版：
   // {red|**粗的红字**} 会先变成 <span>**粗的红字**</span>，加粗规则随后再跑一遍
@@ -118,6 +121,37 @@ function tradeRefHtml(id) {
     + (result ? `<span class="mono" style="color:${rc};font-weight:600;">${esc(result)}</span>` : "")
     + (rTxt ? `<span class="mono" style="color:${rc};">${esc(rTxt)}</span>` : "")
     + `</span>`;
+}
+
+/* [[page:xxx]] → 一枚可点的页面胶囊。能指向模型库的任何一页，也能指向一篇复盘
+   （「今天又犯了 [[page:连损那条错题]]」）。找不到时跟交易引用一样显式标红，不静默消失 */
+function findDocById(id) {
+  return pbFind(id) || reviews.find((r) => r.id === id) || null;
+}
+function pageRefKindLabel(d) {
+  if (!d) return "";
+  if (d.kind === "system") return T("pb.kind.system");
+  if (d.kind === "strategy") return T("pb.kind.strategy");
+  if (d.kind === "mistake") return T("pb.kind.mistake");
+  return T("pb.kind.review");
+}
+function pageRefHtml(id) {
+  const d = findDocById(id);
+  if (!d) {
+    return `<span class="pageRef broken" title="${esc(id)}">${ICONS.alert}<span class="pageRefMeta">${esc(T("pb.pageMissing"))}</span></span>`;
+  }
+  const title = isPbDoc(d) ? pbLabel(d.id) : reviewTitleOf(d);
+  return `<span class="pageRef kind-${esc(d.kind || "review")}" data-action="open-page-ref" data-id="${esc(id)}" title="${esc(T("pb.pageOpen"))}">`
+    + `<span class="pageRefKind">${esc(pageRefKindLabel(d))}</span>`
+    + `<span class="pageRefMeta">${esc(title)}</span>`
+    + `</span>`;
+}
+function extractPageRefs(body) {
+  const out = [];
+  const re = /\[\[page:([A-Za-z0-9_-]+)\]\]/g;
+  let m;
+  while ((m = re.exec(body || ""))) { if (!out.includes(m[1])) out.push(m[1]); }
+  return out;
 }
 
 /* 按没被转义的 | 切格子。\| 是单元格里的字面竖线（编辑器存表格时会这么写） */
@@ -273,6 +307,7 @@ function mdPlainExcerpt(src, max) {
     .replace(/\\([\\`*_{}\[\]()#+\-.!~|>])/g, (m, c) => String.fromCharCode(0xE100 + c.charCodeAt(0)))
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/\[\[trade:[A-Za-z0-9_-]+\]\]/g, "[trade]")
+    .replace(/\[\[page:([A-Za-z0-9_-]+)\]\]/g, (m, id) => { const d = findDocById(id); return d ? "[" + (isPbDoc(d) ? pbTitle(d) : reviewTitleOf(d)) + "]" : "[page]"; })
     .replace(/!\[[^\]]*\]\([^)]*\)/g, "[img]")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/\{(?:red|green|yellow|blue|gray|mark)\|([^}\n]+)\}/g, "$1")

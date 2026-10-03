@@ -387,7 +387,8 @@ async function writeReviewFolds() {
   rev.folded_headings = keys;
   const json = JSON.stringify(keys);
   if (json === reviewFoldsInDb || rev._isNew) return;
-  const { error } = await sb.from("journal_reviews").update({ folded_headings: keys }).eq("id", rev.id).eq("user_id", session.user.id);
+  const table = isPbDoc(rev) ? "journal_playbook" : "journal_reviews";   // 模型库页面也用这个编辑器
+  const { error } = await sb.from(table).update({ folded_headings: keys }).eq("id", rev.id).eq("user_id", session.user.id);
   if (error) {
     console.error(error);
     if (rev === editingReview) {
@@ -397,6 +398,6 @@ async function writeReviewFolds() {
     return;
   }
   if (rev === editingReview) reviewFoldsInDb = json;
-  const r = reviews.find((x) => x.id === rev.id);
+  const r = reviews.find((x) => x.id === rev.id) || pbFind(rev.id);
   if (r) r.folded_headings = keys;
 }

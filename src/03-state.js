@@ -67,6 +67,24 @@ function reviewGroupCollapseKey(gid) { return recordMode + ":" + gid; }
 let slashMenu = null;                 // { from, query, index } —— 正文里打 / 弹出来的插入菜单
 let tradePickerOpen = false;
 let tradePickerQuery = "";
+let pagePickerOpen = false;           // 正文里插「链接页面」时的选择器（跟交易选择器共用 #tradePickerRoot）
+let pagePickerQuery = "";
+/* 编辑器里从一页点进另一页（模型库页面互相跳、复盘里点错题胶囊）时，记着从哪来的，顶栏给一个「返回」 */
+let editorBackStack = [];
+
+/* ---------- 模型库（PLAYBOOK）----------
+   交易系统 / 衍生策略 / 错题笔记，都是 journal_playbook 里的行，跨回测/实盘只有一份。
+   打开编辑时就是 editingReview（带 kind），复用复盘编辑器的全部东西。 */
+let pbPages = [];
+let pbError = null;                   // 模型库页面上常驻的一条错误（保存失败之类）
+let pbSearch = "";
+let pbMistakeFilter = "all";          // 错题库按归属筛：all / 系统 id / "__global"
+let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗
+let pbConfirmDeleteId = null;
+let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
+/* 归类模式：{ ids, i, scope: 'unsorted' | 'all', mistakeOpen, notice }。ids 是开始时拍下来的队列——
+   边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */
+let pbTriage = null;
 /* localStorage 里读出来的枚举一律过一遍白名单：
    「超大图」(huge) 这一档被看图模式取代删掉了，老用户本地还存着 "huge"，
    不校验的话四个尺寸按钮会全都不高亮、还查不出为什么 */

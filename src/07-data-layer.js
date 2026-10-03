@@ -89,6 +89,8 @@ async function loadAll() {
 
     // 复盘：表可能还没建，loadReviews 内部自己降级，不会影响这次 loadAll 的其他部分
     try { await loadReviews(); } catch (e) { console.error(e); }
+    // 模型库跨回测/实盘只有一份，所以只在这里拉，切模式（reloadModeData）不用重拉
+    try { await loadPlaybook(); } catch (e) { console.error(e); }
 
     // 分析页筛选：本地存过就用存的，没存过给默认（只看 Taken）。跟记录页那份各存各的，互不影响
     seedAnalysisFilters();
@@ -417,6 +419,13 @@ function extractTradeRefs(body) {
 
 async function persistReview(rev, opts) {
   if (viewingUserId || !sb || !session) return false;
+  // 模型库页面走自己的表，编辑器那一套（自动保存、草稿、已保存徽章）照旧
+  if (isPbDoc(rev)) {
+    const ok = await persistPbPage(rev);
+    if (ok) { reviewSaveError = null; if (!(opts && opts.silent)) clearReviewDraft(); }
+    else reviewSaveError = pbError;
+    return ok;
+  }
   const row = {
     id: rev.id,
     user_id: session.user.id,
@@ -451,6 +460,116 @@ async function deleteReview(id) {
   if (error) { console.error(error); return; }
   reviews = reviews.filter((r) => r.id !== id);
 }
+
+/* ============================================================
+   模型库（PLAYBOOK）—— 数据层。模型见 src/11b-playbook-data.js
+   ============================================================ */
+async function loadPlaybook() {
+  if (!sb || !session) return;
+  const uid = viewingUserId || session.user.id;
+  const { data, error } = await fetchAllRows(() => sb.from("journal_playbook").select("*", { count: "exact" })
+    .eq("user_id", uid).order("created_at", { ascending: true }).order("id", { ascending: true }));
+  if (error) {
+    noteDbError(error);
+    console.error(error);
+    pbPages = [];
+    return;
+  }
+  pbPages = data || [];
+}
+function pbRowPayload(p) {
+  return {
+    id: p.id,
+    user_id: session.user.id,
+    kind: p.kind,
+    parent_id: p.parent_id || null,
+    title: p.title || "",
+    body: p.body || "",
+    linked_trade_ids: extractTradeRefs(p.body),
+    sort_order: p.sort_order === undefined ? null : p.sort_order,
+    updated_at: new Date().toISOString(),
+  };
+}
+/* 写一页（新建、改名、改归属、往错题里加交易、编辑器自动保存都走这里）。本地数组同步更新，不重拉 */
+async function persistPbPage(p) {
+  if (viewingUserId || !sb || !session) return false;
+  const row = pbRowPayload(p);
+  const { error } = await sb.from("journal_playbook").upsert(row);
+  if (error) {
+    console.error(error);
+    pbError = noteDbError(error) ? T("error.dbOutdated") : T("review.saveFailed", { msg: error.message });
+    return false;
+  }
+  pbError = null;
+  const i = pbPages.findIndex((x) => x.id === row.id);
+  if (i >= 0) pbPages[i] = { ...pbPages[i], ...row };
+  else pbPages.push({ ...row, folded_headings: p.folded_headings || [], created_at: new Date().toISOString() });
+  return true;
+}
+
+/* 删一页。长文不能顺手连带删掉（跟删复盘分组不删里面的复盘同一个道理）：
+   - 系统下面还有衍生策略：不让删，界面上会先拦住（这里再兜一次）
+   - 这一页的错题挪到上一层（策略 → 所属系统；系统 → 通用）
+   - 归在这一页的交易：策略的挪到所属系统（「说不清是哪个子策略」本来就归系统），系统的变回未归类
+     交易只在实盘模式下归类，回测模式下内存里没有那批交易——那时候不改，读的时候按未归类算（见 pbTradePageId） */
+async function deletePbPage(id) {
+  if (viewingUserId || !sb || !session) return false;
+  const p = pbFind(id);
+  if (!p) return false;
+  if (p.kind === "system" && pbStrategiesOf(p.id).length) return false;
+  const up = p.kind === "strategy" ? (pbFind(p.parent_id) ? p.parent_id : null) : null;
+  if (p.kind !== "mistake") {
+    const orphans = pbPages.filter((m) => m.kind === "mistake" && m.parent_id === p.id);
+    for (const m of orphans) { m.parent_id = up; if (!(await persistPbPage(m))) return false; }
+    const affected = trades.filter((t) => t[PB_KEY] === p.id);
+    if (affected.length) {
+      const ok = await pbPatchTrades(affected.map((t) => ({ id: t.id, patch: up ? { [PB_KEY]: up } : { [PB_KEY]: undefined, [PB_STAR_KEY]: undefined } })));
+      if (!ok) return false;
+    }
+  }
+  const { error } = await sb.from("journal_playbook").delete().eq("id", id).eq("user_id", session.user.id);
+  if (error) {
+    console.error(error);
+    pbError = noteDbError(error) ? T("error.dbOutdated") : T("review.saveFailed", { msg: error.message });
+    return false;
+  }
+  pbPages = pbPages.filter((x) => x.id !== id);
+  return true;
+}
+
+/* 改一批交易的模型库归属（归类、点星标、删页面时挪交易）。
+   先改本地再写库：归类是一笔接一笔按键的节奏，等网络回来才动界面会很涩。写失败就把这批改回去并提示。
+   patch 里值为 undefined 的键 = 删掉这个键（不留一堆 "__pb": null 在 data 里）。
+   一次 upsert 整批写，不一笔一个请求。 */
+async function pbPatchTrades(items) {
+  if (viewingUserId || !sb || !session || !items.length) return false;
+  const modeAtSave = recordMode;
+  const before = [];
+  const rows = [];
+  items.forEach(({ id, patch }) => {
+    const i = trades.findIndex((t) => t.id === id);
+    if (i < 0) return;
+    before.push(trades[i]);
+    const next = { ...trades[i] };
+    Object.keys(patch).forEach((k) => { if (patch[k] === undefined) delete next[k]; else next[k] = patch[k]; });
+    trades[i] = next;
+    const clean = { ...next };
+    delete clean.id; delete clean._created_at; delete clean._updated_at;
+    rows.push({ id, user_id: session.user.id, mode: modeAtSave, data: clean, updated_at: new Date().toISOString() });
+  });
+  if (!rows.length) return false;
+  const { data, error } = await sb.from("trades").upsert(rows).select("id, created_at, updated_at, data");
+  if (error) {
+    console.error(error);
+    if (modeAtSave === recordMode) before.forEach((t) => applySavedTrade(t));
+    pbError = T("error.saveTrade", { msg: error.message });
+    return false;
+  }
+  pbError = null;
+  if (modeAtSave === recordMode) (data || []).forEach((r) => applySavedTrade(tradeFromRow(r)));
+  return true;
+}
+function pbPatchTrade(id, patch) { return pbPatchTrades([{ id, patch }]); }
 
 /* 本地草稿：数据库那边是 debounce 保存，中间这一秒断网/关标签页靠这个兜底。
    跟交易草稿（journal_trade_draft）各存各的，互不影响。 */

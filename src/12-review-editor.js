@@ -50,13 +50,14 @@ const SLASH_ITEMS = [
   { cmd: "link",  labelKey: "review.slash.link",  keys: ["link", "url", "链接", "lianjie"] },
   { cmd: "color", labelKey: "review.slash.color", keys: ["color", "颜色", "yanse", "红", "绿", "highlight", "高亮"] },
   { cmd: "trade", labelKey: "review.slash.trade", keys: ["trade", "交易", "jiaoyi", "复盘", "关联"] },
+  { cmd: "page",  labelKey: "review.slash.page",  keys: ["page", "link page", "页面", "错题", "模型", "策略", "yemian", "cuoti", "moxing"] },
 ];
 const SLASH_MENU_WIDTH = 230;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
 const SLASH_MENU_MAX_H = 300;
 const SLASH_ICONS = {
   text: "pencil", h1: "tbHeading", h2: "tbHeading", h3: "tbHeading", ul: "tbUl", ol: "tbOl", task: "tbTask",
   quote: "tbQuote", code: "tbCode", hr: "tbHr", table: "tbTable", image: "tbImage", link: "tbLink",
-  color: "tbColor", trade: "grid",
+  color: "tbColor", trade: "grid", page: "book",
 };
 
 /* 只有「有没有编辑权」一种判定了：管理员只读查看别人的数据时为 false。
@@ -95,6 +96,8 @@ function updateReviewSaveBadge() {
    重绘整个编辑器会把正在写的正文和光标一起冲掉。 */
 function reviewWeekRowInnerHtml() {
   if (!editingReview) return "";
+  // 模型库页面不挂日/周，这一行换成它自己的属性行（类型、归属、统计）
+  if (isPbDoc(editingReview)) return pbMetaRowInnerHtml();
   // 只读态是拿来看的，一排禁用按钮纯属噪音——只留一枚说明关联到哪天/哪周的标签
   if (reviewIsReadOnly()) {
     return `<span class="reviewWeekTag ${reviewPeriodKind(editingReview) ? "on" : ""}">${esc(reviewPeriodTagText(editingReview))}</span>`
@@ -231,6 +234,10 @@ function mdInlineFromNodes(nodes, ctx) {
       closeTo(0);
       const id = n.attrs && n.attrs.id;
       if (id && /^[A-Za-z0-9_-]+$/.test(id)) out += "[[trade:" + id + "]]";
+    } else if (n.type === "pageRef") {
+      closeTo(0);
+      const id = n.attrs && n.attrs.id;
+      if (id && /^[A-Za-z0-9_-]+$/.test(id)) out += "[[page:" + id + "]]";
     } else if (n.type === "image") {
       closeTo(0);
       const u = mdUrlOut(n.attrs && n.attrs.src);
@@ -367,6 +374,36 @@ function reviewExtensions(L) {
     },
   });
 
+  // 页面引用 [[page:id]]：跟交易胶囊一模一样的做法，只是指向一页模型库 / 一篇复盘
+  const PageRef = L.Node.create({
+    name: "pageRef",
+    group: "inline",
+    inline: true,
+    atom: true,
+    selectable: true,
+    marks: "",
+    addAttributes() {
+      return {
+        id: {
+          default: "",
+          parseHTML: (el) => { const v = el.getAttribute("data-page-ref") || ""; return /^[A-Za-z0-9_-]+$/.test(v) ? v : ""; },
+          renderHTML: (a) => ({ "data-page-ref": a.id }),
+        },
+      };
+    },
+    parseHTML() { return [{ tag: "span[data-page-ref]" }]; },
+    renderHTML({ HTMLAttributes }) { return ["span", HTMLAttributes]; },
+    renderText({ node }) { return "[[page:" + node.attrs.id + "]]"; },
+    addNodeView() {
+      return ({ node }) => {
+        const dom = document.createElement("span");
+        dom.className = "tradeRefHost";
+        dom.innerHTML = pageRefHtml(node.attrs.id);
+        return { dom, ignoreMutation: () => true };
+      };
+    },
+  });
+
   return [
     L.StarterKit.configure({
       blockquote: false,
@@ -400,6 +437,7 @@ function reviewExtensions(L) {
     }),
     MdColor,
     TradeRef,
+    PageRef,
     reviewFoldExtension(L),
   ];
 }
@@ -435,13 +473,11 @@ function renderReviewEditor(force) {
 
   const readOnly = reviewIsReadOnly();
   const staticBody = renderMarkdown(editingReview.body);
-  root.innerHTML = `<div class="reviewEditorOverlay" id="reviewScroller" onscroll="window.__reviewScroll()">
+  const isPb = isPbDoc(editingReview);
+  const titlePh = isPb ? T("pb.titlePh." + editingReview.kind) : T("review.titlePlaceholder");
+  root.innerHTML = `<div class="reviewEditorOverlay${isPb ? " isPb" : ""}" id="reviewScroller" onscroll="window.__reviewScroll()">
     <div class="reviewTopBar">
-      <div class="reviewCrumbs">
-        <button class="reviewCrumbBtn" data-action="close-review-editor">${esc(T("review.back"))}</button>
-        <span class="reviewCrumbSep">/</span>
-        <span class="reviewCrumbTitle" id="reviewCrumbTitle">${esc(reviewTitleOf(editingReview))}</span>
-      </div>
+      <div class="reviewCrumbs">${reviewCrumbsHtml()}</div>
       <div class="reviewTopRight">
         <span id="reviewSaveSlot">${readOnly ? "" : reviewSaveBadgeHtml()}</span>
         <button class="iconBtn reviewOutlineBtn" id="reviewOutlineBtn" data-action="review-outline-toggle" hidden>${ICONS.outline}</button>
@@ -452,7 +488,7 @@ function renderReviewEditor(force) {
       ${readOnly
         ? `<div class="reviewTitleStatic display">${esc(reviewTitleOf(editingReview))}</div>`
         : `<input class="reviewTitleInput display" type="text" id="reviewTitleInput"
-            placeholder="${esc(T("review.titlePlaceholder"))}" value="${esc(editingReview.title || "")}"
+            placeholder="${esc(titlePh)}" value="${esc(editingReview.title || "")}"
             oninput="window.__reviewTitleInput(this)" onkeydown="window.__reviewTitleKey(event)" />`}
       <div class="reviewWeekRow" id="reviewWeekRow">${reviewWeekRowInnerHtml()}</div>
       ${readOnly
@@ -461,7 +497,8 @@ function renderReviewEditor(force) {
             <div class="mdBody reviewDoc reviewDocLoading">${staticBody}</div>
             <div class="reviewLoadingNote">${esc(T("review.loadingEditor"))}</div>
           </div>
-          <div class="reviewDocTail" onclick="window.__reviewFocusEnd()"></div>`}
+          <div class="reviewDocTail${isPb ? " short" : ""}" onclick="window.__reviewFocusEnd()"></div>`}
+      ${isPb ? `<div id="pbPanels" class="pbPanels">${pbPanelsHtml()}</div>` : ""}
     </div>
     <nav class="reviewOutline" id="reviewOutline" hidden onmousedown="event.preventDefault()"></nav>
     ${readOnly ? "" : `<div class="reviewHintBar">${esc(T("review.hintBar", { mod: modKeyLabel(), alt: isMacLike() ? "⌥" : "Alt" }))}</div>`}
@@ -666,6 +703,8 @@ async function flushReviewSave() {
   if (ok) {
     rev._isNew = false;
     if (wasNew) writeReviewFolds();   // 新帖刚插进库：之前折的那几节现在才能写
+    // 错题页下面「涉及的交易」那一栏是从正文里的胶囊抽出来的，正文存好了就跟着刷新一下
+    if (isPbDoc(rev)) refreshPbPanels();
     if (startedAt === reviewEditRev) {
       reviewSaveState = "saved";
       reviewSavedAt = Date.now();
@@ -857,6 +896,7 @@ function runReviewCommand(cmd) {
       else { bubbleMode = "color"; updateBubble(); }
       break;
     case "trade": openTradePicker(); break;
+    case "page": openPagePicker(); break;
   }
 }
 
@@ -1206,9 +1246,100 @@ function insertTradeRef(id) {
   ]).run();
 }
 
+/* ---------- 页面选择器（插入 [[page:id]]）----------
+   跟交易选择器同一个外壳、同一个根节点（#tradePickerRoot），两个不会同时开。
+   能链到模型库的任何一页，也能链到当前模式下的复盘。 */
+let pagePickerRange = null;
+function pagePickerItems() {
+  const q = (pagePickerQuery || "").trim().toLowerCase();
+  const self = editingReview && editingReview.id;
+  const items = [];
+  pbAssignOptions().forEach((o) => items.push({ id: o.id, kind: o.kind, title: o.full }));
+  pbSortList(pbMistakes()).forEach((m) => {
+    const o = pbMistakeOwner(m);
+    items.push({ id: m.id, kind: "mistake", title: pbTitle(m), sub: o ? pbLabel(o.id) : T("pb.globalMistake") });
+  });
+  sortReviewsForDisplay(reviews).forEach((r) => items.push({ id: r.id, kind: "review", title: reviewTitleOf(r), sub: reviewPeriodTagText(r) }));
+  return items.filter((it) => it.id !== self && (!q || (it.title + " " + (it.sub || "")).toLowerCase().includes(q)));
+}
+function pagePickerResultsHtml() {
+  const all = pagePickerItems();
+  if (!all.length) return `<div class="tradePickerEmpty">${esc(T("pb.picker.empty"))}</div>`;
+  return all.slice(0, 60).map((it) => `<button class="pagePickerRow" data-action="pick-page" data-id="${esc(it.id)}">
+      <span class="pageRefKind kind-${esc(it.kind)}">${esc(pageRefKindLabel({ kind: it.kind }))}</span>
+      <span class="pagePickerTitle">${esc(it.title)}</span>
+      ${it.sub ? `<span class="pagePickerSub">${esc(it.sub)}</span>` : ""}
+    </button>`).join("");
+}
+function openPagePicker() {
+  const ed = reviewTiptap;
+  pagePickerRange = ed ? { from: ed.state.selection.from, to: ed.state.selection.to } : null;
+  pagePickerOpen = true;
+  pagePickerQuery = "";
+  const root = document.getElementById("tradePickerRoot");
+  if (!root) return;
+  root.innerHTML = `<div class="overlay tradePickerOverlay" data-action="close-page-picker">
+    <div class="modal tradePickerModal">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${esc(T("pb.picker.title"))}</div>
+        <button class="iconBtn" data-action="close-page-picker">${ICONS.x}</button>
+      </div>
+      <div class="tradePickerSearch">
+        ${ICONS.search}
+        <input class="input" type="text" id="pagePickerInput" placeholder="${esc(T("pb.picker.search"))}" oninput="window.__pagePickerInput(this)" />
+      </div>
+      <div class="tradePickerResults" id="pagePickerResults">${pagePickerResultsHtml()}</div>
+    </div>
+  </div>`;
+  const input = document.getElementById("pagePickerInput");
+  if (input) input.focus();
+}
+window.__pagePickerInput = function (el) {
+  pagePickerQuery = el.value;
+  const box = document.getElementById("pagePickerResults");
+  if (box) box.innerHTML = pagePickerResultsHtml();
+};
+function closePagePicker() {
+  pagePickerOpen = false;
+  const root = document.getElementById("tradePickerRoot");
+  if (root) root.innerHTML = "";
+  if (reviewTiptap) reviewTiptap.commands.focus();
+}
+function insertPageRef(id) {
+  const ed = reviewTiptap;
+  closePagePicker();
+  if (!ed || !/^[A-Za-z0-9_-]+$/.test(id || "")) return;
+  const size = ed.state.doc.content.size;
+  const r = pagePickerRange || { from: ed.state.selection.from, to: ed.state.selection.to };
+  pagePickerRange = null;
+  ed.chain().focus().insertContentAt({ from: Math.min(r.from, size), to: Math.min(r.to, size) }, [
+    { type: "pageRef", attrs: { id } },
+    { type: "text", text: " " },
+  ]).run();
+}
+
+/* 顶栏左边那串。复盘：「复盘 / 标题」；模型库页面：「模型库 / RIFVG / 趋势延续 / 标题」，每一级都能点。
+   从别的页面跳过来的，最前面多一个「←」回到上一页 */
+function reviewCrumbsHtml() {
+  const d = editingReview;
+  const back = editorBackStack.length
+    ? `<button class="reviewCrumbBtn reviewCrumbBack" data-action="editor-back" title="${esc(T("pb.backTo", { title: (() => { const p = findDocById(editorBackStack[editorBackStack.length - 1]); return p ? (isPbDoc(p) ? pbTitle(p) : reviewTitleOf(p)) : ""; })() }))}">←</button>`
+    : "";
+  const title = `<span class="reviewCrumbTitle" id="reviewCrumbTitle">${esc(reviewTitleOf(d))}</span>`;
+  if (!isPbDoc(d)) {
+    return `${back}<button class="reviewCrumbBtn" data-action="close-review-editor">${esc(T("review.back"))}</button>
+      <span class="reviewCrumbSep">/</span>${title}`;
+  }
+  const chain = pbAncestors(d).map((p) =>
+    `<button class="reviewCrumbBtn" data-action="pb-open" data-id="${esc(p.id)}">${esc(pbTitle(p))}</button><span class="reviewCrumbSep">/</span>`).join("");
+  const home = d.kind === "mistake" && !pbMistakeOwner(d) ? T("pb.mistakeLibrary") : T("tab.playbook");
+  return `${back}<button class="reviewCrumbBtn" data-action="pb-home">${esc(home)}</button>
+    <span class="reviewCrumbSep">/</span>${chain}${title}`;
+}
+
 /* ---------- 打开 / 关闭编辑器 ---------- */
 function openReviewEditor(id) {
-  const r = reviews.find((x) => x.id === id);
+  const r = reviews.find((x) => x.id === id) || pbFind(id);
   if (!r) return;
   editingReview = {
     id: r.id, title: r.title || "", body: r.body || "", week_start: r.week_start || "", day_date: r.day_date || "",
@@ -1217,11 +1348,31 @@ function openReviewEditor(id) {
     folded_headings: Array.isArray(r.folded_headings) ? r.folded_headings : [],
     _isNew: false,
   };
+  if (isPbDoc(r)) { editingReview.kind = r.kind; editingReview.parent_id = r.parent_id || null; }
   reviewSaveState = "idle";
   reviewSavedAt = null;
   reviewSaveError = null;
   tradePickerOpen = false;
+  pagePickerOpen = false;
+  pbConfirmDeleteId = null;
+  pbShowAllTrades = false;
   renderReviewEditor(true);
+  // 从模型库的卡片点进来时，编辑器盖在列表上面；滚动条回到顶
+  const sc = document.getElementById("reviewScroller");
+  if (sc) sc.scrollTop = 0;
+}
+/* 编辑器开着的时候从一页点到另一页（页面胶囊、面包屑、模型库面板里的卡片）。
+   先把这一篇该存的存完（新建的空白页照旧不落库），再换。back = 是「←」点回去的，不再压栈 */
+async function navigateEditorTo(id, opts) {
+  if (!findDocById(id)) return;
+  if (editingReview && editingReview.id === id) return;
+  if (editingReview) {
+    const fromId = editingReview.id;
+    const keep = await finishEditingDoc();
+    if (!(opts && opts.back) && keep) editorBackStack.push(fromId);
+    if (editorBackStack.length > 20) editorBackStack.shift();
+  }
+  openReviewEditor(id);
 }
 function openNewReview(opts) {
   const o = opts || {};
@@ -1242,9 +1393,11 @@ function openNewReview(opts) {
   tradePickerOpen = false;
   renderReviewEditor(true);
 }
-async function closeReviewEditor() {
+/* 离开当前这一篇前该做的：存完，或者（新建的空白页）直接扔掉。返回 false = 这篇没落库（被扔掉了） */
+async function finishEditingDoc() {
   syncReviewBody();   // 下面判断「是不是空白页」要看最新的正文
   tradePickerOpen = false;
+  pagePickerOpen = false;
   const wasNew = editingReview && editingReview._isNew;
   const isBlank = editingReview && !(editingReview.title || "").trim() && !(editingReview.body || "").trim();
   if (wasNew && isBlank) {
@@ -1252,11 +1405,16 @@ async function closeReviewEditor() {
     clearTimeout(reviewSaveTimer); reviewSaveTimer = null;
     reviewSaveState = "idle";
     clearReviewDraft();
-  } else {
-    await flushReviewSave();
-    await flushReviewFolds();
+    return false;
   }
+  await flushReviewSave();
+  await flushReviewFolds();
+  return true;
+}
+async function closeReviewEditor() {
+  await finishEditingDoc();
   editingReview = null;
+  editorBackStack = [];
   reviewEditorRenderedFor = null;
   renderReviewEditor();
   render();

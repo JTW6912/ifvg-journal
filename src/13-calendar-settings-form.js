@@ -382,6 +382,7 @@ function renderModal(force) {
         <button class="tinyBtn" data-action="clear-draft" style="color:var(--accent);text-decoration:underline;">${T("modal.clearDraft")}</button>
       </div>` : ""}
       <div class="modalBody ${readOnly ? "readOnlyFields" : ""}" ${readOnly ? 'style="opacity:.75;"' : ""}>
+        ${pbFormBlockHtml()}
         ${activeF.map(fieldHtml).join("")}
         ${legacyF.length ? `<div class="legacyFields">
           <div class="legacyFieldsHead">${esc(T("modal.legacyFieldsTitle"))}</div>

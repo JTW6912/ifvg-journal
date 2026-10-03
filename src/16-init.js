@@ -18,6 +18,7 @@ async function bootstrapAuth() {
       if (currentProfile && currentProfile.active !== false) await loadAll();
     } else {
       currentProfile = null; trades = []; schema = defaultSchema(); adminUsers = null;
+      pbPages = []; pbTriage = null; pbError = null;
       defaultFiltersSeeded = false; activeFilters = [];
       analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;

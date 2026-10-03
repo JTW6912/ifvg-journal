@@ -309,6 +309,7 @@ function tradePreviewHtml() {
         <button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button>
       </div>
       <div class="modalBody tradePreviewBody">
+        ${pbTradePreviewHtml(t)}
         <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"` : ""}>
           ${shot
             ? `<img src="${esc(imgSrc(shot))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />
@@ -328,7 +329,7 @@ function tradePreviewHtml() {
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : null)))));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : null))))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
@@ -336,6 +337,11 @@ function renderSecondaryModals(force) {
   else if (want === "tradepreview") root.innerHTML = tradePreviewHtml();
   else if (want === "combogroup") root.innerHTML = comboGroupModalHtml();
   else if (want === "reviewgroup") root.innerHTML = reviewGroupModalHtml();
+  else if (want === "pbname") {
+    root.innerHTML = pbNameModalHtml();
+    const input = document.getElementById("pbNameInput");
+    if (input) input.focus();
+  }
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else root.innerHTML = "";
 }
@@ -443,6 +449,8 @@ function render() {
   ];
   // 复盘只在实盘模式下出现——回测那批数据不需要写周复盘，页签也就不该占位置
   TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
+  // 模型库跨回测/实盘只有一份，两种模式下都在；回测模式下只是交易不参与归类（页面上有说明）
+  TABS.splice(4, 0, { id: "playbook", label: T("tab.playbook"), icon: ICONS.layers });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   applyFocusHeight();
   let body = "";
@@ -451,6 +459,7 @@ function render() {
     else if (tab === "analytics") body = renderAnalytics();
     else if (tab === "calendar") body = renderCalendar();
     else if (tab === "reviews") body = renderReviews();
+    else if (tab === "playbook") body = renderPlaybook();
     else if (tab === "changelog") body = renderChangelog();
     else if (tab === "settings") body = renderSettings();
     else if (tab === "admin") body = isAdmin ? renderAdminPanel() : `<div class="notice">${ICONS.alert}<span>${T("common.noPermission")}</span></div>`;

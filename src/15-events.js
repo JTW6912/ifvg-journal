@@ -48,6 +48,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
     if (draft) {
       schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
+      [PB_KEY, PB_STAR_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
       blank._resumedDraft = true;
     }
     const dateF = roleField("date");
@@ -163,7 +164,11 @@ document.addEventListener("click", async (e) => {
     const draft = loadDraft();
     const blank = { id: uid(), _isNew: true };
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
-    if (draft) { schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; }); blank._resumedDraft = true; }
+    if (draft) {
+      schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
+      [PB_KEY, PB_STAR_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
+      blank._resumedDraft = true;
+    }
     const dateF = roleField("date");
     if (dateF) blank[dateF.id] = forDate;
     editingTrade = blank;
@@ -701,6 +706,108 @@ document.addEventListener("click", async (e) => {
     closeTradePicker();
   }
   else if (action === "pick-trade") { insertTradeRef(el.dataset.id); }
+  else if (action === "close-page-picker") {
+    if (el.classList.contains("tradePickerOverlay") && e.target !== el) return;  // 点内容不关闭（不能用 stopPropagation）
+    closePagePicker();
+  }
+  else if (action === "pick-page") { insertPageRef(el.dataset.id); }
+  /* ---------- 模型库 ---------- */
+  else if (action === "open-page-ref" || action === "pb-open") {
+    const id = el.dataset.id;
+    // 从交易预览里点的：预览是盖在编辑器上面的弹层，先收掉，不然新打开的页面被它挡着
+    if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); }
+    await pbOpenDoc(id);
+  }
+  else if (action === "editor-back") {
+    const id = editorBackStack.pop();
+    if (id && findDocById(id)) await navigateEditorTo(id, { back: true });
+    else refreshPbPanels();
+  }
+  else if (action === "pb-home") {
+    await closeReviewEditor();
+    tab = "playbook"; pbTriage = null;
+    render();
+  }
+  else if (action === "pb-new") {
+    if (viewingUserId) return;
+    pbNameModal = { kind: el.dataset.kind, parentId: el.dataset.parent || null, name: "", from: el.dataset.from || "" };
+    renderSecondaryModals(true);
+  }
+  else if (action === "close-pb-name-modal") { pbNameModal = null; renderSecondaryModals(true); }
+  else if (action === "dismiss-pb-name-overlay") { if (e.target === el) { pbNameModal = null; renderSecondaryModals(true); } }
+  else if (action === "save-pb-name-modal") {
+    const m = pbNameModal;
+    const input = document.getElementById("pbNameInput");
+    const name = (input ? input.value : "").trim();
+    if (!m || !name) { if (input) input.focus(); return; }
+    pbNameModal = null;
+    renderSecondaryModals(true);
+    const p = await pbCreatePage(m.kind, m.parentId, name);
+    if (!p) { render(); refreshPbPanels(); return; }
+    if (m.from === "triage" && pbTriage) {
+      // 归类时现建的系统：顺手把眼前这一笔归进去，然后接着归类，不跳去编辑页面
+      const t = pbTriageCurrent();
+      if (t && p.kind !== "mistake") await pbTriageAssign(p.id);
+      render();
+      return;
+    }
+    render();
+    await pbOpenDoc(p.id);
+  }
+  else if (action === "pb-ask-delete") { pbConfirmDeleteId = el.dataset.id; refreshReviewWeekRow(); }
+  else if (action === "pb-cancel-delete") { pbConfirmDeleteId = null; refreshReviewWeekRow(); }
+  else if (action === "pb-confirm-delete") {
+    const id = el.dataset.id;
+    const p = pbFind(id);
+    pbConfirmDeleteId = null;
+    if (!p) return;
+    const up = p.kind === "mistake" ? pbMistakeOwner(p) : pbFind(p.parent_id);
+    const ok = await deletePbPage(id);
+    if (!ok) { reviewSaveError = pbError; updateReviewSaveBadge(); refreshReviewWeekRow(); return; }
+    if (editingReview && editingReview.id === id) {
+      // 删的就是开着的这一页：不保存直接关，回到上一层（没有上一层就回模型库）
+      clearTimeout(reviewSaveTimer); reviewSaveTimer = null;
+      reviewSaveState = "idle"; clearReviewDraft();
+      editorBackStack = editorBackStack.filter((x) => x !== id && findDocById(x));
+      editingReview = null; reviewEditorRenderedFor = null;
+      if (up && findDocById(up.id)) openReviewEditor(up.id);
+      else { renderReviewEditor(); tab = "playbook"; }
+    }
+    render();
+  }
+  else if (action === "pb-star") { await pbToggleStar(el.dataset.id); }
+  else if (action === "pb-show-all-trades") { pbShowAllTrades = true; refreshPbPanels(); }
+  else if (action === "pb-mistake-filter") { pbMistakeFilter = el.dataset.val || "all"; render(); }
+  else if (action === "pb-triage-start") {
+    if (editingReview) await closeReviewEditor();
+    tab = "playbook";
+    startPbTriage(el.dataset.scope);
+    render();
+  }
+  else if (action === "pb-triage-exit") { pbTriage = null; render(); }
+  else if (action === "pb-triage-scope") { startPbTriage(el.dataset.scope); render(); }
+  else if (action === "pb-triage-assign") { await pbTriageAssign(el.dataset.id); }
+  else if (action === "pb-triage-star") { await pbTriageStar(); }
+  else if (action === "pb-triage-mistake") {
+    if (!pbTriage) return;
+    pbTriage.mistakeOpen = !pbTriage.mistakeOpen;
+    render();
+    if (pbTriage.mistakeOpen) { const inp = document.getElementById("pbErrText"); if (inp) inp.focus(); }
+  }
+  else if (action === "pb-triage-toggle-mistake") { await pbTriageToggleMistake(el.dataset.id); }
+  else if (action === "pb-triage-new-mistake") { await pbTriageNewMistake(); }
+  else if (action === "pb-triage-prev") { pbTriageStep(-1); }
+  else if (action === "pb-triage-next") { pbTriageStep(1); }
+  else if (action === "pb-form-star") {
+    if (!editingTrade) return;
+    if (formDraft[PB_STAR_KEY]) delete formDraft[PB_STAR_KEY]; else formDraft[PB_STAR_KEY] = true;
+    refreshPbFormBlock(); saveDraft();
+  }
+  else if (action === "pb-form-suggest") {
+    if (!editingTrade) return;
+    formDraft[PB_KEY] = el.dataset.id;
+    refreshPbFormBlock(); saveDraft();
+  }
   else if (action === "open-trade-ref") {
     // 只读预览，不是编辑表单：看复盘时是在读，一点就弹一堆输入框既容易误改也太重
     tradePreviewId = el.dataset.id;
@@ -731,6 +838,7 @@ document.addEventListener("click", async (e) => {
     if (editingReview) { flushReviewSave(); editingReview = null; reviewEditorRenderedFor = null; renderReviewEditor(); }
     flushReviewPrefs();
     reviewSearch = ""; reviewConfirmDeleteId = null; reviewGroupConfirmDeleteId = null; reviewGroupModal = null;
+    pbTriage = null;   // 归类只在实盘模式下做，队列是那一批交易拍下来的
     if (!viewingUserId) { try { localStorage.setItem("journal_record_mode", recordMode); } catch (e) {} }
     if (recordMode === "live") {
       const now = new Date();
@@ -754,6 +862,7 @@ document.addEventListener("click", async (e) => {
       gridPage, sortBy, sortDir, recordMode, tab,
     };
     viewingUserId = el.dataset.id;
+    pbTriage = null; pbNameModal = null;
     viewingUserEmail = el.dataset.email;
     activeFilters = [];
     // 别人的数据用默认口径看，也别把人家的条件写进自己的 localStorage（saveAnalysisFilters 里也挡了一道）
@@ -766,6 +875,7 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "exit-view-mode") {
     viewingUserId = null;
+    pbTriage = null;
     viewingUserEmail = null;
     if (ownStateSnapshot) {
       activeFilters = ownStateSnapshot.activeFilters;
@@ -812,6 +922,8 @@ document.addEventListener("click", async (e) => {
     }
     const field = schema.find((f) => f.id === fieldId);
     document.getElementById("chipgroup-" + fieldId).outerHTML = chipGroupHtml(field, formDraft[fieldId], multi);
+    // 模型标签一变，模型库那一栏的「建议归到哪」跟着变
+    if (field && field.role === "model") refreshPbFormBlock();
     saveDraft();
   }
   else if (action === "toggle-settings-row") {
@@ -873,6 +985,13 @@ document.addEventListener("input", (e) => {
     const el = document.querySelector('[data-action="search-input"]');
     if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (err) {} }
   }
+  else if (e.target.dataset.action === "pb-search-input") {
+    pbSearch = e.target.value;
+    const caret = e.target.selectionStart;
+    render();
+    const el = document.querySelector('[data-action="pb-search-input"]');
+    if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (err) {} }
+  }
   else if (e.target.dataset.action === "review-search-input") {
     reviewSearch = e.target.value;
     const caret = e.target.selectionStart;
@@ -882,6 +1001,24 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("change", async (e) => {
+  if (e.target.dataset.pbFormPick !== undefined) {
+    if (!editingTrade || viewingUserId) return;
+    const v = e.target.value;
+    if (v) formDraft[PB_KEY] = v; else delete formDraft[PB_KEY];
+    if (!v || v === PB_NONE) delete formDraft[PB_STAR_KEY];   // 关注是相对某一页说的，没归到页面就谈不上
+    refreshPbFormBlock();
+    saveDraft();
+    return;
+  }
+  if (e.target.dataset.pbParent !== undefined) {
+    // 模型库页面的属性行：策略换系统 / 错题换归属。走编辑器那套自动保存
+    if (!editingReview || !isPbDoc(editingReview) || reviewIsReadOnly()) return;
+    editingReview.parent_id = e.target.value || null;
+    scheduleReviewSave();
+    await flushReviewSave();
+    refreshPbPanels();
+    return;
+  }
   if (e.target.dataset.reviewWeekDate !== undefined) {
     if (!editingReview || reviewIsReadOnly()) return;
     // 随手挑的日子归到那一周的周一——week_start 这个名字要求它就是周一
@@ -1323,8 +1460,11 @@ document.addEventListener("keydown", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (focusKeyNav(e)) return;
+  if (pbTriageKey(e)) return;
   if (e.key !== "Escape") return;
   if (lightboxUrl) { closeLightbox(); return; }
+  if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }
+  if (pagePickerOpen) { closePagePicker(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）
   if (reviewPop) { closeReviewPop(true); return; }
@@ -1344,6 +1484,7 @@ document.addEventListener("keydown", (e) => {
   if (reviewGroupModal) { reviewGroupModal = null; render(); return; }
   if (editingReview) { closeReviewEditor(); return; }
   if (dayDetailDate) { dayDetailDate = null; render(); return; }
+  if (tab === "playbook" && pbTriage) { pbTriage = null; render(); return; }
 });
 
 /* 复盘是长文，debounce 那一秒里关掉标签页就丢了。localStorage 那份草稿能兜底，

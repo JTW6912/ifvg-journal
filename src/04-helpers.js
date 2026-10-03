@@ -107,15 +107,27 @@ function resultColor(v) {
    ============================================================ */
 const VF_CREATED = "__created_at";
 const VF_UPDATED = "__updated_at";
+/* 第三个虚拟字段：模型库归属（「RIFVG › 趋势延续」）。值存在交易的 __pb 上（见 11b-playbook-data），
+   包装成一个 select 字段之后，筛选、组合、拆解、卡片额外字段、导出都能直接按策略来。
+   选项就是当前的页面名字——改了页面名字，存着旧名字的筛选条件会照常被标红（跟删掉一个选项一样） */
+const VF_PLAYBOOK = "__playbook";
+function playbookVirtualField() {
+  return { id: VF_PLAYBOOK, label: T("vfield.playbook"), type: "select", role: "", virtual: true,
+    options: pbAssignOptions().map((o) => o.full) };
+}
+// 没建过模型库页面的用户不该多出一个永远是空的列 / 筛选字段
 function virtualFields() {
-  return [
+  const out = [
     { id: VF_CREATED, label: T("vfield.created"), type: "date", role: "", virtual: true },
     { id: VF_UPDATED, label: T("vfield.updated"), type: "date", role: "", virtual: true },
   ];
+  if (pbHasPages()) out.push(playbookVirtualField());
+  return out;
 }
-function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED; }
+function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK; }
 // 按 id 找字段：先虚拟字段，再用户自己的 schema。找不到返回 null（调用方按"字段已删除"处理）
 function resolveField(id) {
+  if (id === VF_PLAYBOOK) return playbookVirtualField();   // 页面全删光了也认得：存着它的条件不该被当成「字段已删除」
   if (isVirtualFieldId(id)) return virtualFields().find((f) => f.id === id) || null;
   return schema.find((x) => x.id === id) || null;
 }
@@ -131,6 +143,7 @@ function tradeFieldValue(t, field) {
   if (field.id === VF_CREATED) return localDateStr(t._created_at);
   // 没被改过的老数据 updated_at 可能是空的，回落到创建时间，免得筛「修改日期」时整批凭空消失
   if (field.id === VF_UPDATED) return localDateStr(t._updated_at || t._created_at);
+  if (field.id === VF_PLAYBOOK) return pbTradeLabel(t);
   return t[field.id];
 }
 

@@ -257,6 +257,8 @@ function markFdrSignificant(rows) {
 // 所以以后加个「出场时间」字段也会自动多出一张拆解卡
 function breakdownCandidateFields() {
   const all = schema.filter((f) => (f.type === "select" || f.type === "multiselect" || f.type === "time") && f.role !== "result");
+  // 模型库归属也能拆：「哪个策略在赚钱」正是建模型库想回答的问题
+  if (pbHasPages()) all.push(playbookVirtualField());
   const order = analysisPrefs.breakdownOrder || [];
   const ranked = [], rest = [];
   all.forEach((f) => (order.includes(f.id) ? ranked : rest).push(f));
@@ -460,7 +462,7 @@ function computeBreakdowns(list) {
     if (f.type === "time") return computeTimeBreakdown(f, list, resultF, rF, minN);
     const map = {};
     list.forEach((t) => {
-      let vals = t[f.id];
+      let vals = tradeFieldValue(t, f);   // 走 tradeFieldValue：模型库归属是虚拟字段，不在 t[f.id] 上
       if (vals === undefined || vals === null || vals === "") return;
       if (!Array.isArray(vals)) vals = [vals];
       // 多选字段一笔交易会落进多行，所以各行 n 之和可能大于总笔数，这是预期行为
