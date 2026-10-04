@@ -540,7 +540,8 @@ textarea.input{resize:vertical;}
 .lbPrev{left:16px;}
 .lbNext{right:16px;}
 .lbCount{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);padding:5px 12px;border-radius:14px;
-  background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;white-space:nowrap;pointer-events:none;}
+  background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;white-space:nowrap;pointer-events:none;
+  max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;}
 @media(max-width:640px){.overlay.lbHasNav{padding:30px 44px 52px;}.lbNav{width:34px;height:52px;font-size:26px;}.lbPrev{left:6px;}.lbNext{right:6px;}}
 
 /* 颜色面板里的一格（格式栏和插入菜单共用） */

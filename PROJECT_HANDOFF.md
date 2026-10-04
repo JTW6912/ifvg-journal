@@ -366,6 +366,7 @@ JS
   - 「当前筛选」只对当前模式的交易生效。`exportHasActiveFilters()` 改成按 `filterNodeIsEffective` 判断——记录页默认摆着两行没选值的筛选，以前按「有字段」算，导出会默认成「筛选结果」（其实就是全部）
 - **更新日志页**：全局共享，仅 admin 能发布/删除
 - **交易预览里 ←/→ 翻笔**（`openTradePreview()` / `stepTradePreview()` / `closeTradePreview()`，在 14 文件里）：范围是「打开它的那个列表」——模型库页面里的某一栏、复盘正文、或者整个 #app——按 DOM 顺序收那里面的交易胶囊 / 交易行 id（去重）。顶上有「3 / 8」和上一笔 / 下一笔。关掉时背后页面滚到最后看的那一笔并挂 `.isPicked`（交易行标整行）。root 存「选择器 + 第几个」不存节点：预览开着时背后那一栏可能被 refreshPbPanels 重画过。键盘走捕获阶段（跟灯箱一样）：从复盘正文里点开时焦点还在编辑器里，不先拦方向键会去挪编辑器光标；灯箱盖在上面时让给灯箱
+- **从交易预览里点开大图，←/→ 换的是上一笔 / 下一笔交易的截图**（`lightboxTradeNav()`，灯箱 nav 的 scope 为 `"trade"`，多存一份 `ids`）：范围跟预览的 ←/→ 一样，没截图的那几笔跳过；每翻一笔把 `tradePreviewId` / `tradePreviewNav.index` 一起挪过去，所以 Esc 关掉大图回到的是最后看的那笔的预览，再关预览照常 `.isPicked` 标出来。底部说明条显示那笔的「日期 模型 结果 R」
 - **截图链接 → 图片**：所有把截图显示成 `<img>` 的地方（卡片、看图、表格的放大按钮、当日明细、交易预览、交易选择器、录入弹窗的预览、复盘正文里的图片）都经过 `imgSrc()`。它把 TradingView 的快照页面链接（`tradingview.com/x/{id}/`）换成图片直链 `s3.tradingview.com/snapshots/{id 首字符小写}/{id}.png`（2026-09 实测过，就是那个页面 og:image 的地址），其余原样放行（FX Replay 的 `fxr-snapshots-….s3.amazonaws.com/…png` 本来就是直链）。**库里存的仍然是用户粘的原链接**，只在显示时换。以后新加显示截图的地方记得也套一层 `imgSrc()`，`data-fallback-url` 也要用换过的地址——重试加载时用的就是它
 - **看大图（灯箱）能 ←/→ 翻图**（`openLightbox()` / `stepLightbox()` / `closeLightbox()`）：打开时把「同一处」的图收成列表——记录页当前这一页、复盘这篇正文、或者当前弹窗（当日明细等）——到头就停不循环。每翻一张就把背后页面滚到那张图（看图模式对齐到行首，并用 `setFocusCursor()` 把 J/K 的当前行一起挪过去），所以关掉时页面停在最后看的那一张上
   - **⚠️ 打开/关闭灯箱只画 `#secondaryModalRoot`，不要改回 `render()`**：render() 会重建 `#app`，看图模式的 `<img>` 全部重建、高度塌掉，刚对齐好的滚动位置就没了

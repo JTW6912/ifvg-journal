@@ -85,7 +85,7 @@ function lightboxHtml() {
   const navHtml = nav ? `
     <button class="lbNav lbPrev" data-action="lightbox-prev" ${nav.index === 0 ? "disabled" : ""} title="${esc(T("lightbox.prev"))}">‹</button>
     <button class="lbNav lbNext" data-action="lightbox-next" ${nav.index === nav.urls.length - 1 ? "disabled" : ""} title="${esc(T("lightbox.next"))}">›</button>
-    <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${esc(T("lightbox.hint"))}</div>` : "";
+    <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${nav.ids ? esc(lightboxTradeLabel(nav.ids[nav.index])) + " · " + esc(T("lightbox.tradeHint")) : esc(T("lightbox.hint"))}</div>` : "";
   // 有翻页时两侧留出按钮的位置，宽图铺满也不会压在按钮底下
   return `<div class="overlay${nav ? " lbHasNav" : ""}" data-action="close-lightbox"${nav ? "" : ' style="padding:30px;"'}>
     <img src="${esc(lightboxUrl)}" referrerpolicy="no-referrer" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" onclick="event.stopPropagation()" />
@@ -119,6 +119,34 @@ function lightboxTargets(scope) {
 }
 function lightboxTargetUrl(el) { return (el.dataset && el.dataset.url) || el.getAttribute("src") || ""; }
 
+/* 从交易预览里点开的大图：←/→ 换的是「上一笔 / 下一笔交易的截图」，范围跟预览自己的 ←/→ 一样
+   （打开预览的那个列表），没截图的那几笔跳过。每翻一笔就把预览也切到那一笔（tradePreviewId 跟着走），
+   所以关掉大图回到的就是最后看的那笔的预览；再关预览，背后页面照常标出这一笔（closeTradePreview）。
+   列表在打开那一刻定下来，存 id + url 两份：url 给灯箱翻图，id 给预览对位 */
+function lightboxTradeNav(el) {
+  const nav = tradePreviewNav;
+  if (!tradePreviewId || !nav || nav.ids.length < 2 || !el || !el.closest || !el.closest(".tradePreviewModal")) return null;
+  const shotF = roleField("screenshot");
+  if (!shotF) return null;
+  const ids = [], urls = [];
+  nav.ids.forEach((id) => {
+    const t = trades.find((x) => x.id === id);
+    const url = t && t[shotF.id] ? mdSafeUrl(imgSrc(t[shotF.id])) : null;
+    if (url) { ids.push(id); urls.push(url); }
+  });
+  const index = ids.indexOf(tradePreviewId);
+  return index >= 0 && ids.length > 1 ? { scope: "trade", ids, urls, index } : null;
+}
+function lightboxTradeLabel(id) {
+  const t = trades.find((x) => x.id === id);
+  if (!t) return "";
+  const dateF = roleField("date"), modelF = roleField("model"), resultF = roleField("result"), rF = roleField("r_multiple");
+  const r = rF ? t[rF.id] : "";
+  return [dateF && t[dateF.id], modelF && t[modelF.id], resultF && t[resultF.id],
+    r !== undefined && r !== "" && !isNaN(parseFloat(r)) ? (parseFloat(r) >= 0 ? "+" : "") + r + "R" : ""]
+    .filter((v) => v !== undefined && v !== null && String(v).trim() !== "").join(" ");
+}
+
 function openLightbox(el, url) {
   const safe = mdSafeUrl(url);
   if (!safe) return;
@@ -126,8 +154,8 @@ function openLightbox(el, url) {
   const targets = lightboxTargets(scope);
   let index = targets.indexOf(el);
   if (index < 0) index = targets.findIndex((t) => t.contains(el) || (el && el.contains && el.contains(t)));
-  lightboxNav = index >= 0 && targets.length > 1 ? { scope, urls: targets.map(lightboxTargetUrl), index } : null;
-  lightboxUrl = safe;
+  lightboxNav = lightboxTradeNav(el) || (index >= 0 && targets.length > 1 ? { scope, urls: targets.map(lightboxTargetUrl), index } : null);
+  lightboxUrl = lightboxNav && lightboxNav.ids ? lightboxNav.urls[lightboxNav.index] : safe;
   renderSecondaryModals(true);
 }
 function stepLightbox(delta) {
@@ -137,6 +165,10 @@ function stepLightbox(delta) {
   if (next < 0 || next >= nav.urls.length) return;
   nav.index = next;
   lightboxUrl = nav.urls[next];
+  if (nav.ids && tradePreviewNav) {
+    tradePreviewId = nav.ids[next];
+    tradePreviewNav.index = Math.max(tradePreviewNav.ids.indexOf(tradePreviewId), 0);
+  }
   renderSecondaryModals(true);
   alignLightboxSource();
 }
@@ -149,7 +181,7 @@ function closeLightbox() {
 /* 把背后页面滚到当前这张图。弹窗里的图要等灯箱关掉、弹窗画回来之后才找得到 */
 function alignLightboxSource() {
   const nav = lightboxNav;
-  if (!nav || (nav.scope === "modal" && lightboxUrl)) return;
+  if (!nav || nav.scope === "trade" || (nav.scope === "modal" && lightboxUrl)) return;
   const targets = lightboxTargets(nav.scope);
   let el = targets[nav.index];
   if (!el || lightboxTargetUrl(el) !== nav.urls[nav.index]) el = targets.find((t) => lightboxTargetUrl(t) === nav.urls[nav.index]);
