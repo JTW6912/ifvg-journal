@@ -27,7 +27,8 @@ function toCSV(list, fields) {
 }
 // Records 页筛选条件/搜索是全局状态，导出面板不管当前在哪个 tab 都能拿来复用
 function exportHasActiveFilters() {
-  return activeFilters.some((f) => f.fieldId) || searchQuery.trim() !== "";
+  // 只看真的在筛东西的条件：记录页默认摆着两行没选值的筛选，按「有字段」算的话导出会默认成「筛选结果」，其实就是全部
+  return activeFilters.some(filterNodeIsEffective) || searchQuery.trim() !== "";
 }
 function exportFilteredTrades() {
   return trades.filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));

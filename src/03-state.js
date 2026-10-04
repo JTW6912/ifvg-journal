@@ -8,7 +8,6 @@ let trades = [];
 let tab = "grid";
 let editingTrade = null;
 let confirmDeleteId = null;
-let exportMenuOpen = false;
 let exportScope = null; // null = auto (filtered if a filter/search is active, else all); "filtered" | "all" once user picks explicitly
 let exportColumns = "all"; // "all" | "selected"
 let exportSelectedFields = [];

@@ -1263,3 +1263,45 @@ button.pageRef{line-height:1.5;}
   .pbTriageProgress{width:100%;}
   .pbProgress{flex:1;width:auto;min-width:60px;}
 }
+
+/* ============================================================
+   导出中心：一整页，盖在复盘编辑器（90）之上、弹窗（100）之下
+   ============================================================ */
+.exOverlay{position:fixed;inset:0;z-index:95;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;}
+.exPage{max-width:860px;margin:0 auto;padding:40px 24px 120px;}
+.exH1{font-size:30px;font-weight:700;margin:0 0 8px;}
+.exLead{font-size:13.5px;color:var(--muted);line-height:1.7;margin:0 0 26px;}
+.exBlock{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px;}
+.exBlockTitle{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin-bottom:14px;}
+.exRow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;}
+.exRow .chipGroup{margin-bottom:0;}
+.exRow .chip:disabled{opacity:.45;cursor:not-allowed;}
+.exRowLabel{font-size:12px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;min-width:92px;}
+.exNow{font-size:10.5px;opacity:.7;margin-left:2px;}
+.exHint{font-size:12px;color:var(--mutedDark);line-height:1.7;margin-top:4px;}
+.exFmts{display:flex;flex-direction:column;gap:8px;}
+.exFmt{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;text-align:left;font-family:'Inter',sans-serif;transition:border-color .12s;}
+.exFmt:hover{border-color:var(--borderLight);}
+.exFmt.on{border-color:var(--accent);background:var(--accentSoft);}
+.exCheck{width:18px;height:18px;border-radius:5px;border:1px solid var(--borderLight);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;background:var(--surface);}
+.exFmt.on .exCheck{background:var(--accent);border-color:var(--accent);color:#191307;}
+.exCheck svg{width:12px;height:12px;}
+.exFmtMain{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.exFmtTitle{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.exFmtBadge{font-size:10.5px;font-weight:500;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:0 7px;}
+.exFmt.on .exFmtBadge{color:var(--accent);border-color:var(--accent);}
+.exFmtDesc{font-size:12.5px;color:var(--muted);line-height:1.65;}
+.exCsvCols{margin-top:12px;padding:12px 14px;border:1px dashed var(--border);border-radius:10px;display:flex;flex-direction:column;gap:6px;}
+.exSubLabel{font-size:11.5px;color:var(--mutedDark);}
+.exFoot{position:sticky;bottom:0;display:flex;align-items:center;gap:14px;padding:14px 0;margin-top:10px;
+  background:linear-gradient(to top, var(--bg) 70%, transparent);}
+.exFootText{flex:1;min-width:0;font-size:12.5px;color:var(--mutedDark);line-height:1.6;}
+.exFootText svg{width:13px;height:13px;vertical-align:-2px;}
+.exErr{color:var(--neg);}
+.exDone{color:var(--pos);}
+.exBusy{color:var(--accent);}
+.exGo{padding:10px 22px;font-size:14px;}
+.exGo:disabled{opacity:.5;cursor:not-allowed;}
+@media(max-width:640px){.exPage{padding:24px 16px 100px;}.exH1{font-size:24px;}.exFoot{flex-direction:column;align-items:stretch;}.exGo{justify-content:center;}}

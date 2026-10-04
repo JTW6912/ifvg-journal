@@ -356,33 +356,6 @@ function renderPreservingScroll(elId) {
     if (next) next.scrollTop = scrollTop;
   }
 }
-function renderExportPanel() {
-  const filteredCount = exportFilteredTrades().length;
-  const allCount = trades.length;
-  const scope = resolvedExportScope();
-  return `
-    <div style="padding:10px 12px 6px;font-size:11px;color:var(--mutedDark);">${T("export.scope")}</div>
-    <div class="chipGroup" style="padding:0 12px 8px;margin-bottom:0;">
-      <button type="button" class="chip ${scope === "filtered" ? "active" : ""}" data-action="set-export-scope" data-value="filtered">${T("export.scopeFiltered", { n: filteredCount })}</button>
-      <button type="button" class="chip ${scope === "all" ? "active" : ""}" data-action="set-export-scope" data-value="all">${T("export.scopeAll", { n: allCount })}</button>
-    </div>
-    <div style="padding:8px 12px 6px;font-size:11px;color:var(--mutedDark);border-top:1px solid var(--border);">${T("export.columns")}</div>
-    <div class="chipGroup" style="padding:0 12px 8px;margin-bottom:0;">
-      <button type="button" class="chip ${exportColumns === "all" ? "active" : ""}" data-action="set-export-columns" data-value="all">${T("export.columnsAll")}</button>
-      <button type="button" class="chip ${exportColumns === "selected" ? "active" : ""}" data-action="set-export-columns" data-value="selected">${T("export.columnsSelected")}</button>
-    </div>
-    ${exportColumns === "selected" ? `<div id="exportFieldsScroll" class="chipGroup" style="padding:0 12px 8px;max-height:180px;overflow-y:auto;">
-      ${exportAllFields().map((f) => `<button type="button" class="chip ${exportSelectedFields.includes(f.id) ? "active" : ""}" data-action="toggle-export-field" data-id="${esc(f.id)}">${esc(f.label)}</button>`).join("")}
-    </div>
-    <div style="padding:0 12px 8px;display:flex;gap:10px;">
-      <button type="button" class="tinyBtn" data-action="export-fields-select-all">${T("export.selectAll")}</button>
-      <button type="button" class="tinyBtn" data-action="export-fields-clear">${T("export.clearAll")}</button>
-    </div>` : ""}
-    <button data-action="export-csv" ${exportColumns === "selected" && exportSelectedFields.length === 0 ? "disabled" : ""} style="border-top:1px solid var(--border);font-weight:600;color:var(--accent);">${ICONS.download} ${T("export.exportCsv")}</button>
-    <button data-action="export-json">${ICONS.download} ${T("header.jsonBackup")}</button>
-    <div style="padding:6px 12px 10px;font-size:10.5px;color:var(--mutedDark);line-height:1.4;">${T("export.jsonBackupHint")}</div>
-  `;
-}
 /* ---------- 分区重绘 ----------
    以前 render() 每次都把整个 #app 的 innerHTML 重写：随便点一下（开个弹窗、翻个页码、
    保存一笔交易）都会让所有 <img> 重建、滚动位置和焦点丢掉——前面那些 renderPreservingScroll、
@@ -481,12 +454,7 @@ function render() {
           <button class="modeBtn ${recordMode === "live" ? "active" : ""}" data-action="set-record-mode" data-mode="live">${T("mode.live")}</button>
         </div>
         <button class="themeToggle" data-action="toggle-theme" title="${esc(T("header.toggleTheme"))}">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
-        <div style="position:relative;">
-          <button class="btn" data-action="toggle-export">${ICONS.download} ${T("header.export")}</button>
-          <div class="exportMenu ${exportMenuOpen ? "open" : ""}" style="min-width:250px;">
-            ${exportMenuOpen ? renderExportPanel() : ""}
-          </div>
-        </div>
+        <button class="btn" data-action="open-export-center">${ICONS.download} ${T("header.export")}</button>
         ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
         <div style="position:relative;">
           <button class="themeToggle" data-action="toggle-user-menu" title="${esc(T("header.account"))}">${ICONS.user}</button>
@@ -512,5 +480,6 @@ function render() {
   renderModal();
   renderSecondaryModals();
   renderReviewEditor();
+  renderExportCenter();
 }
 

@@ -10,7 +10,6 @@ document.addEventListener("click", async (e) => {
   }
   if (!el) {
     let changed = false;
-    if (exportMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-export"]')) { exportMenuOpen = false; changed = true; }
     if (userMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-user-menu"]')) { userMenuOpen = false; changed = true; }
     if (changed) render();
     return;
@@ -25,7 +24,18 @@ document.addEventListener("click", async (e) => {
     render();
   }
   else if (action === "set-lang") { await setLang(el.dataset.lang); }
-  else if (action === "toggle-export") { exportMenuOpen = !exportMenuOpen; render(); }
+  /* ---------- 导出中心 ---------- */
+  else if (action === "open-export-center") { exportCenterOpen = true; exportStatus = ""; exportError = ""; userMenuOpen = false; render(); }
+  else if (action === "close-export-center") { if (!exportBusy) { exportCenterOpen = false; render(); } }
+  else if (action === "ex-toggle-fmt") {
+    const k = el.dataset.fmt;
+    if (EX_FORMATS.includes(k)) { exportOpts.fmt[k] = !exportOpts.fmt[k]; saveExportOpts(); exportStatus = ""; renderExportCenter(); }
+  }
+  else if (action === "ex-toggle-mode") {
+    const m = el.dataset.mode;
+    if (m === "live" || m === "backtest") { exportOpts.modes[m] = !exportOpts.modes[m]; saveExportOpts(); exportStatus = ""; renderExportCenter(); }
+  }
+  else if (action === "ex-run") { await runExport(); }
   else if (action === "set-export-scope") { exportScope = el.dataset.value; render(); }
   else if (action === "set-export-columns") {
     exportColumns = el.dataset.value;
@@ -39,8 +49,6 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "export-fields-select-all") { exportSelectedFields = exportAllFields().map((f) => f.id); renderPreservingScroll("exportFieldsScroll"); }
   else if (action === "export-fields-clear") { exportSelectedFields = []; renderPreservingScroll("exportFieldsScroll"); }
-  else if (action === "export-csv") { downloadFile(`trades-${new Date().toISOString().slice(0,10)}.csv`, toCSV(exportTradeList(), exportFieldList()), "text/csv;charset=utf-8;"); exportMenuOpen = false; render(); }
-  else if (action === "export-json") { downloadFile(`journal-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify({ schema, trades }, null, 2), "application/json"); exportMenuOpen = false; render(); }
   else if (action === "new-trade") {
     if (viewingUserId) return;
     const draft = loadDraft();
@@ -544,7 +552,7 @@ document.addEventListener("click", async (e) => {
       await doLogin(email, password, remember);
     }
   }
-  else if (action === "toggle-user-menu") { userMenuOpen = !userMenuOpen; exportMenuOpen = false; render(); }
+  else if (action === "toggle-user-menu") { userMenuOpen = !userMenuOpen; render(); }
   else if (action === "open-profile-modal") {
     userMenuOpen = false;
     profileModalOpen = true; profileError = ""; profileSuccess = ""; passwordError = ""; passwordSuccess = "";
@@ -1501,6 +1509,7 @@ document.addEventListener("keydown", (e) => {
   if (pbTriageKey(e)) return;
   if (e.key !== "Escape") return;
   if (lightboxUrl) { closeLightbox(); return; }
+  if (exportCenterOpen) { if (!exportBusy) { exportCenterOpen = false; render(); } return; }
   if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }
   if (pagePickerOpen) { closePagePicker(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
