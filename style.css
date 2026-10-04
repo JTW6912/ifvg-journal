@@ -1204,8 +1204,10 @@ button.pageRef{line-height:1.5;}
   font-family:'JetBrains Mono',monospace;font-size:10.5px;flex-shrink:0;}
 .pbTriageSide kbd.blank{visibility:hidden;}
 .pbOpt.on kbd{border-color:var(--accent);color:var(--accent);}
-.pbToggleRow{display:flex;gap:8px;}
-.pbToggle{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);
+/* 关注 / 错题 / 待验证：360px 的侧栏里三个并排会把字挤成两行，改成一行一个（跟上面的选项列表一个节奏） */
+.pbToggleRow{display:flex;flex-direction:column;gap:6px;}
+.pbToggle span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.pbToggle{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:1px solid var(--border);text-align:left;
   background:var(--surface2);color:var(--text);cursor:pointer;font-size:12.5px;font-family:'Inter',sans-serif;}
 .pbToggle svg{width:14px;height:14px;}
 .pbToggle:hover:not(:disabled){border-color:var(--borderLight);}
