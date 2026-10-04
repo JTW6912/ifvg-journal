@@ -83,6 +83,7 @@ let pbVerifyFilter = "all";           // 待验证区按状态筛：all / watchi
 let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗
 let pbConfirmDeleteId = null;
 let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
+let pbNotedOnly = false;              // 页面里「全部交易」只看写了归类记录的
 /* 归类模式：{ ids, i, scope: 'unsorted' | 'all', panel: '' | 'mistake' | 'verify', notice }。ids 是开始时拍下来的队列——
    边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */
 let pbTriage = null;

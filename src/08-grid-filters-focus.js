@@ -211,6 +211,7 @@ function loadSavedFilters() {
 function tradeMatchesSearch(t, query) {
   const q = query.trim().toLowerCase();
   if (!q) return true;
+  if (pbTradeNote(t).toLowerCase().includes(q)) return true;   // 归类记录也搜（不是用户字段，单独看）
   return schema.some((f) => {
     if (!["text", "textarea", "url"].includes(f.type)) return false;
     const v = t[f.id];

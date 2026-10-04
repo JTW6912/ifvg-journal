@@ -17,6 +17,8 @@
      __pb       页面 id；"__none" = 确认过「不属于任何模型」，归类时不再出现
      __pb_star  true = 「我关注的关联交易」，在页面上单独展示
      __pb_tags  打了哪些标签（标签页面 id 的数组；一笔可以打好几个）
+     __pb_note  归类记录：归类时写下的「为什么归到这里 / 这笔看到了什么」。跟交易当时写的备注、
+                事后的复盘笔记分开放；存在交易上，所以改归到别的策略时记录跟着走
    一笔交易只属于一个策略（说不清是哪个子策略时归到系统本身），放在交易上删交易时自然就没了，
    也不用迁移——data 是 jsonb，多两个键而已。
 
@@ -36,6 +38,7 @@ const PB_VERIFY_STATUSES = ["watching", "works", "rejected"];
 const PB_KEY = "__pb";
 const PB_STAR_KEY = "__pb_star";
 const PB_TAGS_KEY = "__pb_tags";
+const PB_NOTE_KEY = "__pb_note";
 const PB_NONE = "__none";
 
 function isPbDoc(d) { return !!d && PB_KINDS.includes(d.kind); }
@@ -104,6 +107,7 @@ function pbTradePageId(t) {
 function pbTradeIsNone(t) { return !!t && t[PB_KEY] === PB_NONE; }
 function pbTradeIsUnsorted(t) { return !pbTradePageId(t) && !pbTradeIsNone(t); }
 function pbTradeStarred(t) { return !!(t && t[PB_STAR_KEY]); }
+function pbTradeNote(t) { const v = t && t[PB_NOTE_KEY]; return typeof v === "string" ? v.trim() : ""; }
 function pbTradeLabel(t) { const id = pbTradePageId(t); return id ? pbLabel(id) : ""; }
 
 /* 系统页算上它所有衍生策略的交易；策略页只算自己 */
@@ -328,6 +332,28 @@ function pbSuggestFor(t) {
   if (exact) return exact.id;
   const loose = opts.find((o) => tags.some((g) => g.length >= 3 && o.label.toLowerCase().includes(g)));
   return loose ? loose.id : "";
+}
+
+/* 往系统 / 策略页正文里记一条「归类时的发现」：跨好几笔才看得出来的东西（「这个 setup 多半出在开盘 15 分钟内」），
+   不该只挂在某一笔上。写进页面正文「归类时的发现」那一节末尾，一条一个列表项：日期 + 当时那笔的胶囊 + 那句话。
+   找不到那一节就在文末补一节。跟 pbAppendTradeToBody 不同，同一笔可以被记好几次（不同的发现） */
+function pbAppendFindingToBody(body, text, tradeId, date) {
+  const src = String(body || "");
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (!clean) return src;
+  const ref = /^[A-Za-z0-9_-]+$/.test(tradeId || "") ? " [[trade:" + tradeId + "]]" : "";
+  const item = "- " + (date ? date + ref : ref.trim()) + " " + mdEscapeText(clean, {});
+  const lines = src.replace(/\r\n?/g, "\n").split("\n");
+  const at = lines.findIndex((l) => pbIsHeadingLine(l, pbHeadingNames("pb.tpl.findings")));
+  if (at < 0) return (src.trim() ? src.replace(/\s+$/, "") + "\n\n" : "") + "## " + T("pb.tpl.findings") + "\n\n" + item;
+  let end = lines.length;
+  for (let i = at + 1; i < lines.length; i++) if (/^\s{0,3}#{1,6}\s/.test(lines[i])) { end = i; break; }
+  let last = end - 1;
+  while (last > at && !lines[last].trim()) last--;
+  const prevIsItem = last > at && /^\s*[-*+]\s/.test(lines[last]);
+  const rest = lines.slice(last + 1);
+  const out = lines.slice(0, last + 1).concat(prevIsItem ? [item] : ["", item], rest.length && rest[0].trim() ? [""] : [], rest);
+  return out.join("\n").replace(/\n{3,}/g, "\n\n");
 }
 
 /* 新页面的正文模板。按当时的界面语言写进去，之后就是用户自己的文字了 */

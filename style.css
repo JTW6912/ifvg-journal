@@ -1077,7 +1077,13 @@ button.pageRef{line-height:1.5;}
 
 /* 全部交易：紧凑的一行一笔 */
 .pbTradeList{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.pbTradeRow{display:flex;align-items:center;border-bottom:1px solid var(--border);background:var(--surface);}
+.pbTradeRow{display:flex;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--surface);}
+/* 归类记录：挂在那一行底下，跟缩略图左边对齐 */
+.pbRowNote{flex-basis:100%;margin:-2px 0 0;padding:0 14px 9px 98px;font-size:12.5px;line-height:1.6;color:var(--muted);
+  white-space:pre-wrap;word-break:break-word;cursor:pointer;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.pbRowNote::before{content:"✎ ";color:var(--mutedDark);}
+.pbNotedBtn.on{color:var(--accent);border-color:var(--accent);border-style:solid;background:var(--accentSoft);}
+@media(max-width:640px){.pbRowNote{padding-left:40px;}}
 .pbTradeRow:last-child{border-bottom:none;}
 .pbStarBtn{background:transparent;border:none;cursor:pointer;color:var(--mutedDark);padding:0 4px 0 12px;align-self:stretch;display:flex;align-items:center;}
 .pbStarBtn:hover:not(:disabled){color:var(--accent);}
@@ -1149,6 +1155,10 @@ button.pageRef{line-height:1.5;}
 .tpPbLabel{font-size:10.5px;letter-spacing:.5px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;min-width:52px;}
 .tpPbStar{color:var(--accent);display:inline-flex;}
 .tpPbStar svg{width:14px;height:14px;}
+.tpPbNote{font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word;flex:1;min-width:0;}
+.pbFormNoteWrap{margin-top:10px;}
+.pbFormNoteWrap .pbFormTagsLabel{display:block;margin-bottom:5px;}
+.pbFormNoteArea{font-size:12.5px;line-height:1.6;resize:vertical;min-height:52px;}
 
 /* ============================================================
    归类模式：一屏一笔
@@ -1219,6 +1229,18 @@ button.pageRef{line-height:1.5;}
 .pbMpNew{display:flex;gap:6px;margin-top:8px;padding-top:10px;border-top:1px dashed var(--border);}
 .pbMpNew .input{flex:1;min-width:0;font-size:12.5px;}
 .pbMpNew .btn{padding:6px 10px;font-size:12px;white-space:nowrap;}
+/* 这笔的记录 */
+.pbNoteBlock .pbTriageLabel{align-items:baseline;}
+.pbNoteStatus{margin-left:auto;font-size:11px;font-weight:400;color:var(--accent);font-family:'JetBrains Mono',monospace;}
+.pbNoteStatus.ok{color:var(--pos);}
+.pbNoteStatus.err{color:var(--neg);}
+.pbNoteInput{font-size:13px;line-height:1.65;resize:vertical;min-height:72px;}
+.pbNoteActions{display:flex;align-items:center;gap:8px;margin-top:8px;min-height:20px;}
+.pbNoteToPage{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
+.pbNoteToPage:hover:not(:disabled){color:var(--accent);}
+.pbNoteToPage:disabled{opacity:.4;cursor:not-allowed;}
+.pbNoteToPage svg,.pbNoteSent svg{width:12px;height:12px;}
+.pbNoteSent{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--pos);}
 .pbTriageNav{display:flex;gap:8px;}
 .pbTriageNav .btn{flex:1;justify-content:center;}
 .pbTriageNav .btn:disabled{opacity:.45;cursor:not-allowed;}

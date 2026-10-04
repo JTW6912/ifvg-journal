@@ -355,6 +355,7 @@ function pbTradeRowHtml(t, opts) {
       ${pbTradeTagIds(t).map((id) => `<span class="pbTagChip small">${esc(pbTitle(pbFind(id)))}</span>`).join("")}
       ${pbTradeResultBits(t)}
     </div>
+    ${pbTradeNote(t) ? `<div class="pbRowNote" data-action="open-trade-ref" data-id="${esc(t.id)}">${esc(pbTradeNote(t))}</div>` : ""}
   </div>`;
 }
 const PB_TRADES_PREVIEW = 30;
@@ -405,16 +406,20 @@ function pbPanelsForPageHtml(d) {
 
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.starred"), starred.length, "", T("pb.section.starredHint"))}
     ${starred.length
-      ? `<div class="pbTileGrid">${starred.map((t) => pbTileHtml(t, { showLabel })).join("")}</div>`
+      ? `<div class="pbTileGrid">${starred.map((t) => pbTileHtml(t, { showLabel, note: pbTradeNote(t) })).join("")}</div>`
       : `<div class="pbEmptyLine">${esc(T("pb.noStarred"))}</div>`}
   </section>`;
 
-  const shown = pbShowAllTrades ? list : list.slice(0, PB_TRADES_PREVIEW);
+  // 「只看有记录的」：回头集中翻归类时写下的那些话
+  const noted = list.filter((t) => pbTradeNote(t));
+  const rows = pbNotedOnly ? noted : list;
+  const shown = pbShowAllTrades ? rows : rows.slice(0, PB_TRADES_PREVIEW);
   const triageBtn = viewingUserId || !pbUnsortedCount() ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="unsorted">${ICONS.grid} ${esc(T("pb.triage.more", { n: pbUnsortedCount() }))}</button>`;
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, triageBtn, showLabel ? T("pb.section.tradesHintSystem") : "")}
-    ${list.length
+  const notedBtn = noted.length ? `<button class="tinyBtn pbAddBtn pbNotedBtn${pbNotedOnly ? " on" : ""}" data-action="pb-noted-only">${ICONS.pencil} ${esc(T("pb.note.onlyNoted", { n: noted.length }))}</button>` : "";
+  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + triageBtn, showLabel ? T("pb.section.tradesHintSystem") : "")}
+    ${rows.length
       ? `<div class="pbTradeList">${shown.map((t) => pbTradeRowHtml(t, { showLabel })).join("")}</div>
-         ${list.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: list.length }))}</button>` : ""}`
+         ${rows.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: rows.length }))}</button>` : ""}`
       : `<div class="pbEmptyLine">${esc(T("pb.noTradesLong"))}</div>`}
   </section>`;
   return html;
@@ -612,6 +617,7 @@ function pbTriageCurrent() {
 }
 function pbTriageStep(delta) {
   if (!pbTriage) return;
+  pbTriageSaveNote();   // 翻走之前把没存的记录存掉（不等它：存的是 noteFor 那一笔，翻到哪都不影响）
   pbTriage.i = Math.max(0, Math.min(pbTriage.ids.length, pbTriage.i + delta));
   pbTriage.panel = "";
   pbTriage.errText = "";
@@ -678,6 +684,93 @@ async function pbTriageNewNote(kind) {
   render();
 }
 
+/* ---------- 归类记录（这笔的记录）----------
+   打字时不 render()：整块重画会把光标和输入法状态冲掉。停手 1.2 秒、失焦、翻到别的单、退出归类时存，
+   只改右上角那个「已保存」小字。还没存的那一份放在 pbTriage.noteFor / noteText 上，
+   中途因为别的操作重画了，文本框里显示的也是这一份，不会被库里的旧值盖回去。 */
+let pbTriageNoteTimer = null;
+function pbTriageNoteValue(t) {
+  return pbTriage && pbTriage.noteFor === t.id ? pbTriage.noteText : (t[PB_NOTE_KEY] || "");
+}
+function pbTriageNoteStatus(key) {
+  const el = document.getElementById("pbNoteStatus");
+  if (!el) return;
+  el.textContent = key ? T(key) : "";
+  el.className = "pbNoteStatus" + (key === "pb.note.failed" ? " err" : key === "pb.note.saved" ? " ok" : "");
+}
+window.__pbTriageNoteInput = function (el) {
+  const t = pbTriageCurrent();
+  if (!t) return;
+  pbTriage.noteFor = t.id;
+  pbTriage.noteText = el.value;
+  pbTriageNoteStatus("pb.note.unsaved");
+  // 只换按钮那一小格（能不能点、「已写进」要不要撤掉），不重画整块
+  const act = document.getElementById("pbNoteActions");
+  if (act) act.innerHTML = pbTriageNoteActionsHtml(t, el.value);
+  clearTimeout(pbTriageNoteTimer);
+  pbTriageNoteTimer = setTimeout(pbTriageSaveNote, 1200);
+};
+/* Ctrl/⌘+Enter = 存好并下一笔；Esc = 收起光标（不退出归类——document 上那条 Esc 链会把整个归类关掉） */
+window.__pbTriageNoteKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); pbTriageStep(1); }
+  else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); e.target.blur(); }
+};
+async function pbTriageSaveNote() {
+  clearTimeout(pbTriageNoteTimer);
+  pbTriageNoteTimer = null;
+  if (!pbTriage || !pbTriage.noteFor) return true;
+  const id = pbTriage.noteFor;
+  const text = String(pbTriage.noteText || "").replace(/\s+$/, "");
+  const t = trades.find((x) => x.id === id);
+  if (!t) { pbTriage.noteFor = null; return true; }
+  if ((t[PB_NOTE_KEY] || "") === text) { pbTriage.noteFor = null; pbTriageNoteStatus(text ? "pb.note.saved" : ""); return true; }
+  pbTriage.done.add(id);
+  pbTriageNoteStatus("pb.note.saving");
+  const ok = await pbPatchTrade(id, { [PB_NOTE_KEY]: text || undefined });
+  // 存的途中又改过：保持这一份草稿，排着的那次会再存
+  if (pbTriage && pbTriage.noteFor === id && String(pbTriage.noteText || "").replace(/\s+$/, "") === text) pbTriage.noteFor = null;
+  if (pbTriage && pbTriageCurrent() && pbTriageCurrent().id === id) pbTriageNoteStatus(ok ? "pb.note.saved" : "pb.note.failed");
+  return ok;
+}
+function pbTriageFocusNote() {
+  const el = document.getElementById("pbTriageNote");
+  if (!el) return;
+  el.focus();
+  el.setSelectionRange(el.value.length, el.value.length);
+}
+/* 「也写进页面」：跨好几笔才看得出来的发现，记进这笔所归那一页的「归类时的发现」一节（带日期和这笔的胶囊） */
+async function pbTriageNoteToPage() {
+  const t = pbTriageCurrent();
+  const page = t && pbFind(pbTradePageId(t));
+  if (!page) return;
+  const text = pbTriageNoteValue(t).trim();
+  if (!text) { pbTriageFocusNote(); return; }
+  await pbTriageSaveNote();
+  const ok = await persistPbPage({ ...page, body: pbAppendFindingToBody(page.body, text, t.id, todayStr()) });
+  if (ok) pbTriage.sentToPage = t.id + "\n" + text;
+  render();
+}
+function pbTriageNoteBlockHtml(t) {
+  const val = pbTriageNoteValue(t);
+  const page = pbFind(pbTradePageId(t));
+  return `<div class="pbTriageBlock pbNoteBlock">
+    <div class="pbTriageLabel">${esc(T("pb.note.label"))}<span class="pbKbdHint">${esc(T("pb.note.keyHint", { mod: modKeyLabel() }))}</span>
+      <span class="pbNoteStatus${t[PB_NOTE_KEY] && pbTriage.noteFor !== t.id ? " ok" : ""}" id="pbNoteStatus">${t[PB_NOTE_KEY] && pbTriage.noteFor !== t.id ? esc(T("pb.note.saved")) : ""}</span></div>
+    <textarea class="input pbNoteInput" id="pbTriageNote" rows="3" placeholder="${esc(T("pb.note.ph"))}"
+      oninput="window.__pbTriageNoteInput(this)" onblur="pbTriageSaveNote()" onkeydown="window.__pbTriageNoteKey(event)">${esc(val)}</textarea>
+    ${page ? `<div class="pbNoteActions" id="pbNoteActions">${pbTriageNoteActionsHtml(t, val)}</div>` : ""}
+  </div>`;
+}
+function pbTriageNoteActionsHtml(t, val) {
+  const page = pbFind(pbTradePageId(t));
+  if (!page) return "";
+  if (pbTriage.sentToPage === t.id + "\n" + val.trim()) {
+    return `<span class="pbNoteSent">${ICONS.check} ${esc(T("pb.note.sent", { name: pbTitle(page) }))}</span>`;
+  }
+  return `<button class="tinyBtn pbNoteToPage" data-action="pb-triage-note-to-page" ${val.trim() ? "" : "disabled"} title="${esc(T("pb.note.toPageTitle"))}">${ICONS.book} ${esc(T("pb.note.toPage", { name: pbTitle(page) }))}</button>`;
+}
+
 function pbTriageFieldsHtml(t) {
   const modelF = roleField("model");
   const rows = [];
@@ -688,7 +781,7 @@ function pbTriageFieldsHtml(t) {
   // 跟看图模式挂的是同一批字段（用户在那边挑过「看图时要看哪些」），归类时要看的也就是这些
   focusFields.forEach((fid) => {
     const f = resolveField(fid);
-    if (!f || f.id === VF_PLAYBOOK || f.id === VF_PB_TAGS || (modelF && f.id === modelF.id)) return;
+    if (!f || f.id === VF_PLAYBOOK || f.id === VF_PB_TAGS || f.id === VF_PB_NOTE || (modelF && f.id === modelF.id)) return;
     let v = tradeFieldValue(t, f);
     if (Array.isArray(v)) v = v.join(", ");
     if (v === undefined || v === null || String(v).trim() === "") return;
@@ -815,6 +908,7 @@ function pbTriageBodyHtml() {
           </button>
         </div>
       </div>
+      ${pbTriageNoteBlockHtml(t)}
       <div class="pbTriageBlock">
         <div class="pbToggleRow">
           <button class="pbToggle${starOn ? " on" : ""}" data-action="pb-triage-star" ${canStar ? "" : `disabled title="${esc(T("pb.triage.starNeedsPage"))}"`}>
@@ -837,7 +931,7 @@ function pbTriageBodyHtml() {
     </div>
   </div>`;
 }
-/* 归类模式的键盘：数字 = 归到第几项（0 = 不属于任何模型）、S = 关注、E = 错题、V = 待验证、Enter / → = 下一笔、← = 上一笔。
+/* 归类模式的键盘：数字 = 归到第几项（0 = 不属于任何模型）、S = 关注、E = 错题、V = 待验证、N = 写这笔的记录、Enter / → = 下一笔、← = 上一笔。
    正在输入（错在哪、新笔记名字）或者有弹层时一律让开 */
 function pbTriageKey(e) {
   if (tab !== "playbook" || !pbTriage) return false;
@@ -849,7 +943,7 @@ function pbTriageKey(e) {
   if (k === "Escape") {
     e.preventDefault();
     if (pbTriage.panel) { pbTriage.panel = ""; render(); }
-    else { pbTriage = null; render(); }
+    else { pbTriageSaveNote(); pbTriage = null; render(); }
     return true;
   }
   if (k === "Enter" || k === "ArrowRight") { e.preventDefault(); pbTriageStep(1); return true; }
@@ -865,6 +959,7 @@ function pbTriageKey(e) {
   if (k === "s" || k === "S") { e.preventDefault(); pbTriageStar(); return true; }
   if (k === "e" || k === "E") { e.preventDefault(); pbTriageOpenPanel("mistake"); return true; }
   if (k === "v" || k === "V") { e.preventDefault(); pbTriageOpenPanel("verify"); return true; }
+  if (k === "n" || k === "N") { e.preventDefault(); pbTriageFocusNote(); return true; }
   return false;
 }
 
@@ -960,10 +1055,21 @@ function pbFormBlockInnerHtml() {
     </div>
     ${suggest && !readOnly ? `<button type="button" class="tinyBtn pbFormSuggest" data-action="pb-form-suggest" data-id="${esc(suggest)}">${esc(T("pb.form.suggest", { name: pbLabel(suggest) }))}</button>` : ""}
     ${(() => { const tl = pbTagChoices(pageId, formDraft); return tl.length ? `<div class="pbFormTags"><span class="pbFormTagsLabel">${esc(T("pb.form.tags"))}</span>${pbTagChipsHtml(tl, pbTradeTagIds(formDraft), "pb-form-tag", readOnly)}</div>` : ""; })()}
+    <div class="pbFormNoteWrap">
+      <div class="pbFormTagsLabel">${esc(T("pb.form.noteLabel"))}</div>
+      <textarea class="input pbFormNoteArea" rows="2" placeholder="${esc(T("pb.note.ph"))}" ${readOnly ? "disabled" : ""}
+        oninput="window.__pbFormNoteInput(this)">${esc(formDraft[PB_NOTE_KEY] || "")}</textarea>
+    </div>
     ${pbFormNotesBoxHtml("mistake", pageId)}
     ${pbFormNotesBoxHtml("verify", pageId)}
     ${pbFormNotesExtraHtml()}`;
 }
+/* 交易表单里改归类记录：跟着交易一起存（save-trade 写的就是 formDraft）。空了就把键删掉 */
+window.__pbFormNoteInput = function (el) {
+  if (!editingTrade || viewingUserId) return;
+  if (el.value.trim()) formDraft[PB_NOTE_KEY] = el.value.replace(/\s+$/, ""); else delete formDraft[PB_NOTE_KEY];
+  saveDraft();
+};
 function pbFormNoteToggle(id) {
   const st = pbFormNotesState();
   if (!st || viewingUserId || !pbFind(id)) return;
@@ -1015,8 +1121,10 @@ function pbTradePreviewHtml(t) {
   const mistakes = pbMistakesWithTrade(t.id);
   const verifies = pbNotesWithTrade(t.id, "verify");
   const tagIds = pbTradeTagIds(t);
-  if (!pid && !mistakes.length && !verifies.length && !tagIds.length) return "";
+  const note = pbTradeNote(t);
+  if (!pid && !mistakes.length && !verifies.length && !tagIds.length && !note) return "";
   return `<div class="tpPb">
+    ${note ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.form.noteLabel"))}</span><span class="tpPbNote">${esc(note)}</span></div>` : ""}
     ${pid ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.form.label"))}</span>${pageRefHtml(pid)}${pbTradeStarred(t) ? `<span class="tpPbStar">${ICONS.starFill}</span>` : ""}</div>` : ""}
     ${mistakes.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.mistake"))}</span>${mistakes.map((m) => pageRefHtml(m.id)).join("")}</div>` : ""}
     ${verifies.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.verify"))}</span>${verifies.map((m) => pageRefHtml(m.id)).join("")}</div>` : ""}

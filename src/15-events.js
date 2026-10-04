@@ -48,7 +48,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
     if (draft) {
       schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
-      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
+      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY, PB_NOTE_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
       blank._resumedDraft = true;
     }
     const dateF = roleField("date");
@@ -167,7 +167,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
     if (draft) {
       schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
-      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
+      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY, PB_NOTE_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
       blank._resumedDraft = true;
     }
     const dateF = roleField("date");
@@ -726,7 +726,7 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "pb-home") {
     await closeReviewEditor();
-    tab = "playbook"; pbTriage = null;
+    tab = "playbook"; if (pbTriage) pbTriageSaveNote(); pbTriage = null;
     render();
   }
   else if (action === "pb-new") {
@@ -778,6 +778,8 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "pb-star") { await pbToggleStar(el.dataset.id); }
   else if (action === "pb-show-all-trades") { pbShowAllTrades = true; refreshPbPanels(); }
+  else if (action === "pb-noted-only") { pbNotedOnly = !pbNotedOnly; refreshPbPanels(); }
+  else if (action === "pb-triage-note-to-page") { await pbTriageNoteToPage(); }
   else if (action === "pb-mistake-filter") { pbMistakeFilter = el.dataset.val || "all"; render(); }
   else if (action === "pb-verify-filter") { pbVerifyFilter = el.dataset.val || "all"; render(); }
   else if (action === "pb-verify-status") {
@@ -797,7 +799,7 @@ document.addEventListener("click", async (e) => {
     startPbTriage(el.dataset.scope);
     render();
   }
-  else if (action === "pb-triage-exit") { pbTriage = null; render(); }
+  else if (action === "pb-triage-exit") { pbTriageSaveNote(); pbTriage = null; render(); }
   else if (action === "pb-triage-scope") { startPbTriage(el.dataset.scope); render(); }
   else if (action === "pb-triage-assign") { await pbTriageAssign(el.dataset.id); }
   else if (action === "pb-triage-star") { await pbTriageStar(); }
@@ -873,6 +875,7 @@ document.addEventListener("click", async (e) => {
     if (editingReview) { flushReviewSave(); editingReview = null; reviewEditorRenderedFor = null; renderReviewEditor(); }
     flushReviewPrefs();
     reviewSearch = ""; reviewConfirmDeleteId = null; reviewGroupConfirmDeleteId = null; reviewGroupModal = null;
+    if (pbTriage) pbTriageSaveNote();
     pbTriage = null;   // 归类只在实盘模式下做，队列是那一批交易拍下来的
     if (!viewingUserId) { try { localStorage.setItem("journal_record_mode", recordMode); } catch (e) {} }
     if (recordMode === "live") {
@@ -1519,7 +1522,7 @@ document.addEventListener("keydown", (e) => {
   if (reviewGroupModal) { reviewGroupModal = null; render(); return; }
   if (editingReview) { closeReviewEditor(); return; }
   if (dayDetailDate) { dayDetailDate = null; render(); return; }
-  if (tab === "playbook" && pbTriage) { pbTriage = null; render(); return; }
+  if (tab === "playbook" && pbTriage) { pbTriageSaveNote(); pbTriage = null; render(); return; }
 });
 
 /* 复盘是长文，debounce 那一秒里关掉标签页就丢了。localStorage 那份草稿能兜底，

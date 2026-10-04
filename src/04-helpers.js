@@ -122,21 +122,27 @@ function pbTagsVirtualField() {
   return { id: VF_PB_TAGS, label: T("vfield.pbTags"), type: "multiselect", role: "", virtual: true,
     options: pbSortList(pbTags()).map(pbTagLabel) };
 }
+/* 第五个：归类记录（长文本，值在交易的 __pb_note 上）。筛选里按「包含」找、卡片 / 看图 / 表格 / 导出都能挂出来 */
+const VF_PB_NOTE = "__pb_note_vf";
+function pbNoteVirtualField() {
+  return { id: VF_PB_NOTE, label: T("vfield.pbNote"), type: "textarea", role: "", virtual: true };
+}
 // 没建过模型库页面的用户不该多出一个永远是空的列 / 筛选字段
 function virtualFields() {
   const out = [
     { id: VF_CREATED, label: T("vfield.created"), type: "date", role: "", virtual: true },
     { id: VF_UPDATED, label: T("vfield.updated"), type: "date", role: "", virtual: true },
   ];
-  if (pbHasPages()) out.push(playbookVirtualField());
+  if (pbHasPages()) out.push(playbookVirtualField(), pbNoteVirtualField());
   if (pbTags().length) out.push(pbTagsVirtualField());
   return out;
 }
-function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK || id === VF_PB_TAGS; }
+function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK || id === VF_PB_TAGS || id === VF_PB_NOTE; }
 // 按 id 找字段：先虚拟字段，再用户自己的 schema。找不到返回 null（调用方按"字段已删除"处理）
 function resolveField(id) {
   if (id === VF_PLAYBOOK) return playbookVirtualField();   // 页面全删光了也认得：存着它的条件不该被当成「字段已删除」
   if (id === VF_PB_TAGS) return pbTagsVirtualField();
+  if (id === VF_PB_NOTE) return pbNoteVirtualField();
   if (isVirtualFieldId(id)) return virtualFields().find((f) => f.id === id) || null;
   return schema.find((x) => x.id === id) || null;
 }
@@ -154,6 +160,7 @@ function tradeFieldValue(t, field) {
   if (field.id === VF_UPDATED) return localDateStr(t._updated_at || t._created_at);
   if (field.id === VF_PLAYBOOK) return pbTradeLabel(t);
   if (field.id === VF_PB_TAGS) return pbTradeTagLabels(t);
+  if (field.id === VF_PB_NOTE) return pbTradeNote(t);
   return t[field.id];
 }
 

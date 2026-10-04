@@ -239,3 +239,26 @@ test("模型库标签做成多选虚拟字段：选项带归属，取值是这�
   assert.deepStrictEqual(call("() => tradeFieldValue(trades[0], resolveField(VF_PB_TAGS))"), ["RIFVG · 有 SMT"]);
   assert.ok(call("() => breakdownCandidateFields().some((x) => x.id === VF_PB_TAGS)"));
 });
+
+test("归类时的发现：写进页面「归类时的发现」一节，带日期和交易胶囊；没有这一节就在文末补", () => {
+  const { call } = setup(PAGES);
+  const tpl = "## 结构与趋势\n\n先看 4H";
+  const once = call("(b) => pbAppendFindingToBody(b, '多半出在开盘 *15* 分钟内', 't_a', '2026-10-05')", tpl);
+  assert.strictEqual(once, "## 结构与趋势\n\n先看 4H\n\n## 归类时的发现\n\n- 2026-10-05 [[trade:t_a]] 多半出在开盘 \\*15\\* 分钟内");
+  // 第二条紧贴着上一条；同一笔可以记好几次；后面还有别的节也不会插错位置
+  const twice = call("(b) => pbAppendFindingToBody(b + '\\n\\n## 出场', '扫完再进', 't_a', '2026-10-06')", once);
+  assert.match(twice, /\[\[trade:t_a\]\] 多半[^\n]*\n- 2026-10-06 \[\[trade:t_a\]\] 扫完再进\n\n## 出场$/);
+  assert.strictEqual(call("(b) => pbAppendFindingToBody(b, '   ', 't_a', 'x')", tpl), tpl);
+});
+
+test("归类记录：存在交易上，筛选按包含、记录页搜索都找得到", () => {
+  const { call } = setup(PAGES, [
+    { id: "a", __pb: "st1", __pb_note: "假突破后才进" },
+    { id: "b", __pb: "st1" },
+  ]);
+  assert.strictEqual(call("() => pbTradeNote(trades[0])"), "假突破后才进");
+  const f = call("() => resolveField(VF_PB_NOTE)");
+  assert.strictEqual(f.type, "textarea");
+  assert.deepStrictEqual(call("() => trades.filter((t) => tradeMatchesFilters(t, [{ ...newFilterRow(VF_PB_NOTE), textValue: '假突破' }])).map((t) => t.id)"), ["a"]);
+  assert.deepStrictEqual(call("() => trades.filter((t) => tradeMatchesSearch(t, '假突破')).map((t) => t.id)"), ["a"]);
+});
