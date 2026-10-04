@@ -1355,6 +1355,7 @@ function openReviewEditor(id) {
   tradePickerOpen = false;
   pagePickerOpen = false;
   pbConfirmDeleteId = null;
+  pbConvertAskId = null;
   pbShowAllTrades = false;
   pbExecFilter = "";
   renderReviewEditor(true);

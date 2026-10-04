@@ -358,6 +358,21 @@ function pbSuggestFor(t) {
   return loose ? loose.id : "";
 }
 
+/* 错题 ⇄ 待验证互转时，正文里**还是模板原样**的标题跟着对调（「错误现象」↔「想验证什么」、「如何规避」↔「结论」），
+   不然便利贴上那句要点（按标题找段落）转完就取不到了。用户自己改过、加的标题一律不动；
+   「涉及的交易」两边都有，不用换。认标题时中英文模板都认，换成当前界面语言的写法，级别（## / ###）保持原样 */
+const PB_NOTE_HEADING_SWAP = [["pb.tpl.symptom", "pb.tpl.hypothesis"], ["pb.tpl.avoid", "pb.tpl.verdict"]];
+function pbSwapNoteHeadings(body, toKind) {
+  const pairs = PB_NOTE_HEADING_SWAP.map(([m, v]) => (toKind === "verify" ? [m, v] : [v, m]));
+  return String(body || "").split("\n").map((line) => {
+    const h = /^(\s{0,3}#{1,6}\s+)(.*?)\s*#*\s*$/.exec(line);
+    if (!h) return line;
+    const text = h[2].trim().toLowerCase();
+    const hit = pairs.find(([from]) => pbHeadingNames(from).some((n) => n.toLowerCase() === text));
+    return hit ? h[1] + T(hit[1]) : line;
+  }).join("\n");
+}
+
 /* 往系统 / 策略页正文里记一条「归类时的发现」：跨好几笔才看得出来的东西（「这个 setup 多半出在开盘 15 分钟内」），
    不该只挂在某一笔上。写进页面正文「归类时的发现」那一节末尾，一条一个列表项：日期 + 当时那笔的胶囊 + 那句话。
    找不到那一节就在文末补一节。跟 pbAppendTradeToBody 不同，同一笔可以被记好几次（不同的发现） */

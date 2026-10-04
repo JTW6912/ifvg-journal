@@ -818,6 +818,12 @@ document.addEventListener("click", async (e) => {
     refreshPbPanels();
   }
   else if (action === "pb-verify-promote") { await pbPromoteVerify(); }
+  else if (action === "pb-convert-ask") {
+    if (!editingReview || !pbIsNote(editingReview) || reviewIsReadOnly()) return;
+    pbConvertAskId = editingReview.id; pbConvertSwap = true; refreshReviewWeekRow();
+  }
+  else if (action === "pb-convert-cancel") { pbConvertAskId = null; refreshReviewWeekRow(); }
+  else if (action === "pb-convert-do") { await pbConvertNote(); }
   else if (action === "pb-triage-start") {
     if (editingReview) await closeReviewEditor();
     tab = "playbook";
@@ -1072,6 +1078,7 @@ document.addEventListener("change", async (e) => {
     saveDraft();
     return;
   }
+  if (e.target.dataset.pbConvertSwap !== undefined) { pbConvertSwap = e.target.checked; return; }
   if (e.target.dataset.pbParent !== undefined) {
     // 模型库页面的属性行：策略换系统 / 错题换归属。走编辑器那套自动保存
     if (!editingReview || !isPbDoc(editingReview) || reviewIsReadOnly()) return;

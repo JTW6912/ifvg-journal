@@ -82,6 +82,8 @@ let pbMistakeFilter = "all";          // 错题库按归属筛：all / 系统 id
 let pbVerifyFilter = "all";           // 待验证区按状态筛：all / watching / works / rejected
 let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗
 let pbConfirmDeleteId = null;
+let pbConvertAskId = null;            // 错题 ⇄ 待验证：正在问「确定要转吗」的那一条
+let pbConvertSwap = true;             // 转的时候正文里的模板标题要不要一起对调（默认要）
 let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
 let pbScopeOpen = (function () { try { return localStorage.getItem("journal_pb_scope_open") === "true"; } catch (e) { return false; } })();
 let pbNotedOnly = false;

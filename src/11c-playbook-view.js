@@ -406,7 +406,56 @@ function pbMetaRowInnerHtml() {
     ${pbParentSelectHtml(d)}
     ${d.kind === "verify" ? pbVerifyStatusHtml(d) : ""}
     <span class="pbMetaStats">${stats}${stats && pbScopeActive() && d.kind !== "mistake" ? `<span class="pbStat muted pbScopeMark" title="${esc(comboConditionsText({ conditions: pbScopeConditions() }))}">${esc(T("pb.scope.mark"))}</span>` : ""}</span>
-    <span class="pbMetaRight">${promote}${pbDeleteControlHtml(d)}</span>`;
+    <span class="pbMetaRight">${promote}${pbConvertControlHtml(d)}${pbDeleteControlHtml(d)}</span>
+    ${pbConvertAskId === d.id ? pbConvertConfirmHtml(d) : ""}`;
+}
+
+/* ---------- 错题 ⇄ 待验证 ----------
+   两种笔记在数据上是同一种东西（正文 + 正文里关联的交易 + 挂在某页下面），只差 kind 和待验证的 status。
+   所以转换 = 换 kind：正文、关联的交易、归属、别处链到它的 [[page:id]] 全都原样留着，随时能转回去。
+   待验证被标成「已否定」时按钮换成醒目的「转到错题库」——证明不能做的想法，正好就是一条要避开的错 */
+function pbConvertControlHtml(d) {
+  if (!pbIsNote(d) || reviewIsReadOnly() || d._isNew || pbConvertAskId === d.id) return "";
+  const rejected = d.kind === "verify" && pbVerifyStatus(d) === "rejected";
+  const label = T(d.kind === "mistake" ? "pb.convert.toVerify" : rejected ? "pb.convert.rejectedBtn" : "pb.convert.toMistake");
+  return `${rejected ? `<span class="pbConvertHint">${esc(T("pb.convert.rejectedHint"))}</span>` : ""}
+    <button class="tinyBtn pbConvertBtn${rejected ? " strong" : ""}" data-action="pb-convert-ask">⇄ ${esc(label)}</button>`;
+}
+function pbConvertConfirmHtml(d) {
+  const to = d.kind === "mistake" ? "verify" : "mistake";
+  const pairs = PB_NOTE_HEADING_SWAP.map(([m, v]) => (to === "verify" ? [m, v] : [v, m]));
+  return `<div class="pbConvertConfirm">
+    <span>${esc(T(to === "verify" ? "pb.convert.confirmToVerify" : "pb.convert.confirmToMistake"))}</span>
+    <label class="pbConvertSwap"><input type="checkbox" data-pb-convert-swap ${pbConvertSwap ? "checked" : ""} />
+      ${esc(T("pb.convert.swap", { a: T(pairs[0][0]), b: T(pairs[0][1]), c: T(pairs[1][0]), d: T(pairs[1][1]) }))}</label>
+    <span class="pbConvertBtns">
+      <button class="btn btn-primary" data-action="pb-convert-do">${esc(T("pb.convert.do"))}</button>
+      <button class="tinyBtn" data-action="pb-convert-cancel">${esc(T("common.cancel"))}</button>
+    </span>
+  </div>`;
+}
+/* 先把编辑器里没存的存掉，再换 kind（和正文标题）存一次。正文是在编辑器外面改的，存好后重新挂编辑器 */
+async function pbConvertNote() {
+  const d = editingReview;
+  pbConvertAskId = null;
+  if (!d || !pbIsNote(d) || reviewIsReadOnly()) return;
+  await flushReviewSave();
+  const before = { kind: d.kind, status: d.status, body: d.body };
+  const to = d.kind === "mistake" ? "verify" : "mistake";
+  d.kind = to;
+  if (to === "verify") d.status = "watching";
+  if (pbConvertSwap) d.body = pbSwapNoteHeadings(d.body, to);
+  scheduleReviewSave();
+  if (!(await flushReviewSave())) {
+    Object.assign(d, before);
+    refreshReviewWeekRow();
+    return;
+  }
+  const p = pbFind(d.id);
+  if (p && to === "verify") p.status = "watching";   // 本地那份也记上，打开时从这里读
+  openReviewEditor(d.id);
+  render();
+  showReviewToast(T(to === "verify" ? "pb.convert.doneToVerify" : "pb.convert.doneToMistake"));
 }
 
 function pbTradeRowHtml(t, opts) {

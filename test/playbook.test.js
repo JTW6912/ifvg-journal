@@ -291,3 +291,15 @@ test("模型库成绩口径：按条件排除的单不进胜率和 R，但还留
   // 存盘再读回来，口径还在
   assert.strictEqual(call("() => normalizeAnalysisPrefs(JSON.parse(JSON.stringify(analysisPrefs))).pbScope.length"), 1);
 });
+
+test("错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的标题和级别不动；中英文模板都认", () => {
+  const { call } = setup(PAGES);
+  const body = "## 错误现象\n\n追高\n\n## 涉及的交易\n\n- [[trade:t_a]] x\n\n### 如何规避\n\n等回踩\n\n## 我自己的标题\n\n## How to avoid it";
+  const v = call("(b) => pbSwapNoteHeadings(b, 'verify')", body);
+  assert.strictEqual(v, "## 想验证什么\n\n追高\n\n## 涉及的交易\n\n- [[trade:t_a]] x\n\n### 结论\n\n等回踩\n\n## 我自己的标题\n\n## 结论");
+  // 转回去：结论 → 如何规避（两处都换），想验证什么 → 错误现象
+  assert.strictEqual(call("(b) => pbSwapNoteHeadings(b, 'mistake')", v),
+    "## 错误现象\n\n追高\n\n## 涉及的交易\n\n- [[trade:t_a]] x\n\n### 如何规避\n\n等回踩\n\n## 我自己的标题\n\n## 如何规避");
+  // 转完要点还取得到
+  assert.strictEqual(call("(b) => pbMistakeGist({ kind: 'verify', body: b })", v).length > 0, true);
+});
