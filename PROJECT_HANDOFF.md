@@ -129,19 +129,21 @@ updated_at        timestamptz
 - **关联到哪一天/哪一周由 `reviewPeriodKind()` 唯一判定**：`day_date` 有值就是日复盘，否则看 `week_start`，都没有就是自由帖。**day_date 优先**——万一两列都有值（正常切换会清另一个，但脏数据难说）也有个确定的落点，不会两处显示不一致
 - 建表和后加的列（mode / group_id / sort_order / day_date）都在 `supabase/migrations/20260901000000_journal_features.sql`，可重复执行；`folded_headings` 在 `20261001000000_review_folds.sql`
 
-### journal_playbook（模型库：交易系统 / 衍生策略 / 错题笔记）
+### journal_playbook（模型库：交易系统 / 衍生策略 / 错题 / 待验证）
 ```
 id                text, 主键（p_ 开头）
 user_id           uuid, 引用 auth.users(id)
-kind              text —— 'system' 交易系统 / 'strategy' 衍生策略 / 'mistake' 错题笔记
-parent_id         text, 可空 —— 策略 → 所属系统；错题 → 所属系统或策略，空 = 通用错题
+kind              text —— 'system' 交易系统 / 'strategy' 衍生策略 / 'mistake' 错题笔记 / 'verify' 待验证
+parent_id         text, 可空 —— 策略 → 所属系统；错题 / 待验证 → 所属系统或策略，空 = 通用
+status            text, 可空 —— 只有待验证用：'watching' 观察中 / 'works' 验证可做 / 'rejected' 已否定，null 按观察中读
 title / body      text —— body 是 markdown，跟复盘同一套渲染和编辑器
 linked_trade_ids  text[] —— 正文里 [[trade:xxx]] 的冗余索引（错题「涉及的交易」就是它）
 sort_order        double precision, 可空 —— 同级顺序，null = 按创建先后
 folded_headings   jsonb —— 跟复盘一样
 created_at / updated_at
 ```
-- 建表在 `supabase/migrations/20261003000000_playbook.sql`。RLS 跟复盘一样：自己读写 + admin 只读
+- 建表在 `supabase/migrations/20261003000000_playbook.sql`，`status` 在 `20261004000000_playbook_verify.sql`。RLS 跟复盘一样：自己读写 + admin 只读
+- `pbRowPayload()` **只在待验证上写 `status`**：系统 / 策略 / 错题的保存不依赖这一列，迁移没跑之前那几样照常能存
 - **跨回测 / 实盘只有一份**（没有 mode 列）。所以只在 `loadAll()` 里拉，`reloadModeData()` 不拉
 - **交易属于哪一页存在交易自己身上**：`trades.data.__pb`（页面 id；`"__none"` = 确认过不属于任何模型）、`trades.data.__pb_star`（关注）。不是用户字段，不在 schema 里；指向已删除页面的 `__pb` 一律按「未归类」读（`pbTradePageId()`）
 - 为什么不跟 journal_reviews 共表：复盘按 mode 分两套、有分组和拖拽，模型库是跨模式的一份，混在一起复盘那边每一处查询都要多排除一次
@@ -342,9 +344,10 @@ JS
   - **错题涉及哪些交易 = 错题正文里的 `[[trade:xxx]]`**，「这笔错在哪」就是紧跟在胶囊后面那句话。归类模式里「加入错题」是往正文「涉及的交易」那一节末尾追加一个 `- [[trade:id]] 错在哪` 列表项（`pbAppendTradeToBody()`），移出只删那一行列表项（`pbRemoveTradeFromBody()`）；正文别处行文里还提到这笔时不动、如实报错——那是用户自己写的句子。认标题时中英文两种模板标题都认（`pbHeadingNames()`），切过语言也找得到
   - **页面引用 `[[page:id]]`**：跟交易胶囊同一个套路（`pageRefHtml()` / 编辑器里的 `PageRef` 节点 / 插入菜单「链接页面」/ 页面选择器），能指向模型库任何一页或一篇复盘。找不到时标红不静默消失。错题页的「相关错题」= 这条链出去的 + 链到这条的
   - 编辑器里从一页点到另一页走 `navigateEditorTo()`：先 `finishEditingDoc()` 存完（新建空白页照旧扔掉），压进 `editorBackStack`，顶栏出一个「←」。面包屑每一级都能点
-  - **删页面不连带删长文**：系统下面还有衍生策略时不让删；页面上的错题挪到上一层（策略 → 系统，系统 → 通用）；归在策略上的交易一次 upsert 整批挪到所属系统（`pbPatchTrades()`），系统上的变回未归类
-  - **归类模式**（`pbTriage`）：一屏一笔，数字键归到第几项（0 = 不属于任何模型）、S 关注、E 错题、Enter/→ 下一笔、← 上一笔。队列是开始时拍下来的 id 列表——边归类边从「未归类」里消失的话下标会挪、按「下一笔」会跳过一笔。改交易先改本地再写库（按键节奏，等网络会涩），写失败整批改回去并提示。「建议」先看同一个模型标签以前大多被归到哪一页（学出来的对应关系），没有再按名字匹配（`pbSuggestFor()`）
-  - **交易表单顶上的「模型库」一栏**只在实盘 + 建过页面时出现；选了策略就把它的错题（策略自己的 + 所属系统的 + 通用的）摆出来，进场前看一眼
+  - **删页面不连带删长文**：系统下面还有衍生策略时不让删；页面上的错题和待验证挪到上一层（策略 → 系统，系统 → 通用）；归在策略上的交易一次 upsert 整批挪到所属系统（`pbPatchTrades()`），系统上的变回未归类
+  - **归类模式**（`pbTriage`）：一屏一笔，数字键归到第几项（0 = 不属于任何模型）、S 关注、E 错题、V 待验证、Enter/→ 下一笔、← 上一笔。队列是开始时拍下来的 id 列表——边归类边从「未归类」里消失的话下标会挪、按「下一笔」会跳过一笔。改交易先改本地再写库（按键节奏，等网络会涩），写失败整批改回去并提示。「建议」先看同一个模型标签以前大多被归到哪一页（学出来的对应关系），没有再按名字匹配（`pbSuggestFor()`）
+  - **交易表单顶上的「模型库」一栏**只在实盘 + 建过页面（或笔记）时出现；选了策略就把它的错题和待验证（策略自己的 + 所属系统的 + 通用的）摆出来，进场前看一眼。**每条前面能勾**：勾上 = 这笔也算进这条笔记。勾选先记在 `pbFormNotes`（11c），**点保存、`persistTrade()` 返回 true 之后**才由 `pbApplyFormNotes()` 写进各条笔记正文——取消表单笔记不动，新交易也不会先写一个指向不存在交易的胶囊。`renderModal` 换一笔交易时清空 `pbFormNotes`。表单里「新建错题 / 新建待验证」是马上建页面（空模板），勾选照样等保存
+  - **待验证（kind = 'verify'）**跟错题一样是「笔记」（`pbIsNote()`）：归属、候选、涉及的交易、胶囊进出全部共用 `pbNote*` 那一组函数（`pbMistake*` 留着当错题版的简写）。比错题多两样：便利贴和属性行上直接显示关联交易的成绩（`pbStats(pbNoteTrades())`）；有状态（三选一，按状态筛，已否定的不再出现在表单 / 归类的候选里，除非这笔本来就在里面）。状态是「验证可做」时属性行上有「升级成衍生策略」（`pbPromoteVerify()`）：**原地改 kind**（id 不变，别处的 `[[page:id]]` 照样有效），挂到归属所在的系统下，正文里关联的交易一起归过去（策略页看的是交易身上的 `__pb`，不看正文）；只能在实盘模式下升级。归类模式里按 V
   - **虚拟字段 `VF_PLAYBOOK`**（「模型库归属」，select，选项是当前页面名字）：筛选、组合、字段拆解、卡片/看图额外字段、表格、CSV 导出全都能按策略来。`computeBreakdowns()` 因此改成走 `tradeFieldValue()`。改了页面名字，存着旧名字的条件会照常被标红（跟删掉一个选项一样）
   - 回测模式下页签照常在（看系统说明），只是交易不参与归类，页面上有一行说明
 - **更新日志页**：全局共享，仅 admin 能发布/删除

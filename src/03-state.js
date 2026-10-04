@@ -73,16 +73,17 @@ let pagePickerQuery = "";
 let editorBackStack = [];
 
 /* ---------- 模型库（PLAYBOOK）----------
-   交易系统 / 衍生策略 / 错题笔记，都是 journal_playbook 里的行，跨回测/实盘只有一份。
+   交易系统 / 衍生策略 / 错题 / 待验证，都是 journal_playbook 里的行，跨回测/实盘只有一份。
    打开编辑时就是 editingReview（带 kind），复用复盘编辑器的全部东西。 */
 let pbPages = [];
 let pbError = null;                   // 模型库页面上常驻的一条错误（保存失败之类）
 let pbSearch = "";
 let pbMistakeFilter = "all";          // 错题库按归属筛：all / 系统 id / "__global"
+let pbVerifyFilter = "all";           // 待验证区按状态筛：all / watching / works / rejected
 let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗
 let pbConfirmDeleteId = null;
 let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
-/* 归类模式：{ ids, i, scope: 'unsorted' | 'all', mistakeOpen, notice }。ids 是开始时拍下来的队列——
+/* 归类模式：{ ids, i, scope: 'unsorted' | 'all', panel: '' | 'mistake' | 'verify', notice }。ids 是开始时拍下来的队列——
    边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */
 let pbTriage = null;
 /* localStorage 里读出来的枚举一律过一遍白名单：

@@ -144,20 +144,22 @@ async function persistFocusFields(next) {
 /* 保存 / 删除只改本地数组，不再 loadAll()：以前每存一笔就把 schema、全部交易、更新日志、复盘重新拉一遍，
    交易一多这就是每次保存好几个来回、外加整页重绘。本地怎么改要和 loadTrades 拉回来的形状一致
    （created_at 按升序排，新的在最后）。 */
+/* 返回 true = 存进库了（表单保存之后要接着把勾选的笔记写进去，得知道这一步成没成） */
 async function persistTrade(trade) {
-  if (viewingUserId) return;
+  if (viewingUserId) return false;
   const clean = { ...trade };
   const id = clean.id; delete clean.id; delete clean._isNew; delete clean._resumedDraft;
   delete clean._created_at; delete clean._updated_at;
-  if (!sb || !session) return;
+  if (!sb || !session) return false;
   const modeAtSave = recordMode;
   const { data, error } = await sb.from("trades")
     .upsert({ id, user_id: session.user.id, mode: modeAtSave, data: clean, updated_at: new Date().toISOString() })
     .select("id, created_at, updated_at, data").single();
-  if (error) { console.error(error); alert(T("error.saveTrade", { msg: error.message })); return; }
-  if (modeAtSave !== recordMode) return;   // 保存途中用户切了模式：这一笔不属于现在显示的这批
+  if (error) { console.error(error); alert(T("error.saveTrade", { msg: error.message })); return false; }
+  if (modeAtSave !== recordMode) return true;   // 保存途中用户切了模式：这一笔不属于现在显示的这批
   applySavedTrade(tradeFromRow(data));
   render();
+  return true;
 }
 function applySavedTrade(saved) {
   const i = trades.findIndex((t) => t.id === saved.id);
@@ -478,7 +480,7 @@ async function loadPlaybook() {
   pbPages = data || [];
 }
 function pbRowPayload(p) {
-  return {
+  const row = {
     id: p.id,
     user_id: session.user.id,
     kind: p.kind,
@@ -489,6 +491,10 @@ function pbRowPayload(p) {
     sort_order: p.sort_order === undefined ? null : p.sort_order,
     updated_at: new Date().toISOString(),
   };
+  // status 只有待验证用得上。只在待验证上写这一列：系统 / 策略 / 错题的保存不依赖它，
+  // 迁移没跑之前那几样照常能存
+  if (p.kind === "verify") row.status = pbVerifyStatus(p);
+  return row;
 }
 /* 写一页（新建、改名、改归属、往错题里加交易、编辑器自动保存都走这里）。本地数组同步更新，不重拉 */
 async function persistPbPage(p) {
@@ -509,7 +515,7 @@ async function persistPbPage(p) {
 
 /* 删一页。长文不能顺手连带删掉（跟删复盘分组不删里面的复盘同一个道理）：
    - 系统下面还有衍生策略：不让删，界面上会先拦住（这里再兜一次）
-   - 这一页的错题挪到上一层（策略 → 所属系统；系统 → 通用）
+   - 这一页的笔记（错题 / 待验证）挪到上一层（策略 → 所属系统；系统 → 通用）
    - 归在这一页的交易：策略的挪到所属系统（「说不清是哪个子策略」本来就归系统），系统的变回未归类
      交易只在实盘模式下归类，回测模式下内存里没有那批交易——那时候不改，读的时候按未归类算（见 pbTradePageId） */
 async function deletePbPage(id) {
@@ -518,8 +524,8 @@ async function deletePbPage(id) {
   if (!p) return false;
   if (p.kind === "system" && pbStrategiesOf(p.id).length) return false;
   const up = p.kind === "strategy" ? (pbFind(p.parent_id) ? p.parent_id : null) : null;
-  if (p.kind !== "mistake") {
-    const orphans = pbPages.filter((m) => m.kind === "mistake" && m.parent_id === p.id);
+  if (!pbIsNote(p)) {
+    const orphans = pbPages.filter((m) => pbIsNote(m) && m.parent_id === p.id);
     for (const m of orphans) { m.parent_id = up; if (!(await persistPbPage(m))) return false; }
     const affected = trades.filter((t) => t[PB_KEY] === p.id);
     if (affected.length) {

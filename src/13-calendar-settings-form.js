@@ -363,6 +363,7 @@ function renderModal(force) {
   if (!force && modalRenderedForId === editingTrade.id) return; // already showing this trade — don't wipe unsaved input
   modalRenderedForId = editingTrade.id;
   formDraft = { ...editingTrade };
+  pbFormNotes = null;   // 表单里勾的错题 / 待验证跟着这一笔重来（11c 的 pbFormNotesState）
   const isNew = editingTrade._isNew;
   const resumedDraft = editingTrade._resumedDraft;
   const readOnly = !!viewingUserId;

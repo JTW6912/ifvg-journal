@@ -83,7 +83,8 @@ document.addEventListener("click", async (e) => {
       const inputEl = document.querySelector(`[data-form-field="${f.id}"]`);
       if (inputEl) formDraft[f.id] = inputEl.value;
     });
-    await persistTrade(formDraft);
+    const saved = await persistTrade(formDraft);
+    if (saved) await pbApplyFormNotes(formDraft.id);   // 表单里勾的错题 / 待验证，交易存好了才写进去
     if (wasNew) clearDraft();
     editingTrade = null;
     if (returnToDayDetail) { dayDetailDate = returnToDayDetail; returnToDayDetail = null; }
@@ -747,7 +748,7 @@ document.addEventListener("click", async (e) => {
     if (m.from === "triage" && pbTriage) {
       // 归类时现建的系统：顺手把眼前这一笔归进去，然后接着归类，不跳去编辑页面
       const t = pbTriageCurrent();
-      if (t && p.kind !== "mistake") await pbTriageAssign(p.id);
+      if (t && !pbIsNote(p)) await pbTriageAssign(p.id);
       render();
       return;
     }
@@ -761,7 +762,7 @@ document.addEventListener("click", async (e) => {
     const p = pbFind(id);
     pbConfirmDeleteId = null;
     if (!p) return;
-    const up = p.kind === "mistake" ? pbMistakeOwner(p) : pbFind(p.parent_id);
+    const up = pbIsNote(p) ? pbNoteOwner(p) : pbFind(p.parent_id);
     const ok = await deletePbPage(id);
     if (!ok) { reviewSaveError = pbError; updateReviewSaveBadge(); refreshReviewWeekRow(); return; }
     if (editingReview && editingReview.id === id) {
@@ -778,6 +779,18 @@ document.addEventListener("click", async (e) => {
   else if (action === "pb-star") { await pbToggleStar(el.dataset.id); }
   else if (action === "pb-show-all-trades") { pbShowAllTrades = true; refreshPbPanels(); }
   else if (action === "pb-mistake-filter") { pbMistakeFilter = el.dataset.val || "all"; render(); }
+  else if (action === "pb-verify-filter") { pbVerifyFilter = el.dataset.val || "all"; render(); }
+  else if (action === "pb-verify-status") {
+    // 待验证的状态：走编辑器那套自动保存，属性行和下面的面板跟着换
+    if (!editingReview || editingReview.kind !== "verify" || reviewIsReadOnly()) return;
+    if (!PB_VERIFY_STATUSES.includes(el.dataset.status)) return;
+    editingReview.status = el.dataset.status;
+    scheduleReviewSave();
+    refreshReviewWeekRow();
+    await flushReviewSave();
+    refreshPbPanels();
+  }
+  else if (action === "pb-verify-promote") { await pbPromoteVerify(); }
   else if (action === "pb-triage-start") {
     if (editingReview) await closeReviewEditor();
     tab = "playbook";
@@ -788,14 +801,9 @@ document.addEventListener("click", async (e) => {
   else if (action === "pb-triage-scope") { startPbTriage(el.dataset.scope); render(); }
   else if (action === "pb-triage-assign") { await pbTriageAssign(el.dataset.id); }
   else if (action === "pb-triage-star") { await pbTriageStar(); }
-  else if (action === "pb-triage-mistake") {
-    if (!pbTriage) return;
-    pbTriage.mistakeOpen = !pbTriage.mistakeOpen;
-    render();
-    if (pbTriage.mistakeOpen) { const inp = document.getElementById("pbErrText"); if (inp) inp.focus(); }
-  }
-  else if (action === "pb-triage-toggle-mistake") { await pbTriageToggleMistake(el.dataset.id); }
-  else if (action === "pb-triage-new-mistake") { await pbTriageNewMistake(); }
+  else if (action === "pb-triage-panel") { pbTriageOpenPanel(el.dataset.kind); }
+  else if (action === "pb-triage-toggle-note") { await pbTriageToggleNote(el.dataset.id); }
+  else if (action === "pb-triage-new-note") { await pbTriageNewNote(el.dataset.kind); }
   else if (action === "pb-triage-prev") { pbTriageStep(-1); }
   else if (action === "pb-triage-next") { pbTriageStep(1); }
   else if (action === "pb-form-star") {
@@ -803,6 +811,25 @@ document.addEventListener("click", async (e) => {
     if (formDraft[PB_STAR_KEY]) delete formDraft[PB_STAR_KEY]; else formDraft[PB_STAR_KEY] = true;
     refreshPbFormBlock(); saveDraft();
   }
+  else if (action === "pb-form-note") { pbFormNoteToggle(el.dataset.id); }
+  else if (action === "pb-form-notes-more") {
+    const st = pbFormNotesState();
+    if (st) { st.showAll[el.dataset.kind] = true; refreshPbFormBlock(); }
+  }
+  else if (action === "pb-form-note-new") {
+    const st = pbFormNotesState();
+    if (!st || viewingUserId) return;
+    st.creating = el.dataset.kind === "verify" ? "verify" : "mistake";
+    st.newName = "";
+    refreshPbFormBlock();
+    const inp = document.getElementById("pbFormNewName");
+    if (inp) inp.focus();
+  }
+  else if (action === "pb-form-note-cancel") {
+    const st = pbFormNotesState();
+    if (st) { st.creating = ""; st.newName = ""; refreshPbFormBlock(); }
+  }
+  else if (action === "pb-form-note-create") { await pbFormNoteCreate(); }
   else if (action === "pb-form-suggest") {
     if (!editingTrade) return;
     formDraft[PB_KEY] = el.dataset.id;

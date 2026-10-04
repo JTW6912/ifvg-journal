@@ -5,6 +5,9 @@
      交易系统 system    交易框架 / 交易语言，例：RIFVG、TLD-QM
      衍生策略 strategy  同一个系统衍生出来的 setup，例：趋势延续、猎杀反转（parent_id = 系统）
      错题笔记 mistake   一条反复出现的错误：涉及哪些单、错在哪、怎么规避（parent_id = 系统或策略，空 = 通用）
+     待验证   verify    还不确定能不能做的想法：涉及哪些单、成绩如何、结论（归属规则跟错题一样）。
+                        status = watching 观察中 / works 验证可做 / rejected 已否定；可做的能一键升级成衍生策略
+   错题和待验证合称「笔记」（pbIsNote）：都是「正文里列着几笔交易」的便利贴，不是交易能归进去的页面。
    正文是 markdown，编辑器 / 折叠 / 目录全部复用复盘那一套（editingReview 上带 kind 就是模型库页面）。
 
    交易属于哪一页存在交易自己身上（trades.data 里的两个保留键，不是用户字段）：
@@ -13,18 +16,24 @@
    一笔交易只属于一个策略（说不清是哪个子策略时归到系统本身），放在交易上删交易时自然就没了，
    也不用迁移——data 是 jsonb，多两个键而已。
 
-   错题涉及哪些交易 = 错题正文里的 [[trade:xxx]]（linked_trade_ids 是冗余索引，跟复盘一样「正文才是唯一真相」）。
+   笔记涉及哪些交易 = 笔记正文里的 [[trade:xxx]]（linked_trade_ids 是冗余索引，跟复盘一样「正文才是唯一真相」）。
    所以「这笔错在哪」就是正文里紧跟在交易胶囊后面的那句话，用户在编辑器里直接改。
 
    ⚠ 指向已删除页面的 __pb 一律按「未归类」读（pbTradePageId 返回空），不报错也不静默算进别处——
    这样就算删页面时没来得及改交易（比如当时在回测模式，实盘交易不在内存里），交易也只是回到归类队列。
    ============================================================ */
-const PB_KINDS = ["system", "strategy", "mistake"];
+const PB_KINDS = ["system", "strategy", "mistake", "verify"];
+const PB_NOTE_KINDS = ["mistake", "verify"];
+const PB_VERIFY_STATUSES = ["watching", "works", "rejected"];
 const PB_KEY = "__pb";
 const PB_STAR_KEY = "__pb_star";
 const PB_NONE = "__none";
 
 function isPbDoc(d) { return !!d && PB_KINDS.includes(d.kind); }
+function pbIsNote(d) { return !!d && PB_NOTE_KINDS.includes(d.kind); }
+function pbVerifyStatus(d) { return d && PB_VERIFY_STATUSES.includes(d.status) ? d.status : "watching"; }
+/* 已否定的待验证：有结论了，记交易 / 归类时不再摆出来让人勾 */
+function pbVerifyRejected(d) { return !!d && d.kind === "verify" && pbVerifyStatus(d) === "rejected"; }
 function newPbId() { return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function pbFind(id) { return id ? pbPages.find((p) => p.id === id) || null : null; }
 function pbTitle(p) { return (p && (p.title || "").trim()) || T("pb.untitled"); }
@@ -45,7 +54,7 @@ function pbStrategiesOf(sysId) { return pbSortList(pbPages.filter((p) => p.kind 
 function pbOrphanStrategies() { return pbSortList(pbPages.filter((p) => p.kind === "strategy" && !pbFind(p.parent_id))); }
 function pbHasPages() { return pbPages.some((p) => p.kind === "system" || p.kind === "strategy"); }
 
-/* 一页往上的那一串（不含自己）：错题 → 策略 → 系统 */
+/* 一页往上的那一串（不含自己）：笔记 → 策略 → 系统 */
 function pbAncestors(p) {
   const out = [];
   let cur = p && pbFind(p.parent_id);
@@ -79,7 +88,7 @@ function pbTradePageId(t) {
   const v = t && t[PB_KEY];
   if (!v || v === PB_NONE) return "";
   const p = pbFind(v);
-  return p && p.kind !== "mistake" ? v : "";
+  return p && !pbIsNote(p) ? v : "";
 }
 function pbTradeIsNone(t) { return !!t && t[PB_KEY] === PB_NONE; }
 function pbTradeIsUnsorted(t) { return !pbTradePageId(t) && !pbTradeIsNone(t); }
@@ -124,42 +133,52 @@ function pbStats(list) {
   return { ...s, all: list.length, faded: list.length - counted.length };
 }
 
-/* ---------- 错题 ---------- */
-function pbMistakes() { return pbPages.filter((p) => p.kind === "mistake"); }
-/* 这一页（系统页连同它的衍生策略）下面挂着的错题 */
-function pbMistakesOf(pageId) {
+/* ---------- 笔记（错题 / 待验证）----------
+   两种笔记的归属、候选、涉及的交易规则完全一样，只是 kind 不同 */
+function pbNotes(kind) { return pbPages.filter((p) => p.kind === kind); }
+/* 这一页（系统页连同它的衍生策略）下面挂着的笔记 */
+function pbNotesOf(pageId, kind) {
   const ids = new Set(pbScopeIds(pageId));
-  return pbSortList(pbMistakes().filter((m) => ids.has(m.parent_id)));
+  return pbSortList(pbNotes(kind).filter((m) => ids.has(m.parent_id)));
 }
-/* 通用错题：没挂在任何页面上（或者挂的那页被删了） */
-function pbGlobalMistakes() {
-  return pbSortList(pbMistakes().filter((m) => { const o = pbFind(m.parent_id); return !o || o.kind === "mistake"; }));
-}
-function pbMistakeOwner(m) { const o = pbFind(m && m.parent_id); return o && o.kind !== "mistake" ? o : null; }
-/* 记新交易 / 归类时要提醒的错题：策略自己的 + 它所属系统的 + 通用的。系统页：系统的 + 它衍生策略的 + 通用的 */
-function pbMistakeCandidates(pageId) {
+function pbNoteOwner(m) { const o = pbFind(m && m.parent_id); return o && !pbIsNote(o) ? o : null; }
+/* 通用笔记：没挂在任何页面上（或者挂的那页被删了） */
+function pbGlobalNotes(kind) { return pbSortList(pbNotes(kind).filter((m) => !pbNoteOwner(m))); }
+/* 记新交易 / 归类时要摆出来的笔记：策略自己的 + 它所属系统的 + 通用的。系统页：系统的 + 它衍生策略的 + 通用的 */
+function pbNoteCandidates(pageId, kind) {
   const p = pbFind(pageId);
   const own = [], fromSystem = [];
   if (p && p.kind === "strategy") {
-    own.push(...pbMistakesOf(p.id));
+    own.push(...pbNotesOf(p.id, kind));
     const sys = pbFind(p.parent_id);
-    if (sys) fromSystem.push(...pbSortList(pbMistakes().filter((m) => m.parent_id === sys.id)));
+    if (sys) fromSystem.push(...pbSortList(pbNotes(kind).filter((m) => m.parent_id === sys.id)));
   } else if (p) {
-    own.push(...pbMistakesOf(p.id));
+    own.push(...pbNotesOf(p.id, kind));
   }
-  return { own, fromSystem, global: pbGlobalMistakes() };
+  return { own, fromSystem, global: pbGlobalNotes(kind) };
 }
-function pbMistakeTradeIds(m) { return extractTradeRefs(m && m.body); }
-function pbMistakeTrades(m) {
-  const ids = pbMistakeTradeIds(m);
+function pbNoteTradeIds(m) { return extractTradeRefs(m && m.body); }
+function pbNoteTrades(m) {
+  const ids = pbNoteTradeIds(m);
   return pbSortTradesDesc(trades.filter((t) => ids.includes(t.id)));
 }
-function pbMistakesWithTrade(tradeId) {
-  return pbSortList(pbMistakes().filter((m) => pbMistakeTradeIds(m).includes(tradeId)));
+function pbNotesWithTrade(tradeId, kind) {
+  return pbSortList(pbNotes(kind).filter((m) => pbNoteTradeIds(m).includes(tradeId)));
 }
-function pbMistakeLastDate(m) {
-  return pbMistakeTrades(m).map(pbTradeDateOf).filter(Boolean).sort().pop() || "";
+function pbNoteLastDate(m) {
+  return pbNoteTrades(m).map(pbTradeDateOf).filter(Boolean).sort().pop() || "";
 }
+
+/* 错题版的简写，老代码都在用 */
+function pbMistakes() { return pbNotes("mistake"); }
+function pbMistakesOf(pageId) { return pbNotesOf(pageId, "mistake"); }
+function pbGlobalMistakes() { return pbGlobalNotes("mistake"); }
+function pbMistakeOwner(m) { return pbNoteOwner(m); }
+function pbMistakeCandidates(pageId) { return pbNoteCandidates(pageId, "mistake"); }
+function pbMistakeTradeIds(m) { return pbNoteTradeIds(m); }
+function pbMistakeTrades(m) { return pbNoteTrades(m); }
+function pbMistakesWithTrade(tradeId) { return pbNotesWithTrade(tradeId, "mistake"); }
+function pbMistakeLastDate(m) { return pbNoteLastDate(m); }
 
 /* 标题文字在两种语言里各是什么。模板是按建页面时的界面语言写进正文的，
    之后用户可能切了语言，所以认标题的时候两种都认 */
@@ -185,10 +204,14 @@ function pbSectionText(body, key) {
   }
   return mdPlainExcerpt(buf.join("\n"), 400);
 }
-/* 便利贴上那句话：优先「如何规避」，没写就退回「错误现象」，再退回全文摘要 */
+/* 便利贴上那句话。错题：优先「如何规避」，没写就退回「错误现象」；
+   待验证：优先「结论」，没写就退回「想验证什么」。都没写就是全文摘要 */
 function pbMistakeGist(m) {
-  return pbSectionText(m.body, "pb.tpl.avoid") || pbSectionText(m.body, "pb.tpl.symptom")
-    || mdPlainExcerpt(String(m.body || "").replace(/^\s{0,3}#{1,6}\s.*$/gm, ""), 160);
+  const first = m.kind === "verify"
+    ? pbSectionText(m.body, "pb.tpl.verdict") || pbSectionText(m.body, "pb.tpl.hypothesis")
+    : pbSectionText(m.body, "pb.tpl.avoid") || pbSectionText(m.body, "pb.tpl.symptom");
+  // 退回全文摘要时去掉标题和交易胶囊——只列了几笔交易的笔记，摘要里不该是一串「[trade]」
+  return first || mdPlainExcerpt(String(m.body || "").replace(/^\s{0,3}#{1,6}\s.*$/gm, "").replace(/\[\[trade:[A-Za-z0-9_-]+\]\]/g, ""), 160);
 }
 
 const PB_TRADE_LINE_RE = (id) => new RegExp("^\\s*[-*+]\\s+(?:\\[[ xX]\\]\\s+)?\\[\\[trade:" + id + "\\]\\](.*)$");
@@ -272,5 +295,6 @@ function pbTemplateBody(kind) {
   const h = (k) => "## " + T(k);
   if (kind === "system") return [h("pb.tpl.structure"), h("pb.tpl.conditions"), h("pb.tpl.manage")].join("\n\n");
   if (kind === "strategy") return [h("pb.tpl.setupLooks"), h("pb.tpl.conditions"), h("pb.tpl.manage")].join("\n\n");
+  if (kind === "verify") return [h("pb.tpl.hypothesis"), h("pb.tpl.mistakeTrades"), h("pb.tpl.verdict")].join("\n\n");
   return [h("pb.tpl.symptom"), h("pb.tpl.mistakeTrades"), h("pb.tpl.avoid")].join("\n\n");
 }

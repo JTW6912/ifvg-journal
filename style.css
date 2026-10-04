@@ -6,6 +6,8 @@
   --text:#E8E6DF; --muted:#8A9099; --mutedDark:#5B6169;
   --info:#5B8DEF; --infoSoft:rgba(91,141,239,.16);
   --note:#1E1B13; --noteEdge:#6B5626; --noteText:#E9DFC4;
+  --verify:#A387E0; --verifySoft:rgba(163,135,224,.16);
+  --vnote:#19162A; --vnoteEdge:#56478A; --vnoteText:#E1D9F5;
 }
 :root[data-theme="light"]{
   --bg:#F6F4EF; --surface:#FFFFFF; --surface2:#EFEBE1; --border:#E1DACB; --borderLight:#D2C9B4;
@@ -15,6 +17,8 @@
   --text:#211D16; --muted:#6C6558; --mutedDark:#9B9385;
   --info:#2C6BD6; --infoSoft:rgba(44,107,214,.14);
   --note:#FBF2D5; --noteEdge:#E0C27A; --noteText:#3A2F14;
+  --verify:#7350B8; --verifySoft:rgba(115,80,184,.12);
+  --vnote:#F2EDFB; --vnoteEdge:#C6B4E8; --vnoteText:#2D2346;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
@@ -857,12 +861,14 @@ button.pageRef{line-height:1.5;}
 .pageRef.kind-system{--k:var(--accent);}
 .pageRef.kind-strategy{--k:var(--info);}
 .pageRef.kind-mistake{--k:var(--neg);}
+.pageRef.kind-verify{--k:var(--verify);}
 .pageRef:hover{border-color:var(--k);}
 .pageRefKind{font-size:10px;padding:0 6px;border-radius:9px;background:var(--k);color:var(--bg);font-weight:600;
   letter-spacing:.3px;line-height:16px;white-space:nowrap;}
 .pageRefKind.kind-system{background:var(--accent);}
 .pageRefKind.kind-strategy{background:var(--info);}
 .pageRefKind.kind-mistake{background:var(--neg);}
+.pageRefKind.kind-verify{background:var(--verify);}
 .pageRefKind.kind-review{background:var(--muted);}
 .pageRefMeta{font-size:12px;}
 .pageRef.broken{background:var(--negSoft);border-color:var(--neg);color:var(--neg);cursor:default;padding-left:8px;}
@@ -902,6 +908,7 @@ button.pageRef{line-height:1.5;}
 .pbKindBadge.kind-system{color:var(--accent);background:var(--accentSoft);}
 .pbKindBadge.kind-strategy{color:var(--info);background:var(--infoSoft);}
 .pbKindBadge.kind-mistake{color:var(--neg);background:var(--negSoft);}
+.pbKindBadge.kind-verify{color:var(--verify);background:var(--verifySoft);}
 
 /* 一行成绩：笔数 · 胜率 · 平均 R · 总 R */
 .pbStatsRow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-size:12px;color:var(--mutedDark);}
@@ -963,6 +970,28 @@ button.pageRef{line-height:1.5;}
 .pbStickyGist{font-size:12.5px;line-height:1.6;opacity:.9;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 .pbStickyGist.muted{opacity:.5;font-style:italic;}
 .pbStickyFoot{margin-top:auto;font-size:10.5px;opacity:.65;padding-top:4px;}
+.pbStickyTop{display:flex;align-items:center;gap:8px;min-width:0;}
+.pbStickyTop .pbStickyOwner{flex:1;min-width:0;}
+
+/* ---------- 待验证：紫色便利贴，状态决定顶边颜色 ---------- */
+.pbLibVerify{margin-top:28px;}
+.pbSticky.isVerify{background:var(--vnote);color:var(--vnoteText);border-color:var(--vnoteEdge);}
+.pbSticky.isVerify .pbStickyFoot{opacity:.8;}
+.pbSticky.isVerify.status-works{border-top-color:var(--pos);}
+.pbSticky.isVerify.status-rejected{opacity:.6;border-top-color:var(--mutedDark);}
+.pbSticky.isVerify.status-rejected .pbStickyTitle{text-decoration:line-through;text-decoration-thickness:1px;}
+.pbStatusPill{flex-shrink:0;margin-left:auto;font-size:10.5px;font-weight:600;line-height:1.6;padding:0 8px;border-radius:9px;white-space:nowrap;
+  font-family:'Inter',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;}
+.pbStatusPill.status-watching{color:var(--verify);background:var(--verifySoft);}
+.pbStatusPill.status-works{color:var(--pos);background:var(--posSoft);}
+.pbStatusPill.status-rejected{color:var(--muted);background:var(--surface2);}
+.pbRowVerify{font-size:10.5px;color:var(--verify);background:var(--verifySoft);border-radius:9px;padding:1px 7px;flex-shrink:0;}
+.pbStatusSeg .tinyBtn.on.status-watching{background:var(--verify);color:#fff;}
+.pbStatusSeg .tinyBtn.on.status-works{background:var(--pos);color:#fff;}
+.pbStatusSeg .tinyBtn.on.status-rejected{background:var(--mutedDark);color:#fff;}
+.reviewWeekRow .pbPromoteBtn{display:inline-flex;align-items:center;gap:4px;border-color:var(--pos);color:var(--pos);margin-right:8px;}
+.reviewWeekRow .pbPromoteBtn:hover{background:var(--posSoft);}
+.pbPromoteBtn svg{width:12px;height:12px;}
 
 /* ---------- 编辑器里：属性行 ---------- */
 .reviewEditorOverlay.isPb .reviewWeekRow{gap:10px 12px;}
@@ -1055,6 +1084,28 @@ button.pageRef{line-height:1.5;}
 .pbReminder:first-of-type{border-top:none;}
 .pbReminder b{margin-right:8px;}
 .pbReminder span{opacity:.85;}
+/* 表单里的笔记是可以勾的：勾上 = 这笔也算进这条，点保存时写进去 */
+.pbReminders.isVerify{background:var(--vnote);border-color:var(--vnoteEdge);color:var(--vnoteText);}
+.pbRemindersHint{margin-left:auto;font-weight:400;font-size:10.5px;opacity:.7;white-space:nowrap;}
+.pbFormNote{display:flex;align-items:flex-start;gap:9px;width:100%;background:transparent;border:none;border-top:1px dashed var(--noteEdge);
+  color:inherit;text-align:left;cursor:pointer;font:inherit;font-size:12.5px;padding:5px 2px;}
+.pbReminders.isVerify .pbFormNote{border-top-color:var(--vnoteEdge);}
+.pbFormNote:disabled{cursor:default;}
+.pbFormNote .pbMpBox{margin-top:3px;border-color:currentColor;opacity:.55;}
+.pbFormNote span.pbMpBox,.pbFormNote .pbStatusPill{opacity:1;}
+.pbFormNote:not(.on) span.pbMpBox{opacity:.5;}
+.pbFormNote.on .pbMpBox{background:var(--neg);border-color:var(--neg);color:#fff;}
+.pbReminders.isVerify .pbFormNote.on .pbMpBox{background:var(--verify);border-color:var(--verify);}
+.pbFormNoteText{flex:1;min-width:0;line-height:1.6;}
+.pbFormNote:hover:not(:disabled) .pbFormNoteText b{text-decoration:underline;text-underline-offset:2px;}
+.pbFormMore{margin-top:4px;font-size:11.5px;color:inherit;opacity:.8;}
+.pbFormMore:hover{opacity:1;text-decoration:underline;}
+.pbFormNoteInput{margin-top:8px;font-size:12.5px;}
+.pbFormNewBtns{display:flex;gap:12px;margin-top:9px;}
+.pbFormNewBtns .tinyBtn{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted);}
+.pbFormNewBtns .tinyBtn:hover{color:var(--text);}
+.pbFormNewBtns .tinyBtn svg{width:11px;height:11px;}
+.pbFormNew{margin-top:8px;padding-top:0;border-top:none;align-items:center;}
 
 /* ---------- 交易预览里的归属 ---------- */
 .tpPb{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
@@ -1115,6 +1166,9 @@ button.pageRef{line-height:1.5;}
 .pbToggle:disabled{opacity:.45;cursor:not-allowed;}
 .pbToggle.on{border-color:var(--accent);color:var(--accent);background:var(--accentSoft);}
 .pbToggle.open{border-color:var(--borderLight);box-shadow:inset 0 0 0 1px var(--borderLight);}
+.pbToggle.isVerify.on{border-color:var(--verify);color:var(--verify);background:var(--verifySoft);}
+.pbMpRow.isVerify.on .pbMpBox{background:var(--verify);border-color:var(--verify);}
+.pbMpRow .pbStatusPill{margin-left:0;}
 .pbMp{margin-top:10px;display:flex;flex-direction:column;gap:3px;}
 .pbMp>.input{margin-bottom:6px;font-size:12.5px;}
 .pbMpGroup{font-size:10.5px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;letter-spacing:.4px;margin:8px 2px 2px;}

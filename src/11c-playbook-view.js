@@ -1,11 +1,12 @@
 /* ============================================================
    模型库（PLAYBOOK）—— 界面
 
-   - 页签「模型库」：交易系统卡片（带衍生策略和各自的成绩）+ 错题库（便利贴墙）
-   - 归类模式：一屏一笔，按数字键把旧交易归到某个系统 / 策略，顺手标关注、放进错题
+   - 页签「模型库」：交易系统卡片（带衍生策略和各自的成绩）+ 错题库 + 待验证区（两面便利贴墙）
+   - 归类模式：一屏一笔，按数字键把旧交易归到某个系统 / 策略，顺手标关注、放进错题（E）/ 待验证（V）
    - 编辑器里的模型库页面：正文还是那个编辑器，正文上面换成属性行，下面挂几栏自动生成的内容
      （衍生策略 / 关注的交易 / 错题集 / 全部交易；错题页是 涉及的交易 / 相关错题）
-   - 交易表单顶上的「模型库」一栏：选了策略就把它的错题便利贴摆出来，进场前看一眼
+   - 交易表单顶上的「模型库」一栏：选了策略就把它的错题和待验证摆出来，进场前看一眼；
+     勾上就是「这笔也算」，点保存、交易存成功之后才写进那条笔记
 
    ⚠ 编辑器里的那几栏画在 #pbPanels 里，**不在 Tiptap 的挂载点里面**，可以随便整块重画
    （refreshPbPanels），不会碰到正在写的正文和光标。属性行同理（就是复盘的 #reviewWeekRow 那一格）。
@@ -50,19 +51,38 @@ function pbTileHtml(t, opts) {
     ${o.note ? `<div class="pbTileNote">${esc(o.note)}</div>` : ""}
   </div>`;
 }
-/* 便利贴：一条错题。上面是归属，中间标题 + 「怎么规避」那句，底下是出现过几次、最近一次是哪天——
-   一眼看得出这个错是不是还在反复犯 */
+function pbStatusPillHtml(d) {
+  const s = pbVerifyStatus(d);
+  return `<span class="pbStatusPill status-${s}">${esc(T("pb.status." + s))}</span>`;
+}
+/* 待验证便利贴底下那行成绩。验证的意义就是看这类单能不能做，数字直接摆出来 */
+function pbVerifyFootText(m) {
+  const st = pbStats(pbNoteTrades(m));
+  if (!st.all) return T("pb.sticky.none");
+  return T("pb.sticky.verifyStats", { n: st.n, wr: fmtPct(st.wr), ev: st.hasR ? pbFmtR(st.ev) + "R" : "—" });
+}
+/* 便利贴：一条笔记。上面是归属，中间标题 + 一句话。
+   错题底下是出现过几次、最近一次是哪天——一眼看得出这个错是不是还在反复犯；
+   待验证底下是关联交易的成绩，右上角是状态 */
 function pbStickyHtml(m, opts) {
   const o = opts || {};
-  const owner = pbMistakeOwner(m);
-  const n = pbMistakeTrades(m).length;
-  const last = pbMistakeLastDate(m);
+  const isV = m.kind === "verify";
+  const owner = pbNoteOwner(m);
   const gist = pbMistakeGist(m);
-  return `<div class="pbSticky" data-action="pb-open" data-id="${esc(m.id)}">
-    ${o.hideOwner ? "" : `<div class="pbStickyOwner">${esc(owner ? pbLabel(owner.id) : T("pb.globalMistake"))}</div>`}
+  let foot;
+  if (isV) foot = esc(pbVerifyFootText(m));
+  else {
+    const n = pbNoteTrades(m).length;
+    const last = pbNoteLastDate(m);
+    foot = esc(n ? T("pb.sticky.count", { n }) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
+  }
+  const ownerTxt = owner ? pbLabel(owner.id) : T(isV ? "pb.globalVerify" : "pb.globalMistake");
+  const top = (o.hideOwner ? "" : `<div class="pbStickyOwner">${esc(ownerTxt)}</div>`) + (isV ? pbStatusPillHtml(m) : "");
+  return `<div class="pbSticky${isV ? " isVerify status-" + pbVerifyStatus(m) : ""}" data-action="pb-open" data-id="${esc(m.id)}">
+    ${top ? `<div class="pbStickyTop">${top}</div>` : ""}
     <div class="pbStickyTitle">${esc(pbTitle(m))}</div>
-    ${gist ? `<div class="pbStickyGist">${esc(gist)}</div>` : `<div class="pbStickyGist muted">${esc(T("pb.sticky.noGist"))}</div>`}
-    <div class="pbStickyFoot mono">${esc(n ? T("pb.sticky.count", { n }) : T("pb.sticky.none"))}${last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : ""}</div>
+    ${gist ? `<div class="pbStickyGist">${esc(gist)}</div>` : `<div class="pbStickyGist muted">${esc(T(isV ? "pb.sticky.noGistVerify" : "pb.sticky.noGist"))}</div>`}
+    <div class="pbStickyFoot mono">${foot}</div>
   </div>`;
 }
 function pbSectionHeadHtml(title, count, rightHtml, hint) {
@@ -95,6 +115,7 @@ function pbSystemCardHtml(sys, q) {
   const own = trades.filter((t) => pbTradePageId(t) === sys.id).length;
   const starred = pbTradesOf(sys.id).filter(pbTradeStarred).length;
   const mistakes = pbMistakesOf(sys.id).length;
+  const verifies = pbNotesOf(sys.id, "verify").length;
   const excerpt = mdPlainExcerpt(String(sys.body || "").replace(/^\s{0,3}#{1,6}\s.*$/gm, ""), 150);
   return `<div class="pbSysCard" data-action="pb-open" data-id="${esc(sys.id)}">
     <div class="pbSysHead">
@@ -119,6 +140,7 @@ function pbSystemCardHtml(sys, q) {
     <div class="pbSysFoot mono">
       <span>${ICONS.star} ${starred}</span>
       <span>${esc(T("pb.foot.mistakes", { n: mistakes }))}</span>
+      ${verifies ? `<span>${esc(T("pb.foot.verify", { n: verifies }))}</span>` : ""}
       ${own && strategies.length ? `<span title="${esc(T("pb.foot.systemOnlyTitle"))}">${esc(T("pb.foot.systemOnly", { n: own }))}</span>` : ""}
     </div>
   </div>`;
@@ -158,7 +180,7 @@ function renderPlaybook() {
 
   const systems = pbSystems();
   const orphans = pbOrphanStrategies();
-  if (!systems.length && !orphans.length && !pbMistakes().length) return html + pbEmptyLibraryHtml();
+  if (!systems.length && !orphans.length && !pbPages.some(pbIsNote)) return html + pbEmptyLibraryHtml();
 
   // 搜索：系统本身或它下面任何一个策略命中，整张卡就留着（命中的策略行会高亮）
   const shownSystems = systems.filter((s) => !q || pbMatchesSearch(s, q) || pbStrategiesOf(s.id).some((x) => pbMatchesSearch(x, q)));
@@ -188,6 +210,22 @@ function renderPlaybook() {
     ? `<div class="pbStickyGrid">${list.map((m) => pbStickyHtml(m)).join("")}</div>`
     : `<div class="pbEmptyLine">${esc(all.length ? T("pb.emptySearch") : T("pb.noMistakes"))}</div>`;
   html += `</div>`;
+
+  // 待验证区：按状态筛（观察中 / 验证可做 / 已否定）
+  const vAll = pbSortList(pbNotes("verify"));
+  const vCount = (s) => vAll.filter((v) => pbVerifyStatus(v) === s).length;
+  let vList = pbVerifyFilter === "all" ? vAll : vAll.filter((v) => pbVerifyStatus(v) === pbVerifyFilter);
+  if (q) vList = vList.filter((v) => pbMatchesSearch(v, q));
+  const vChip = (val, label, n) => `<button class="chip ${pbVerifyFilter === val ? "active" : ""}" data-action="pb-verify-filter" data-val="${esc(val)}">${esc(label)} <span class="mono pbChipN">${n}</span></button>`;
+  html += `<div class="pbLibMistakes pbLibVerify">`;
+  html += pbSectionHeadHtml(T("pb.verifyLibrary"), vAll.length, pbAddBtn("verify", "", "pb.addGlobalVerify"), T("pb.verifyLibraryHint"));
+  if (vAll.length) {
+    html += `<div class="chipGroup pbFilterChips">${vChip("all", T("pb.filterAll"), vAll.length)}${PB_VERIFY_STATUSES.map((s) => vChip(s, T("pb.status." + s), vCount(s))).join("")}</div>`;
+  }
+  html += vList.length
+    ? `<div class="pbStickyGrid">${vList.map((v) => pbStickyHtml(v)).join("")}</div>`
+    : `<div class="pbEmptyLine">${esc(vAll.length ? T("pb.emptySearch") : T("pb.noVerify"))}</div>`;
+  html += `</div>`;
   return html;
 }
 
@@ -202,11 +240,11 @@ function pbParentSelectHtml(d) {
         ${pbSystems().map((s) => `<option value="${esc(s.id)}" ${d.parent_id === s.id ? "selected" : ""}>${esc(pbTitle(s))}</option>`).join("")}
       </select></label>`;
   }
-  if (d.kind === "mistake") {
-    const cur = pbMistakeOwner(d) ? d.parent_id : "";
+  if (pbIsNote(d)) {
+    const cur = pbNoteOwner(d) ? d.parent_id : "";
     return `<label class="pbMetaField"><span>${esc(T("pb.meta.mistakeOf"))}</span>
       <select class="select" data-pb-parent>
-        <option value="" ${cur ? "" : "selected"}>${esc(T("pb.globalMistake"))}</option>
+        <option value="" ${cur ? "" : "selected"}>${esc(T(d.kind === "verify" ? "pb.globalVerify" : "pb.globalMistake"))}</option>
         ${pbAssignOptions().map((o) => `<option value="${esc(o.id)}" ${cur === o.id ? "selected" : ""}>${o.depth ? "　" : ""}${esc(o.label)}</option>`).join("")}
       </select></label>`;
   }
@@ -221,8 +259,8 @@ function pbDeleteControlHtml(d) {
     return `<span class="pbDelConfirm"><span>${esc(T("pb.deleteBlocked"))}</span>
       <button class="tinyBtn" data-action="pb-cancel-delete">${esc(T("common.cancel"))}</button></span>`;
   }
-  const n = d.kind === "mistake" ? 0 : trades.filter((t) => t[PB_KEY] === d.id).length;
-  const m = d.kind === "mistake" ? 0 : pbPages.filter((x) => x.kind === "mistake" && x.parent_id === d.id).length;
+  const n = pbIsNote(d) ? 0 : trades.filter((t) => t[PB_KEY] === d.id).length;
+  const m = pbIsNote(d) ? 0 : pbPages.filter((x) => pbIsNote(x) && x.parent_id === d.id).length;
   const bits = [];
   if (n) bits.push(T(d.kind === "strategy" ? "pb.deleteTradesUp" : "pb.deleteTradesClear", { n }));
   if (m) bits.push(T(d.kind === "strategy" ? "pb.deleteMistakesUp" : "pb.deleteMistakesGlobal", { n: m }));
@@ -230,20 +268,30 @@ function pbDeleteControlHtml(d) {
     <button class="btn btn-danger" data-action="pb-confirm-delete" data-id="${esc(d.id)}">${esc(T("common.delete"))}</button>
     <button class="tinyBtn" data-action="pb-cancel-delete">${esc(T("common.cancel"))}</button></span>`;
 }
+/* 待验证的状态：三选一的分段按钮（只读时只留一枚标签） */
+function pbVerifyStatusHtml(d) {
+  if (reviewIsReadOnly()) return pbStatusPillHtml(d);
+  const cur = pbVerifyStatus(d);
+  return `<span class="reviewPeriodSeg pbStatusSeg">${PB_VERIFY_STATUSES.map((s) =>
+    `<button class="tinyBtn status-${s} ${cur === s ? "on" : ""}" data-action="pb-verify-status" data-status="${s}">${esc(T("pb.status." + s))}</button>`).join("")}</span>`;
+}
 function pbMetaRowInnerHtml() {
   const d = editingReview;
   let stats = "";
   if (d.kind === "mistake") {
-    const n = pbMistakeTrades(d).length;
-    const last = pbMistakeLastDate(d);
+    const n = pbNoteTrades(d).length;
+    const last = pbNoteLastDate(d);
     stats = `<span class="pbStat"><b class="mono">${n}</b> ${esc(T("pb.stat.occurrences"))}</span>${last ? `<span class="pbStat">${esc(T("pb.sticky.last", { date: last }))}</span>` : ""}`;
   } else if (recordMode === "live") {
-    stats = pbStatsHtml(pbStats(pbTradesOf(d.id)));
+    stats = pbStatsHtml(pbStats(d.kind === "verify" ? pbNoteTrades(d) : pbTradesOf(d.id)));
   }
+  const promote = d.kind === "verify" && pbVerifyStatus(d) === "works" && !reviewIsReadOnly() && !d._isNew
+    ? `<button class="tinyBtn pbPromoteBtn" data-action="pb-verify-promote">${ICONS.up} ${esc(T("pb.promote.btn"))}</button>` : "";
   return `${pbKindBadge(d.kind)}
     ${pbParentSelectHtml(d)}
+    ${d.kind === "verify" ? pbVerifyStatusHtml(d) : ""}
     <span class="pbMetaStats">${stats}</span>
-    <span class="pbMetaRight">${pbDeleteControlHtml(d)}</span>`;
+    <span class="pbMetaRight">${promote}${pbDeleteControlHtml(d)}</span>`;
 }
 
 function pbTradeRowHtml(t, opts) {
@@ -252,6 +300,7 @@ function pbTradeRowHtml(t, opts) {
   const tag = modelF ? t[modelF.id] : "";
   const tagTxt = Array.isArray(tag) ? tag.join(", ") : (tag || "");
   const mistakes = pbMistakesWithTrade(t.id);
+  const verifies = pbNotesWithTrade(t.id, "verify");
   const ro = !!viewingUserId;
   return `<div class="pbTradeRow">
     <button class="pbStarBtn${pbTradeStarred(t) ? " on" : ""}" ${ro ? "disabled" : `data-action="pb-star" data-id="${esc(t.id)}"`} title="${esc(T("pb.starTitle"))}">${pbTradeStarred(t) ? ICONS.starFill : ICONS.star}</button>
@@ -263,6 +312,7 @@ function pbTradeRowHtml(t, opts) {
       ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : ""}
       <span class="pbRowSpacer"></span>
       ${mistakes.length ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
+      ${verifies.length ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
       ${pbTradeResultBits(t)}
     </div>
   </div>`;
@@ -281,7 +331,7 @@ function pbPanelsForPageHtml(d) {
               <div class="pbStratCardTitle">${esc(pbTitle(s))}</div>
               <div class="pbStatsRow small">${pbStatsHtml(ss, true)}</div>
               ${ex ? `<div class="pbStratCardEx">${esc(ex)}</div>` : ""}
-              <div class="pbStratCardFoot mono">${ICONS.star} ${pbTradesOf(s.id).filter(pbTradeStarred).length} · ${esc(T("pb.foot.mistakes", { n: pbMistakesOf(s.id).length }))}</div>
+              <div class="pbStratCardFoot mono">${ICONS.star} ${pbTradesOf(s.id).filter(pbTradeStarred).length} · ${esc(T("pb.foot.mistakes", { n: pbMistakesOf(s.id).length }))}${pbNotesOf(s.id, "verify").length ? ` · ${esc(T("pb.foot.verify", { n: pbNotesOf(s.id, "verify").length }))}` : ""}</div>
             </div>`;
           }).join("")}</div>`
         : `<div class="pbEmptyLine">${esc(T("pb.noStrategiesLong"))}</div>`}
@@ -296,6 +346,13 @@ function pbPanelsForPageHtml(d) {
     ${mistakes.length
       ? `<div class="pbStickyGrid">${mistakes.map((m) => pbStickyHtml(m, { hideOwner: m.parent_id === d.id })).join("")}</div>`
       : `<div class="pbEmptyLine">${esc(T("pb.noMistakesHere"))}</div>`}
+  </section>`;
+
+  const verifies = pbNotesOf(d.id, "verify");
+  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.verify"), verifies.length, pbAddBtn("verify", d.id, "pb.addVerify"), T("pb.section.verifyHint"))}
+    ${verifies.length
+      ? `<div class="pbStickyGrid">${verifies.map((v) => pbStickyHtml(v, { hideOwner: v.parent_id === d.id })).join("")}</div>`
+      : `<div class="pbEmptyLine">${esc(T("pb.noVerifyHere"))}</div>`}
   </section>`;
 
   if (recordMode !== "live") return html + pbBacktestNote();
@@ -316,17 +373,18 @@ function pbPanelsForPageHtml(d) {
   </section>`;
   return html;
 }
-function pbPanelsForMistakeHtml(d) {
+function pbPanelsForNoteHtml(d) {
   let html = "";
-  const list = pbMistakeTrades(d);
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.mistakeTrades"), list.length, "", T("pb.section.mistakeTradesHint"))}
+  const isV = d.kind === "verify";
+  const list = pbNoteTrades(d);
+  html += `<section class="pbPanel">${pbSectionHeadHtml(T(isV ? "pb.section.verifyTrades" : "pb.section.mistakeTrades"), list.length, "", T(isV ? "pb.section.verifyTradesHint" : "pb.section.mistakeTradesHint"))}
     ${list.length
       ? `<div class="pbTileGrid">${list.map((t) => pbTileHtml(t, { showLabel: true, note: pbMistakeLineNote(d.body, t.id) })).join("")}</div>`
-      : `<div class="pbEmptyLine">${esc(recordMode === "live" ? T("pb.noMistakeTrades") : T("pb.backtestNote"))}</div>`}
+      : `<div class="pbEmptyLine">${esc(recordMode === "live" ? T(isV ? "pb.noVerifyTrades" : "pb.noMistakeTrades") : T("pb.backtestNote"))}</div>`}
   </section>`;
-  // 相关错题：这一条正文里链到的，加上别的错题里链到这一条的——两个方向都算「有关系」
+  // 相关笔记：这一条正文里链到的，加上别的笔记里链到这一条的——两个方向都算「有关系」。错题和待验证混在一起算
   const outIds = extractPageRefs(d.body);
-  const related = pbSortList(pbMistakes().filter((m) => m.id !== d.id && (outIds.includes(m.id) || extractPageRefs(m.body).includes(d.id))));
+  const related = pbSortList(pbPages.filter((m) => pbIsNote(m) && m.id !== d.id && (outIds.includes(m.id) || extractPageRefs(m.body).includes(d.id))));
   const mentionedIn = sortReviewsForDisplay(reviews.filter((r) => extractPageRefs(r.body).includes(d.id)));
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.related"), related.length, "", T("pb.section.relatedHint"))}
     ${related.length
@@ -340,7 +398,7 @@ function pbPanelsHtml() {
   const d = editingReview;
   if (!isPbDoc(d)) return "";
   if (d._isNew) return "";
-  return d.kind === "mistake" ? pbPanelsForMistakeHtml(d) : pbPanelsForPageHtml(d);
+  return pbIsNote(d) ? pbPanelsForNoteHtml(d) : pbPanelsForPageHtml(d);
 }
 /* 只换 #pbPanels 和属性行，编辑器本体不动 */
 function refreshPbPanels() {
@@ -359,6 +417,7 @@ function pbNameModalHtml() {
   const parent = pbFind(m.parentId);
   const title = m.kind === "system" ? T("pb.newSystem")
     : m.kind === "strategy" ? T("pb.newStrategyOf", { name: parent ? pbTitle(parent) : "" })
+    : m.kind === "verify" ? (parent ? T("pb.newVerifyOf", { name: pbLabel(parent.id) }) : T("pb.addGlobalVerify"))
     : parent ? T("pb.newMistakeOf", { name: pbLabel(parent.id) }) : T("pb.addGlobalMistake");
   return `<div class="overlay" data-action="dismiss-pb-name-overlay">
     <div class="modal" style="max-width:440px;">
@@ -404,23 +463,53 @@ async function pbToggleStar(tradeId) {
   await p;
   refreshPbPanels(); render();
 }
-/* 一笔交易进 / 出一条错题：改的是错题正文里那一行列表项 */
-async function pbToggleTradeInMistake(mistakeId, tradeId, note) {
-  const m = pbFind(mistakeId);
+/* 一笔交易进 / 出一条笔记（错题或待验证）：改的是笔记正文里那一行列表项。on = 要不要在里面 */
+async function pbSetTradeInNote(noteId, tradeId, on, note) {
+  const m = pbFind(noteId);
   if (!m || viewingUserId) return false;
-  // 这条错题正开在编辑器里的话，正文以编辑器为准，这里不去改它（不会发生：归类模式下编辑器是关着的）
-  if (editingReview && editingReview.id === mistakeId) return false;
+  // 这条笔记正开在编辑器里的话，正文以编辑器为准，这里不去改它（归类模式、交易表单打开时编辑器都是关着的）
+  if (editingReview && editingReview.id === noteId) return false;
+  const has = pbNoteTradeIds(m).includes(tradeId);
+  if (has === !!on) return true;
   let body;
-  if (pbMistakeTradeIds(m).includes(tradeId)) {
+  if (!on) {
     const r = pbRemoveTradeFromBody(m.body, tradeId);
-    if (!r.removed || r.stillLinked) { pbError = T("pb.err.inlineRef", { title: pbTitle(m) }); render(); return false; }
+    if (!r.removed || r.stillLinked) { pbError = T("pb.err.inlineRef", { title: pbTitle(m) }); return false; }
     body = r.body;
   } else {
     body = pbAppendTradeToBody(m.body, tradeId, note);
   }
-  const ok = await persistPbPage({ ...m, body });
+  return persistPbPage({ ...m, body });
+}
+async function pbToggleTradeInNote(noteId, tradeId, note) {
+  const m = pbFind(noteId);
+  if (!m) return false;
+  const ok = await pbSetTradeInNote(noteId, tradeId, !pbNoteTradeIds(m).includes(tradeId), note);
   render();
   return ok;
+}
+
+/* 待验证 → 衍生策略。原地改 kind，id 不变：别处链到它的 [[page:id]] 照样有效。
+   正文里关联的交易一起归到这个新策略下——策略页的交易看的是交易身上的归属，不看正文 */
+async function pbPromoteVerify() {
+  const d = editingReview;
+  if (!d || d.kind !== "verify" || reviewIsReadOnly()) return;
+  if (recordMode !== "live") { showReviewToast(T("pb.promote.needLive")); return; }
+  const owner = pbNoteOwner(d);
+  const sys = owner ? (owner.kind === "system" ? owner : pbFind(owner.parent_id)) : null;
+  if (!sys) { showReviewToast(T("pb.promote.needSystem")); return; }
+  const ids = pbNoteTradeIds(d).filter((id) => trades.some((t) => t.id === id));
+  if (!confirm(T("pb.promote.confirm", { name: pbTitle(d), sys: pbTitle(sys), n: ids.length }))) return;
+  await flushReviewSave();
+  const before = { kind: d.kind, parent_id: d.parent_id };
+  d.kind = "strategy";
+  d.parent_id = sys.id;
+  scheduleReviewSave();
+  if (!(await flushReviewSave())) { d.kind = before.kind; d.parent_id = before.parent_id; refreshPbPanels(); return; }
+  if (ids.length) await pbPatchTrades(ids.map((id) => ({ id, patch: { [PB_KEY]: d.id } })));
+  refreshPbPanels();
+  render();
+  showReviewToast(T("pb.promote.done", { name: pbLabel(d.id) }));
 }
 
 /* ============================================================
@@ -433,7 +522,7 @@ function pbTriageQueue(scope) {
 function startPbTriage(scope) {
   if (viewingUserId || recordMode !== "live") return;
   const sc = scope === "all" ? "all" : "unsorted";
-  pbTriage = { ids: pbTriageQueue(sc), i: 0, scope: sc, mistakeOpen: false, errText: "", newMistake: "", done: new Set(), starred: 0, mistakes: 0 };
+  pbTriage = { ids: pbTriageQueue(sc), i: 0, scope: sc, panel: "", errText: "", newNote: "", done: new Set(), starred: 0, mistakes: 0 };
   window.scrollTo({ top: 0 });
 }
 function pbTriageCurrent() {
@@ -443,7 +532,7 @@ function pbTriageCurrent() {
 function pbTriageStep(delta) {
   if (!pbTriage) return;
   pbTriage.i = Math.max(0, Math.min(pbTriage.ids.length, pbTriage.i + delta));
-  pbTriage.mistakeOpen = false;
+  pbTriage.panel = "";
   pbTriage.errText = "";
   render();
   window.scrollTo({ top: 0 });
@@ -469,24 +558,32 @@ async function pbTriageStar() {
   await p;
   render();
 }
-async function pbTriageToggleMistake(mistakeId) {
+/* 归类模式里打开错题（E）或待验证（V）的面板；再按一次同一个键收起 */
+function pbTriageOpenPanel(kind) {
+  if (!pbTriage) return;
+  pbTriage.panel = pbTriage.panel === kind ? "" : kind;
+  pbTriage.newNote = "";
+  render();
+  if (pbTriage.panel) { const inp = document.getElementById("pbErrText"); if (inp) inp.focus(); }
+}
+async function pbTriageToggleNote(noteId) {
   const t = pbTriageCurrent();
   if (!t) return;
-  const m = pbFind(mistakeId);
-  const adding = m && !pbMistakeTradeIds(m).includes(t.id);
-  const ok = await pbToggleTradeInMistake(mistakeId, t.id, pbTriage.errText);
+  const m = pbFind(noteId);
+  const adding = m && !pbNoteTradeIds(m).includes(t.id);
+  const ok = await pbToggleTradeInNote(noteId, t.id, pbTriage.errText);
   if (ok && adding) { pbTriage.mistakes++; pbTriage.errText = ""; pbTriage.done.add(t.id); }
   render();
 }
-async function pbTriageNewMistake() {
+async function pbTriageNewNote(kind) {
   const t = pbTriageCurrent();
-  const name = (pbTriage.newMistake || "").trim();
-  if (!t || !name) return;
-  // 新错题挂在这笔交易归到的那一页下面；还没归类就先当通用错题
+  const name = (pbTriage.newNote || "").trim();
+  if (!t || !name || !PB_NOTE_KINDS.includes(kind)) return;
+  // 新笔记挂在这笔交易归到的那一页下面；还没归类就先当通用的
   const owner = pbTradePageId(t) || null;
-  const body = pbAppendTradeToBody(pbTemplateBody("mistake"), t.id, pbTriage.errText);
-  const m = await pbCreatePage("mistake", owner, name, body);
-  if (m) { pbTriage.newMistake = ""; pbTriage.errText = ""; pbTriage.mistakes++; pbTriage.done.add(t.id); }
+  const body = pbAppendTradeToBody(pbTemplateBody(kind), t.id, pbTriage.errText);
+  const m = await pbCreatePage(kind, owner, name, body);
+  if (m) { pbTriage.newNote = ""; pbTriage.errText = ""; pbTriage.mistakes++; pbTriage.done.add(t.id); }
   render();
 }
 
@@ -508,28 +605,32 @@ function pbTriageFieldsHtml(t) {
   });
   return rows.map((r) => `<div class="focusField${r.long ? " isLong" : ""}"><div class="focusFieldLabel">${esc(r.label)}</div><div class="focusFieldVal">${esc(r.text)}</div></div>`).join("");
 }
-function pbTriageMistakePanelHtml(t) {
+function pbTriageNotePanelHtml(t, kind) {
+  const isV = kind === "verify";
   const pageId = pbTradePageId(t);
-  const c = pbMistakeCandidates(pageId);
-  const has = (m) => pbMistakeTradeIds(m).includes(t.id);
-  const group = (label, list) => list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + list.map((m) => `<button class="pbMpRow${has(m) ? " on" : ""}" data-action="pb-triage-toggle-mistake" data-id="${esc(m.id)}">
+  const c = pbNoteCandidates(pageId, kind);
+  const has = (m) => pbNoteTradeIds(m).includes(t.id);
+  const group = (label, all) => { const list = all.filter((m) => !pbVerifyRejected(m) || has(m)); return list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + list.map((m) => `<button class="pbMpRow${has(m) ? " on" : ""}${isV ? " isVerify" : ""}" data-action="pb-triage-toggle-note" data-id="${esc(m.id)}">
       <span class="pbMpBox">${has(m) ? ICONS.check : ""}</span>
       <span class="pbMpTitle">${esc(pbTitle(m))}</span>
-      <span class="pbMpN mono">${pbMistakeTrades(m).length}</span>
-    </button>`).join("") : "";
+      ${isV ? pbStatusPillHtml(m) : ""}
+      <span class="pbMpN mono">${pbNoteTrades(m).length}</span>
+    </button>`).join("") : ""; };
   const page = pbFind(pageId);
   const sys = page && page.kind === "strategy" ? pbFind(page.parent_id) : null;
-  const body = group(page ? T("pb.mp.ofPage", { name: pbTitle(page) }) : "", c.own)
-    + group(sys ? T("pb.mp.ofPage", { name: pbTitle(sys) }) : "", c.fromSystem)
-    + group(T("pb.globalMistake"), c.global);
+  const ofKey = isV ? "pb.mp.ofPageVerify" : "pb.mp.ofPage";
+  const body = group(page ? T(ofKey, { name: pbTitle(page) }) : "", c.own)
+    + group(sys ? T(ofKey, { name: pbTitle(sys) }) : "", c.fromSystem)
+    + group(T(isV ? "pb.globalVerify" : "pb.globalMistake"), c.global);
+  const newPh = page ? T(isV ? "pb.mp.newPhVerify" : "pb.mp.newPh", { name: pbTitle(page) }) : T(isV ? "pb.mp.newPhGlobalVerify" : "pb.mp.newPhGlobal");
   return `<div class="pbMp">
-    <input class="input" id="pbErrText" type="text" placeholder="${esc(T("pb.mp.errPh"))}" value="${esc(pbTriage.errText)}" oninput="window.__pbTriageInput(this,'errText')" />
-    ${body || `<div class="pbEmptyLine">${esc(T("pb.mp.empty"))}</div>`}
+    <input class="input" id="pbErrText" type="text" placeholder="${esc(T(isV ? "pb.mp.notePh" : "pb.mp.errPh"))}" value="${esc(pbTriage.errText)}" oninput="window.__pbTriageInput(this,'errText')" />
+    ${body || `<div class="pbEmptyLine">${esc(T(isV ? "pb.mp.emptyVerify" : "pb.mp.empty"))}</div>`}
     <div class="pbMpNew">
-      <input class="input" type="text" placeholder="${esc(page ? T("pb.mp.newPh", { name: pbTitle(page) }) : T("pb.mp.newPhGlobal"))}" value="${esc(pbTriage.newMistake)}"
-        oninput="window.__pbTriageInput(this,'newMistake')"
-        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();window.__pbTriageInput(this,'newMistake');document.querySelector('[data-action=&quot;pb-triage-new-mistake&quot;]').click();}" />
-      <button class="btn" data-action="pb-triage-new-mistake">${ICONS.plus} ${esc(T("pb.mp.create"))}</button>
+      <input class="input" type="text" placeholder="${esc(newPh)}" value="${esc(pbTriage.newNote)}"
+        oninput="window.__pbTriageInput(this,'newNote')"
+        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();window.__pbTriageInput(this,'newNote');document.querySelector('[data-action=&quot;pb-triage-new-note&quot;]').click();}" />
+      <button class="btn" data-action="pb-triage-new-note" data-kind="${kind}">${ICONS.plus} ${esc(T("pb.mp.create"))}</button>
     </div>
   </div>`;
 }
@@ -589,6 +690,7 @@ function pbTriageBodyHtml() {
       ${cur === o.id ? `<span class="pbOptCheck">${ICONS.check}</span>` : ""}
     </button>`).join("");
   const inMistakes = pbMistakesWithTrade(t.id);
+  const inVerify = pbNotesWithTrade(t.id, "verify");
   const starOn = pbTradeStarred(t);
   const canStar = !!pbTradePageId(t);
   const rF = roleField("r_multiple"), resultF = roleField("result");
@@ -627,11 +729,14 @@ function pbTriageBodyHtml() {
           <button class="pbToggle${starOn ? " on" : ""}" data-action="pb-triage-star" ${canStar ? "" : `disabled title="${esc(T("pb.triage.starNeedsPage"))}"`}>
             <kbd>S</kbd>${starOn ? ICONS.starFill : ICONS.star}<span>${esc(T("pb.triage.star"))}</span>
           </button>
-          <button class="pbToggle${pbTriage.mistakeOpen ? " open" : ""}${inMistakes.length ? " on" : ""}" data-action="pb-triage-mistake">
+          <button class="pbToggle${pbTriage.panel === "mistake" ? " open" : ""}${inMistakes.length ? " on" : ""}" data-action="pb-triage-panel" data-kind="mistake">
             <kbd>E</kbd>${ICONS.alert}<span>${esc(inMistakes.length ? T("pb.triage.inMistakes", { n: inMistakes.length }) : T("pb.triage.addMistake"))}</span>
           </button>
+          <button class="pbToggle isVerify${pbTriage.panel === "verify" ? " open" : ""}${inVerify.length ? " on" : ""}" data-action="pb-triage-panel" data-kind="verify">
+            <kbd>V</kbd>${ICONS.search}<span>${esc(inVerify.length ? T("pb.triage.inVerify", { n: inVerify.length }) : T("pb.triage.addVerify"))}</span>
+          </button>
         </div>
-        ${pbTriage.mistakeOpen ? pbTriageMistakePanelHtml(t) : ""}
+        ${pbTriage.panel ? pbTriageNotePanelHtml(t, pbTriage.panel) : ""}
       </div>
       <div class="pbTriageNav">
         <button class="btn" data-action="pb-triage-prev" ${pbTriage.i === 0 ? "disabled" : ""}><kbd>←</kbd> ${esc(T("pb.triage.prev"))}</button>
@@ -640,8 +745,8 @@ function pbTriageBodyHtml() {
     </div>
   </div>`;
 }
-/* 归类模式的键盘：数字 = 归到第几项（0 = 不属于任何模型）、S = 关注、E = 错题、Enter / → = 下一笔、← = 上一笔。
-   正在输入（错在哪、新错题名字）或者有弹层时一律让开 */
+/* 归类模式的键盘：数字 = 归到第几项（0 = 不属于任何模型）、S = 关注、E = 错题、V = 待验证、Enter / → = 下一笔、← = 上一笔。
+   正在输入（错在哪、新笔记名字）或者有弹层时一律让开 */
 function pbTriageKey(e) {
   if (tab !== "playbook" || !pbTriage) return false;
   if (lightboxUrl || editingTrade || editingReview || pbNameModal || tradePreviewId || profileModalOpen) return false;
@@ -651,7 +756,7 @@ function pbTriageKey(e) {
   const k = e.key;
   if (k === "Escape") {
     e.preventDefault();
-    if (pbTriage.mistakeOpen) { pbTriage.mistakeOpen = false; render(); }
+    if (pbTriage.panel) { pbTriage.panel = ""; render(); }
     else { pbTriage = null; render(); }
     return true;
   }
@@ -666,37 +771,91 @@ function pbTriageKey(e) {
     return true;
   }
   if (k === "s" || k === "S") { e.preventDefault(); pbTriageStar(); return true; }
-  if (k === "e" || k === "E") {
-    e.preventDefault();
-    pbTriage.mistakeOpen = !pbTriage.mistakeOpen;
-    render();
-    if (pbTriage.mistakeOpen) { const inp = document.getElementById("pbErrText"); if (inp) inp.focus(); }
-    return true;
-  }
+  if (k === "e" || k === "E") { e.preventDefault(); pbTriageOpenPanel("mistake"); return true; }
+  if (k === "v" || k === "V") { e.preventDefault(); pbTriageOpenPanel("verify"); return true; }
   return false;
 }
 
 /* ============================================================
    交易表单顶上的「模型库」一栏 + 交易预览里的归属
    ============================================================ */
+/* 表单里勾的笔记先记在这里，点「保存」、交易存成功之后才写进笔记正文：
+   取消表单的话笔记不该被改；新交易在库里还不存在，也不能先写一个指向它的胶囊。
+   renderModal 换了一笔交易时清空（见 13 文件里 formDraft 初始化那一行）。 */
+let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, errText, creating: "" | "mistake" | "verify", newName, showAll: {} }
+function pbFormNotesState() {
+  if (!editingTrade) return null;
+  if (!pbFormNotes || pbFormNotes.tradeId !== editingTrade.id) {
+    const init = new Set(pbPages.filter((m) => pbIsNote(m) && pbNoteTradeIds(m).includes(editingTrade.id)).map((m) => m.id));
+    pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), errText: "", creating: "", newName: "", showAll: {} };
+  }
+  return pbFormNotes;
+}
+const PB_FORM_NOTES_LIMIT = 8;
+function pbFormNotesBoxHtml(kind, pageId) {
+  const st = pbFormNotesState();
+  if (!st) return "";
+  const isV = kind === "verify";
+  const ro = !!viewingUserId;
+  const c = pbNoteCandidates(pageId, kind);
+  // 已否定的想法有结论了，不再摆出来让人勾——除非这笔本来就在里面
+  const cands = c.own.concat(c.fromSystem, c.global).filter((m) => !pbVerifyRejected(m) || st.sel.has(m.id) || st.init.has(m.id));
+  const candIds = new Set(cands.map((m) => m.id));
+  // 这笔本来就在里面、或者刚勾上的，就算不在候选里（比如挂在别的策略下）也得列出来，不然没法取消
+  const extra = pbSortList(pbNotes(kind).filter((m) => (st.sel.has(m.id) || st.init.has(m.id)) && !candIds.has(m.id)));
+  const all = extra.concat(cands);
+  if (!all.length) return "";
+  const list = st.showAll[kind] ? all : all.filter((m, i) => i < PB_FORM_NOTES_LIMIT || st.sel.has(m.id));
+  const page = pbFind(pageId);
+  const head = isV
+    ? (page ? T("pb.form.verifyHead", { name: pbTitle(page) }) : T("pb.form.verifyHeadGlobal"))
+    : (page ? T("pb.form.remind", { name: pbTitle(page) }) : T("pb.form.remindGlobal"));
+  return `<div class="pbReminders${isV ? " isVerify" : ""}">
+    <div class="pbRemindersHead">${isV ? ICONS.search : ICONS.alert} <span>${esc(head)}</span>${ro ? "" : `<span class="pbRemindersHint">${esc(T("pb.form.checkHint"))}</span>`}</div>
+    ${list.map((m) => {
+      const on = st.sel.has(m.id);
+      const g = pbMistakeGist(m);
+      return `<button type="button" class="pbReminder pbFormNote${on ? " on" : ""}" ${ro ? "disabled" : `data-action="pb-form-note" data-id="${esc(m.id)}"`}>
+        <span class="pbMpBox">${on ? ICONS.check : ""}</span>
+        <span class="pbFormNoteText"><b>${esc(pbTitle(m))}</b>${g ? `<span>${esc(g)}</span>` : ""}</span>
+        ${isV ? pbStatusPillHtml(m) : ""}
+      </button>`;
+    }).join("")}
+    ${all.length > list.length ? `<button type="button" class="tinyBtn pbFormMore" data-action="pb-form-notes-more" data-kind="${kind}">${esc(T("pb.form.more", { n: all.length }))}</button>` : ""}
+  </div>`;
+}
+function pbFormNotesExtraHtml() {
+  const st = pbFormNotesState();
+  if (!st || viewingUserId) return "";
+  const adding = [...st.sel].some((id) => !st.init.has(id));
+  let html = adding
+    ? `<input class="input pbFormNoteInput" type="text" placeholder="${esc(T("pb.form.notePh"))}" value="${esc(st.errText)}" oninput="window.__pbFormNotesInput(this,'errText')" />`
+    : "";
+  if (st.creating) {
+    html += `<div class="pbMpNew pbFormNew">
+      <input class="input" id="pbFormNewName" type="text" placeholder="${esc(T("pb.form.newPh." + st.creating))}" value="${esc(st.newName)}"
+        oninput="window.__pbFormNotesInput(this,'newName')"
+        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();window.__pbFormNotesInput(this,'newName');document.querySelector('[data-action=&quot;pb-form-note-create&quot;]').click();}" />
+      <button type="button" class="btn" data-action="pb-form-note-create">${ICONS.plus} ${esc(T("pb.form.create"))}</button>
+      <button type="button" class="iconBtn" data-action="pb-form-note-cancel">${ICONS.x}</button>
+    </div>`;
+  } else {
+    html += `<div class="pbFormNewBtns">
+      <button type="button" class="tinyBtn" data-action="pb-form-note-new" data-kind="mistake">${ICONS.plus} ${esc(T("pb.form.newMistake"))}</button>
+      <button type="button" class="tinyBtn" data-action="pb-form-note-new" data-kind="verify">${ICONS.plus} ${esc(T("pb.form.newVerify"))}</button>
+    </div>`;
+  }
+  return html;
+}
+window.__pbFormNotesInput = function (el, key) { if (pbFormNotes) pbFormNotes[key] = el.value; };
+
 function pbFormBlockInnerHtml() {
   const readOnly = !!viewingUserId;
   const cur = formDraft[PB_KEY] || "";
   const curValid = cur === PB_NONE || pbTradePageId(formDraft) ? cur : "";
   const star = !!formDraft[PB_STAR_KEY];
   const suggest = curValid ? "" : pbSuggestFor(formDraft);
-  let reminders = "";
   const pageId = curValid && curValid !== PB_NONE ? curValid : "";
-  if (pageId) {
-    const c = pbMistakeCandidates(pageId);
-    const list = c.own.concat(c.fromSystem, c.global).slice(0, 8);
-    if (list.length) {
-      reminders = `<div class="pbReminders">
-        <div class="pbRemindersHead">${ICONS.alert} ${esc(T("pb.form.remind", { name: pbTitle(pbFind(pageId)) }))}</div>
-        ${list.map((m) => { const g = pbMistakeGist(m); return `<div class="pbReminder"><b>${esc(pbTitle(m))}</b>${g ? `<span>${esc(g)}</span>` : ""}</div>`; }).join("")}
-      </div>`;
-    }
-  }
   return `<div class="fieldLabel">${esc(T("pb.form.label"))}</div>
     <div class="pbFormRow">
       <select class="input" data-pb-form-pick ${readOnly ? "disabled" : ""}>
@@ -707,11 +866,48 @@ function pbFormBlockInnerHtml() {
       <button type="button" class="chip pbFormStar${star ? " active" : ""}" ${readOnly || !pageId ? "disabled" : `data-action="pb-form-star"`}>${star ? ICONS.starFill : ICONS.star} ${esc(T("pb.triage.star"))}</button>
     </div>
     ${suggest && !readOnly ? `<button type="button" class="tinyBtn pbFormSuggest" data-action="pb-form-suggest" data-id="${esc(suggest)}">${esc(T("pb.form.suggest", { name: pbLabel(suggest) }))}</button>` : ""}
-    ${reminders}`;
+    ${pbFormNotesBoxHtml("mistake", pageId)}
+    ${pbFormNotesBoxHtml("verify", pageId)}
+    ${pbFormNotesExtraHtml()}`;
+}
+function pbFormNoteToggle(id) {
+  const st = pbFormNotesState();
+  if (!st || viewingUserId || !pbFind(id)) return;
+  if (st.sel.has(id)) st.sel.delete(id); else st.sel.add(id);
+  refreshPbFormBlock();
+}
+/* 表单里现建一条笔记：页面马上建（就是个空模板），「这笔算进去」照样等保存时才写 */
+async function pbFormNoteCreate() {
+  const st = pbFormNotesState();
+  const name = st ? (st.newName || "").trim() : "";
+  if (!st || !st.creating || viewingUserId) return;
+  if (!name) { const inp = document.getElementById("pbFormNewName"); if (inp) inp.focus(); return; }
+  const owner = pbTradePageId(formDraft) || null;
+  const m = await pbCreatePage(st.creating, owner, name);
+  if (!m) { alert(pbError || T("error.dbOutdated")); return; }
+  st.sel.add(m.id);
+  st.creating = "";
+  st.newName = "";
+  refreshPbFormBlock();
+}
+/* save-trade 里、交易存成功之后调：把勾选的变化写进各条笔记 */
+async function pbApplyFormNotes(tradeId) {
+  const st = pbFormNotes;
+  pbFormNotes = null;
+  if (!st || st.tradeId !== tradeId || viewingUserId) return;
+  const errs = [];
+  const apply = async (id, on) => {
+    pbError = null;
+    const ok = await pbSetTradeInNote(id, tradeId, on, on ? st.errText : "");
+    if (!ok && pbError) errs.push(pbError);
+  };
+  for (const id of st.sel) if (!st.init.has(id)) await apply(id, true);
+  for (const id of st.init) if (!st.sel.has(id)) await apply(id, false);
+  if (errs.length) alert(errs.join("\n"));
 }
 /* 只在实盘模式、而且建过模型库页面时出现——没用这个功能的人表单里不该多一栏 */
 function pbFormBlockHtml() {
-  if (recordMode !== "live" || !pbHasPages()) return "";
+  if (recordMode !== "live" || (!pbHasPages() && !pbPages.some(pbIsNote))) return "";
   return `<div class="field pbFormBlock" id="pbFormBlock">${pbFormBlockInnerHtml()}</div>`;
 }
 function refreshPbFormBlock() {
@@ -721,9 +917,11 @@ function refreshPbFormBlock() {
 function pbTradePreviewHtml(t) {
   const pid = pbTradePageId(t);
   const mistakes = pbMistakesWithTrade(t.id);
-  if (!pid && !mistakes.length) return "";
+  const verifies = pbNotesWithTrade(t.id, "verify");
+  if (!pid && !mistakes.length && !verifies.length) return "";
   return `<div class="tpPb">
     ${pid ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.form.label"))}</span>${pageRefHtml(pid)}${pbTradeStarred(t) ? `<span class="tpPbStar">${ICONS.starFill}</span>` : ""}</div>` : ""}
     ${mistakes.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.mistake"))}</span>${mistakes.map((m) => pageRefHtml(m.id)).join("")}</div>` : ""}
+    ${verifies.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.verify"))}</span>${verifies.map((m) => pageRefHtml(m.id)).join("")}</div>` : ""}
   </div>`;
 }

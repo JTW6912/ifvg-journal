@@ -133,6 +133,7 @@ function pageRefKindLabel(d) {
   if (d.kind === "system") return T("pb.kind.system");
   if (d.kind === "strategy") return T("pb.kind.strategy");
   if (d.kind === "mistake") return T("pb.kind.mistake");
+  if (d.kind === "verify") return T("pb.kind.verify");
   return T("pb.kind.review");
 }
 function pageRefHtml(id) {

@@ -150,3 +150,46 @@ test("[[page:id]] 渲染成页面胶囊；找不到的标红，不静默消失�
   assert.strictEqual(call("(s) => mdPlainExcerpt(s)", "见 [[page:st1]]"), "见 [趋势延续]");
   assert.deepStrictEqual(call("(s) => extractPageRefs(s)", "[[page:a]] [[page:b]] [[page:a]]"), ["a", "b"]);
 });
+
+/* ---------- 待验证 ---------- */
+const VPAGES = PAGES.concat([
+  { id: "v1", kind: "verify", parent_id: "st1", title: "亚盘扫完反手", status: "works", body: "- [[trade:a]] 好\n- [[trade:b]]", created_at: "2026-10-02T00:00:00Z" },
+  { id: "v2", kind: "verify", parent_id: null, title: "通用想法", created_at: "2026-10-02T00:01:00Z" },
+  { id: "m1", kind: "mistake", parent_id: "st1", title: "追单", body: "- [[trade:a]]", created_at: "2026-10-02T00:02:00Z" },
+]);
+
+test("待验证跟错题一样是笔记：交易归不进去，按归属分候选，两种笔记互不混", () => {
+  const { call } = setup(VPAGES, [{ id: "a", __pb: "v1" }]);
+  assert.strictEqual(call("() => pbTradePageId(trades[0])"), "");   // 指向笔记的 __pb 按未归类读
+  const c = call("() => pbNoteCandidates('st1', 'verify')");
+  assert.deepStrictEqual(c.own.map((m) => m.id), ["v1"]);
+  assert.deepStrictEqual(c.global.map((m) => m.id), ["v2"]);
+  assert.deepStrictEqual(call("() => pbMistakeCandidates('st1').own.map((m) => m.id)"), ["m1"]);
+  assert.deepStrictEqual(call("() => pbNotesWithTrade('a', 'verify').map((m) => m.id)"), ["v1"]);
+  assert.deepStrictEqual(call("() => pbMistakesWithTrade('a').map((m) => m.id)"), ["m1"]);
+});
+
+test("待验证的状态：认不出的一律按观察中；status 只在待验证上写", () => {
+  const { call } = setup(VPAGES);
+  assert.strictEqual(call("() => pbVerifyStatus(pbFind('v1'))"), "works");
+  assert.strictEqual(call("() => pbVerifyStatus(pbFind('v2'))"), "watching");
+  assert.strictEqual(call("() => pbVerifyStatus({ kind: 'verify', status: 'maybe' })"), "watching");
+  call("() => { session = { user: { id: 'u' } }; }");
+  assert.strictEqual(call("() => pbRowPayload(pbFind('v2')).status"), "watching");
+  assert.strictEqual(call("() => 'status' in pbRowPayload(pbFind('m1'))"), false);
+  assert.strictEqual(call("() => 'status' in pbRowPayload(pbFind('sys'))"), false);
+});
+
+test("待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」", () => {
+  const { call } = setup(VPAGES);
+  const tpl = call("() => pbTemplateBody('verify')");
+  assert.match(tpl, /## 想验证什么/);
+  assert.match(tpl, /## 涉及的交易/);
+  assert.match(tpl, /## 结论/);
+  const gist = (body) => call("(body) => pbMistakeGist({ kind: 'verify', body })", body);
+  assert.strictEqual(gist("## 想验证什么\n\n扫完反手能不能做\n\n## 结论\n"), "扫完反手能不能做");
+  assert.strictEqual(gist("## 想验证什么\n\nA\n\n## 结论\n\n可以做"), "可以做");
+  // 往待验证里加交易，跟错题一样落在「涉及的交易」那一节
+  const body = call("(b) => pbAppendTradeToBody(b, 'x1', '情况')", tpl);
+  assert.match(body, /## 涉及的交易\n\n- \[\[trade:x1\]\] 情况/);
+});
