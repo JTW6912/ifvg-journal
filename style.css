@@ -8,6 +8,7 @@
   --note:#1E1B13; --noteEdge:#6B5626; --noteText:#E9DFC4;
   --verify:#A387E0; --verifySoft:rgba(163,135,224,.16);
   --vnote:#19162A; --vnoteEdge:#56478A; --vnoteText:#E1D9F5;
+  --tag:#3DB5A6; --tagSoft:rgba(61,181,166,.15);
 }
 :root[data-theme="light"]{
   --bg:#F6F4EF; --surface:#FFFFFF; --surface2:#EFEBE1; --border:#E1DACB; --borderLight:#D2C9B4;
@@ -19,6 +20,7 @@
   --note:#FBF2D5; --noteEdge:#E0C27A; --noteText:#3A2F14;
   --verify:#7350B8; --verifySoft:rgba(115,80,184,.12);
   --vnote:#F2EDFB; --vnoteEdge:#C6B4E8; --vnoteText:#2D2346;
+  --tag:#1E8A7D; --tagSoft:rgba(30,138,125,.12);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
@@ -862,6 +864,7 @@ button.pageRef{line-height:1.5;}
 .pageRef.kind-strategy{--k:var(--info);}
 .pageRef.kind-mistake{--k:var(--neg);}
 .pageRef.kind-verify{--k:var(--verify);}
+.pageRef.kind-tag{--k:var(--tag);}
 .pageRef:hover{border-color:var(--k);}
 .pageRefKind{font-size:10px;padding:0 6px;border-radius:9px;background:var(--k);color:var(--bg);font-weight:600;
   letter-spacing:.3px;line-height:16px;white-space:nowrap;}
@@ -869,6 +872,7 @@ button.pageRef{line-height:1.5;}
 .pageRefKind.kind-strategy{background:var(--info);}
 .pageRefKind.kind-mistake{background:var(--neg);}
 .pageRefKind.kind-verify{background:var(--verify);}
+.pageRefKind.kind-tag{background:var(--tag);}
 .pageRefKind.kind-review{background:var(--muted);}
 .pageRefMeta{font-size:12px;}
 .pageRef.broken{background:var(--negSoft);border-color:var(--neg);color:var(--neg);cursor:default;padding-left:8px;}
@@ -909,6 +913,7 @@ button.pageRef{line-height:1.5;}
 .pbKindBadge.kind-strategy{color:var(--info);background:var(--infoSoft);}
 .pbKindBadge.kind-mistake{color:var(--neg);background:var(--negSoft);}
 .pbKindBadge.kind-verify{color:var(--verify);background:var(--verifySoft);}
+.pbKindBadge.kind-tag{color:var(--tag);background:var(--tagSoft);}
 
 /* 一行成绩：笔数 · 胜率 · 平均 R · 总 R */
 .pbStatsRow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;font-size:12px;color:var(--mutedDark);}
@@ -958,6 +963,7 @@ button.pageRef{line-height:1.5;}
 
 /* ---------- 错题便利贴 ---------- */
 .pbLibMistakes{margin-top:8px;}
+.pbLibTags+.pbLibMistakes{margin-top:28px;}
 .pbFilterChips{margin-bottom:14px;}
 .pbChipN{font-size:10.5px;opacity:.7;margin-left:2px;}
 .pbStickyGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;align-items:start;}
@@ -972,6 +978,36 @@ button.pageRef{line-height:1.5;}
 .pbStickyFoot{margin-top:auto;font-size:10.5px;opacity:.65;padding-top:4px;}
 .pbStickyTop{display:flex;align-items:center;gap:8px;min-width:0;}
 .pbStickyTop .pbStickyOwner{flex:1;min-width:0;}
+
+/* ---------- 标签：有它 vs 没它 ---------- */
+.pbLibTags{margin-top:28px;}
+.pbTagGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start;}
+.pbTagCard{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--tag);border-radius:8px;padding:11px 14px 10px;
+  cursor:pointer;display:flex;flex-direction:column;gap:5px;transition:border-color .15s,transform .15s;}
+.pbTagCard:hover{border-color:var(--borderLight);border-left-color:var(--tag);transform:translateY(-1px);}
+.pbTagHead{display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:2px;}
+.pbTagName{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;color:var(--text);min-width:0;}
+.pbTagName svg{color:var(--tag);flex-shrink:0;}
+.pbTagOwner{margin-left:auto;font-size:10.5px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pbTagLine{display:flex;align-items:baseline;gap:8px;font-size:11.5px;color:var(--muted);}
+.pbTagLine.on{color:var(--text);}
+.pbTagSide{flex-shrink:0;min-width:34px;font-size:10.5px;font-weight:600;padding:0 6px;border-radius:8px;text-align:center;
+  color:var(--mutedDark);background:var(--surface2);}
+.pbTagLine.on .pbTagSide,.pbTagCompareRow.on .pbTagSide{color:var(--tag);background:var(--tagSoft);}
+.pbTagDelta{font-size:11.5px;color:var(--muted);padding-top:5px;margin-top:2px;border-top:1px dashed var(--border);}
+.pbTagCompare{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+.pbTagCompareRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.pbTagCompareRow .pbTagSide{min-width:44px;font-size:11.5px;padding:1px 8px;}
+.pbTagChip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.pbTagChip svg{width:11px;height:11px;}
+.pbTagChip:hover:not(:disabled){border-color:var(--tag);color:var(--text);}
+.pbTagChip.on{border-color:var(--tag);background:var(--tagSoft);color:var(--tag);font-weight:600;}
+.pbTagChip:disabled{cursor:default;}
+.pbTagChip.small{padding:0 7px;font-size:10.5px;border-color:transparent;background:var(--tagSoft);color:var(--tag);cursor:inherit;flex-shrink:0;}
+.pbFormTags,.pbTriageTags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.pbFormTagsLabel,.pbTriageTagsLabel{font-size:11px;color:var(--mutedDark);margin-right:2px;}
+.pbTriageTags{margin-top:12px;}
 
 /* ---------- 待验证：紫色便利贴，状态决定顶边颜色 ---------- */
 .pbLibVerify{margin-top:28px;}

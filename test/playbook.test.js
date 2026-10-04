@@ -193,3 +193,49 @@ test("待验证的模板和便利贴摘要：先看「结论」，没写退回�
   const body = call("(b) => pbAppendTradeToBody(b, 'x1', '情况')", tpl);
   assert.match(body, /## 涉及的交易\n\n- \[\[trade:x1\]\] 情况/);
 });
+
+/* ---------- 标签 ---------- */
+const TPAGES = PAGES.concat([
+  { id: "g1", kind: "tag", parent_id: "sys", title: "有 SMT", created_at: "2026-10-03T00:00:00Z" },
+  { id: "g2", kind: "tag", parent_id: null, title: "新闻日", created_at: "2026-10-03T00:01:00Z" },
+]);
+const TTRADES = [
+  { id: "a", __pb: "st1", __pb_tags: ["g1"], result: "W" },
+  { id: "b", __pb: "st2", __pb_tags: ["g1", "gone"], result: "W" },
+  { id: "c", __pb: "st1", result: "L" },
+  { id: "d", __pb: "tld", result: "L" },
+  { id: "e", __pb: "tld", __pb_tags: ["g1"], result: "L" },   // 打了 Mech 的标签但归在别的系统：「有」照样算它
+];
+
+test("标签不是能归交易的页面，也不算笔记；指向已删除标签的 id 读的时候忽略", () => {
+  const { call } = setup(TPAGES, TTRADES);
+  assert.strictEqual(call("() => pbTradePageId({ __pb: 'g1' })"), "");
+  assert.strictEqual(call("() => pbIsNote(pbFind('g1'))"), false);
+  assert.strictEqual(call("() => pbIsChild(pbFind('g1'))"), true);
+  assert.deepStrictEqual(call("() => pbTradeTagIds(trades[1])"), ["g1"]);
+});
+
+test("有 vs 没有：「没有」是标签所在那一页（系统含衍生策略）里没打标签的，通用标签跟全部交易比", () => {
+  const { call } = setup(TPAGES, TTRADES);
+  const c = call("() => { const c = pbTagCompare(pbFind('g1')); return { w: c.withList.map((t) => t.id).sort(), wo: c.withoutList.map((t) => t.id).sort() }; }");
+  assert.deepStrictEqual(c.w, ["a", "b", "e"]);
+  assert.deepStrictEqual(c.wo, ["c"]);   // d 归在 TLD-QM，不在 Mech 的范围里
+  const g = call("() => pbTagCompare(pbFind('g2')).withoutList.length");
+  assert.strictEqual(g, 5);
+});
+
+test("打 / 摘标签：顺手清掉失效的 id，摘空了整个键删掉", () => {
+  const { call } = setup(TPAGES, TTRADES);
+  assert.deepStrictEqual(call("() => pbTagsToggled(trades[1], 'g2')"), ["g1", "g2"]);
+  assert.strictEqual(call("() => pbTagsToggled(trades[0], 'g1')"), undefined);
+  assert.deepStrictEqual(call("() => pbTagsToggled(trades[2], 'g1')"), ["g1"]);
+});
+
+test("模型库标签做成多选虚拟字段：选项带归属，取值是这笔打的标签", () => {
+  const { call } = setup(TPAGES, TTRADES);
+  const f = call("() => resolveField(VF_PB_TAGS)");
+  assert.strictEqual(f.type, "multiselect");
+  assert.deepStrictEqual(f.options, ["RIFVG · 有 SMT", "新闻日"]);
+  assert.deepStrictEqual(call("() => tradeFieldValue(trades[0], resolveField(VF_PB_TAGS))"), ["RIFVG · 有 SMT"]);
+  assert.ok(call("() => breakdownCandidateFields().some((x) => x.id === VF_PB_TAGS)"));
+});

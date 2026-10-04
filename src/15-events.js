@@ -48,7 +48,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
     if (draft) {
       schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
-      [PB_KEY, PB_STAR_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
+      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
       blank._resumedDraft = true;
     }
     const dateF = roleField("date");
@@ -167,7 +167,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
     if (draft) {
       schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
-      [PB_KEY, PB_STAR_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
+      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
       blank._resumedDraft = true;
     }
     const dateF = roleField("date");
@@ -748,7 +748,7 @@ document.addEventListener("click", async (e) => {
     if (m.from === "triage" && pbTriage) {
       // 归类时现建的系统：顺手把眼前这一笔归进去，然后接着归类，不跳去编辑页面
       const t = pbTriageCurrent();
-      if (t && !pbIsNote(p)) await pbTriageAssign(p.id);
+      if (t && pbIsPage(p)) await pbTriageAssign(p.id);
       render();
       return;
     }
@@ -762,7 +762,7 @@ document.addEventListener("click", async (e) => {
     const p = pbFind(id);
     pbConfirmDeleteId = null;
     if (!p) return;
-    const up = pbIsNote(p) ? pbNoteOwner(p) : pbFind(p.parent_id);
+    const up = pbIsChild(p) ? pbNoteOwner(p) : pbFind(p.parent_id);
     const ok = await deletePbPage(id);
     if (!ok) { reviewSaveError = pbError; updateReviewSaveBadge(); refreshReviewWeekRow(); return; }
     if (editingReview && editingReview.id === id) {
@@ -812,6 +812,14 @@ document.addEventListener("click", async (e) => {
     refreshPbFormBlock(); saveDraft();
   }
   else if (action === "pb-form-note") { pbFormNoteToggle(el.dataset.id); }
+  else if (action === "pb-form-tag") {
+    // 标签存在交易自己身上，跟着交易一起存（不像笔记要等保存后再写进别的页面）
+    if (!editingTrade || viewingUserId || !pbFind(el.dataset.id)) return;
+    const next = pbTagsToggled(formDraft, el.dataset.id);
+    if (next) formDraft[PB_TAGS_KEY] = next; else delete formDraft[PB_TAGS_KEY];
+    refreshPbFormBlock(); saveDraft();
+  }
+  else if (action === "pb-triage-tag") { await pbTriageToggleTag(el.dataset.id); }
   else if (action === "pb-form-notes-more") {
     const st = pbFormNotesState();
     if (st) { st.showAll[el.dataset.kind] = true; refreshPbFormBlock(); }
@@ -819,7 +827,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "pb-form-note-new") {
     const st = pbFormNotesState();
     if (!st || viewingUserId) return;
-    st.creating = el.dataset.kind === "verify" ? "verify" : "mistake";
+    st.creating = PB_CHILD_KINDS.includes(el.dataset.kind) ? el.dataset.kind : "mistake";
     st.newName = "";
     refreshPbFormBlock();
     const inp = document.getElementById("pbFormNewName");

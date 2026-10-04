@@ -8,11 +8,15 @@
      待验证   verify    还不确定能不能做的想法：涉及哪些单、成绩如何、结论（归属规则跟错题一样）。
                         status = watching 观察中 / works 验证可做 / rejected 已否定；可做的能一键升级成衍生策略
    错题和待验证合称「笔记」（pbIsNote）：都是「正文里列着几笔交易」的便利贴，不是交易能归进去的页面。
+     标签     tag       一个已经确认过的条件 / 变体，例：Mech 模型「有 SMT」。不单开策略、也不是待验证，
+                        只把交易标出来，看有它和没它差多少（归属规则跟错题一样）
+   笔记和标签合称「挂在页面下面的东西」（pbIsChild）；能归交易的「页面」只有系统和策略（pbIsPage）。
    正文是 markdown，编辑器 / 折叠 / 目录全部复用复盘那一套（editingReview 上带 kind 就是模型库页面）。
 
    交易属于哪一页存在交易自己身上（trades.data 里的两个保留键，不是用户字段）：
      __pb       页面 id；"__none" = 确认过「不属于任何模型」，归类时不再出现
      __pb_star  true = 「我关注的关联交易」，在页面上单独展示
+     __pb_tags  打了哪些标签（标签页面 id 的数组；一笔可以打好几个）
    一笔交易只属于一个策略（说不清是哪个子策略时归到系统本身），放在交易上删交易时自然就没了，
    也不用迁移——data 是 jsonb，多两个键而已。
 
@@ -22,15 +26,22 @@
    ⚠ 指向已删除页面的 __pb 一律按「未归类」读（pbTradePageId 返回空），不报错也不静默算进别处——
    这样就算删页面时没来得及改交易（比如当时在回测模式，实盘交易不在内存里），交易也只是回到归类队列。
    ============================================================ */
-const PB_KINDS = ["system", "strategy", "mistake", "verify"];
+const PB_KINDS = ["system", "strategy", "mistake", "verify", "tag"];
 const PB_NOTE_KINDS = ["mistake", "verify"];
+const PB_CHILD_KINDS = ["mistake", "verify", "tag"];
+/* 没挂在任何页面上时叫什么、它所在的那面墙叫什么 */
+const PB_GLOBAL_KEY = { mistake: "pb.globalMistake", verify: "pb.globalVerify", tag: "pb.globalTag" };
+const PB_LIBRARY_KEY = { mistake: "pb.mistakeLibrary", verify: "pb.verifyLibrary", tag: "pb.tagLibrary" };
 const PB_VERIFY_STATUSES = ["watching", "works", "rejected"];
 const PB_KEY = "__pb";
 const PB_STAR_KEY = "__pb_star";
+const PB_TAGS_KEY = "__pb_tags";
 const PB_NONE = "__none";
 
 function isPbDoc(d) { return !!d && PB_KINDS.includes(d.kind); }
 function pbIsNote(d) { return !!d && PB_NOTE_KINDS.includes(d.kind); }
+function pbIsChild(d) { return !!d && PB_CHILD_KINDS.includes(d.kind); }
+function pbIsPage(d) { return !!d && (d.kind === "system" || d.kind === "strategy"); }
 function pbVerifyStatus(d) { return d && PB_VERIFY_STATUSES.includes(d.status) ? d.status : "watching"; }
 /* 已否定的待验证：有结论了，记交易 / 归类时不再摆出来让人勾 */
 function pbVerifyRejected(d) { return !!d && d.kind === "verify" && pbVerifyStatus(d) === "rejected"; }
@@ -88,7 +99,7 @@ function pbTradePageId(t) {
   const v = t && t[PB_KEY];
   if (!v || v === PB_NONE) return "";
   const p = pbFind(v);
-  return p && !pbIsNote(p) ? v : "";
+  return pbIsPage(p) ? v : "";
 }
 function pbTradeIsNone(t) { return !!t && t[PB_KEY] === PB_NONE; }
 function pbTradeIsUnsorted(t) { return !pbTradePageId(t) && !pbTradeIsNone(t); }
@@ -141,7 +152,7 @@ function pbNotesOf(pageId, kind) {
   const ids = new Set(pbScopeIds(pageId));
   return pbSortList(pbNotes(kind).filter((m) => ids.has(m.parent_id)));
 }
-function pbNoteOwner(m) { const o = pbFind(m && m.parent_id); return o && !pbIsNote(o) ? o : null; }
+function pbNoteOwner(m) { const o = pbFind(m && m.parent_id); return pbIsPage(o) ? o : null; }
 /* 通用笔记：没挂在任何页面上（或者挂的那页被删了） */
 function pbGlobalNotes(kind) { return pbSortList(pbNotes(kind).filter((m) => !pbNoteOwner(m))); }
 /* 记新交易 / 归类时要摆出来的笔记：策略自己的 + 它所属系统的 + 通用的。系统页：系统的 + 它衍生策略的 + 通用的 */
@@ -179,6 +190,35 @@ function pbMistakeTradeIds(m) { return pbNoteTradeIds(m); }
 function pbMistakeTrades(m) { return pbNoteTrades(m); }
 function pbMistakesWithTrade(tradeId) { return pbNotesWithTrade(tradeId, "mistake"); }
 function pbMistakeLastDate(m) { return pbNoteLastDate(m); }
+
+/* ---------- 标签 ----------
+   交易打了哪些标签存在交易自己身上（__pb_tags），跟 __pb 一个套路：删交易时自然就没了，
+   指向已删除标签的 id 读的时候直接忽略（pbTradeTagIds）。
+   对比的范围：标签挂在哪一页，「没有」就是那一页（系统页含衍生策略）里没打这个标签的交易；
+   通用标签跟全部交易比。「有」= 所有打了这个标签的交易（归到别处的也算，不然标了却看不见） */
+function pbTags() { return pbNotes("tag"); }
+function pbTradeTagIds(t) {
+  const v = t && t[PB_TAGS_KEY];
+  return Array.isArray(v) ? v.filter((id) => { const p = pbFind(id); return !!p && p.kind === "tag"; }) : [];
+}
+function pbTagTrades(tag) { return pbSortTradesDesc(trades.filter((t) => pbTradeTagIds(t).includes(tag.id))); }
+function pbTagCompare(tag) {
+  const withList = pbTagTrades(tag);
+  const ids = new Set(withList.map((t) => t.id));
+  const owner = pbNoteOwner(tag);
+  const scope = owner ? pbTradesOf(owner.id) : pbSortTradesDesc(trades);
+  const withoutList = scope.filter((t) => !ids.has(t.id));
+  return { with: pbStats(withList), without: pbStats(withoutList), withList, withoutList, owner };
+}
+/* 「Mech · 有 SMT」：不同系统下可能有同名标签，虚拟字段的选项和筛选条件认的是这个写法 */
+function pbTagLabel(tag) { const o = pbNoteOwner(tag); return o ? pbLabel(o.id) + " · " + pbTitle(tag) : pbTitle(tag); }
+function pbTradeTagLabels(t) { return pbTradeTagIds(t).map((id) => pbTagLabel(pbFind(id))); }
+/* 打 / 摘一个标签之后的数组。顺手清掉指向已删除标签的 id；空了返回 undefined（patch 里 = 删掉这个键） */
+function pbTagsToggled(t, tagId) {
+  const cur = pbTradeTagIds(t);
+  const next = cur.includes(tagId) ? cur.filter((x) => x !== tagId) : cur.concat(tagId);
+  return next.length ? next : undefined;
+}
 
 /* 标题文字在两种语言里各是什么。模板是按建页面时的界面语言写进正文的，
    之后用户可能切了语言，所以认标题的时候两种都认 */
@@ -296,5 +336,6 @@ function pbTemplateBody(kind) {
   if (kind === "system") return [h("pb.tpl.structure"), h("pb.tpl.conditions"), h("pb.tpl.manage")].join("\n\n");
   if (kind === "strategy") return [h("pb.tpl.setupLooks"), h("pb.tpl.conditions"), h("pb.tpl.manage")].join("\n\n");
   if (kind === "verify") return [h("pb.tpl.hypothesis"), h("pb.tpl.mistakeTrades"), h("pb.tpl.verdict")].join("\n\n");
+  if (kind === "tag") return [h("pb.tpl.tagWhat"), h("pb.tpl.verdict")].join("\n\n");
   return [h("pb.tpl.symptom"), h("pb.tpl.mistakeTrades"), h("pb.tpl.avoid")].join("\n\n");
 }

@@ -515,7 +515,8 @@ async function persistPbPage(p) {
 
 /* 删一页。长文不能顺手连带删掉（跟删复盘分组不删里面的复盘同一个道理）：
    - 系统下面还有衍生策略：不让删，界面上会先拦住（这里再兜一次）
-   - 这一页的笔记（错题 / 待验证）挪到上一层（策略 → 所属系统；系统 → 通用）
+   - 这一页的笔记和标签挪到上一层（策略 → 所属系统；系统 → 通用）
+   - 删的是标签：内存里打了这个标签的交易摘掉它（另一个模式的交易读的时候按不存在忽略）
    - 归在这一页的交易：策略的挪到所属系统（「说不清是哪个子策略」本来就归系统），系统的变回未归类
      交易只在实盘模式下归类，回测模式下内存里没有那批交易——那时候不改，读的时候按未归类算（见 pbTradePageId） */
 async function deletePbPage(id) {
@@ -524,8 +525,12 @@ async function deletePbPage(id) {
   if (!p) return false;
   if (p.kind === "system" && pbStrategiesOf(p.id).length) return false;
   const up = p.kind === "strategy" ? (pbFind(p.parent_id) ? p.parent_id : null) : null;
-  if (!pbIsNote(p)) {
-    const orphans = pbPages.filter((m) => pbIsNote(m) && m.parent_id === p.id);
+  if (p.kind === "tag") {
+    const tagged = trades.filter((t) => pbTradeTagIds(t).includes(p.id));
+    if (tagged.length && !(await pbPatchTrades(tagged.map((t) => ({ id: t.id, patch: { [PB_TAGS_KEY]: pbTagsToggled(t, p.id) } }))))) return false;
+  }
+  if (pbIsPage(p)) {
+    const orphans = pbPages.filter((m) => pbIsChild(m) && m.parent_id === p.id);
     for (const m of orphans) { m.parent_id = up; if (!(await persistPbPage(m))) return false; }
     const affected = trades.filter((t) => t[PB_KEY] === p.id);
     if (affected.length) {

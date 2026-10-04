@@ -50,7 +50,7 @@ const SLASH_ITEMS = [
   { cmd: "link",  labelKey: "review.slash.link",  keys: ["link", "url", "链接", "lianjie"] },
   { cmd: "color", labelKey: "review.slash.color", keys: ["color", "颜色", "yanse", "红", "绿", "highlight", "高亮"] },
   { cmd: "trade", labelKey: "review.slash.trade", keys: ["trade", "交易", "jiaoyi", "复盘", "关联"] },
-  { cmd: "page",  labelKey: "review.slash.page",  keys: ["page", "link page", "页面", "错题", "待验证", "模型", "策略", "yemian", "cuoti", "yanzheng", "moxing"] },
+  { cmd: "page",  labelKey: "review.slash.page",  keys: ["page", "link page", "页面", "错题", "待验证", "标签", "模型", "策略", "yemian", "cuoti", "yanzheng", "biaoqian", "moxing"] },
 ];
 const SLASH_MENU_WIDTH = 230;   // 跟 style.css 里 .slashMenu 的 width / max-height 对齐
 const SLASH_MENU_MAX_H = 300;
@@ -1255,9 +1255,9 @@ function pagePickerItems() {
   const self = editingReview && editingReview.id;
   const items = [];
   pbAssignOptions().forEach((o) => items.push({ id: o.id, kind: o.kind, title: o.full }));
-  ["mistake", "verify"].forEach((kind) => pbSortList(pbNotes(kind)).forEach((m) => {
+  PB_CHILD_KINDS.forEach((kind) => pbSortList(pbNotes(kind)).forEach((m) => {
     const o = pbNoteOwner(m);
-    items.push({ id: m.id, kind, title: pbTitle(m), sub: o ? pbLabel(o.id) : T(kind === "verify" ? "pb.globalVerify" : "pb.globalMistake") });
+    items.push({ id: m.id, kind, title: pbTitle(m), sub: o ? pbLabel(o.id) : T(PB_GLOBAL_KEY[kind]) });
   }));
   sortReviewsForDisplay(reviews).forEach((r) => items.push({ id: r.id, kind: "review", title: reviewTitleOf(r), sub: reviewPeriodTagText(r) }));
   return items.filter((it) => it.id !== self && (!q || (it.title + " " + (it.sub || "")).toLowerCase().includes(q)));
@@ -1332,7 +1332,7 @@ function reviewCrumbsHtml() {
   }
   const chain = pbAncestors(d).map((p) =>
     `<button class="reviewCrumbBtn" data-action="pb-open" data-id="${esc(p.id)}">${esc(pbTitle(p))}</button><span class="reviewCrumbSep">/</span>`).join("");
-  const home = pbIsNote(d) && !pbNoteOwner(d) ? T(d.kind === "verify" ? "pb.verifyLibrary" : "pb.mistakeLibrary") : T("tab.playbook");
+  const home = pbIsChild(d) && !pbNoteOwner(d) ? T(PB_LIBRARY_KEY[d.kind]) : T("tab.playbook");
   return `${back}<button class="reviewCrumbBtn" data-action="pb-home">${esc(home)}</button>
     <span class="reviewCrumbSep">/</span>${chain}${title}`;
 }

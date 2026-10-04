@@ -259,6 +259,7 @@ function breakdownCandidateFields() {
   const all = schema.filter((f) => (f.type === "select" || f.type === "multiselect" || f.type === "time") && f.role !== "result");
   // 模型库归属也能拆：「哪个策略在赚钱」正是建模型库想回答的问题
   if (pbHasPages()) all.push(playbookVirtualField());
+  if (pbTags().length) all.push(pbTagsVirtualField());   // 「有 SMT 的单是不是更好」
   const order = analysisPrefs.breakdownOrder || [];
   const ranked = [], rest = [];
   all.forEach((f) => (order.includes(f.id) ? ranked : rest).push(f));

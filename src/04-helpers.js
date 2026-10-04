@@ -115,6 +115,13 @@ function playbookVirtualField() {
   return { id: VF_PLAYBOOK, label: T("vfield.playbook"), type: "select", role: "", virtual: true,
     options: pbAssignOptions().map((o) => o.full) };
 }
+/* 第四个：模型库标签（多选，「Mech · 有 SMT」）。值在交易的 __pb_tags 上。
+   做成虚拟字段之后，筛选、拆解、组合都能拿「有没有这个标签」切 */
+const VF_PB_TAGS = "__pb_tags_vf";
+function pbTagsVirtualField() {
+  return { id: VF_PB_TAGS, label: T("vfield.pbTags"), type: "multiselect", role: "", virtual: true,
+    options: pbSortList(pbTags()).map(pbTagLabel) };
+}
 // 没建过模型库页面的用户不该多出一个永远是空的列 / 筛选字段
 function virtualFields() {
   const out = [
@@ -122,12 +129,14 @@ function virtualFields() {
     { id: VF_UPDATED, label: T("vfield.updated"), type: "date", role: "", virtual: true },
   ];
   if (pbHasPages()) out.push(playbookVirtualField());
+  if (pbTags().length) out.push(pbTagsVirtualField());
   return out;
 }
-function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK; }
+function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK || id === VF_PB_TAGS; }
 // 按 id 找字段：先虚拟字段，再用户自己的 schema。找不到返回 null（调用方按"字段已删除"处理）
 function resolveField(id) {
   if (id === VF_PLAYBOOK) return playbookVirtualField();   // 页面全删光了也认得：存着它的条件不该被当成「字段已删除」
+  if (id === VF_PB_TAGS) return pbTagsVirtualField();
   if (isVirtualFieldId(id)) return virtualFields().find((f) => f.id === id) || null;
   return schema.find((x) => x.id === id) || null;
 }
@@ -144,6 +153,7 @@ function tradeFieldValue(t, field) {
   // 没被改过的老数据 updated_at 可能是空的，回落到创建时间，免得筛「修改日期」时整批凭空消失
   if (field.id === VF_UPDATED) return localDateStr(t._updated_at || t._created_at);
   if (field.id === VF_PLAYBOOK) return pbTradeLabel(t);
+  if (field.id === VF_PB_TAGS) return pbTradeTagLabels(t);
   return t[field.id];
 }
 
