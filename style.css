@@ -1305,3 +1305,11 @@ button.pageRef{line-height:1.5;}
 .exGo{padding:10px 22px;font-size:14px;}
 .exGo:disabled{opacity:.5;cursor:not-allowed;}
 @media(max-width:640px){.exPage{padding:24px 16px 100px;}.exH1{font-size:24px;}.exFoot{flex-direction:column;align-items:stretch;}.exGo{justify-content:center;}}
+
+/* 模型库的「成绩口径」面板：外壳复用 .filterPanel */
+.pbScopePanel{margin-bottom:22px;}
+.pbScopeHint{font-size:12px;color:var(--mutedDark);line-height:1.7;margin-bottom:10px;}
+.pbScopeFixed{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;padding:4px 10px;margin-bottom:12px;}
+.pbScopeFixed svg{width:12px;height:12px;color:var(--pos);}
+.pbScopeMark{border:1px dashed var(--borderLight);border-radius:9px;padding:0 7px;cursor:help;}

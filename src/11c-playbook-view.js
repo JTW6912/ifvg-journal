@@ -184,6 +184,41 @@ function pbEmptyLibraryHtml() {
     ${viewingUserId ? "" : `<button class="btn btn-primary" data-action="pb-new" data-kind="system" data-parent="">${ICONS.plus} ${esc(T("pb.newSystem"))}</button>`}
   </div>`;
 }
+/* ---------- 成绩口径面板 ----------
+   外壳跟分析页「分析范围」、记录页「筛选条件」是同一套（.filterPanel），条件行也是同一套 DOM，
+   靠 data-filter-ctx="playbook" 区分改的是 analysisPrefs.pbScope。
+   标题上的「全部 N → 计入 M」按实盘里归进模型库的交易算：就是卡片上那些成绩的分母 */
+function pbScopePanelHtml() {
+  const ro = !!viewingUserId;
+  const cond = pbScopeConditions();
+  const active = countFilterConditions(cond);
+  const filed = recordMode === "live" ? trades.filter((t) => pbTradePageId(t)) : [];
+  const counted = filed.filter(pbCountsInStats).length;
+  let html = `<div class="filterPanel pbScopePanel${pbScopeOpen ? " open" : ""}">
+    <button class="filterPanelHead" data-action="toggle-pb-scope">
+      ${ICONS.filter}
+      <span class="filterPanelTitle">${esc(T("pb.scope.title"))}</span>
+      ${active ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: active }))}</span>` : `<span class="filterPanelBadge off">${esc(T("pb.scope.none"))}</span>`}
+      ${recordMode === "live" ? `<span class="filterPanelChain mono" title="${esc(T("pb.scope.chainTitle"))}">${filed.length}<span class="arrow">→</span><b>${counted}</b></span>` : ""}
+      <span class="filterPanelChev">${pbScopeOpen ? ICONS.chevUp : ICONS.chevDown}</span>
+    </button>
+    ${!pbScopeOpen && active ? filterPanelSummaryHtml(cond) : ""}`;
+  if (pbScopeOpen) {
+    html += `<div class="filterPanelBody">
+      <div class="pbScopeHint">${esc(T("pb.scope.hint"))}</div>
+      <div class="pbScopeFixed">${ICONS.check} ${esc(T("pb.scope.fixed"))}</div>
+      ${ro ? (active ? filterPanelSummaryHtml(cond) : "") : `<div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">${filterNodeListHtml(cond, PB_SCOPE_CTX)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn" data-action="add-filter" data-filter-ctx="${PB_SCOPE_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
+        <button class="btn" data-action="add-filter-group" data-filter-ctx="${PB_SCOPE_CTX}">${ICONS.plus} ${T("filter.addGroup")}</button>
+        ${cond.length ? `<button class="btn" data-action="pb-scope-clear">${esc(T("pb.scope.clear"))}</button>` : ""}
+      </div>`}
+      <div class="pbScopeHint" style="margin-top:12px;">${esc(T("pb.scope.note"))}</div>
+    </div>`;
+  }
+  return html + `</div>`;
+}
+
 function renderPlaybook() {
   if (pbTriage) return renderPbTriage();
   const readOnly = !!viewingUserId;
@@ -205,6 +240,7 @@ function renderPlaybook() {
   </div>`;
   if (pbError) html += `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(pbError)}</span></div>`;
   html += pbBacktestNote();
+  html += pbScopePanelHtml();
 
   const systems = pbSystems();
   const orphans = pbOrphanStrategies();
@@ -329,7 +365,7 @@ function pbMetaRowInnerHtml() {
   return `${pbKindBadge(d.kind)}
     ${pbParentSelectHtml(d)}
     ${d.kind === "verify" ? pbVerifyStatusHtml(d) : ""}
-    <span class="pbMetaStats">${stats}</span>
+    <span class="pbMetaStats">${stats}${stats && pbScopeActive() && d.kind !== "mistake" ? `<span class="pbStat muted pbScopeMark" title="${esc(comboConditionsText({ conditions: pbScopeConditions() }))}">${esc(T("pb.scope.mark"))}</span>` : ""}</span>
     <span class="pbMetaRight">${promote}${pbDeleteControlHtml(d)}</span>`;
 }
 
@@ -348,7 +384,7 @@ function pbTradeRowHtml(t, opts) {
       <span class="mono pbRowDate">${esc(pbTradeDateOf(t) || "—")}</span>
       ${o.showLabel ? `<span class="pbRowLabel">${esc(pbTradeLabel(t))}</span>` : ""}
       ${tagTxt ? `<span class="pbRowTag">${esc(tagTxt)}</span>` : ""}
-      ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : ""}
+      ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : !pbCountsInStats(t) ? `<span class="pbRowFaded" title="${esc(T("pb.scope.excludedTitle"))}">${esc(T("pb.scope.excluded"))}</span>` : ""}
       <span class="pbRowSpacer"></span>
       ${mistakes.length ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
       ${verifies.length ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
@@ -895,7 +931,7 @@ function pbTriageBodyHtml() {
         </div>
         <div class="focusModelRow">
           ${result ? `<span class="focusResult" style="background:${rc}">${esc(result)}</span>` : ""}
-          ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : ""}
+          ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : !pbCountsInStats(t) ? `<span class="pbRowFaded" title="${esc(T("pb.scope.excludedTitle"))}">${esc(T("pb.scope.excluded"))}</span>` : ""}
           <button class="tinyBtn" data-action="edit-trade" data-id="${esc(t.id)}">${ICONS.pencil} ${esc(T("focus.edit"))}</button>
         </div>
         <div class="focusFields pbTriageFields">${pbTriageFieldsHtml(t)}</div>

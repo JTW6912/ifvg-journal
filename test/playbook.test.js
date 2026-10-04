@@ -262,3 +262,27 @@ test("归类记录：存在交易上，筛选按包含、记录页搜索都找�
   assert.deepStrictEqual(call("() => trades.filter((t) => tradeMatchesFilters(t, [{ ...newFilterRow(VF_PB_NOTE), textValue: '假突破' }])).map((t) => t.id)"), ["a"]);
   assert.deepStrictEqual(call("() => trades.filter((t) => tradeMatchesSearch(t, '假突破')).map((t) => t.id)"), ["a"]);
 });
+
+test("模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里；Faded 照旧固定排除", () => {
+  const { ctx, call } = setup(PAGES, [
+    { id: "a", __pb: "st1", taken: "Taken", result: "W", r_multiple: "2" },
+    { id: "b", __pb: "st1", taken: "Taken", result: "L", r_multiple: "-1", session: "Asia" },
+    { id: "c", __pb: "st1", taken: "Faded", result: "W", r_multiple: "3" },
+  ]);
+  ctx.set("schema", [
+    { id: "taken", label: "taken", type: "select", role: "taken", options: ["Taken", "Faded"] },
+    { id: "result", label: "result", type: "select", role: "result", options: ["W", "L"] },
+    { id: "r_multiple", label: "R", type: "number", role: "r_multiple" },
+    { id: "session", label: "时段", type: "select", role: "", options: ["NYAM", "Asia"] },
+  ]);
+  const before = call("() => pbStats(pbTradesOf('st1'))");
+  assert.deepStrictEqual([before.all, before.n, before.wr], [3, 2, 50]);
+  // 「时段 非 Asia」：b 被排除
+  ctx.run("analysisPrefs.pbScope = [{ ...newFilterRow('session'), values: ['Asia'], negate: true }]");
+  const after = call("() => pbStats(pbTradesOf('st1'))");
+  assert.deepStrictEqual([after.all, after.n, after.faded, after.wr, after.totalR], [3, 1, 2, 100, 2]);
+  assert.strictEqual(call("() => pbTradesOf('st1').length"), 3);
+  assert.strictEqual(call("() => pbScopeActive()"), true);
+  // 存盘再读回来，口径还在
+  assert.strictEqual(call("() => normalizeAnalysisPrefs(JSON.parse(JSON.stringify(analysisPrefs))).pbScope.length"), 1);
+});

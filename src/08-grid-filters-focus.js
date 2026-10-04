@@ -164,8 +164,11 @@ function pruneFilterNodes(arr) {
 //   data-combo-id="c_xxx"      → 那个组合的 conditions
 //   两个都没有                 → 记录页的 activeFilters
 // ⚠ 加新的筛选入口时一定要带上自己的上下文属性，否则会默默落到记录页那份上，把用户的记录页筛选改掉
+//   data-filter-ctx="playbook" → 模型库的成绩口径 analysisPrefs.pbScope
+const PB_SCOPE_CTX = "playbook";
 function filterCtxOf(el) {
   if (el.dataset.filterCtx === ANALYSIS_CTX) return { arr: analysisFilters, comboId: "", scope: ANALYSIS_CTX };
+  if (el.dataset.filterCtx === PB_SCOPE_CTX) return viewingUserId ? null : { arr: analysisPrefs.pbScope, comboId: "", scope: PB_SCOPE_CTX };
   const comboId = el.dataset.comboId || "";
   if (!comboId) return { arr: activeFilters, comboId: "", scope: "grid" };
   const c = findCombo(comboId);
@@ -174,6 +177,7 @@ function filterCtxOf(el) {
 // filterCtxOf 返回的是上下文对象，chipKey / filterCtxAttr 要的是渲染时那个上下文字符串。
 // 展开状态的 key 必须两边算出来一模一样，否则点开的分组下一次 render 就自己合上了
 function ctxKeyOf(ctx) {
+  if (ctx.scope === PB_SCOPE_CTX) return PB_SCOPE_CTX;
   return ctx.scope === ANALYSIS_CTX ? ANALYSIS_CTX : (ctx.comboId || "");
 }
 // 分析页筛选变了：存自己那份 localStorage，顺便标记"套进来的组合已经被改过"
@@ -184,6 +188,8 @@ function afterAnalysisFilterChange() {
 }
 function afterFilterChange(ctx) {
   if (ctx.scope === ANALYSIS_CTX) { afterAnalysisFilterChange(); return; }
+  // 模型库成绩口径：跟着账号走（存 analysis_prefs），改了卡片和页面上的成绩全部跟着变
+  if (ctx.scope === PB_SCOPE_CTX) { queueSaveAnalysisPrefs(); render(); refreshPbPanels(); return; }
   if (ctx.comboId) {
     queueSaveAnalysisPrefs();
   } else {
@@ -267,6 +273,7 @@ function legacyTextContains(t, field, needle) {
 // ctx: "" = 记录页 / ANALYSIS_CTX = 分析页 / 其他字符串 = 组合 id
 function filterCtxAttr(ctx) {
   if (!ctx) return "";
+  if (ctx === PB_SCOPE_CTX) return ` data-filter-ctx="${PB_SCOPE_CTX}"`;
   return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
 }
 // 选项超过这个数，筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
@@ -276,7 +283,7 @@ function filterCtxAttr(ctx) {
 const COLLAPSE_CHIPS_OVER = 5;
 // 展开状态的 key 必须带上下文，否则记录页第 0 行和分析页第 0 行会互相影响
 function chipKey(ctx, idx) {
-  return (ctx === ANALYSIS_CTX ? "analysis" : ctx || "grid") + ":" + idx;
+  return (ctx === ANALYSIS_CTX ? "analysis" : ctx === PB_SCOPE_CTX ? "playbook" : ctx || "grid") + ":" + idx;
 }
 function filterRowValuesHtml(field, path, f, ctx) {
   const cid = filterCtxAttr(ctx);
@@ -285,7 +292,7 @@ function filterRowValuesHtml(field, path, f, ctx) {
     const opts = field.options || [];
     // 选项被删掉但条件里还留着的，也列出来并标红，否则用户根本看不见问题在哪
     const ghosts = vals.filter((v) => !opts.includes(v));
-    const collapsible = (ctx === ANALYSIS_CTX || !ctx) && opts.length > COLLAPSE_CHIPS_OVER;
+    const collapsible = (ctx === ANALYSIS_CTX || ctx === PB_SCOPE_CTX || !ctx) && opts.length > COLLAPSE_CHIPS_OVER;
     const key = chipKey(ctx, path);
     const expanded = !collapsible || expandedFilterChips.has(key);
     const shown = expanded ? opts : opts.filter((o) => vals.includes(o));

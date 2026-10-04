@@ -142,8 +142,15 @@ function pbIsFaded(t) {
   const v = t[takenF.id];
   return !!v && v !== "Taken";
 }
+/* 模型库自己的成绩口径（模型库页顶上「成绩口径」那块设的条件，存在 analysisPrefs.pbScope，跟着账号走）。
+   刻意跟分析页的「分析范围」分开：用户在模型库里要排除的是「只记录、没真做」的单，
+   不想因此把分析页的口径也改了。代价是两边数字可以不一样——所以页面上把口径写出来，不藏。
+   Faded 那条照旧固定排除，口径是在它之外再加的条件 */
+function pbScopeConditions() { return (analysisPrefs && analysisPrefs.pbScope) || []; }
+function pbScopeActive() { return pbScopeConditions().some(filterNodeIsEffective); }
+function pbCountsInStats(t) { return !pbIsFaded(t) && tradeMatchesFilters(t, pbScopeConditions()); }
 function pbStats(list) {
-  const counted = list.filter((t) => !pbIsFaded(t));
+  const counted = list.filter(pbCountsInStats);
   const s = filteredSummaryStats(counted);
   return { ...s, all: list.length, faded: list.length - counted.length };
 }

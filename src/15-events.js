@@ -786,6 +786,16 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "pb-star") { await pbToggleStar(el.dataset.id); }
   else if (action === "pb-show-all-trades") { pbShowAllTrades = true; refreshPbPanels(); }
+  else if (action === "toggle-pb-scope") {
+    pbScopeOpen = !pbScopeOpen;
+    try { localStorage.setItem("journal_pb_scope_open", String(pbScopeOpen)); } catch (err) {}
+    render();
+  }
+  else if (action === "pb-scope-clear") {
+    if (viewingUserId) return;
+    analysisPrefs.pbScope = [];
+    queueSaveAnalysisPrefs(); render(); refreshPbPanels();
+  }
   else if (action === "pb-noted-only") { pbNotedOnly = !pbNotedOnly; refreshPbPanels(); }
   else if (action === "pb-triage-note-to-page") { await pbTriageNoteToPage(); }
   else if (action === "pb-mistake-filter") { pbMistakeFilter = el.dataset.val || "all"; render(); }

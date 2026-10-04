@@ -459,6 +459,10 @@ function exXlsxSheets(ctx) {
   sheets.push({ name: T("ex.sheet.readme"), widths: [24, 90], rows: [[H("item"), H("desc")]].concat(exReadmeRows(ctx)) });
   return sheets;
 }
+/* 模型库成绩口径写进说明：导出的胜率是按什么条件算的，打开文件的人（和 AI）要知道 */
+function exScopeText() {
+  return T("pb.scope.fixed") + (pbScopeActive() ? "；" + comboConditionsText({ conditions: pbScopeConditions() }) : "");
+}
 function exReadmeRows(ctx) {
   return [
     [T("ex.readme.at"), ctx.at.toLocaleString(localeTag())],
@@ -471,6 +475,7 @@ function exReadmeRows(ctx) {
     [T("ex.sheet.tags"), T("ex.readme.tags")],
     [T("ex.sheet.reviews"), T("ex.readme.reviews")],
     [T("ex.readme.statsTitle"), T("ex.readme.stats")],
+    [T("ex.readme.scope"), exScopeText()],
   ];
 }
 
@@ -745,7 +750,7 @@ function exReadmeMd(ctx, names) {
   return [`# ${T("ex.readme.title")}`, "", `- ${T("ex.readme.at")}：${ctx.at.toLocaleString(localeTag())}`,
     `- ${T("ex.readme.modes")}：${[...ctx.want].map(exModeLabel).join(" + ")}`,
     `- ${T("ex.readme.counts")}：${T("ex.readme.countsVal", { t: ctx.exTrades.length, r: ctx.exReviews.length, p: pbPages.length })}`, "",
-    `## ${T("ex.readme.files")}`, "", ...names.map((n) => `- ${n}`), "", T("ex.readme.stats"), ""].join("\n");
+    `## ${T("ex.readme.files")}`, "", ...names.map((n) => `- ${n}`), "", T("ex.readme.stats"), "", `- ${T("ex.readme.scope")}：${exScopeText()}`, ""].join("\n");
 }
 async function runExport() {
   if (exportBusy) return;
