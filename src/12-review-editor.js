@@ -1356,6 +1356,7 @@ function openReviewEditor(id) {
   pagePickerOpen = false;
   pbConfirmDeleteId = null;
   pbShowAllTrades = false;
+  pbExecFilter = "";
   renderReviewEditor(true);
   // 从模型库的卡片点进来时，编辑器盖在列表上面；滚动条回到顶
   const sc = document.getElementById("reviewScroller");

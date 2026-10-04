@@ -100,7 +100,8 @@ function pbStickyHtml(m, opts) {
   else {
     const n = pbNoteTrades(m).length;
     const last = pbNoteLastDate(m);
-    foot = esc(n ? T("pb.sticky.count", { n }) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
+    // 错题也摆成绩：犯这个错的那几笔一共亏了多少，比「出现过几次」更能说明要不要先改它
+    foot = esc(n ? pbStatsLineText(pbStats(pbNoteTrades(m))) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
   }
   const ownerTxt = owner ? pbLabel(owner.id) : T(isV ? "pb.globalVerify" : "pb.globalMistake");
   const top = (o.hideOwner ? "" : `<div class="pbStickyOwner">${esc(ownerTxt)}</div>`) + (isV ? pbStatusPillHtml(m) : "");
@@ -206,7 +207,7 @@ function pbScopePanelHtml() {
   if (pbScopeOpen) {
     html += `<div class="filterPanelBody">
       <div class="pbScopeHint">${esc(T("pb.scope.hint"))}</div>
-      <div class="pbScopeFixed">${ICONS.check} ${esc(T("pb.scope.fixed"))}</div>
+      ${ro ? "" : pbScopePresetsHtml()}
       ${ro ? (active ? filterPanelSummaryHtml(cond) : "") : `<div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">${filterNodeListHtml(cond, PB_SCOPE_CTX)}</div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
         <button class="btn" data-action="add-filter" data-filter-ctx="${PB_SCOPE_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
@@ -217,6 +218,44 @@ function pbScopePanelHtml() {
     </div>`;
   }
   return html + `</div>`;
+}
+
+/* 快捷口径：「全部」= 清空条件；「只算 Taken」= 一条 taken = Taken。是不是当前状态按条件长相判断 */
+function pbScopePresetsHtml() {
+  const f = roleField("taken");
+  const cond = pbScopeConditions();
+  const isAll = !pbScopeActive();
+  const isTaken = !!f && cond.length === 1 && !isFilterGroup(cond[0]) && cond[0].fieldId === f.id && !cond[0].negate
+    && (cond[0].values || []).length === 1 && cond[0].values[0] === "Taken";
+  return `<div class="pbScopePresets"><span class="pbScopeHint" style="margin:0;">${esc(T("pb.scope.quick"))}</span>
+    <button type="button" class="chip ${isAll ? "active" : ""}" data-action="pb-scope-preset" data-preset="all">${esc(T("pb.scope.presetAll"))}</button>
+    ${f && (f.options || []).includes("Taken") ? `<button type="button" class="chip ${isTaken ? "active" : ""}" data-action="pb-scope-preset" data-preset="taken">${esc(T("pb.scope.presetTaken"))}</button>` : ""}
+  </div>`;
+}
+/* 交易行上那枚 taken 值（Taken 高亮，其余灰），口径排除了的再加一枚「不计入」 */
+function pbTakenBadgeHtml(t) {
+  const v = pbTakenValue(t);
+  return (v ? `<span class="pbRowTaken${v === "Taken" ? " isTaken" : ""}">${esc(v)}</span>` : "")
+    + (pbScopeActive() && !pbCountsInStats(t) ? `<span class="pbRowFaded" title="${esc(T("pb.scope.excludedTitle"))}">${esc(T("pb.scope.excluded"))}</span>` : "");
+}
+/* 页面里的「执行情况」：按 taken 的值各算一份成绩。点一行 = 下面的交易列表只看这一类 */
+function pbExecLabel(v) { return v === PB_EXEC_EMPTY ? T("pb.exec.empty") : v; }
+function pbExecTableHtml(list) {
+  const groups = pbExecGroups(list);
+  if (!list.length || !groups.length) return "";
+  const tone = (v) => (v === null || v === undefined || isNaN(v) ? "" : v > 0.0001 ? "pos" : v < -0.0001 ? "neg" : "");
+  const row = (val, label, st, n, cls) => `<button type="button" class="pbExecRow${cls || ""}${pbExecFilter === val ? " on" : ""}" data-action="pb-exec-filter" data-val="${esc(val)}">
+      <span class="pbExecName">${label}</span>
+      <span class="mono">${n}</span>
+      <span class="mono">${esc(fmtPct(st.wr))}</span>
+      <span class="mono ${tone(st.ev)}">${st.hasR ? esc(pbFmtR(st.ev)) : "—"}</span>
+      <span class="mono ${tone(st.totalR)}">${st.hasR ? esc(pbFmtR(st.totalR)) : "—"}</span>
+    </button>`;
+  return `<div class="pbExecTable">
+    <div class="pbExecRow head"><span>${esc(T("pb.exec.col"))}</span><span>${esc(T("ex.col.all"))}</span><span>${esc(T("ex.col.wr"))}</span><span>${esc(T("ex.col.ev"))}</span><span>${esc(T("ex.col.totalR"))}</span></div>
+    ${row("", esc(T("pb.exec.all")), filteredSummaryStats(list), list.length, " isAll")}
+    ${groups.map((g) => row(g.value, `<span class="pbRowTaken${g.value === "Taken" ? " isTaken" : ""}">${esc(pbExecLabel(g.value))}</span>`, g.stats, g.list.length)).join("")}
+  </div>`;
 }
 
 function renderPlaybook() {
@@ -354,9 +393,10 @@ function pbMetaRowInnerHtml() {
   const d = editingReview;
   let stats = "";
   if (d.kind === "mistake") {
-    const n = pbNoteTrades(d).length;
+    // 错题页也给成绩：犯这个错的那几笔一共怎么样
     const last = pbNoteLastDate(d);
-    stats = `<span class="pbStat"><b class="mono">${n}</b> ${esc(T("pb.stat.occurrences"))}</span>${last ? `<span class="pbStat">${esc(T("pb.sticky.last", { date: last }))}</span>` : ""}`;
+    stats = (recordMode === "live" ? pbStatsHtml(pbStats(pbNoteTrades(d))) : `<span class="pbStat"><b class="mono">${pbNoteTrades(d).length}</b> ${esc(T("pb.stat.occurrences"))}</span>`)
+      + (last ? `<span class="pbStat">${esc(T("pb.sticky.last", { date: last }))}</span>` : "");
   } else if (recordMode === "live") {
     stats = pbStatsHtml(pbStats(d.kind === "verify" ? pbNoteTrades(d) : d.kind === "tag" ? pbTagTrades(d) : pbTradesOf(d.id)));
   }
@@ -384,7 +424,7 @@ function pbTradeRowHtml(t, opts) {
       <span class="mono pbRowDate">${esc(pbTradeDateOf(t) || "—")}</span>
       ${o.showLabel ? `<span class="pbRowLabel">${esc(pbTradeLabel(t))}</span>` : ""}
       ${tagTxt ? `<span class="pbRowTag">${esc(tagTxt)}</span>` : ""}
-      ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : !pbCountsInStats(t) ? `<span class="pbRowFaded" title="${esc(T("pb.scope.excludedTitle"))}">${esc(T("pb.scope.excluded"))}</span>` : ""}
+      ${pbTakenBadgeHtml(t)}
       <span class="pbRowSpacer"></span>
       ${mistakes.length ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
       ${verifies.length ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
@@ -448,11 +488,13 @@ function pbPanelsForPageHtml(d) {
 
   // 「只看有记录的」：回头集中翻归类时写下的那些话
   const noted = list.filter((t) => pbTradeNote(t));
-  const rows = pbNotedOnly ? noted : list;
+  const rows = (pbNotedOnly ? noted : list).filter((t) => pbExecMatches(t, pbExecFilter));
   const shown = pbShowAllTrades ? rows : rows.slice(0, PB_TRADES_PREVIEW);
   const triageBtn = viewingUserId || !pbUnsortedCount() ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="unsorted">${ICONS.grid} ${esc(T("pb.triage.more", { n: pbUnsortedCount() }))}</button>`;
   const notedBtn = noted.length ? `<button class="tinyBtn pbAddBtn pbNotedBtn${pbNotedOnly ? " on" : ""}" data-action="pb-noted-only">${ICONS.pencil} ${esc(T("pb.note.onlyNoted", { n: noted.length }))}</button>` : "";
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + triageBtn, showLabel ? T("pb.section.tradesHintSystem") : "")}
+    ${pbExecTableHtml(list)}
+    ${pbExecFilter ? `<div class="pbExecNow">${esc(T("pb.exec.showing", { v: pbExecLabel(pbExecFilter), n: rows.length }))} <button class="tinyBtn" data-action="pb-exec-filter" data-val="">${esc(T("pb.exec.showAll"))}</button></div>` : ""}
     ${rows.length
       ? `<div class="pbTradeList">${shown.map((t) => pbTradeRowHtml(t, { showLabel })).join("")}</div>
          ${rows.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: rows.length }))}</button>` : ""}`
@@ -931,7 +973,7 @@ function pbTriageBodyHtml() {
         </div>
         <div class="focusModelRow">
           ${result ? `<span class="focusResult" style="background:${rc}">${esc(result)}</span>` : ""}
-          ${pbIsFaded(t) ? `<span class="pbRowFaded">${esc(T("pb.faded"))}</span>` : !pbCountsInStats(t) ? `<span class="pbRowFaded" title="${esc(T("pb.scope.excludedTitle"))}">${esc(T("pb.scope.excluded"))}</span>` : ""}
+          ${pbTakenBadgeHtml(t)}
           <button class="tinyBtn" data-action="edit-trade" data-id="${esc(t.id)}">${ICONS.pencil} ${esc(T("focus.edit"))}</button>
         </div>
         <div class="focusFields pbTriageFields">${pbTriageFieldsHtml(t)}</div>

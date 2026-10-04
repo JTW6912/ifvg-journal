@@ -19,6 +19,7 @@ let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth() + 1;
 let dayDetailDate = null;
 let tradePreviewId = null;      // 复盘正文里点交易胶囊弹出的只读预览
+let tradePreviewNav = null;     // { ids, index, root } —— 预览里 ←/→ 在「打开它的那个列表」里翻，见 openTradePreview
 let returnToDayDetail = null;
 let apiDraft = { url: "", key: "" };
 let changelog = [];
@@ -83,7 +84,8 @@ let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename
 let pbConfirmDeleteId = null;
 let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
 let pbScopeOpen = (function () { try { return localStorage.getItem("journal_pb_scope_open") === "true"; } catch (e) { return false; } })();
-let pbNotedOnly = false;              // 页面里「全部交易」只看写了归类记录的
+let pbNotedOnly = false;
+let pbExecFilter = "";              // 页面「全部交易」只看某一类 taken 值（"" = 全部，"__empty" = 没填）              // 页面里「全部交易」只看写了归类记录的
 /* 归类模式：{ ids, i, scope: 'unsorted' | 'all', panel: '' | 'mistake' | 'verify', notice }。ids 是开始时拍下来的队列——
    边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */
 let pbTriage = null;

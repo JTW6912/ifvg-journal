@@ -133,22 +133,39 @@ function pbTradesOf(pageId) {
 function pbUnsortedCount() { return recordMode === "live" ? trades.filter(pbTradeIsUnsorted).length : 0; }
 
 /* ---------- 统计 ----------
-   口径跟标题栏一致：只算真的入场了的。明确标了 Faded（taken 有值但不是 Taken）的单是「setup 出现了但没做」，
-   照样归在页面里当例子看，但不进胜率和 R——不然没做的单会把这个策略的成绩算花。
-   taken 留空的单算入场：实盘记录里常常懒得填这一项，按空值排除的话整页数字会莫名其妙变成 0。 */
-function pbIsFaded(t) {
-  const takenF = roleField("taken");
-  if (!takenF) return false;
-  const v = t[takenF.id];
-  return !!v && v !== "Taken";
-}
-/* 模型库自己的成绩口径（模型库页顶上「成绩口径」那块设的条件，存在 analysisPrefs.pbScope，跟着账号走）。
-   刻意跟分析页的「分析范围」分开：用户在模型库里要排除的是「只记录、没真做」的单，
-   不想因此把分析页的口径也改了。代价是两边数字可以不一样——所以页面上把口径写出来，不藏。
-   Faded 那条照旧固定排除，口径是在它之外再加的条件 */
+   **默认所有归进来的交易都算**：Taken、Faded、missed、data-gathering……不管做没做。
+   模型库问的是「这个 setup 本身表现如何」，没做的单也是这个 setup 出现过的样本——这是用户明确要的默认。
+   想只看实际做了的，在模型库页顶上「成绩口径」里自己加条件（有「只算 Taken」快捷按钮），
+   存在 analysisPrefs.pbScope，跟着账号走。刻意跟分析页的「分析范围」分开，两边数字可以不一样，
+   所以口径不是默认时页面上会标出来。
+   「做了 / 没做」另外按 taken 字段的实际值分组摆在页面里（pbExecGroups），不靠口径 */
 function pbScopeConditions() { return (analysisPrefs && analysisPrefs.pbScope) || []; }
 function pbScopeActive() { return pbScopeConditions().some(filterNodeIsEffective); }
-function pbCountsInStats(t) { return !pbIsFaded(t) && tradeMatchesFilters(t, pbScopeConditions()); }
+function pbCountsInStats(t) { return tradeMatchesFilters(t, pbScopeConditions()); }
+
+/* ---------- 执行情况：按 taken 字段的值分组 ----------
+   直接用用户自己填的值（Taken / Faded / missed / data-gathering…），不翻译成「做了 / 没做」——
+   每个人叫法不一样，按值分就永远对得上。顺序跟字段设置里选项的顺序一致，选项里没有的值接在后面，没填的排最后 */
+const PB_EXEC_EMPTY = "__empty";
+function pbTakenValue(t) {
+  const f = roleField("taken");
+  const v = f ? t[f.id] : "";
+  return v === undefined || v === null ? "" : String(v).trim();
+}
+function pbExecGroups(list) {
+  const f = roleField("taken");
+  if (!f) return [];
+  const by = new Map();
+  list.forEach((t) => { const k = pbTakenValue(t) || PB_EXEC_EMPTY; if (!by.has(k)) by.set(k, []); by.get(k).push(t); });
+  const order = (f.options || []).filter((o) => by.has(o));
+  [...by.keys()].forEach((k) => { if (!order.includes(k) && k !== PB_EXEC_EMPTY) order.push(k); });
+  if (by.has(PB_EXEC_EMPTY)) order.push(PB_EXEC_EMPTY);
+  return order.map((k) => ({ value: k, list: by.get(k), stats: filteredSummaryStats(by.get(k)) }));
+}
+function pbExecMatches(t, value) {
+  if (!value) return true;
+  return value === PB_EXEC_EMPTY ? !pbTakenValue(t) : pbTakenValue(t) === value;
+}
 function pbStats(list) {
   const counted = list.filter(pbCountsInStats);
   const s = filteredSummaryStats(counted);

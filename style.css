@@ -1313,3 +1313,28 @@ button.pageRef{line-height:1.5;}
   border:1px solid var(--border);border-radius:8px;padding:4px 10px;margin-bottom:12px;}
 .pbScopeFixed svg{width:12px;height:12px;color:var(--pos);}
 .pbScopeMark{border:1px dashed var(--borderLight);border-radius:9px;padding:0 7px;cursor:help;}
+
+/* 交易的「做了还是避免」值：Taken 绿，其余灰 */
+.pbRowTaken{font-size:10.5px;color:var(--mutedDark);border:1px solid var(--border);border-radius:9px;padding:0 7px;flex-shrink:0;white-space:nowrap;font-family:'JetBrains Mono',monospace;}
+.pbRowTaken.isTaken{color:var(--pos);border-color:var(--pos);background:var(--posSoft);}
+/* 页面里的「执行情况」小表：一行一类，点一行筛下面的交易列表 */
+.pbExecTable{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;}
+.pbExecRow{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(4,minmax(0,1fr));gap:10px;align-items:center;padding:7px 14px;
+  background:var(--surface);border:none;border-bottom:1px solid var(--border);color:var(--text);font-size:12.5px;text-align:left;cursor:pointer;font-family:'Inter',sans-serif;}
+.pbExecRow:last-child{border-bottom:none;}
+.pbExecRow:hover:not(.head){background:var(--surface2);}
+.pbExecRow.head{cursor:default;background:var(--surface2);font-size:11px;color:var(--mutedDark);font-family:'JetBrains Mono',monospace;}
+.pbExecRow.isAll .pbExecName{font-weight:600;}
+.pbExecRow.on{background:var(--accentSoft);box-shadow:inset 3px 0 0 var(--accent);}
+.pbExecRow .pos{color:var(--pos);} .pbExecRow .neg{color:var(--neg);}
+.pbExecNow{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--accent);margin:0 2px 10px;}
+.pbExecNow .tinyBtn{color:var(--muted);text-decoration:underline;font-size:12px;}
+.pbScopePresets{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+/* 交易预览：顶上的「3 / 8」和上一笔 / 下一笔；关掉后背后页面里标出最后看的那一笔 */
+.tpHeadRight{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.tpNav{display:inline-flex;align-items:center;gap:2px;font-size:12px;color:var(--muted);margin-right:6px;}
+.tpNav .iconBtn{font-size:18px;line-height:1;padding:2px 9px;}
+.tpNav .iconBtn:disabled{opacity:.3;cursor:default;}
+.pbTradeRow.isPicked{box-shadow:inset 3px 0 0 var(--accent);background:var(--accentSoft);}
+.pbTile.isPicked{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);}
+.tradeRef.isPicked{box-shadow:0 0 0 2px var(--accent);}

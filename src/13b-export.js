@@ -461,7 +461,7 @@ function exXlsxSheets(ctx) {
 }
 /* 模型库成绩口径写进说明：导出的胜率是按什么条件算的，打开文件的人（和 AI）要知道 */
 function exScopeText() {
-  return T("pb.scope.fixed") + (pbScopeActive() ? "；" + comboConditionsText({ conditions: pbScopeConditions() }) : "");
+  return pbScopeActive() ? comboConditionsText({ conditions: pbScopeConditions() }) : T("pb.scope.none");
 }
 function exReadmeRows(ctx) {
   return [

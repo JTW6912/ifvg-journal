@@ -49,18 +49,20 @@ test("系统页算上衍生策略的交易，策略页只算自己", () => {
   assert.deepStrictEqual(call("(id) => pbTradesOf(id).map((t) => t.id)", "st1"), ["a"]);
 });
 
-test("成绩不算 Faded 的单，taken 留空的照算", () => {
-  const { call } = setup(PAGES, [
+test("模型库成绩默认把所有交易都算进去（做没做都算）；执行情况按 taken 的值分组，没填的排最后", () => {
+  const { ctx, call } = setup(PAGES, [
     { id: "a", __pb: "st1", taken: "Taken", result: "W", r_multiple: "2" },
     { id: "b", __pb: "st1", taken: "", result: "L", r_multiple: "-1" },
     { id: "c", __pb: "st1", taken: "Faded", result: "W", r_multiple: "3" },
   ]);
+  ctx.set("schema", [{ id: "taken", label: "taken", type: "select", role: "taken", options: ["Taken", "Faded", "data-gathering"] },
+    { id: "result", label: "result", type: "select", role: "result", options: ["W", "L"] }, { id: "r_multiple", label: "R", type: "number", role: "r_multiple" }]);
   const st = call("(id) => pbStats(pbTradesOf(id))", "st1");
-  assert.strictEqual(st.all, 3);
-  assert.strictEqual(st.n, 2);
-  assert.strictEqual(st.faded, 1);
-  assert.strictEqual(st.wr, 50);
-  assert.strictEqual(st.totalR, 1);
+  assert.deepStrictEqual([st.all, st.n, st.faded, st.totalR], [3, 3, 0, 4]);
+  assert.strictEqual(Math.round(st.wr * 10) / 10, 66.7);
+  const g = call("(id) => pbExecGroups(pbTradesOf(id)).map((x) => [x.value, x.list.length, x.stats.wr])", "st1");
+  assert.deepStrictEqual(g, [["Taken", 1, 100], ["Faded", 1, 100], ["__empty", 1, 0]]);
+  assert.deepStrictEqual(call("() => trades.filter((t) => pbExecMatches(t, '__empty')).map((t) => t.id)"), ["b"]);
 });
 
 test("往错题里加交易：放进「涉及的交易」那一节，紧贴着上一条列表项", () => {
@@ -263,7 +265,7 @@ test("归类记录：存在交易上，筛选按包含、记录页搜索都找�
   assert.deepStrictEqual(call("() => trades.filter((t) => tradeMatchesSearch(t, '假突破')).map((t) => t.id)"), ["a"]);
 });
 
-test("模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里；Faded 照旧固定排除", () => {
+test("模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里", () => {
   const { ctx, call } = setup(PAGES, [
     { id: "a", __pb: "st1", taken: "Taken", result: "W", r_multiple: "2" },
     { id: "b", __pb: "st1", taken: "Taken", result: "L", r_multiple: "-1", session: "Asia" },
@@ -276,11 +278,14 @@ test("模型库成绩口径：按条件排除的单不进胜率和 R，但还留
     { id: "session", label: "时段", type: "select", role: "", options: ["NYAM", "Asia"] },
   ]);
   const before = call("() => pbStats(pbTradesOf('st1'))");
-  assert.deepStrictEqual([before.all, before.n, before.wr], [3, 2, 50]);
+  assert.deepStrictEqual([before.all, before.n], [3, 3]);
   // 「时段 非 Asia」：b 被排除
   ctx.run("analysisPrefs.pbScope = [{ ...newFilterRow('session'), values: ['Asia'], negate: true }]");
   const after = call("() => pbStats(pbTradesOf('st1'))");
-  assert.deepStrictEqual([after.all, after.n, after.faded, after.wr, after.totalR], [3, 1, 2, 100, 2]);
+  assert.deepStrictEqual([after.all, after.n, after.faded, after.wr, after.totalR], [3, 2, 1, 100, 5]);
+  // 「只算 Taken」那种口径
+  ctx.run("analysisPrefs.pbScope = [{ ...newFilterRow('taken'), values: ['Taken'] }]");
+  assert.deepStrictEqual(call("() => { const s = pbStats(pbTradesOf('st1')); return [s.n, s.faded]; }"), [2, 1]);
   assert.strictEqual(call("() => pbTradesOf('st1').length"), 3);
   assert.strictEqual(call("() => pbScopeActive()"), true);
   // 存盘再读回来，口径还在

@@ -724,7 +724,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "open-page-ref" || action === "pb-open") {
     const id = el.dataset.id;
     // 从交易预览里点的：预览是盖在编辑器上面的弹层，先收掉，不然新打开的页面被它挡着
-    if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); }
+    if (tradePreviewId) closeTradePreview(false);   // 要跳去别的页面了，不用回原处标记
     await pbOpenDoc(id);
   }
   else if (action === "editor-back") {
@@ -790,6 +790,13 @@ document.addEventListener("click", async (e) => {
     pbScopeOpen = !pbScopeOpen;
     try { localStorage.setItem("journal_pb_scope_open", String(pbScopeOpen)); } catch (err) {}
     render();
+  }
+  else if (action === "pb-exec-filter") { pbExecFilter = pbExecFilter === el.dataset.val ? "" : (el.dataset.val || ""); pbShowAllTrades = false; refreshPbPanels(); }
+  else if (action === "pb-scope-preset") {
+    if (viewingUserId) return;
+    const f = roleField("taken");
+    analysisPrefs.pbScope = el.dataset.preset === "taken" && f ? [{ ...newFilterRow(f.id), values: ["Taken"] }] : [];
+    queueSaveAnalysisPrefs(); render(); refreshPbPanels();
   }
   else if (action === "pb-scope-clear") {
     if (viewingUserId) return;
@@ -865,19 +872,18 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "open-trade-ref") {
     // 只读预览，不是编辑表单：看复盘时是在读，一点就弹一堆输入框既容易误改也太重
-    tradePreviewId = el.dataset.id;
-    renderSecondaryModals(true);
+    openTradePreview(el);
   }
   else if (action === "close-trade-preview") {
     if (el.classList.contains("overlay") && e.target !== el) return;   // 点内容不关闭（不能用 stopPropagation）
-    tradePreviewId = null;
-    renderSecondaryModals(true);
+    closeTradePreview();
   }
+  else if (action === "trade-preview-prev") { stepTradePreview(-1); }
+  else if (action === "trade-preview-next") { stepTradePreview(1); }
   else if (action === "edit-trade-from-preview") {
     if (viewingUserId) return;
     const t = trades.find((x) => x.id === el.dataset.id);
-    tradePreviewId = null;
-    renderSecondaryModals(true);
+    closeTradePreview();
     if (t) { editingTrade = { ...t }; renderModal(true); }
   }
   else if (action === "preview-image") { openLightbox(el, el.dataset.url); }
@@ -1513,6 +1519,17 @@ document.addEventListener("keydown", (e) => {
   e.stopPropagation();
   stepLightbox(e.key === "ArrowRight" ? 1 : -1);
 }, true);
+/* 交易预览开着（上面没盖着灯箱）时 ←/→ 翻上一笔 / 下一笔。也走捕获阶段：从复盘正文里点开的预览，
+   焦点还在编辑器里，不先拦下来方向键会去挪编辑器的光标 */
+document.addEventListener("keydown", (e) => {
+  if (!tradePreviewId || lightboxUrl || editingTrade || e.isComposing) return;
+  if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+  const tg = e.target;
+  if (tg && tg.closest && tg.closest("#secondaryModalRoot") && tg.matches("input, textarea, select")) return;
+  e.preventDefault();
+  e.stopPropagation();
+  stepTradePreview(e.key === "ArrowRight" ? 1 : -1);
+}, true);
 
 document.addEventListener("keydown", (e) => {
   if (focusKeyNav(e)) return;
@@ -1529,7 +1546,7 @@ document.addEventListener("keydown", (e) => {
   if (reviewTiptap && bubbleMode !== "main") { bubbleMode = "main"; updateBubble(); if (reviewTiptap) reviewTiptap.commands.focus(); return; }
   if (tradePickerOpen) { closeTradePicker(); return; }
   if (closeReviewOutlinePop()) return;
-  if (tradePreviewId) { tradePreviewId = null; renderSecondaryModals(true); return; }
+  if (tradePreviewId) { closeTradePreview(); return; }
   if (comboGroupModal) { comboGroupModal = null; render(); return; }
   if (profileModalOpen) { profileModalOpen = false; render(); return; }
   if (editingTrade) {

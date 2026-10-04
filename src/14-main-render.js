@@ -257,6 +257,73 @@ function reviewGroupModalHtml() {
    既容易误改，也把「我只想看一眼那张图」这件事弄得很重。
    所以这里只给截图 + 字段值，要改得点底下那个明确的「编辑这笔交易」。
    ============================================================ */
+/* ---------- 交易预览里 ←/→ 翻笔 ----------
+   范围 = 打开它的那个列表：模型库页面里的某一栏（关注的交易 / 全部交易 / 错题涉及的交易…各算各的）、
+   复盘正文、或者整个 #app。按 DOM 顺序收那里面所有交易胶囊 / 交易行的 id（去重），就是用户眼睛看到的顺序。
+   关掉预览时把背后页面滚到最后看的那一笔并标上 .isPicked——跟灯箱翻图是同一个思路：关掉之后人要知道自己停在哪。
+   root 存的是「选择器 + 第几个」不是 DOM 节点：预览开着的时候背后那一栏可能被 refreshPbPanels 重画过 */
+function tradePreviewRootOf(el) {
+  if (!el || !el.closest) return null;
+  const sec = el.closest("#pbPanels .pbPanel");
+  if (sec) return { sel: "#pbPanels .pbPanel", nth: [...document.querySelectorAll("#pbPanels .pbPanel")].indexOf(sec) };
+  if (el.closest("#reviewEditorRoot .reviewDoc")) return { sel: "#reviewEditorRoot .reviewDoc", nth: 0 };
+  if (el.closest("#secondaryModalRoot") || el.closest("#exportRoot")) return null;
+  return { sel: "#app", nth: 0 };
+}
+function tradePreviewRootEl(root) { return root ? document.querySelectorAll(root.sel)[root.nth] || null : null; }
+function tradePreviewIdsIn(rootEl) {
+  const ids = [];
+  rootEl.querySelectorAll('[data-action="open-trade-ref"][data-id]').forEach((n) => {
+    const id = n.dataset.id;
+    if (!ids.includes(id) && trades.some((t) => t.id === id)) ids.push(id);
+  });
+  return ids;
+}
+function openTradePreview(el) {
+  const id = el.dataset.id;
+  const root = tradePreviewRootOf(el);
+  const rootEl = tradePreviewRootEl(root);
+  const ids = rootEl ? tradePreviewIdsIn(rootEl) : [];
+  const index = ids.indexOf(id);
+  tradePreviewNav = root ? { ids: index >= 0 ? ids : [id], index: Math.max(index, 0), root } : null;
+  tradePreviewId = id;
+  renderSecondaryModals(true);
+}
+function stepTradePreview(delta) {
+  const nav = tradePreviewNav;
+  if (!nav || !tradePreviewId || nav.ids.length < 2) return;
+  const next = nav.index + delta;
+  if (next < 0 || next >= nav.ids.length) return;
+  nav.index = next;
+  tradePreviewId = nav.ids[next];
+  renderSecondaryModals(true);
+}
+function closeTradePreview(keepPlace) {
+  const nav = tradePreviewNav, id = tradePreviewId;
+  tradePreviewId = null;
+  tradePreviewNav = null;
+  renderSecondaryModals(true);
+  if (keepPlace !== false && nav && id) markPickedTrade(nav.root, id);
+}
+/* 背后页面里把这一笔标出来（交易行标整行，胶囊 / 截图格标它自己），不在视野里就滚过去 */
+function markPickedTrade(root, id) {
+  document.querySelectorAll(".isPicked").forEach((n) => n.classList.remove("isPicked"));
+  const rootEl = tradePreviewRootEl(root);
+  if (!rootEl) return;
+  const els = [...rootEl.querySelectorAll('[data-action="open-trade-ref"][data-id]')].filter((n) => n.dataset.id === id);
+  if (!els.length) return;
+  els.forEach((n) => (n.closest(".pbTradeRow") || n).classList.add("isPicked"));
+  (els[0].closest(".pbTradeRow") || els[0]).scrollIntoView({ block: "nearest", behavior: "auto" });
+}
+function tradePreviewNavHtml() {
+  const nav = tradePreviewNav;
+  if (!nav || nav.ids.length < 2) return "";
+  return `<span class="tpNav">
+    <button class="iconBtn" data-action="trade-preview-prev" ${nav.index === 0 ? "disabled" : ""} title="${esc(T("tradePreview.prev"))}">‹</button>
+    <span class="mono">${nav.index + 1} / ${nav.ids.length}</span>
+    <button class="iconBtn" data-action="trade-preview-next" ${nav.index === nav.ids.length - 1 ? "disabled" : ""} title="${esc(T("tradePreview.next"))}">›</button>
+  </span>`;
+}
 function tradePreviewHtml() {
   const t = trades.find((x) => x.id === tradePreviewId);
   if (!t) {
@@ -305,8 +372,9 @@ function tradePreviewHtml() {
           ${modelF && t[modelF.id] ? `<span class="tpModel">${esc(String(t[modelF.id]))}</span>` : ""}
           ${result ? `<span class="tpResult" style="background:${rc};">${esc(result)}</span>` : ""}
           ${hasR ? `<span class="tpR mono" style="color:${rc};">${(parseFloat(rVal) >= 0 ? "+" : "") + esc(String(rVal))}R</span>` : ""}
+          ${pbTakenValue(t) ? `<span class="pbRowTaken${pbTakenValue(t) === "Taken" ? " isTaken" : ""}">${esc(pbTakenValue(t))}</span>` : ""}
         </div>
-        <button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button>
+        <span class="tpHeadRight">${tradePreviewNavHtml()}<button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button></span>
       </div>
       <div class="modalBody tradePreviewBody">
         ${pbTradePreviewHtml(t)}
