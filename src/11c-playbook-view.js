@@ -44,8 +44,12 @@ function pbThumbHtml(t, cls) {
 /* 截图墙上的一格：点了是交易的只读预览（跟复盘里的交易胶囊一样，读的时候不该一点就进编辑表单） */
 function pbTileHtml(t, opts) {
   const o = opts || {};
+  // o.remove = 「移出」按钮的 data-action（笔记页移出这条笔记 / 标签页摘掉标签）。按钮在磁贴里面，
+  // 事件委托认最近的 data-action，点它不会顺带打开交易预览
+  const rm = o.remove && !viewingUserId
+    ? `<button class="pbTileRemove" data-action="${o.remove}" data-id="${esc(t.id)}" title="${esc(T(o.removeTitle || "pb.tile.remove"))}">${ICONS.x}</button>` : "";
   return `<div class="pbTile" data-action="open-trade-ref" data-id="${esc(t.id)}">
-    <div class="pbTileImg">${pbThumbHtml(t, "pbTileShot")}${pbTradeStarred(t) ? `<span class="pbTileStar">${ICONS.starFill}</span>` : ""}</div>
+    <div class="pbTileImg">${pbThumbHtml(t, "pbTileShot")}${pbTradeStarred(t) ? `<span class="pbTileStar">${ICONS.starFill}</span>` : ""}${rm}</div>
     <div class="pbTileMeta"><span class="mono">${esc(pbTradeDateOf(t) || "—")}</span>${pbTradeResultBits(t)}</div>
     ${o.showLabel && pbTradeLabel(t) ? `<div class="pbTileSub">${esc(pbTradeLabel(t))}</div>` : ""}
     ${o.note ? `<div class="pbTileNote">${esc(o.note)}</div>` : ""}
@@ -557,7 +561,7 @@ function pbPanelsForNoteHtml(d) {
   const list = pbNoteTrades(d);
   html += `<section class="pbPanel">${pbSectionHeadHtml(T(isV ? "pb.section.verifyTrades" : "pb.section.mistakeTrades"), list.length, "", T(isV ? "pb.section.verifyTradesHint" : "pb.section.mistakeTradesHint"))}
     ${list.length
-      ? `<div class="pbTileGrid">${list.map((t) => pbTileHtml(t, { showLabel: true, note: pbMistakeLineNote(d.body, t.id) })).join("")}</div>`
+      ? `<div class="pbTileGrid">${list.map((t) => pbTileHtml(t, { showLabel: true, note: pbMistakeLineNote(d.body, t.id), remove: "pb-note-remove-trade" })).join("")}</div>`
       : `<div class="pbEmptyLine">${esc(recordMode === "live" ? T(isV ? "pb.noVerifyTrades" : "pb.noMistakeTrades") : T("pb.backtestNote"))}</div>`}
   </section>`;
   // 相关笔记：这一条正文里链到的，加上别的笔记里链到这一条的——两个方向都算「有关系」。错题和待验证混在一起算
@@ -585,7 +589,7 @@ function pbPanelsForTagHtml(d) {
   </section>`;
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.tagTrades"), c.withList.length, "", "")}
     ${c.withList.length
-      ? `<div class="pbTileGrid">${c.withList.map((t) => pbTileHtml(t, { showLabel: true })).join("")}</div>`
+      ? `<div class="pbTileGrid">${c.withList.map((t) => pbTileHtml(t, { showLabel: true, remove: "pb-tag-remove-trade", removeTitle: "pb.tile.untag" })).join("")}</div>`
       : `<div class="pbEmptyLine">${esc(T("pb.noTagTrades"))}</div>`}
   </section>`;
   return html;
@@ -662,11 +666,111 @@ async function pbToggleStar(tradeId) {
   refreshPbPanels(); render();
 }
 /* 一笔交易进 / 出一条笔记（错题或待验证）：改的是笔记正文里那一行列表项。on = 要不要在里面 */
+/* ---------- 这条笔记正开在编辑器里时：改编辑器的文档，不改库里那份 ----------
+   以前这种情况直接跳过（怕跟正在写的正文打架），而且是悄悄跳过：在笔记页里点开一笔交易 → 编辑 →
+   取消勾选这条笔记 → 保存，什么都没变、也没提示。现在走一个 ProseMirror 事务，跟手动删那一行一样：
+   能 Ctrl+Z 撤回、折叠和光标不受影响，存库还是编辑器那套自动保存。
+   规则跟 pbAppendTradeToBody / pbRemoveTradeFromBody 一致：只认「开头就是这笔交易胶囊」的列表项 */
+function pbEditorTradeItems(doc, tradeId) {
+  const out = [];
+  doc.descendants((node, pos) => {
+    if (node.type.name !== "listItem" && node.type.name !== "taskItem") return true;
+    const p = node.firstChild;
+    const first = p && p.type.name === "paragraph" ? p.firstChild : null;
+    if (first && first.type.name === "tradeRef" && first.attrs.id === tradeId) out.push({ node, pos });
+    return true;
+  });
+  return out;
+}
+function pbEditorHasTrade(doc, tradeId) {
+  let found = false;
+  doc.descendants((node) => {
+    if (found) return false;
+    if (node.type.name === "tradeRef" && node.attrs.id === tradeId) found = true;
+    return !found;
+  });
+  return found;
+}
+function pbEditorRemoveTrade(ed, tradeId) {
+  const items = pbEditorTradeItems(ed.state.doc, tradeId);
+  if (!items.length) return false;
+  const tr = ed.state.tr;
+  // 从后往前删，前面的位置不会被挪动；列表里只剩这一项的话连整个列表一起删，不留一个空列表
+  items.slice().reverse().forEach(({ node, pos }) => {
+    const $p = tr.doc.resolve(pos);
+    const list = $p.parent;
+    if (list.childCount === 1 && $p.depth > 0) tr.delete($p.before(), $p.after());
+    else tr.delete(pos, pos + node.nodeSize);
+  });
+  if (pbEditorHasTrade(tr.doc, tradeId)) return false;   // 正文别处还提到这笔：跟库里那份一样，不替用户删句子
+  ed.view.dispatch(tr);
+  return true;
+}
+function pbEditorAddTrade(ed, tradeId, note) {
+  const { state } = ed;
+  const doc = state.doc, schema = state.schema;
+  if (pbEditorHasTrade(doc, tradeId)) return true;
+  const clean = String(note || "").replace(/\s+/g, " ").trim();
+  const para = schema.nodes.paragraph.create(null, [schema.nodes.tradeRef.create({ id: tradeId })].concat(clean ? [schema.text(" " + clean)] : []));
+  const item = schema.nodes.listItem.create(null, para);
+  const names = pbHeadingNames("pb.tpl.mistakeTrades").map((n) => n.toLowerCase());
+  const blocks = [];
+  doc.forEach((node, pos) => blocks.push({ node, pos }));
+  const hi = blocks.findIndex((b) => b.node.type.name === "heading" && names.includes(b.node.textContent.trim().toLowerCase()));
+  const tr = state.tr;
+  if (hi < 0) {
+    // 没有「涉及的交易」那一节：在文末补一节
+    tr.insert(doc.content.size, [schema.nodes.heading.create({ level: 2 }, schema.text(T("pb.tpl.mistakeTrades"))), schema.nodes.bulletList.create(null, item)]);
+  } else {
+    let end = blocks.length;
+    for (let i = hi + 1; i < blocks.length; i++) if (blocks[i].node.type.name === "heading") { end = i; break; }
+    let last = null;
+    for (let i = end - 1; i > hi; i--) {
+      const b = blocks[i];
+      if (b.node.type.name === "paragraph" && !b.node.content.size) continue;   // 空段落不算
+      last = b; break;
+    }
+    if (last && last.node.type.name === "bulletList") tr.insert(last.pos + last.node.nodeSize - 1, item);   // 接在已有列表的最后
+    else {
+      const at = last ? last.pos + last.node.nodeSize : blocks[hi].pos + blocks[hi].node.nodeSize;
+      tr.insert(at, schema.nodes.bulletList.create(null, item));
+    }
+  }
+  ed.view.dispatch(tr);
+  return true;
+}
+async function pbSetTradeInOpenNote(tradeId, on, note) {
+  const d = editingReview;
+  syncReviewBody();
+  const has = extractTradeRefs(d.body).includes(tradeId);
+  if (has === !!on) return true;
+  const ed = reviewTiptap;
+  if (ed) {
+    const ok = on ? pbEditorAddTrade(ed, tradeId, note) : pbEditorRemoveTrade(ed, tradeId);
+    if (!ok) { pbError = T("pb.err.inlineRef", { title: pbTitle(d) }); return false; }
+  } else {
+    // 编辑器没加载出来、退回了纯文本框：直接改 markdown，再把文本框也换掉
+    let body;
+    if (!on) {
+      const r = pbRemoveTradeFromBody(d.body, tradeId);
+      if (!r.removed || r.stillLinked) { pbError = T("pb.err.inlineRef", { title: pbTitle(d) }); return false; }
+      body = r.body;
+    } else body = pbAppendTradeToBody(d.body, tradeId, note);
+    d.body = body;
+    const ta = document.querySelector(".reviewFallbackInput");
+    if (ta) ta.value = body;
+    scheduleReviewSave();
+  }
+  // 马上存：笔记页下面「涉及的交易」那一栏、库里那份都等着这一步刷新
+  const saved = await flushReviewSave();
+  refreshPbPanels();
+  return saved !== false;
+}
+
 async function pbSetTradeInNote(noteId, tradeId, on, note) {
   const m = pbFind(noteId);
   if (!m || viewingUserId) return false;
-  // 这条笔记正开在编辑器里的话，正文以编辑器为准，这里不去改它（归类模式、交易表单打开时编辑器都是关着的）
-  if (editingReview && editingReview.id === noteId) return false;
+  if (editingReview && editingReview.id === noteId) return pbSetTradeInOpenNote(tradeId, on, note);
   const has = pbNoteTradeIds(m).includes(tradeId);
   if (has === !!on) return true;
   let body;
@@ -1100,7 +1204,9 @@ let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, errText, creating: 
 function pbFormNotesState() {
   if (!editingTrade) return null;
   if (!pbFormNotes || pbFormNotes.tradeId !== editingTrade.id) {
-    const init = new Set(pbPages.filter((m) => pbIsNote(m) && pbNoteTradeIds(m).includes(editingTrade.id)).map((m) => m.id));
+    syncReviewBody();
+    const bodyOf = (m) => (editingReview && editingReview.id === m.id ? editingReview.body : m.body);
+    const init = new Set(pbPages.filter((m) => pbIsNote(m) && extractTradeRefs(bodyOf(m)).includes(editingTrade.id)).map((m) => m.id));
     pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), errText: "", creating: "", newName: "", showAll: {} };
   }
   return pbFormNotes;

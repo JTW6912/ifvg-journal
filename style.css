@@ -980,6 +980,14 @@ button.pageRef{line-height:1.5;}
 .pbStickyTop{display:flex;align-items:center;gap:8px;min-width:0;}
 .pbStickyTop .pbStickyOwner{flex:1;min-width:0;}
 
+/* 磁贴右上角的「移出」：鼠标移上去才出现（触屏常显） */
+.pbTileRemove{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:6px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;opacity:0;transition:opacity .12s,background .12s;}
+.pbTileRemove svg{width:12px;height:12px;}
+.pbTile:hover .pbTileRemove,.pbTileRemove:focus-visible{opacity:1;}
+.pbTileRemove:hover{background:var(--neg);}
+@media(hover:none){.pbTileRemove{opacity:.85;}}
+
 /* ---------- 标签：有它 vs 没它 ---------- */
 .pbLibTags{margin-top:28px;}
 .pbTagGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start;}

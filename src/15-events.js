@@ -853,6 +853,22 @@ document.addEventListener("click", async (e) => {
     refreshPbFormBlock(); saveDraft();
   }
   else if (action === "pb-triage-tag") { await pbTriageToggleTag(el.dataset.id); }
+  else if (action === "pb-note-remove-trade") {
+    // 笔记页「涉及的交易」磁贴上的 ×：从正文里删掉这笔那一行（走编辑器，能 Ctrl+Z）
+    if (!editingReview || !pbIsNote(editingReview) || reviewIsReadOnly()) return;
+    pbError = null;
+    const ok = await pbSetTradeInNote(editingReview.id, el.dataset.id, false);
+    showReviewToast(ok ? T("pb.tile.removed") : (pbError || T("pb.err.inlineRef", { title: pbTitle(editingReview) })));
+  }
+  else if (action === "pb-tag-remove-trade") {
+    // 标签页磁贴上的 ×：从这笔交易上摘掉这个标签
+    if (!editingReview || editingReview.kind !== "tag" || reviewIsReadOnly()) return;
+    const t = trades.find((x) => x.id === el.dataset.id);
+    if (!t) return;
+    const ok = await pbPatchTrade(t.id, { [PB_TAGS_KEY]: pbTagsToggled(t, editingReview.id) });
+    refreshPbPanels(); render();
+    if (ok) showReviewToast(T("pb.tile.untagged"));
+  }
   else if (action === "pb-form-notes-more") {
     const st = pbFormNotesState();
     if (st) { st.showAll[el.dataset.kind] = true; refreshPbFormBlock(); }
