@@ -79,9 +79,9 @@
 /* ============================================================
    按钮
    ============================================================ */
-[data-layout="modern"] .btn{border-radius:10px;background:var(--surface);border-color:var(--border);box-shadow:var(--shadowSm);
+:where([data-layout="modern"]) .btn{border-radius:10px;background:var(--surface);border-color:var(--border);box-shadow:var(--shadowSm);
   font-weight:500;transition:border-color .15s,box-shadow .15s,background .15s,transform .1s;}
-[data-layout="modern"] .btn:hover{border-color:var(--borderLight);box-shadow:var(--shadowCard);}
+:where([data-layout="modern"] .btn):hover{border-color:var(--borderLight);box-shadow:var(--shadowCard);}
 [data-layout="modern"] .btn:active{transform:translateY(1px);}
 [data-layout="modern"] .btn-primary{border:1px solid transparent;color:var(--onAccent);font-weight:600;
   background:linear-gradient(135deg,var(--accent) 0%,var(--accentHover) 100%);box-shadow:var(--glow);}
@@ -89,20 +89,20 @@
 [data-layout="modern"] .btn-danger{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 45%,transparent);background:var(--surface);}
 [data-layout="modern"] .btn-danger:hover{background:var(--negSoft);border-color:var(--neg);}
 [data-layout="modern"] .btn:disabled{box-shadow:none;}
-[data-layout="modern"] .themeToggle{border-radius:11px;background:var(--surface);box-shadow:var(--shadowSm);color:var(--muted);
+:where([data-layout="modern"]) .themeToggle{border-radius:11px;background:var(--surface);box-shadow:var(--shadowSm);color:var(--muted);
   transition:color .15s,border-color .15s,box-shadow .15s;}
-[data-layout="modern"] .themeToggle:hover{color:var(--accent);border-color:var(--borderLight);box-shadow:var(--shadowCard);}
+:where([data-layout="modern"] .themeToggle):hover{color:var(--accent);border-color:var(--borderLight);box-shadow:var(--shadowCard);}
 [data-layout="modern"] .iconBtn{border-radius:9px;transition:background .12s,color .12s;}
-[data-layout="modern"] .iconBtn:hover{background:var(--surface2);color:var(--text);}
-[data-layout="modern"] .tinyBtn:hover{color:var(--accent);}
+:where([data-layout="modern"] .iconBtn):hover{background:var(--surface2);color:var(--text);}
+:where([data-layout="modern"] .tinyBtn):hover{color:var(--accent);}
 
 /* 分段控件（实盘/回测、卡片/列表、日/周/不关联……）：iOS 那种底槽 + 浮起的白片 */
 [data-layout="modern"] .modeToggle,[data-layout="modern"] .viewToggle{background:var(--segBg);border:1px solid var(--border);
   border-radius:11px;padding:3px;gap:2px;}
-[data-layout="modern"] .modeBtn,[data-layout="modern"] .viewBtn{background:transparent;border-radius:8px;color:var(--muted);
+:where([data-layout="modern"]) .modeBtn,:where([data-layout="modern"]) .viewBtn{background:transparent;border-radius:8px;color:var(--muted);
   transition:background .15s,color .15s,box-shadow .15s;}
 [data-layout="modern"] .modeBtn{padding:6px 13px;font-weight:500;}
-[data-layout="modern"] .modeBtn:hover,[data-layout="modern"] .viewBtn:hover{color:var(--text);}
+:where([data-layout="modern"] .modeBtn):hover,:where([data-layout="modern"] .viewBtn):hover{color:var(--text);}
 [data-layout="modern"] .modeBtn.active,[data-layout="modern"] .viewBtn.active{background:var(--segActive);color:var(--accent);
   font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12),0 0 0 1px var(--border);}
 [data-layout="modern"] .viewBtn{height:24px;}
@@ -134,38 +134,31 @@
 /* ============================================================
    表单
    ============================================================ */
-[data-layout="modern"] .input,[data-layout="modern"] textarea.input,[data-layout="modern"] select.input,
-[data-layout="modern"] .select,[data-layout="modern"] .bubbleInput{background:var(--surface);border-color:var(--border);
+:where([data-layout="modern"]) .input,:where([data-layout="modern"]) textarea.input,:where([data-layout="modern"]) select.input,:where([data-layout="modern"]) .select,:where([data-layout="modern"]) .bubbleInput{background:var(--surface);border-color:var(--border);
   transition:border-color .15s,box-shadow .15s;}
-[data-layout="modern"] .input:hover,[data-layout="modern"] .select:hover{border-color:var(--borderLight);}
+:where([data-layout="modern"] .input):hover,:where([data-layout="modern"] .select):hover{border-color:var(--borderLight);}
 [data-layout="modern"] .input:focus,[data-layout="modern"] .select:focus,[data-layout="modern"] .bubbleInput:focus{
   border-color:var(--accent);box-shadow:0 0 0 3px var(--accentSoft);outline:none;}
 [data-layout="modern"] .select{padding:6px 10px;}
 [data-layout="modern"] .fieldLabel{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.2px;}
 [data-layout="modern"] input[type="checkbox"],[data-layout="modern"] input[type="radio"]{accent-color:var(--accent);}
 
-[data-layout="modern"] .chip{border-radius:999px;background:var(--surface);transition:border-color .12s,color .12s,background .12s;}
-[data-layout="modern"] .chip:hover{border-color:var(--borderLight);color:var(--text);}
+:where([data-layout="modern"]) .chip{border-radius:999px;background:var(--surface);transition:border-color .12s,color .12s,background .12s;}
+:where([data-layout="modern"] .chip):hover{border-color:var(--borderLight);color:var(--text);}
 [data-layout="modern"] .chip.active{font-weight:600;}
 [data-layout="modern"] .tagChip{border-radius:999px;}
 
 /* ============================================================
    卡片类容器：白底 + 柔和阴影，悬停时浮起来
    ============================================================ */
-[data-layout="modern"] .card,[data-layout="modern"] .statBox,[data-layout="modern"] .recentBox,[data-layout="modern"] .filterPanel,
-[data-layout="modern"] .breakdownCard,[data-layout="modern"] .comboCard,[data-layout="modern"] .calendarPanel,[data-layout="modern"] .reviewCard,
-[data-layout="modern"] .pbSysCard,[data-layout="modern"] .pbTagCard,[data-layout="modern"] .exBlock,[data-layout="modern"] .focusRow,
-[data-layout="modern"] .settingsRow,[data-layout="modern"] .notice,[data-layout="modern"] .findingsBox,[data-layout="modern"] .pbTriageTrade,
-[data-layout="modern"] .pbTriageBlock,[data-layout="modern"] .pbTradeList,[data-layout="modern"] .pbExecTable,[data-layout="modern"] .changelogEntry,
-[data-layout="modern"] .pbStratCard,[data-layout="modern"] .pbTile,[data-layout="modern"] .pbIntro,[data-layout="modern"] .pbTagCompare,
-[data-layout="modern"] .tableScroll,[data-layout="modern"] .authCard{border-color:var(--border);box-shadow:var(--shadowCard);}
+:where([data-layout="modern"]) .card,:where([data-layout="modern"]) .statBox,:where([data-layout="modern"]) .recentBox,:where([data-layout="modern"]) .filterPanel,:where([data-layout="modern"]) .breakdownCard,:where([data-layout="modern"]) .comboCard,:where([data-layout="modern"]) .calendarPanel,:where([data-layout="modern"]) .reviewCard,:where([data-layout="modern"]) .pbSysCard,:where([data-layout="modern"]) .pbTagCard,:where([data-layout="modern"]) .exBlock,:where([data-layout="modern"]) .focusRow,:where([data-layout="modern"]) .settingsRow,:where([data-layout="modern"]) .notice,:where([data-layout="modern"]) .findingsBox,:where([data-layout="modern"]) .pbTriageTrade,:where([data-layout="modern"]) .pbTriageBlock,:where([data-layout="modern"]) .pbTradeList,:where([data-layout="modern"]) .pbExecTable,:where([data-layout="modern"]) .changelogEntry,:where([data-layout="modern"]) .pbStratCard,:where([data-layout="modern"]) .pbTile,:where([data-layout="modern"]) .pbIntro,:where([data-layout="modern"]) .pbTagCompare,:where([data-layout="modern"]) .tableScroll,:where([data-layout="modern"]) .authCard{border-color:var(--border);box-shadow:var(--shadowCard);}
 [data-layout="modern"] .tableScroll{background:var(--surface);border-radius:16px;}
 
 [data-layout="modern"] .card,[data-layout="modern"] .reviewCard,[data-layout="modern"] .pbSysCard,[data-layout="modern"] .pbTagCard,
 [data-layout="modern"] .pbStratCard,[data-layout="modern"] .pbTile{transition:border-color .18s,transform .18s,box-shadow .18s;}
-[data-layout="modern"] .card:hover,[data-layout="modern"] .pbSysCard:hover,[data-layout="modern"] .pbTile:hover,
+[data-layout="modern"] .card:hover,[data-layout="modern"] .pbSysCard:hover,[data-layout="modern"] .pbTile:not(.isPicked):hover,
 [data-layout="modern"] .pbStratCard:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:var(--shadowHover);transform:translateY(-3px);}
-[data-layout="modern"] .reviewCard:hover{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:var(--shadowHover);}
+[data-layout="modern"] .reviewCard:not(.dragOverTarget):hover{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:var(--shadowHover);}
 [data-layout="modern"] .pbTagCard:hover{box-shadow:var(--shadowHover);}
 
 /* 交易卡片 */
@@ -235,9 +228,9 @@
    ============================================================ */
 [data-layout="modern"] .calendarPanel{border-radius:20px;padding:22px;}
 [data-layout="modern"] .monthYear{font-family:var(--fontDisplay);font-weight:700;font-size:15px;}
-[data-layout="modern"] .dayCell,[data-layout="modern"] .weekCell,[data-layout="modern"] .monthBarCell,[data-layout="modern"] .monthCell{
+:where([data-layout="modern"]) .dayCell,:where([data-layout="modern"]) .weekCell,:where([data-layout="modern"]) .monthBarCell,:where([data-layout="modern"]) .monthCell{
   border-color:var(--border);background:var(--surface);border-radius:12px;}
-[data-layout="modern"] .dayCell:not(.outMonth):hover,[data-layout="modern"] .monthBarCell:hover,[data-layout="modern"] .monthCell:hover{
+:where([data-layout="modern"] .dayCell):not(.outMonth):hover,:where([data-layout="modern"] .monthBarCell):hover,:where([data-layout="modern"] .monthCell):hover{
   border-color:var(--accent);box-shadow:var(--shadowCard);}
 [data-layout="modern"] .dayCell.pos,[data-layout="modern"] .weekCell.pos,[data-layout="modern"] .monthBarCell.pos{border-color:color-mix(in srgb,var(--pos) 35%,transparent);background:var(--posSoft);}
 [data-layout="modern"] .dayCell.neg,[data-layout="modern"] .weekCell.neg,[data-layout="modern"] .monthBarCell.neg{border-color:color-mix(in srgb,var(--neg) 32%,transparent);background:var(--negSoft);}
@@ -289,7 +282,7 @@
 [data-layout="modern"] .pbSticky{border-radius:6px 6px 14px 14px;}
 [data-layout="modern"] .pbKindBadge{border-color:transparent;}
 [data-layout="modern"] .pbOpt{border-radius:10px;}
-[data-layout="modern"] .pbToggle{border-radius:10px;background:var(--surface);}
+:where([data-layout="modern"]) .pbToggle{border-radius:10px;background:var(--surface);}
 [data-layout="modern"] .pbTriageShot{border-radius:16px;}
 [data-layout="modern"] .pbExecRow.head{font-weight:600;letter-spacing:.3px;}
 [data-layout="modern"] .pbProgress{height:6px;border-radius:999px;}
@@ -302,7 +295,7 @@
 [data-layout="modern"] .exH1{font-family:var(--fontDisplay);font-weight:800;letter-spacing:-.6px;}
 [data-layout="modern"] .exBlock{border-radius:18px;padding:20px 22px;}
 [data-layout="modern"] .exBlockTitle{font-weight:700;}
-[data-layout="modern"] .exFmt{background:var(--surface);}
+:where([data-layout="modern"]) .exFmt{background:var(--surface);}
 [data-layout="modern"] .exFoot{background:linear-gradient(to top,var(--bg) 70%,transparent);}
 [data-layout="modern"] .settingsRow{border-radius:14px;}
 [data-layout="modern"] .settingsRowHead{padding:12px 16px;}
