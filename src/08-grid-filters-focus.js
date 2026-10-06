@@ -788,7 +788,7 @@ function renderGrid() {
         </div>`;
       }).join("");
     }
-    html += `<div class="card" data-action="edit-trade" data-id="${esc(t.id)}">
+    html += `<div class="card res-${result ? resultBucket(result) : "none"}" data-action="edit-trade" data-id="${esc(t.id)}">
       <div class="cardImg">
         ${shot ? `<img src="${esc(imgSrc(shot))}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="cardImgFallback" onerror="window.__imgFallback(this)" />`
                : `<div class="cardImgFallback">${ICONS.camera}</div>`}

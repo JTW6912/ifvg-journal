@@ -1,0 +1,132 @@
+/* ============================================================
+   配色（data-palette="…"）
+   跟布局（data-layout）、日/夜（data-theme）是三条独立的轴，可以随便组合。
+   - 黑金 = 不挂 data-palette，用 style.css 里 :root 的原始值（经典主题原封不动）
+   - 其余每种配色给一套浅色 + 一套深色的「基础色」；新版布局需要的辅助色（hover、玻璃、光晕……）
+     由 theme-modern.css 用 color-mix 从基础色推出来，这里不用管
+   - 胜/负/待验证/标签/便利贴这些「语义色」各配色共用一套（下面两段），个别配色撞色时单独改
+   ============================================================ */
+
+/* ---------- 非黑金配色共用的语义色 ---------- */
+:root[data-palette][data-theme="light"]{
+  --pos:#0FA37A; --posSoft:rgba(15,163,122,.11); --posFaint:rgba(15,163,122,.07);
+  --neg:#E04B4B; --negSoft:rgba(224,75,75,.10);
+  --note:#FFF8E3; --noteEdge:#F0CF77; --noteText:#5A4413;
+  --verify:#8B5CF6; --verifySoft:rgba(139,92,246,.11);
+  --vnote:#F5F0FF; --vnoteEdge:#CFBBF8; --vnoteText:#3A2A66;
+  --tag:#0C9C93; --tagSoft:rgba(12,156,147,.11);
+  --onAccent:#FFFFFF; --onSolid:#FFFFFF;
+  --scrim:rgba(15,23,42,.36);
+}
+:root[data-palette]:not([data-theme="light"]){
+  --pos:#2EC191; --posSoft:rgba(46,193,145,.14); --posFaint:rgba(46,193,145,.08);
+  --neg:#F06461; --negSoft:rgba(240,100,97,.14);
+  --note:#221D10; --noteEdge:#6E5B27; --noteText:#F0E4C3;
+  --verify:#A98BFA; --verifySoft:rgba(169,139,250,.16);
+  --vnote:#1B1734; --vnoteEdge:#4F418C; --vnoteText:#E3DBFB;
+  --tag:#2CC6B9; --tagSoft:rgba(44,198,185,.15);
+  --onAccent:#FFFFFF; --onSolid:#07121F;
+  --scrim:rgba(3,6,12,.66);
+}
+
+/* ---------- 晴空 · 蓝 ---------- */
+:root[data-palette="sky"][data-theme="light"]{
+  --bg:#F3F7FC; --surface:#FFFFFF; --surface2:#F0F5FB; --border:#E0E9F4; --borderLight:#C9D9EC;
+  --accent:#2B7DE9; --accentSoft:rgba(43,125,233,.10); --accentHover:#1F6AD3; --accent2:#5AB2FF;
+  --text:#10233F; --muted:#5A6B85; --mutedDark:#8E9CB3;
+  --info:#5B5FEF; --infoSoft:rgba(91,95,239,.11);
+}
+:root[data-palette="sky"]:not([data-theme="light"]){
+  --bg:#0A1322; --surface:#101C30; --surface2:#16253D; --border:#213350; --borderLight:#2D4366;
+  --accent:#4A97FF; --accentSoft:rgba(74,151,255,.15); --accentHover:#68A9FF; --accent2:#7CC4FF;
+  --text:#E5EDF9; --muted:#97A7C0; --mutedDark:#66789A;
+  --info:#8E90FA; --infoSoft:rgba(142,144,250,.16);
+}
+
+/* ---------- 紫罗兰 ---------- */
+:root[data-palette="violet"][data-theme="light"]{
+  --bg:#F6F4FD; --surface:#FFFFFF; --surface2:#F2EFFB; --border:#E6E1F5; --borderLight:#D3CBEE;
+  --accent:#7448E6; --accentSoft:rgba(116,72,230,.10);
+  --text:#1E1638; --muted:#645B80; --mutedDark:#9A92B5;
+  --info:#2F7BEA; --infoSoft:rgba(47,123,234,.11);
+  --verify:#C2410C; --verifySoft:rgba(194,65,12,.10);
+}
+:root[data-palette="violet"]:not([data-theme="light"]){
+  --bg:#0F0C1C; --surface:#17132A; --surface2:#1F1A37; --border:#2C2550; --borderLight:#3A3166;
+  --accent:#A07CFF; --accentSoft:rgba(160,124,255,.16);
+  --text:#ECE8FA; --muted:#A79FC4; --mutedDark:#6F6890;
+  --info:#5EA2FF; --infoSoft:rgba(94,162,255,.16);
+  --verify:#FB923C; --verifySoft:rgba(251,146,60,.15);
+}
+
+/* ---------- 樱花粉 ---------- */
+:root[data-palette="rose"][data-theme="light"]{
+  --bg:#FDF5F8; --surface:#FFFFFF; --surface2:#FBEFF4; --border:#F3DFE8; --borderLight:#E9C8D6;
+  --accent:#D63F84; --accentSoft:rgba(214,63,132,.10);
+  --text:#3A1628; --muted:#856070; --mutedDark:#B597A5;
+  --info:#3B82F6; --infoSoft:rgba(59,130,246,.11);
+}
+:root[data-palette="rose"]:not([data-theme="light"]){
+  --bg:#1A0E15; --surface:#23131C; --surface2:#2D1925; --border:#3F2434; --borderLight:#522F43;
+  --accent:#FF6FAA; --accentSoft:rgba(255,111,170,.15);
+  --text:#F8E9F0; --muted:#C6A2B3; --mutedDark:#8C6B7B;
+  --info:#6AA8FF; --infoSoft:rgba(106,168,255,.16);
+  --onAccent:#2A0716;
+}
+
+/* ---------- 落日橙 ---------- */
+:root[data-palette="sunset"][data-theme="light"]{
+  --bg:#FDF7F2; --surface:#FFFFFF; --surface2:#FBF1E8; --border:#F1E2D3; --borderLight:#E5CDB5;
+  --accent:#E2621B; --accentSoft:rgba(226,98,27,.10);
+  --text:#2E1B0C; --muted:#7D6450; --mutedDark:#B09A88;
+  --info:#2F7BEA; --infoSoft:rgba(47,123,234,.11);
+  --note:#FFF4E0;
+}
+:root[data-palette="sunset"]:not([data-theme="light"]){
+  --bg:#16100B; --surface:#1F1710; --surface2:#291E15; --border:#3A2B1E; --borderLight:#4C3827;
+  --accent:#FF8A3D; --accentSoft:rgba(255,138,61,.15);
+  --text:#F6ECE2; --muted:#C2AA96; --mutedDark:#85705E;
+  --info:#66A6FF; --infoSoft:rgba(102,166,255,.16);
+  --onAccent:#1F0F02;
+}
+
+/* ---------- 深海青 ---------- */
+:root[data-palette="ocean"][data-theme="light"]{
+  --bg:#F1F8F9; --surface:#FFFFFF; --surface2:#EBF5F6; --border:#D8EBEE; --borderLight:#BCDCE1;
+  --accent:#0B8E9C; --accentSoft:rgba(11,142,156,.10);
+  --text:#0D2A30; --muted:#4F6E75; --mutedDark:#8BA7AD;
+  --info:#5B5FEF; --infoSoft:rgba(91,95,239,.11);
+  --tag:#C2410C; --tagSoft:rgba(194,65,12,.10);
+}
+:root[data-palette="ocean"]:not([data-theme="light"]){
+  --bg:#08151A; --surface:#0E1F25; --surface2:#142A31; --border:#1E3A43; --borderLight:#2A4C56;
+  --accent:#2CC8D6; --accentSoft:rgba(44,200,214,.15);
+  --text:#E2F3F5; --muted:#93B5BB; --mutedDark:#5E7F86;
+  --info:#8E90FA; --infoSoft:rgba(142,144,250,.16);
+  --tag:#FB923C; --tagSoft:rgba(251,146,60,.15);
+  --onAccent:#04191C;
+}
+
+/* ---------- 石墨（黑白极简） ---------- */
+:root[data-palette="graphite"][data-theme="light"]{
+  --bg:#F5F5F4; --surface:#FFFFFF; --surface2:#F0F0EE; --border:#E4E4E1; --borderLight:#D0D0CC;
+  --accent:#27272A; --accentSoft:rgba(39,39,42,.08); --accent2:#71717A;
+  --text:#18181B; --muted:#63636B; --mutedDark:#9C9CA3;
+  --info:#2F6FEB; --infoSoft:rgba(47,111,235,.11);
+}
+:root[data-palette="graphite"]:not([data-theme="light"]){
+  --bg:#0B0B0C; --surface:#151517; --surface2:#1C1C1F; --border:#2A2A2E; --borderLight:#3A3A3F;
+  --accent:#F4F4F5; --accentSoft:rgba(244,244,245,.10); --accent2:#A1A1AA;
+  --text:#EDEDEF; --muted:#A1A1AA; --mutedDark:#6B6B73;
+  --info:#6AA8FF; --infoSoft:rgba(106,168,255,.16);
+  --onAccent:#111113;
+}
+
+/* ---------- 菜单里的色板小圆点（按钮本身不随配色变，永远显示自己那种颜色） ---------- */
+.sw-gold{--a:#C9A24B;--b:#0B0F14;}
+.sw-sky{--a:#2B7DE9;--b:#EAF3FF;}
+.sw-violet{--a:#7448E6;--b:#F1ECFF;}
+.sw-rose{--a:#D63F84;--b:#FFE9F2;}
+.sw-sunset{--a:#E2621B;--b:#FFF0E3;}
+.sw-ocean{--a:#0B8E9C;--b:#E3F6F8;}
+.sw-graphite{--a:#27272A;--b:#E9E9E7;}

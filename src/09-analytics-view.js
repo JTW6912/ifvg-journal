@@ -310,7 +310,7 @@ function analyticsSectionHead(secId, label, countHint, rightHtml) {
   return `<div class="anaSectionHead">
     <button class="anaSectionToggle" data-action="toggle-analytics-section" data-sec="${esc(secId)}">
       <span style="color:var(--mutedDark);display:flex;">${collapsed ? ICONS.chevDown : ICONS.chevUp}</span>
-      <span class="sectionLabel" style="margin:0;">⟦ ${esc(label)} ⟧</span>
+      <span class="sectionLabel" style="margin:0;"><span class="bk">⟦ </span>${esc(label)}<span class="bk"> ⟧</span></span>
       ${countHint ? `<span style="font-size:11.5px;color:var(--mutedDark);">${esc(countHint)}</span>` : ""}
     </button>
     ${rightHtml || ""}
@@ -333,13 +333,13 @@ function renderCombosSection() {
   // 一个组合都没有、也没建过分组，才是真正的空状态；只要建过分组就得把分组画出来，
   // 否则新用户先建分组、还没建组合，会以为分组没存上
   if (!combos.length && !groups.length) {
-    html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
+    html += `<div class="emptyHint" style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:16px;margin-bottom:26px;line-height:1.7;">
       ${T("combos.emptyIntro")}
     </div>`;
     return html;
   }
   if (!combos.length && !viewingUserId) {
-    html += `<div style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;">
+    html += `<div class="emptyHint" style="font-size:12.5px;color:var(--mutedDark);border:1px dashed var(--border);border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;">
       ${T("combos.emptyWithGroups")}
     </div>`;
   }
@@ -390,7 +390,7 @@ function renderTopFindings(breakdowns) {
   }).join("");
   return `<div class="findingsBox">
     <div class="findingsHead">
-      <span class="sectionLabel" style="margin:0;">⟦ ${esc(T("finding.title"))} ⟧</span>
+      <span class="sectionLabel" style="margin:0;"><span class="bk">⟦ </span>${esc(T("finding.title"))}<span class="bk"> ⟧</span></span>
       <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T(sigMetric() === "sig_wr" ? "finding.basisWr" : "finding.basisR"))}</span>
     </div>
     ${rows}
@@ -451,7 +451,7 @@ function renderRecentPanel(stats) {
   };
   return `<div class="recentPanel">
     <div class="recentHead">
-      <span class="sectionLabel" style="margin:0;">⟦ ${esc(T("recent.title"))} ⟧</span>
+      <span class="sectionLabel" style="margin:0;"><span class="bk">⟦ </span>${esc(T("recent.title"))}<span class="bk"> ⟧</span></span>
       <span style="font-size:11.5px;color:var(--mutedDark);">${esc(T("recent.basis"))}</span>
     </div>
     <div class="recentRow">
@@ -472,6 +472,86 @@ function renderAnalyticsSticky(stats) {
     <button class="tinyBtn stickyTop" data-action="scroll-top" title="${esc(T("sticky.top"))}">${ICONS.up}</button>
   </div></div>`;
 }
+/* ============================================================
+   分析页顶部的仪表盘（只在晴空皮肤下出现，经典主题保持原样）
+   左：资金曲线（累计 R）；右：结果分布环 + 胜率。数字全部来自同一个 stats，不另算口径
+   ============================================================ */
+function renderEquityCard(stats) {
+  const rF = roleField("r_multiple");
+  const pts = equityCurve(stats.list, rF);
+  if (pts.length < 2) {
+    return `<div class="dashCard dashEquity"><div class="dashHead"><span class="dashTitle">${esc(T("dash.equity"))}</span></div>
+      <div class="dashEmpty">${esc(T("dash.noCurve"))}</div></div>`;
+  }
+  const W = 600, H = 200, padT = 14, padB = 10;
+  const vals = [0, ...pts.map((p) => p.eq)];
+  const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const span = hi - lo || 1;
+  const x = (i) => (i / (vals.length - 1)) * W;
+  const y = (v) => padT + (1 - (v - lo) / span) * (H - padT - padB);
+  const line = vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+  const area = `${line}L${W},${H}L0,${H}Z`;
+  const last = vals[vals.length - 1];
+  const tone = last >= 0 ? "pos" : "neg";
+  // 峰值：曲线最高点，在图上打个小点
+  let peakI = 0; vals.forEach((v, i) => { if (v > vals[peakI]) peakI = i; });
+  const dot = (i, cls) => `<span class="dashDot ${cls}" style="left:${(x(i) / W * 100).toFixed(2)}%;top:${(y(vals[i]) / H * 100).toFixed(2)}%"></span>`;
+  return `<div class="dashCard dashEquity tone-${tone}">
+    <div class="dashHead">
+      <div>
+        <div class="dashTitle">${esc(T("dash.equity"))}</div>
+        <div class="dashBig ${tone}">${fmtNum(last)}<small>R</small></div>
+      </div>
+      <div class="dashMeta">
+        ${stats.dd !== null ? `<div><span>${esc(T("dash.maxDD"))}</span><b class="neg">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</b></div>` : ""}
+        <div><span>${esc(T("dash.peak"))}</span><b>${fmtNum(vals[peakI])}R</b></div>
+        <div><span>EV</span><b>${fmtNum(stats.ev, 3)}</b></div>
+      </div>
+    </div>
+    <div class="dashChart">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" class="eqStop0"/><stop offset="1" class="eqStop1"/></linearGradient></defs>
+        <line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" class="eqZero" vector-effect="non-scaling-stroke"/>
+        <path d="${area}" fill="url(#eqFill)"/>
+        <path d="${line}" class="eqLine" vector-effect="non-scaling-stroke"/>
+      </svg>
+      ${peakI > 0 && peakI < vals.length - 1 ? dot(peakI, "peak") : ""}${dot(vals.length - 1, "end " + tone)}
+    </div>
+    <div class="dashAxis"><span>${esc(pts[0].date || "")}</span><span>${esc(T("dash.curveBasis", { n: pts.length }))}</span><span>${esc(pts[pts.length - 1].date || "")}</span></div>
+  </div>`;
+}
+function renderWinRingCard(stats) {
+  const beAll = stats.be + stats.bew + stats.bel;
+  const parts = [["pos", stats.w, T("dash.wins")], ["be", beAll, T("dash.be")], ["neg", stats.l, T("dash.losses")]];
+  const sum = parts.reduce((a, p) => a + p[1], 0);
+  const R = 52, C = 2 * Math.PI * R;
+  let offset = 0;
+  const arcs = sum ? parts.filter((p) => p[1] > 0).map(([cls, v]) => {
+    const len = (v / sum) * C;
+    // 段与段之间留 2px 缝，只有一段的时候不留
+    const gap = parts.filter((p) => p[1] > 0).length > 1 ? 2 : 0;
+    const seg = `<circle r="${R}" cx="64" cy="64" class="ringSeg ${cls}" stroke-dasharray="${Math.max(0, len - gap).toFixed(2)} ${(C - Math.max(0, len - gap)).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"/>`;
+    offset += len;
+    return seg;
+  }).join("") : "";
+  return `<div class="dashCard dashRing">
+    <div class="dashHead"><div class="dashTitle">${esc(T("dash.mix"))}</div><div class="dashCount">${stats.total} ${esc(T("nav.trades"))}</div></div>
+    <div class="ringWrap">
+      <div class="ring">
+        <svg viewBox="0 0 128 128" aria-hidden="true"><circle r="${R}" cx="64" cy="64" class="ringTrack"/><g transform="rotate(-90 64 64)">${arcs}</g></svg>
+        <div class="ringCenter"><b>${fmtPct(stats.wr)}</b><span>${esc(T("dash.winRate"))}</span></div>
+      </div>
+      <div class="ringLegend">
+        ${parts.map(([cls, v, label]) => `<div class="ringLegendRow"><i class="${cls}"></i><span>${esc(label)}</span><b>${v}</b><em>${sum ? Math.round((v / sum) * 100) : 0}%</em></div>`).join("")}
+        ${stats.hasR ? `<div class="ringLegendRow pf"><span>PF</span><b style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</b></div>` : ""}
+      </div>
+    </div>
+  </div>`;
+}
+function renderAnalyticsHero(stats) {
+  return `<div class="dashHero">${stats.hasR ? renderEquityCard(stats) : ""}${renderWinRingCard(stats)}</div>`;
+}
 function renderAnalytics() {
   const stats = computeStats();
   if (!stats.hasResult) {
@@ -488,7 +568,7 @@ function renderAnalytics() {
     </div></div>`;
   }
 
-  let html = prefsNotice + panel + renderAnalyticsSticky(stats) + `<div id="anaOverview" class="statRow">
+  let html = prefsNotice + panel + renderAnalyticsSticky(stats) + (currentLayout() === "modern" ? renderAnalyticsHero(stats) : "") + `<div id="anaOverview" class="statRow">
     <div class="statBox"><div class="statLabel">${T("analytics.countTrades")}</div><div class="statValue">${stats.total}</div></div>
     <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div><div class="statSub">W${stats.w} · L${stats.l}</div></div>
     <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
@@ -577,7 +657,7 @@ function renderChangelog() {
     <textarea class="input" id="changelogDraft" rows="3" placeholder="${esc(T("changelog.placeholder"))}"></textarea>
     <button class="btn btn-primary" data-action="add-changelog" style="margin-top:8px;">${ICONS.plus} ${T("changelog.publish")}</button>
   </div>
-  <div style="margin:22px 0 14px;"><div class="sectionLabel">⟦ ${esc(T("changelog.history"))} ⟧</div></div>` : "";
+  <div style="margin:22px 0 14px;"><div class="sectionLabel"><span class="bk">⟦ </span>${esc(T("changelog.history"))}<span class="bk"> ⟧</span></div></div>` : "";
   if (!changelog.length) {
     html += `<div class="notice">${ICONS.alert}<span>${T("changelog.empty")}</span></div>`;
   } else {

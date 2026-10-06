@@ -4,7 +4,7 @@
 function renderMonthBar() {
   let html = `<div class="calendarPanel">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ ${esc(T("calendar.monthOverview"))} ⟧</div>
+    <div class="sectionLabel" style="margin:0;padding:0;border:none;"><span class="bk">⟦ </span>${esc(T("calendar.monthOverview"))}<span class="bk"> ⟧</span></div>
     <div style="display:flex;align-items:center;gap:14px;">
       <button class="tinyBtn" data-action="calendar-prev-year" style="font-size:20px;line-height:1;">‹</button>
       <div class="monthYear" style="margin-bottom:0;">${calendarYear}</div>
@@ -27,8 +27,51 @@ function renderMonthBar() {
   html += `<div class="monthBarCell ${ytdTone}" style="cursor:default;">
     <div class="monthBarLabel">YTD</div>
     ${ytdCount > 0 ? `<div class="monthBarValue">${ytdHasR ? fmtNum(ytdR) + "R" : ""}</div>` : ""}
-  </div></div></div>`;
+  </div></div>${currentLayout() === "modern" ? renderYearHeatmap(calendarYear) : ""}</div>`;
   return html;
+}
+/* 全年每日热力图（GitHub 贡献图那种）：一列一周、一行一个星期几，颜色深浅 = 当天 R 的绝对值。
+   点一格跟点日历里的日格子是同一个动作（open-day-detail）。只在晴空皮肤下出现 */
+function renderYearHeatmap(year) {
+  const dateF = roleField("date");
+  if (!dateF) return "";
+  const byDay = {};
+  trades.forEach((t) => {
+    const d = String(t[dateF.id] || "");
+    if (d.startsWith(year + "-") && tradeMatchesFilters(t, activeFilters)) (byDay[d] = byDay[d] || []).push(t);
+  });
+  const stats = {};
+  Object.keys(byDay).forEach((d) => { stats[d] = aggregateTradeStats(byDay[d]); });
+  const max = Math.max(0, ...Object.values(stats).map((s) => (s.hasR ? Math.abs(s.rSum) : 0)));
+  const first = new Date(year, 0, 1);
+  const start = new Date(year, 0, 1 - ((first.getDay() + 6) % 7)); // 从那一周的周一开始
+  const pad = (n) => String(n).padStart(2, "0");
+  let cols = "", monthLabels = "", lastMonth = -1, col = 0;
+  for (let d = new Date(start); d.getFullYear() <= year; col++) {
+    let cells = "";
+    for (let k = 0; k < 7; k++, d.setDate(d.getDate() + 1)) {
+      const inYear = d.getFullYear() === year;
+      const ds = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+      const s = stats[ds];
+      if (k === 0 && inYear && d.getMonth() !== lastMonth) {
+        lastMonth = d.getMonth();
+        monthLabels += `<span style="grid-column:${col + 1}">${esc(new Date(2000, lastMonth, 1).toLocaleString(localeTag(), { month: "short" }))}</span>`;
+      }
+      if (!inYear) { cells += `<i class="hm out"></i>`; continue; }
+      if (!s || !s.count) { cells += `<i class="hm" title="${ds}"></i>`; continue; }
+      const heat = s.hasR && max > 0 ? Math.abs(s.rSum) / max : 0.5;
+      const lvl = Math.min(4, 1 + Math.floor(heat * 3.999));
+      const tip = ds + " · " + T("dayDetail.summary", { n: s.count }) + (s.hasR ? " · " + fmtNum(s.rSum) + "R" : "");
+      cells += `<i class="hm ${s.tone} l${lvl}" data-action="open-day-detail" data-date="${ds}" title="${esc(tip)}"></i>`;
+    }
+    cols += `<div class="hmCol">${cells}</div>`;
+  }
+  return `<div class="yearHeat">
+    <div class="yearHeatHead"><span class="yearHeatTitle">${esc(T("dash.yearHeat"))}</span>
+      <span class="yearHeatLegend"><span>${esc(T("dash.loss"))}</span><i class="hm neg l4"></i><i class="hm neg l2"></i><i class="hm"></i><i class="hm pos l2"></i><i class="hm pos l4"></i><span>${esc(T("dash.gain"))}</span></span></div>
+    <div class="yearHeatScroll"><div class="yearHeatMonths" style="grid-template-columns:repeat(${col},1fr)">${monthLabels}</div>
+    <div class="yearHeatGrid" style="grid-template-columns:repeat(${col},1fr)">${cols}</div></div>
+  </div>`;
 }
 function renderDayCalendar() {
   const year = calendarYear, month = calendarMonth;
@@ -46,14 +89,22 @@ function renderDayCalendar() {
     });
   }
 
+  // 热力深浅：本月单日 |R| 最大的那天 = 1。只是个 CSS 变量，经典主题不读它
+  const dayStats = {};
+  cells.forEach((c) => { if (c.inMonth) dayStats[c.dateStr] = aggregateTradeStats(tradesOnDate(c.dateStr)); });
+  const heatMax = Math.max(0, ...Object.values(dayStats).map((d) => (d.hasR ? Math.abs(d.rSum) : 0)));
+  const _now = new Date();
+  const todayStr = _now.getFullYear() + "-" + String(_now.getMonth() + 1).padStart(2, "0") + "-" + String(_now.getDate()).padStart(2, "0");
+  const heatOf = (d) => (d.hasR && heatMax > 0 ? Math.abs(d.rSum) / heatMax : 0.5);
+
   let weeksHtml = "";
   for (let w = 0; w < cells.length; w += 7) {
     const weekCells = cells.slice(w, w + 7);
     weeksHtml += weekCells.map((c) => {
       if (!c.inMonth) return `<div class="dayCell outMonth"><div class="dayCellNum">${c.day}</div></div>`;
-      const stats = aggregateTradeStats(tradesOnDate(c.dateStr));
+      const stats = dayStats[c.dateStr];
       const tone = stats.count > 0 ? stats.tone : "";
-      return `<div class="dayCell ${tone}" data-action="open-day-detail" data-date="${c.dateStr}">
+      return `<div class="dayCell ${tone}${c.dateStr === todayStr ? " isToday" : ""}" data-action="open-day-detail" data-date="${c.dateStr}"${stats.count > 0 ? ` style="--heat:${heatOf(stats).toFixed(3)}"` : ""}>
         <div class="dayCellNum">${c.day}</div>
         ${stats.count > 0 ? `<div class="dayCellInfo">${esc(T("dayDetail.summary", { n: stats.count }))}${stats.hasR ? `<br>${fmtNum(stats.rSum)}R${stats.wr !== null ? ` · ${fmtPct(stats.wr)}` : ""}` : ""}</div>` : ""}
       </div>`;
@@ -67,7 +118,7 @@ function renderDayCalendar() {
 
   let html = `<div class="calendarPanel" id="day-calendar-top">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-    <div class="sectionLabel" style="margin:0;padding:0;border:none;">⟦ ${esc(T("calendar.dayDetail"))} ⟧</div>
+    <div class="sectionLabel" style="margin:0;padding:0;border:none;"><span class="bk">⟦ </span>${esc(T("calendar.dayDetail"))}<span class="bk"> ⟧</span></div>
     <div style="display:flex;align-items:center;gap:14px;">
       <button class="tinyBtn" data-action="cal-prev-month" style="font-size:20px;line-height:1;">‹</button>
       <div class="monthYear" style="margin-bottom:0;">${esc(new Date(year, month - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" }))}</div>
@@ -88,7 +139,7 @@ function renderHistoryCoverage(list) {
   const src = list || trades;
   const filterCount = countFilterConditions(activeFilters);
   let html = `<div class="calendarPanel" style="margin-top:20px;">
-  <div class="sectionLabel" style="margin:0 0 12px;padding:0;border:none;">⟦ ${esc(T("coverage.title", { year: curYear }))} ⟧</div>
+  <div class="sectionLabel" style="margin:0 0 12px;padding:0;border:none;"><span class="bk">⟦ </span>${esc(T("coverage.title", { year: curYear }))}<span class="bk"> ⟧</span></div>
   <div style="font-size:12.5px;color:var(--muted);margin-bottom:${filterCount ? 10 : 20}px;line-height:1.7;">
     ${T("coverage.rule")}</div>`;
   if (filterCount) {

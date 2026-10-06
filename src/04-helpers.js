@@ -189,3 +189,55 @@ function hasFieldValue(t, f) {
   return v !== undefined && v !== null && String(v).trim() !== "";
 }
 
+
+/* ============================================================
+   外观：布局 × 配色 × 日/夜，三条独立的轴，存在本机 localStorage
+   - 布局 classic = 原来的顶部页签（不挂属性）；modern = 侧边栏新版（theme-modern.css，挂 data-layout="modern"）
+   - 配色 gold = 原来的黑金（不挂属性）；其余见 palettes.css（挂 data-palette）
+   index.html 头部有一段内联脚本在首帧前就按同样的规则挂好，避免先闪一下默认样式
+   ============================================================ */
+const LAYOUTS = ["classic", "modern"];
+const PALETTES = ["gold", "sky", "violet", "rose", "sunset", "ocean", "graphite"];
+function currentLayout() { return document.documentElement.dataset.layout || "classic"; }
+function currentPalette() { return document.documentElement.dataset.palette || "gold"; }
+function applyLayout(v) {
+  if (v && v !== "classic" && LAYOUTS.includes(v)) document.documentElement.dataset.layout = v;
+  else delete document.documentElement.dataset.layout;
+}
+function applyPalette(v) {
+  if (v && v !== "gold" && PALETTES.includes(v)) document.documentElement.dataset.palette = v;
+  else delete document.documentElement.dataset.palette;
+}
+function loadAppearance() {
+  try {
+    // 早期试做时存过一个 journal_skin=sky（= 新版布局 + 晴空蓝），读到就换成新的两个键
+    if (localStorage.getItem("journal_skin") === "sky" && !localStorage.getItem("journal_layout")) {
+      localStorage.setItem("journal_layout", "modern");
+      localStorage.setItem("journal_palette", "sky");
+    }
+    localStorage.removeItem("journal_skin");
+    applyLayout(localStorage.getItem("journal_layout"));
+    applyPalette(localStorage.getItem("journal_palette"));
+  } catch (e) {}
+}
+
+// 新版布局页面大标题上方那行问候（按本地时间分早/午/晚/深夜）
+function greetingText(name) {
+  const hr = new Date().getHours();
+  const key = hr < 5 ? "greet.night" : hr < 11 ? "greet.morning" : hr < 13 ? "greet.noon" : hr < 18 ? "greet.afternoon" : hr < 23 ? "greet.evening" : "greet.night";
+  return name ? T(key + "Name", { name }) : T(key);
+}
+
+// 侧边栏底部那条迷你资金曲线：口径跟上面那几个数字一样（当前模式、只算 Taken），纯装饰，不参与任何统计
+function navSparkHtml() {
+  const takenF = roleField("taken"), rF = roleField("r_multiple");
+  if (!rF) return "";
+  const list = takenF ? trades.filter((t) => t[takenF.id] === "Taken") : trades;
+  const vals = [0, ...equityCurve(list, rF).map((p) => p.eq)];
+  if (vals.length < 3) return "";
+  const W = 200, H = 34;
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+  const pts = vals.map((v, i) => `${((i / (vals.length - 1)) * W).toFixed(1)},${(H - 2 - ((v - lo) / span) * (H - 4)).toFixed(1)}`).join(" ");
+  const tone = vals[vals.length - 1] >= 0 ? "pos" : "neg";
+  return `<svg class="navSpark ${tone}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" vector-effect="non-scaling-stroke"/></svg>`;
+}

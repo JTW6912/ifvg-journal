@@ -33,6 +33,7 @@ async function bootstrapAuth() {
     const savedTheme = localStorage.getItem("journal_theme");
     if (savedTheme === "light") document.documentElement.dataset.theme = "light";
   } catch (e) {}
+  loadAppearance();
   applyLangAttr();
   await bootstrapAuth();
   render();

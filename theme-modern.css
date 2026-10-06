@@ -1,0 +1,604 @@
+/* ============================================================
+   新版布局（data-layout="modern"）
+   只管「形状和排布」：侧边栏、玻璃导航、卡片阴影、圆角、字体、仪表盘、热力图、动效。
+   颜色一律来自配色变量（style.css 里的黑金默认值，或 palettes.css 里的其他配色），
+   所以任何配色都能配这套布局；不挂 data-layout 时这个文件一条都不生效，经典布局保持原样。
+   ============================================================ */
+
+/* ---------- 字体、圆角，以及从配色推出来的几种辅助色 ----------
+   辅助色用 color-mix 从 --accent / --surface 这些基础色算出来，新加一种配色只要给基础色就够了 */
+:root[data-layout="modern"]{
+  --fontBody:'Inter','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;
+  --fontUI:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+  /* 数字不再用等宽字体，改用 Inter 的等宽数字（tabular-nums），对得齐但更清爽 */
+  --fontMono:'Inter','PingFang SC','Microsoft YaHei',sans-serif;
+  --fontDisplay:'Plus Jakarta Sans','Inter','PingFang SC','Microsoft YaHei',sans-serif;
+  --r6:8px; --r7:9px; --r8:10px; --r9:11px; --r10:14px; --r11:999px; --r12:16px; --r14:20px;
+  --accentHover:color-mix(in srgb,var(--accent) 84%,var(--text));
+  --accent2:color-mix(in srgb,var(--accent) 68%,#fff);
+  --glass:color-mix(in srgb,var(--surface) 76%,transparent);
+  --glassBorder:color-mix(in srgb,var(--borderLight) 70%,transparent);
+  --glow:0 6px 16px color-mix(in srgb,var(--accent) 30%,transparent);
+}
+:root[data-layout="modern"][data-theme="light"]{
+  --segBg:color-mix(in srgb,var(--surface2) 70%,var(--border));
+  --segActive:var(--surface);
+  --shadowCard:0 1px 2px rgba(15,23,42,.04),0 4px 14px rgba(15,23,42,.05);
+  --shadowHover:0 2px 4px rgba(15,23,42,.05),0 14px 30px rgba(15,23,42,.10);
+  --shadowSm:0 1px 2px rgba(15,23,42,.06);
+  --shadowModal:0 28px 70px rgba(15,23,42,.20),0 2px 8px rgba(15,23,42,.06);
+  --shadowPop:0 14px 34px rgba(15,23,42,.14),0 2px 6px rgba(15,23,42,.06);
+  --bgGlow:radial-gradient(1100px 520px at 8% -12%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 62%),
+           radial-gradient(900px 460px at 98% -8%,color-mix(in srgb,var(--accent2) 26%,transparent),transparent 60%);
+}
+:root[data-layout="modern"]:not([data-theme="light"]){
+  --segBg:color-mix(in srgb,var(--bg) 60%,var(--surface));
+  --segActive:color-mix(in srgb,var(--surface2) 65%,var(--borderLight));
+  --shadowCard:0 1px 2px rgba(0,0,0,.25),0 6px 18px rgba(0,0,0,.18);
+  --shadowHover:0 2px 6px rgba(0,0,0,.3),0 16px 34px rgba(0,0,0,.32);
+  --shadowSm:0 1px 2px rgba(0,0,0,.3);
+  --shadowModal:0 30px 80px rgba(0,0,0,.55),0 0 0 1px color-mix(in srgb,var(--accent) 8%,transparent);
+  --shadowPop:0 16px 40px rgba(0,0,0,.45);
+  --bgGlow:radial-gradient(1100px 520px at 8% -12%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 62%),
+           radial-gradient(900px 460px at 98% -8%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 60%);
+}
+
+/* ============================================================
+   基础
+   ============================================================ */
+/* 光晕画在 html 上：body 的高度只有内容那么高（登录页甚至是 0），画在 body 上会被截出一道硬边 */
+:root[data-layout="modern"]{background:var(--bgGlow),var(--bg);background-attachment:fixed;}
+[data-layout="modern"] body{background:transparent;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;}
+[data-layout="modern"] ::selection{background:color-mix(in srgb,var(--accent) 22%,transparent);}
+[data-layout="modern"] ::-webkit-scrollbar{width:10px;height:10px;}
+[data-layout="modern"] ::-webkit-scrollbar-thumb{background:var(--borderLight);border-radius:999px;border:2px solid transparent;background-clip:padding-box;}
+[data-layout="modern"] ::-webkit-scrollbar-thumb:hover{background:var(--mutedDark);border:2px solid transparent;background-clip:padding-box;}
+[data-layout="modern"] :focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+/* ============================================================
+   顶栏 + 品牌
+   ============================================================ */
+[data-layout="modern"] .brand{font-family:var(--fontDisplay);font-weight:800;font-size:22px;letter-spacing:-.3px;}
+[data-layout="modern"] .brand .accent{background:linear-gradient(100deg,var(--accent) 0%,var(--accent2) 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;}
+[data-layout="modern"] .subline{font-size:12px;color:var(--muted);margin-top:5px;letter-spacing:.1px;}
+[data-layout="modern"] .header{margin-bottom:18px;}
+
+/* 页签：一条玻璃胶囊，当前页签是浮起来的白片 */
+[data-layout="modern"] .nav{gap:4px;padding:5px;margin-bottom:26px;border:1px solid var(--glassBorder);border-radius:16px;
+  background:var(--glass);backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);
+  box-shadow:var(--shadowCard);width:fit-content;max-width:100%;}
+[data-layout="modern"] .tab{border:none;margin:0;padding:8px 15px;border-radius:11px;font-weight:500;font-size:13.5px;
+  color:var(--muted);transition:background .15s,color .15s,box-shadow .15s;}
+[data-layout="modern"] .tab:hover{color:var(--text);background:var(--accentSoft);}
+[data-layout="modern"] .tab.active{color:var(--onAccent);font-weight:600;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accentHover) 100%);box-shadow:var(--glow);}
+[data-layout="modern"] .tab.active .tabLabel::before,[data-layout="modern"] .tab.active .tabLabel::after{content:none;}
+[data-layout="modern"] .tab svg{opacity:.85;}
+
+/* ============================================================
+   按钮
+   ============================================================ */
+[data-layout="modern"] .btn{border-radius:10px;background:var(--surface);border-color:var(--border);box-shadow:var(--shadowSm);
+  font-weight:500;transition:border-color .15s,box-shadow .15s,background .15s,transform .1s;}
+[data-layout="modern"] .btn:hover{border-color:var(--borderLight);box-shadow:var(--shadowCard);}
+[data-layout="modern"] .btn:active{transform:translateY(1px);}
+[data-layout="modern"] .btn-primary{border:1px solid transparent;color:var(--onAccent);font-weight:600;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accentHover) 100%);box-shadow:var(--glow);}
+[data-layout="modern"] .btn-primary:hover{border-color:transparent;filter:brightness(1.06);box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 34%,transparent);}
+[data-layout="modern"] .btn-danger{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 45%,transparent);background:var(--surface);}
+[data-layout="modern"] .btn-danger:hover{background:var(--negSoft);border-color:var(--neg);}
+[data-layout="modern"] .btn:disabled{box-shadow:none;}
+[data-layout="modern"] .themeToggle{border-radius:11px;background:var(--surface);box-shadow:var(--shadowSm);color:var(--muted);
+  transition:color .15s,border-color .15s,box-shadow .15s;}
+[data-layout="modern"] .themeToggle:hover{color:var(--accent);border-color:var(--borderLight);box-shadow:var(--shadowCard);}
+[data-layout="modern"] .iconBtn{border-radius:9px;transition:background .12s,color .12s;}
+[data-layout="modern"] .iconBtn:hover{background:var(--surface2);color:var(--text);}
+[data-layout="modern"] .tinyBtn:hover{color:var(--accent);}
+
+/* 分段控件（实盘/回测、卡片/列表、日/周/不关联……）：iOS 那种底槽 + 浮起的白片 */
+[data-layout="modern"] .modeToggle,[data-layout="modern"] .viewToggle{background:var(--segBg);border:1px solid var(--border);
+  border-radius:11px;padding:3px;gap:2px;}
+[data-layout="modern"] .modeBtn,[data-layout="modern"] .viewBtn{background:transparent;border-radius:8px;color:var(--muted);
+  transition:background .15s,color .15s,box-shadow .15s;}
+[data-layout="modern"] .modeBtn{padding:6px 13px;font-weight:500;}
+[data-layout="modern"] .modeBtn:hover,[data-layout="modern"] .viewBtn:hover{color:var(--text);}
+[data-layout="modern"] .modeBtn.active,[data-layout="modern"] .viewBtn.active{background:var(--segActive);color:var(--accent);
+  font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.12),0 0 0 1px var(--border);}
+[data-layout="modern"] .viewBtn{height:24px;}
+[data-layout="modern"] .reviewPeriodSeg{background:var(--segBg);border-color:var(--border);padding:2px;gap:2px;}
+[data-layout="modern"] .reviewPeriodSeg .tinyBtn{border-radius:999px;}
+[data-layout="modern"] .reviewPeriodSeg .tinyBtn+.tinyBtn{border-left:none;}
+[data-layout="modern"] .reviewPeriodSeg .tinyBtn.on{background:var(--segActive);color:var(--accent);
+  box-shadow:0 1px 3px rgba(15,23,42,.12),0 0 0 1px var(--border);}
+
+/* ============================================================
+   下拉菜单 / 浮层 / 弹窗
+   ============================================================ */
+[data-layout="modern"] .exportMenu{border-radius:14px;border-color:var(--border);box-shadow:var(--shadowPop);padding:5px;}
+[data-layout="modern"] .exportMenu > button{border-radius:9px;padding:9px 11px;}
+[data-layout="modern"] .exportMenu > button:hover{background:var(--accentSoft);color:var(--accent);}
+[data-layout="modern"] .exportMenu .menuLabel{font-weight:600;text-transform:uppercase;letter-spacing:.6px;}
+
+[data-layout="modern"] .overlay{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+[data-layout="modern"] .modal{border:1px solid var(--border);border-radius:20px;}
+[data-layout="modern"] .modalHead{padding:18px 24px;border-bottom-color:var(--border);}
+[data-layout="modern"] .modalHead .display{font-family:var(--fontDisplay);font-weight:700;letter-spacing:-.2px;}
+[data-layout="modern"] .modalBody{padding:20px 24px;}
+[data-layout="modern"] .modalFoot{padding:14px 24px;background:var(--surface2);border-top-color:var(--border);
+  border-radius:0 0 20px 20px;}
+
+[data-layout="modern"] .reviewBubble,[data-layout="modern"] .reviewPop,[data-layout="modern"] .slashMenu,
+[data-layout="modern"] .reviewToast,[data-layout="modern"] .reviewOutline.isPop{border-color:var(--border);border-radius:12px;}
+
+/* ============================================================
+   表单
+   ============================================================ */
+[data-layout="modern"] .input,[data-layout="modern"] textarea.input,[data-layout="modern"] select.input,
+[data-layout="modern"] .select,[data-layout="modern"] .bubbleInput{background:var(--surface);border-color:var(--border);
+  transition:border-color .15s,box-shadow .15s;}
+[data-layout="modern"] .input:hover,[data-layout="modern"] .select:hover{border-color:var(--borderLight);}
+[data-layout="modern"] .input:focus,[data-layout="modern"] .select:focus,[data-layout="modern"] .bubbleInput:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--accentSoft);outline:none;}
+[data-layout="modern"] .select{padding:6px 10px;}
+[data-layout="modern"] .fieldLabel{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.2px;}
+[data-layout="modern"] input[type="checkbox"],[data-layout="modern"] input[type="radio"]{accent-color:var(--accent);}
+
+[data-layout="modern"] .chip{border-radius:999px;background:var(--surface);transition:border-color .12s,color .12s,background .12s;}
+[data-layout="modern"] .chip:hover{border-color:var(--borderLight);color:var(--text);}
+[data-layout="modern"] .chip.active{font-weight:600;}
+[data-layout="modern"] .tagChip{border-radius:999px;}
+
+/* ============================================================
+   卡片类容器：白底 + 柔和阴影，悬停时浮起来
+   ============================================================ */
+[data-layout="modern"] .card,[data-layout="modern"] .statBox,[data-layout="modern"] .recentBox,[data-layout="modern"] .filterPanel,
+[data-layout="modern"] .breakdownCard,[data-layout="modern"] .comboCard,[data-layout="modern"] .calendarPanel,[data-layout="modern"] .reviewCard,
+[data-layout="modern"] .pbSysCard,[data-layout="modern"] .pbTagCard,[data-layout="modern"] .exBlock,[data-layout="modern"] .focusRow,
+[data-layout="modern"] .settingsRow,[data-layout="modern"] .notice,[data-layout="modern"] .findingsBox,[data-layout="modern"] .pbTriageTrade,
+[data-layout="modern"] .pbTriageBlock,[data-layout="modern"] .pbTradeList,[data-layout="modern"] .pbExecTable,[data-layout="modern"] .changelogEntry,
+[data-layout="modern"] .pbStratCard,[data-layout="modern"] .pbTile,[data-layout="modern"] .pbIntro,[data-layout="modern"] .pbTagCompare,
+[data-layout="modern"] .tableScroll,[data-layout="modern"] .authCard{border-color:var(--border);box-shadow:var(--shadowCard);}
+[data-layout="modern"] .tableScroll{background:var(--surface);border-radius:16px;}
+
+[data-layout="modern"] .card,[data-layout="modern"] .reviewCard,[data-layout="modern"] .pbSysCard,[data-layout="modern"] .pbTagCard,
+[data-layout="modern"] .pbStratCard,[data-layout="modern"] .pbTile{transition:border-color .18s,transform .18s,box-shadow .18s;}
+[data-layout="modern"] .card:hover,[data-layout="modern"] .pbSysCard:hover,[data-layout="modern"] .pbTile:hover,
+[data-layout="modern"] .pbStratCard:hover{border-color:color-mix(in srgb,var(--accent) 45%,transparent);box-shadow:var(--shadowHover);transform:translateY(-3px);}
+[data-layout="modern"] .reviewCard:hover{background:var(--surface);border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:var(--shadowHover);}
+[data-layout="modern"] .pbTagCard:hover{box-shadow:var(--shadowHover);}
+
+/* 交易卡片 */
+[data-layout="modern"] .card{border-radius:16px;}
+[data-layout="modern"] .cardImg{background:linear-gradient(135deg,var(--surface2),var(--accentSoft));}
+[data-layout="modern"] .cardBody{padding:12px 14px;}
+[data-layout="modern"] .cardModel{font-weight:500;}
+[data-layout="modern"] .cardFoot{border-top-color:var(--border);}
+[data-layout="modern"] .cardFoot button{padding:8px 0;transition:background .12s,color .12s;}
+[data-layout="modern"] .cardFoot button:hover{background:var(--accentSoft);color:var(--accent);}
+[data-layout="modern"] .resultBadge,[data-layout="modern"] .focusResult{border-radius:999px;padding:3px 10px;font-weight:700;
+  letter-spacing:.2px;box-shadow:0 2px 8px rgba(15,23,42,.18);}
+[data-layout="modern"] .tpResult{color:var(--onSolid);}
+[data-layout="modern"] .previewIcon{border-radius:9px;backdrop-filter:blur(4px);}
+
+/* ============================================================
+   数字与标签：标签小一号、加粗、偏灰；数字用标题字体
+   ============================================================ */
+[data-layout="modern"] .sectionLabel{font-family:var(--fontDisplay);font-size:13px;font-weight:700;letter-spacing:.1px;
+  color:var(--text);border-bottom-color:var(--border);}
+[data-layout="modern"] .statBox{border-radius:16px;padding:16px 18px;position:relative;overflow:hidden;}
+[data-layout="modern"] .statLabel,[data-layout="modern"] .recentLabel,[data-layout="modern"] .focusFieldLabel,[data-layout="modern"] .tpFieldLabel,
+[data-layout="modern"] .tpPbLabel,[data-layout="modern"] .pbStratListHead,[data-layout="modern"] .reviewWeekLabel,[data-layout="modern"] .exRowLabel,
+[data-layout="modern"] .pbMpGroup,[data-layout="modern"] .slashMenuHead,[data-layout="modern"] .outlineHead{
+  font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--mutedDark);}
+[data-layout="modern"] .statValue,[data-layout="modern"] .recentWr,[data-layout="modern"] .focusR{font-family:var(--fontDisplay);font-weight:700;letter-spacing:-.4px;}
+[data-layout="modern"] .statValue{font-size:24px;}
+[data-layout="modern"] .recentBox{border-radius:14px;}
+[data-layout="modern"] .recentBox.recentBase{border-left:1px solid var(--border);
+  background:linear-gradient(160deg,var(--accentSoft),transparent 70%),var(--surface);box-shadow:var(--shadowCard),inset 0 0 0 1px color-mix(in srgb,var(--accent) 18%,transparent);}
+
+/* ============================================================
+   表格
+   ============================================================ */
+[data-layout="modern"] .dataTable th{background:var(--surface2);color:var(--mutedDark);font-weight:600;font-size:11.5px;
+  letter-spacing:.3px;padding:11px 14px;border-bottom-color:var(--border);}
+[data-layout="modern"] .dataTable td{padding:10px 14px;border-bottom-color:var(--border);}
+[data-layout="modern"] .dataTable tbody tr{transition:background .1s;}
+[data-layout="modern"] .dataTable tbody tr:hover{background:var(--accentSoft);}
+[data-layout="modern"] .dataTable tbody tr:last-child td{border-bottom:none;}
+[data-layout="modern"] .adminTable th{font-weight:600;}
+
+/* ============================================================
+   筛选面板 / 分析
+   ============================================================ */
+[data-layout="modern"] .filterPanel{border-radius:16px;}
+[data-layout="modern"] .filterPanel.open{border-color:var(--border);}
+[data-layout="modern"] .filterPanelHead{padding:13px 17px;}
+[data-layout="modern"] .filterPanelHead:hover{background:var(--surface2);}
+[data-layout="modern"] .filterPanelTitle{font-weight:600;}
+[data-layout="modern"] .filterPanelBadge{font-weight:600;}
+[data-layout="modern"] .filterGroup{background:var(--surface2);}
+[data-layout="modern"] .analyticsSticky{background:var(--glass);border-color:var(--glassBorder);border-radius:14px;
+  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);box-shadow:var(--shadowCard);}
+[data-layout="modern"] .breakdownCard{border-radius:16px;padding:16px;}
+[data-layout="modern"] .breakdownTitle{font-family:var(--fontDisplay);font-weight:700;font-size:13px;color:var(--text);}
+[data-layout="modern"] .barTrack{height:6px;border-radius:999px;}
+[data-layout="modern"] .barFill{border-radius:999px;}
+[data-layout="modern"] .comboCard{border-radius:16px;}
+[data-layout="modern"] .comboCard.analyzing{background:linear-gradient(160deg,var(--accentSoft),transparent 75%),var(--surface);}
+[data-layout="modern"] .comboGroupSection{border-color:var(--border);border-radius:18px;background:color-mix(in srgb,var(--surface) 35%,transparent);}
+[data-layout="modern"] .findingRow{border-radius:10px;}
+[data-layout="modern"] .findingRow:hover{background:var(--accentSoft);}
+
+/* ============================================================
+   日历
+   ============================================================ */
+[data-layout="modern"] .calendarPanel{border-radius:20px;padding:22px;}
+[data-layout="modern"] .monthYear{font-family:var(--fontDisplay);font-weight:700;font-size:15px;}
+[data-layout="modern"] .dayCell,[data-layout="modern"] .weekCell,[data-layout="modern"] .monthBarCell,[data-layout="modern"] .monthCell{
+  border-color:var(--border);background:var(--surface);border-radius:12px;}
+[data-layout="modern"] .dayCell:not(.outMonth):hover,[data-layout="modern"] .monthBarCell:hover,[data-layout="modern"] .monthCell:hover{
+  border-color:var(--accent);box-shadow:var(--shadowCard);}
+[data-layout="modern"] .dayCell.pos,[data-layout="modern"] .weekCell.pos,[data-layout="modern"] .monthBarCell.pos{border-color:color-mix(in srgb,var(--pos) 35%,transparent);background:var(--posSoft);}
+[data-layout="modern"] .dayCell.neg,[data-layout="modern"] .weekCell.neg,[data-layout="modern"] .monthBarCell.neg{border-color:color-mix(in srgb,var(--neg) 32%,transparent);background:var(--negSoft);}
+[data-layout="modern"] .dayCell.neutral,[data-layout="modern"] .weekCell.neutral,[data-layout="modern"] .monthBarCell.neutral{border-color:color-mix(in srgb,var(--accent) 32%,transparent);background:var(--accentSoft);}
+[data-layout="modern"] .dayCellNum{font-weight:500;}
+[data-layout="modern"] .dayGridHead{font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+[data-layout="modern"] .dayDetailRow{border-radius:10px;border-bottom-color:var(--border);}
+
+/* ============================================================
+   看图模式 / 交易预览
+   ============================================================ */
+[data-layout="modern"] .focusRow{border-radius:20px;padding:16px;}
+[data-layout="modern"] .focusRow.isCurrent{border-color:var(--accent);box-shadow:var(--shadowCard),0 0 0 3px var(--accentSoft);}
+[data-layout="modern"] .focusShot{border-radius:14px;}
+[data-layout="modern"] .focusDate{font-weight:600;}
+[data-layout="modern"] .tpShot{border-radius:14px;}
+
+/* ============================================================
+   复盘
+   ============================================================ */
+[data-layout="modern"] .reviewCard{border-radius:16px;padding:16px 18px;}
+[data-layout="modern"] .reviewCardTitle{font-family:var(--fontDisplay);font-weight:700;letter-spacing:-.2px;}
+[data-layout="modern"] .reviewGroupHeader{border-radius:12px;}
+[data-layout="modern"] .reviewGroupName{font-family:var(--fontDisplay);font-weight:700;}
+[data-layout="modern"] .reviewEditorOverlay,[data-layout="modern"] .exOverlay{background:var(--bgGlow),var(--bg);}
+[data-layout="modern"] .reviewTopBar{background:var(--glass);border-bottom-color:var(--glassBorder);
+  backdrop-filter:blur(14px) saturate(1.4);-webkit-backdrop-filter:blur(14px) saturate(1.4);}
+[data-layout="modern"] .reviewHintBar{background:linear-gradient(to top,var(--bg) 55%,transparent);}
+[data-layout="modern"] .reviewTitleInput,[data-layout="modern"] .reviewTitleStatic{font-family:var(--fontDisplay);font-weight:800;letter-spacing:-.6px;}
+[data-layout="modern"] .mdBody h1,[data-layout="modern"] .mdBody h2,[data-layout="modern"] .mdBody h3{font-weight:700;letter-spacing:-.3px;}
+[data-layout="modern"] .mdBody blockquote{border-left-color:var(--accent);border-radius:0 10px 10px 0;}
+[data-layout="modern"] .tradeRef{font-weight:500;}
+[data-layout="modern"] .tradeRef:hover{color:var(--onAccent);}
+[data-layout="modern"] .tradeRef:hover .tradeRefMeta{color:var(--onAccent);}
+[data-layout="modern"] .pageRefKind{color:#fff;}
+
+/* ============================================================
+   模型库
+   ============================================================ */
+[data-layout="modern"] .pbSysCard{border-radius:20px;padding:18px 20px 14px;}
+[data-layout="modern"] .pbSysCard::before{width:100%;height:4px;bottom:auto;opacity:1;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));}
+[data-layout="modern"] .pbSysTitle{font-family:var(--fontDisplay);font-weight:800;letter-spacing:-.4px;}
+[data-layout="modern"] .pbSectionTitle{font-weight:700;font-size:16px;}
+[data-layout="modern"] .pbStratRow{border-radius:10px;}
+[data-layout="modern"] .pbStratCard{border-radius:14px;}
+[data-layout="modern"] .pbTagCard{border-radius:12px;}
+[data-layout="modern"] .pbTile{border-radius:14px;}
+[data-layout="modern"] .pbSticky{border-radius:6px 6px 14px 14px;}
+[data-layout="modern"] .pbKindBadge{border-color:transparent;}
+[data-layout="modern"] .pbOpt{border-radius:10px;}
+[data-layout="modern"] .pbToggle{border-radius:10px;background:var(--surface);}
+[data-layout="modern"] .pbTriageShot{border-radius:16px;}
+[data-layout="modern"] .pbExecRow.head{font-weight:600;letter-spacing:.3px;}
+[data-layout="modern"] .pbProgress{height:6px;border-radius:999px;}
+[data-layout="modern"] .pbProgress i{background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;}
+[data-layout="modern"] .pbTriageNav .btn-primary kbd{background:color-mix(in srgb,var(--onAccent) 16%,transparent);border-color:color-mix(in srgb,var(--onAccent) 32%,transparent);color:var(--onAccent);}
+
+/* ============================================================
+   导出中心 / 设置
+   ============================================================ */
+[data-layout="modern"] .exH1{font-family:var(--fontDisplay);font-weight:800;letter-spacing:-.6px;}
+[data-layout="modern"] .exBlock{border-radius:18px;padding:20px 22px;}
+[data-layout="modern"] .exBlockTitle{font-weight:700;}
+[data-layout="modern"] .exFmt{background:var(--surface);}
+[data-layout="modern"] .exFoot{background:linear-gradient(to top,var(--bg) 70%,transparent);}
+[data-layout="modern"] .settingsRow{border-radius:14px;}
+[data-layout="modern"] .settingsRowHead{padding:12px 16px;}
+[data-layout="modern"] .addFieldBox{border-radius:16px;background:var(--surface);}
+[data-layout="modern"] .dashLabel{font-weight:700;}
+
+/* ============================================================
+   登录页
+   ============================================================ */
+[data-layout="modern"] .authBrand{font-size:28px;}
+[data-layout="modern"] .authCard{border-radius:22px;padding:28px;box-shadow:var(--shadowModal);}
+
+/* 窄屏：页签条横向滚动时撑满宽度 */
+@media(max-width:899px){
+  [data-layout="modern"] .nav{width:100%;}
+  [data-layout="modern"] .navBrand,[data-layout="modern"] .navFoot{display:none;}
+}
+
+/* ============================================================
+   侧边栏布局（≥900px）
+   不改 DOM 结构：#app 本来就是 header / banner / nav / notice / tabBody 五个兄弟，
+   这里用 grid 把 nav 钉在左边一整列，其余四块按顺序落在右边那列
+   ============================================================ */
+[data-layout="modern"] .bk{display:none;}
+@media(min-width:900px){
+  [data-layout="modern"] #app.wrap{display:grid;grid-template-columns:var(--sideW,244px) minmax(0,1fr);
+    grid-template-rows:auto auto auto 1fr;max-width:none;padding:0;min-height:100vh;}
+  [data-layout="modern"] #app.wrap>*:not(#appNav){grid-column:2;padding-left:clamp(20px,3vw,40px);padding-right:clamp(20px,3vw,40px);min-width:0;}
+  [data-layout="modern"] #appHeader{padding-top:26px;margin-bottom:22px;}
+  [data-layout="modern"] #tabBody{padding-bottom:64px;}
+  [data-layout="modern"] #appNav{grid-column:1;grid-row:1 / span 4;position:sticky;top:0;align-self:start;height:100vh;
+    flex-direction:column;align-items:stretch;gap:3px;width:auto;max-width:none;margin:0;padding:18px 14px 16px;
+    border:none;border-right:1px solid var(--glassBorder);border-radius:0;box-shadow:none;overflow-y:auto;overflow-x:hidden;}
+  [data-layout="modern"] #appNav .tab{justify-content:flex-start;gap:11px;padding:10px 13px;font-size:14px;white-space:nowrap;flex-shrink:0;}
+  [data-layout="modern"] #appNav .tab svg{width:17px;height:17px;flex-shrink:0;}
+
+  /* 侧边栏顶部品牌 */
+  [data-layout="modern"] .navBrand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px;}
+  [data-layout="modern"] .navLogo{width:36px;height:36px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    color:var(--onAccent);background:linear-gradient(135deg,var(--accent2),var(--accent) 55%,var(--accentHover));box-shadow:var(--glow);}
+  [data-layout="modern"] .navBrandText{display:flex;flex-direction:column;font-family:var(--fontDisplay);font-size:16px;font-weight:600;
+    color:var(--text);line-height:1.15;letter-spacing:-.2px;min-width:0;}
+  [data-layout="modern"] .navBrandText b{font-weight:800;}
+  [data-layout="modern"] .navBrandText small{font-family:var(--fontBody);font-size:11.5px;font-weight:500;color:var(--mutedDark);
+    margin-top:3px;letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* 侧边栏底部：当前模式的 taken 摘要 */
+  [data-layout="modern"] .navFoot{display:block;margin-top:auto;padding:14px;border-radius:16px;border:1px solid var(--border);flex-shrink:0;
+    background:linear-gradient(160deg,var(--accentSoft),transparent 80%),var(--surface);box-shadow:var(--shadowSm);}
+  [data-layout="modern"] .navFootLabel{font-size:10.5px;font-weight:600;color:var(--mutedDark);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;}
+  [data-layout="modern"] .navFootStats{display:flex;justify-content:space-between;gap:8px;}
+  [data-layout="modern"] .navFootStats div{display:flex;flex-direction:column;min-width:0;}
+  [data-layout="modern"] .navFootStats b{font-family:var(--fontDisplay);font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.3px;}
+  [data-layout="modern"] .navFootStats span{font-size:10.5px;color:var(--mutedDark);}
+
+  /* 顶栏：品牌挪到侧边栏了，这里换成当前页面的大标题 */
+  [data-layout="modern"] #appHeader .brand{display:none;}
+  [data-layout="modern"] .pageTitle{display:block;font-family:var(--fontDisplay);font-size:28px;font-weight:800;letter-spacing:-.7px;color:var(--text);line-height:1.15;}
+}
+/* 中等宽度：侧边栏收成一条图标栏 */
+@media(min-width:900px) and (max-width:1199px){
+  [data-layout="modern"]{--sideW:76px;}
+  [data-layout="modern"] #appNav{padding:16px 12px;}
+  [data-layout="modern"] #appNav .tab{justify-content:center;padding:11px 0;}
+  [data-layout="modern"] #appNav .tabLabel,[data-layout="modern"] .navBrandText,[data-layout="modern"] .navFoot{display:none;}
+  [data-layout="modern"] .navBrand{justify-content:center;padding:4px 0 20px;}
+}
+
+/* 切页签时内容区淡入 */
+@keyframes skyTabIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+[data-layout="modern"] #tabBody.tabEnter{animation:skyTabIn .32s cubic-bezier(.2,.7,.3,1);}
+
+/* ============================================================
+   分析页仪表盘：资金曲线 + 结果分布环
+   ============================================================ */
+[data-layout="modern"] .dashHero{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:16px;margin-bottom:16px;}
+@media(max-width:1000px){[data-layout="modern"] .dashHero{grid-template-columns:1fr;}}
+[data-layout="modern"] .dashCard{position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:18px 20px 16px;box-shadow:var(--shadowCard);}
+[data-layout="modern"] .dashCard::before{content:"";position:absolute;right:-80px;top:-120px;width:320px;height:260px;border-radius:50%;
+  background:radial-gradient(closest-side,var(--accentSoft),transparent);pointer-events:none;}
+[data-layout="modern"] .dashHead{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+[data-layout="modern"] .dashTitle{font-size:11.5px;font-weight:600;color:var(--mutedDark);text-transform:uppercase;letter-spacing:.5px;}
+[data-layout="modern"] .dashCount{font-size:12px;color:var(--muted);font-weight:500;}
+[data-layout="modern"] .dashBig{font-family:var(--fontDisplay);font-size:36px;font-weight:800;letter-spacing:-1.2px;line-height:1.1;margin-top:6px;}
+[data-layout="modern"] .dashBig.pos{color:var(--pos);}
+[data-layout="modern"] .dashBig.neg{color:var(--neg);}
+[data-layout="modern"] .dashBig small{font-size:16px;font-weight:700;margin-left:3px;opacity:.7;letter-spacing:0;}
+[data-layout="modern"] .dashMeta{display:flex;gap:22px;padding-top:4px;}
+[data-layout="modern"] .dashMeta div{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+[data-layout="modern"] .dashMeta span{font-size:11px;color:var(--mutedDark);font-weight:500;}
+[data-layout="modern"] .dashMeta b{font-family:var(--fontDisplay);font-size:16px;font-weight:700;color:var(--text);}
+[data-layout="modern"] .dashMeta b.neg{color:var(--neg);}
+[data-layout="modern"] .dashChart{position:relative;height:200px;margin:14px 0 0;}
+[data-layout="modern"] .dashChart svg{width:100%;height:100%;display:block;overflow:visible;}
+[data-layout="modern"] .eqLine{fill:none;stroke:var(--accent);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;
+  }
+[data-layout="modern"] .tone-neg .eqLine{stroke:var(--neg);}
+[data-layout="modern"] .eqStop0{stop-color:var(--accent);stop-opacity:.26;}
+[data-layout="modern"] .eqStop1{stop-color:var(--accent);stop-opacity:0;}
+[data-layout="modern"] .tone-neg .eqStop0,[data-layout="modern"] .tone-neg .eqStop1{stop-color:var(--neg);}
+[data-layout="modern"] .eqZero{stroke:var(--borderLight);stroke-width:1;stroke-dasharray:4 5;}
+/* 曲线从左往右展开：用 clip-path 揭开，不用 dasharray（跟 non-scaling-stroke 一起用会变成虚线） */
+[data-layout="modern"] .dashChart svg{animation:skyReveal 1s cubic-bezier(.3,.7,.3,1);}
+@keyframes skyReveal{from{clip-path:inset(0 100% 0 0);}to{clip-path:inset(0 0 0 0);}}
+[data-layout="modern"] .dashDot{position:absolute;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);
+  background:var(--surface);border:2.5px solid var(--accent);pointer-events:none;}
+[data-layout="modern"] .dashDot{animation:skyFade .3s .8s both;}
+[data-layout="modern"] .dashDot.end{background:var(--accent);border-color:var(--surface);animation:skyFade .3s .8s both,skyPulse 2.4s 1.1s ease-out infinite;}
+@keyframes skyFade{from{opacity:0;}to{opacity:1;}}
+[data-layout="modern"] .dashDot.end.neg{background:var(--neg);}
+[data-layout="modern"] .dashDot.peak{width:8px;height:8px;border-width:2px;}
+@keyframes skyPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent);}70%{box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 0%,transparent);}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent);}}
+[data-layout="modern"] .dashAxis{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--mutedDark);margin-top:8px;}
+[data-layout="modern"] .dashEmpty{padding:50px 0;text-align:center;color:var(--mutedDark);font-size:12.5px;}
+
+[data-layout="modern"] .ringWrap{position:relative;display:flex;align-items:center;gap:24px;margin-top:16px;flex-wrap:wrap;}
+[data-layout="modern"] .ring{position:relative;width:156px;height:156px;flex-shrink:0;}
+[data-layout="modern"] .ring svg{width:100%;height:100%;display:block;animation:skyRingIn .7s cubic-bezier(.2,.7,.3,1);}
+@keyframes skyRingIn{from{opacity:0;transform:rotate(-40deg) scale(.9);}to{opacity:1;transform:none;}}
+[data-layout="modern"] .ringTrack{fill:none;stroke:var(--surface2);stroke-width:14;}
+[data-layout="modern"] .ringSeg{fill:none;stroke-width:14;}
+[data-layout="modern"] .ringSeg.pos{stroke:var(--pos);}
+[data-layout="modern"] .ringSeg.neg{stroke:var(--neg);}
+[data-layout="modern"] .ringSeg.be{stroke:var(--borderLight);}
+[data-layout="modern"] .ringCenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+[data-layout="modern"] .ringCenter b{font-family:var(--fontDisplay);font-size:28px;font-weight:800;letter-spacing:-.8px;color:var(--text);}
+[data-layout="modern"] .ringCenter span{font-size:11px;color:var(--mutedDark);font-weight:500;margin-top:1px;}
+[data-layout="modern"] .ringLegend{flex:1;min-width:140px;display:flex;flex-direction:column;gap:9px;}
+[data-layout="modern"] .ringLegendRow{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);}
+[data-layout="modern"] .ringLegendRow i{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+[data-layout="modern"] .ringLegendRow i.pos{background:var(--pos);}
+[data-layout="modern"] .ringLegendRow i.neg{background:var(--neg);}
+[data-layout="modern"] .ringLegendRow i.be{background:var(--borderLight);}
+[data-layout="modern"] .ringLegendRow b{margin-left:auto;color:var(--text);font-weight:600;}
+[data-layout="modern"] .ringLegendRow em{font-style:normal;font-size:11.5px;color:var(--mutedDark);min-width:34px;text-align:right;}
+[data-layout="modern"] .ringLegendRow.pf{border-top:1px dashed var(--border);padding-top:9px;margin-top:2px;}
+[data-layout="modern"] .ringLegendRow.pf span{font-weight:600;font-size:12px;}
+
+/* ============================================================
+   日历：日格子按 |R| 深浅上色 + 全年每日热力图
+   ============================================================ */
+[data-layout="modern"] .dayCell{position:relative;isolation:isolate;}
+[data-layout="modern"] .dayCell.pos,[data-layout="modern"] .dayCell.neg{background:var(--surface);}
+[data-layout="modern"] .dayCell.pos::before,[data-layout="modern"] .dayCell.neg::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;
+  opacity:calc(.07 + var(--heat,.5) * .30);}
+[data-layout="modern"] .dayCell.pos::before{background:var(--pos);}
+[data-layout="modern"] .dayCell.neg::before{background:var(--neg);}
+[data-layout="modern"] .dayCell.pos .dayCellInfo{color:color-mix(in srgb,var(--pos) 78%,var(--text));font-weight:600;}
+[data-layout="modern"] .dayCell.neg .dayCellInfo{color:color-mix(in srgb,var(--neg) 80%,var(--text));font-weight:600;}
+
+[data-layout="modern"] .yearHeat{margin-top:22px;padding-top:18px;border-top:1px solid var(--border);}
+[data-layout="modern"] .yearHeatHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+[data-layout="modern"] .yearHeatTitle{font-size:11.5px;font-weight:600;color:var(--mutedDark);text-transform:uppercase;letter-spacing:.5px;}
+[data-layout="modern"] .yearHeatLegend{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mutedDark);}
+[data-layout="modern"] .yearHeatLegend .hm{width:12px;height:12px;}
+[data-layout="modern"] .yearHeatLegend span{margin:0 4px;}
+[data-layout="modern"] .yearHeatScroll{overflow-x:auto;padding-bottom:4px;}
+[data-layout="modern"] .yearHeatMonths,[data-layout="modern"] .yearHeatGrid{display:grid;gap:3px;min-width:640px;}
+[data-layout="modern"] .yearHeatMonths{font-size:10.5px;color:var(--mutedDark);margin-bottom:5px;height:14px;}
+[data-layout="modern"] .yearHeatMonths span{white-space:nowrap;}
+[data-layout="modern"] .hmCol{display:grid;grid-template-rows:repeat(7,1fr);gap:3px;}
+[data-layout="modern"] .hm{display:block;aspect-ratio:1;border-radius:3px;background:var(--surface2);transition:transform .1s;}
+[data-layout="modern"] .hm.out{visibility:hidden;}
+[data-layout="modern"] .hm[data-action]{cursor:pointer;}
+[data-layout="modern"] .hm[data-action]:hover{transform:scale(1.35);box-shadow:0 0 0 1.5px var(--surface),0 0 0 3px var(--text);position:relative;z-index:1;}
+[data-layout="modern"] .hm.pos.l1{background:color-mix(in srgb,var(--pos) 28%,var(--surface2));}
+[data-layout="modern"] .hm.pos.l2{background:color-mix(in srgb,var(--pos) 50%,var(--surface2));}
+[data-layout="modern"] .hm.pos.l3{background:color-mix(in srgb,var(--pos) 74%,var(--surface2));}
+[data-layout="modern"] .hm.pos.l4{background:var(--pos);}
+[data-layout="modern"] .hm.neg.l1{background:color-mix(in srgb,var(--neg) 28%,var(--surface2));}
+[data-layout="modern"] .hm.neg.l2{background:color-mix(in srgb,var(--neg) 50%,var(--surface2));}
+[data-layout="modern"] .hm.neg.l3{background:color-mix(in srgb,var(--neg) 74%,var(--surface2));}
+[data-layout="modern"] .hm.neg.l4{background:var(--neg);}
+[data-layout="modern"] .hm.neutral{background:color-mix(in srgb,var(--accent) 35%,var(--surface2));}
+
+/* 加载中：一条流光 */
+@keyframes skyShimmer{from{background-position:-200% 0;}to{background-position:200% 0;}}
+[data-layout="modern"] .loading{color:transparent;margin:80px auto;max-width:280px;height:14px;padding:0;border-radius:999px;
+  background:linear-gradient(90deg,var(--surface2) 25%,var(--accentSoft) 50%,var(--surface2) 75%);background-size:200% 100%;
+  animation:skyShimmer 1.3s linear infinite;}
+
+@media(prefers-reduced-motion:reduce){
+  [data-layout="modern"] #tabBody.tabEnter,[data-layout="modern"] .dashChart svg,[data-layout="modern"] .ring svg,[data-layout="modern"] .dashDot.end{animation:none;}
+}
+/* 12 个月 + YTD 宽屏下排成一行，不要折成两行 */
+@media(min-width:1200px){[data-layout="modern"] .monthBar{grid-template-columns:repeat(13,minmax(0,1fr));}}
+/* 指标卡用 grid 排：flex 折行时最后落单的那张会被拉满整行 */
+[data-layout="modern"] .statRow{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+/* 手机：顶栏按钮自动折行而不是把字挤成竖排；卡片网格不超出屏幕（大图档位的 360px 最小列宽在手机上会溢出） */
+@media(max-width:640px){
+  [data-layout="modern"] .headerActions{flex-wrap:wrap;}
+  [data-layout="modern"] .headerActions .btn,[data-layout="modern"] .modeBtn{white-space:nowrap;}
+  [data-layout="modern"] .brand{font-size:20px;}
+  [data-layout="modern"] .grid{grid-template-columns:minmax(0,1fr) !important;}
+  [data-layout="modern"] .dashBig{font-size:30px;}
+  [data-layout="modern"] .dashMeta{gap:14px;}
+}
+[data-layout="modern"] .exportMenu .menuSeg{border-radius:10px;}
+[data-layout="modern"] .exportMenu .menuSeg button.on{background:linear-gradient(135deg,var(--accent),var(--accentHover));}
+
+/* ============================================================
+   第二轮打磨：侧边栏分组、问候语、交易卡片、设置分组列表、更新日志时间线、提示框
+   全部只改样子；对应的几个小钩子（navGroup / pageGreeting / res-* / emptyHint / isToday）
+   在经典布局里要么 display:none，要么没有任何样式
+   ============================================================ */
+
+/* ---------- 侧边栏分组标题 ---------- */
+@media(min-width:1200px){
+  [data-layout="modern"] .navGroup{display:block;padding:16px 13px 6px;font-size:10.5px;font-weight:700;letter-spacing:.9px;
+    text-transform:uppercase;color:var(--mutedDark);flex-shrink:0;}
+  [data-layout="modern"] .navBrand + .navGroup{padding-top:0;}
+}
+/* 图标栏：分组标题变成一条细分隔线 */
+@media(min-width:900px) and (max-width:1199px){
+  [data-layout="modern"] .navGroup{display:block;height:1px;margin:8px 14px;background:var(--border);font-size:0;flex-shrink:0;}
+  [data-layout="modern"] .navBrand + .navGroup{display:none;}
+}
+/* 侧边栏的页签：未选中时更安静，悬停时图标先动一下 */
+[data-layout="modern"] #appNav .tab svg{transition:transform .18s;}
+[data-layout="modern"] #appNav .tab:hover:not(.active) svg{transform:translateX(2px);}
+
+/* 侧边栏底部的迷你资金曲线 */
+[data-layout="modern"] .navSpark{display:block;width:100%;height:34px;margin:0 0 10px;overflow:visible;}
+[data-layout="modern"] .navSpark polyline{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;}
+[data-layout="modern"] .navSpark.neg polyline{stroke:var(--neg);}
+
+/* ---------- 页面大标题上方的问候 ---------- */
+@media(min-width:900px){
+  [data-layout="modern"] .pageGreeting{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:3px;letter-spacing:.1px;}
+}
+
+/* ---------- 交易卡片 ---------- */
+[data-layout="modern"] .card{position:relative;}
+/* 截图底边一条结果色：一眼扫过去就知道这一页赢了几笔 */
+[data-layout="modern"] .card .cardImg::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:transparent;}
+[data-layout="modern"] .card.res-win .cardImg::after,[data-layout="modern"] .card.res-bewin .cardImg::after{background:var(--pos);}
+[data-layout="modern"] .card.res-loss .cardImg::after,[data-layout="modern"] .card.res-beloss .cardImg::after{background:var(--neg);}
+[data-layout="modern"] .card.res-be .cardImg::after{background:var(--borderLight);}
+[data-layout="modern"] .card .cardImg img{transition:transform .5s cubic-bezier(.2,.7,.3,1);}
+[data-layout="modern"] .card:hover .cardImg img{transform:scale(1.035);}
+[data-layout="modern"] .cardBody{padding:12px 14px 14px;}
+[data-layout="modern"] .cardTop{align-items:center;}
+[data-layout="modern"] .cardTop > span:nth-child(2){font-family:var(--fontDisplay) !important;font-size:16px !important;font-weight:800 !important;letter-spacing:-.3px;}
+[data-layout="modern"] .cardModel{font-size:13.5px;font-weight:600;margin-top:5px;}
+/* 删除按钮：平时收起，悬停卡片才浮出来；进入「确认删除」时一直显示，触屏一直显示 */
+[data-layout="modern"] .cardFoot{position:absolute;right:10px;bottom:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  background:var(--surface);box-shadow:var(--shadowSm);opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;}
+[data-layout="modern"] .cardFoot:empty{display:none;}
+[data-layout="modern"] .card:hover .cardFoot,[data-layout="modern"] .cardFoot:has([data-action="confirm-delete"]),
+[data-layout="modern"] .cardFoot:focus-within{opacity:1;transform:none;}
+[data-layout="modern"] .cardFoot button{flex:none;padding:6px 9px;}
+[data-layout="modern"] .cardFoot button:hover{background:var(--negSoft);color:var(--neg);}
+@media(hover:none){[data-layout="modern"] .cardFoot{opacity:1;transform:none;}}
+
+/* ---------- 设置：iOS 那种分组列表，一组字段连成一张卡 ---------- */
+[data-layout="modern"] .settingsRow{margin:0;border-radius:0;box-shadow:none;overflow:hidden;}
+[data-layout="modern"] .settingsRow + .settingsRow{margin-top:-1px;}
+[data-layout="modern"] .settingsRow:not(.settingsRow + .settingsRow){border-top-left-radius:16px;border-top-right-radius:16px;}
+[data-layout="modern"] .settingsRow:not(:has(+ .settingsRow)){border-bottom-left-radius:16px;border-bottom-right-radius:16px;margin-bottom:14px;}
+[data-layout="modern"] .settingsRowHead{transition:background .12s;}
+[data-layout="modern"] .settingsRowHead:hover{background:var(--surface2);}
+[data-layout="modern"] .settingsRowBody{background:var(--surface2);border-top-color:var(--border);padding-top:12px;}
+[data-layout="modern"] .settingsRow[draggable="true"].dragOverTarget{position:relative;z-index:1;}
+[data-layout="modern"] .fieldTypeTag{background:var(--surface2);border:1px solid var(--border);border-radius:999px;padding:1px 8px;font-size:10.5px;}
+[data-layout="modern"] .fieldRoleTag{background:var(--accentSoft);border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:600;}
+[data-layout="modern"] .fieldHiddenTag{border-radius:999px;padding:1px 8px;}
+
+/* ---------- 更新日志：时间线 ---------- */
+[data-layout="modern"] .changelogEntry{position:relative;margin-left:28px;border-radius:14px;padding:14px 18px;}
+[data-layout="modern"] .changelogEntry::before{content:"";position:absolute;left:-24px;top:19px;width:10px;height:10px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 0 4px var(--accentSoft);}
+[data-layout="modern"] .changelogEntry::after{content:"";position:absolute;left:-20px;top:36px;bottom:-14px;width:2px;border-radius:2px;background:var(--border);}
+[data-layout="modern"] .changelogEntry:last-child::after{display:none;}
+[data-layout="modern"] .changelogDate{font-weight:600;color:var(--accent);font-size:11.5px;}
+[data-layout="modern"] .changelogText{font-size:13.5px;}
+
+/* ---------- 提示框 / 空状态 ---------- */
+[data-layout="modern"] .notice{border-radius:14px;background:linear-gradient(160deg,var(--accentSoft),transparent 75%),var(--surface);}
+[data-layout="modern"] .notice > svg{color:var(--accent);flex-shrink:0;margin-top:1px;}
+[data-layout="modern"] .notice.error{background:linear-gradient(160deg,var(--negSoft),transparent 80%),var(--surface);border-color:color-mix(in srgb,var(--neg) 40%,transparent);}
+[data-layout="modern"] .notice.error > svg{color:var(--neg);}
+[data-layout="modern"] .emptyHint{position:relative;padding:18px 20px 18px 58px !important;border:1px dashed var(--borderLight) !important;
+  border-radius:16px !important;color:var(--muted) !important;background:linear-gradient(160deg,var(--accentSoft),transparent 70%),var(--surface);}
+[data-layout="modern"] .emptyHint::before{content:"✦";position:absolute;left:18px;top:17px;width:26px;height:26px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--onAccent);
+  background:linear-gradient(135deg,var(--accent2),var(--accent));box-shadow:var(--glow);}
+[data-layout="modern"] .emptyState{padding:70px 20px;font-size:13.5px;}
+
+/* ---------- 日历：今天 ---------- */
+[data-layout="modern"] .dayCell.isToday{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentSoft);}
+[data-layout="modern"] .dayCell.isToday .dayCellNum{color:var(--accent);font-weight:800;}
+[data-layout="modern"] .dayCell.isToday .dayCellNum::after{content:"•";margin-left:3px;}
+
+/* ---------- 顶栏动作按钮：导出 / 新建 再精致一点 ---------- */
+[data-layout="modern"] .headerActions{align-items:center;gap:10px;}
+[data-layout="modern"] .headerActions .btn-primary{padding:10px 16px;border-radius:12px;}
+[data-layout="modern"] .headerActions .btn-primary svg{transition:transform .2s;}
+[data-layout="modern"] .headerActions .btn-primary:hover svg{transform:rotate(90deg);}

@@ -6,9 +6,12 @@
 <title>IFVG Trade Journal</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B0F14'/%3E%3Cpath d='M8 22V14M14 22V8M20 22V17M26 22V11' stroke='%23C9A24B' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="palettes.css" />
+<link rel="stylesheet" href="theme-modern.css" />
+<script>/* 首帧前挂好日/夜和皮肤，免得先闪一下默认样式 */try{var d=document.documentElement,L=localStorage;if(L.getItem("journal_theme")==="light")d.dataset.theme="light";if(L.getItem("journal_skin")==="sky"&&!L.getItem("journal_layout")){L.setItem("journal_layout","modern");L.setItem("journal_palette","sky");}var y=L.getItem("journal_layout"),p=L.getItem("journal_palette");if(y==="modern")d.dataset.layout=y;if(p&&p!=="gold")d.dataset.palette=p;}catch(e){}</script>
 
 </head>
 <body>

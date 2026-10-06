@@ -6,8 +6,8 @@ function renderAuthScreen() {
   return `
   <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px 16px;">
     <div style="max-width:380px;width:100%;">
-      <div class="brand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;">
+      <div class="brand authBrand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
+      <div class="authCard">
         <div style="display:flex;gap:6px;margin-bottom:18px;">
           <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${T("auth.login")}</button>
           <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${T("auth.register")}</button>
@@ -68,7 +68,7 @@ function profileModalHtml() {
         <button class="btn btn-primary" data-action="save-profile" ${profileBusy ? "disabled" : ""}>${profileBusy ? T("common.saving") : T("common.save")}</button>
 
         <div style="border-top:1px solid var(--border);margin:22px 0 16px;"></div>
-        <div class="sectionLabel">⟦ ${esc(T("password.title"))} ⟧</div>
+        <div class="sectionLabel"><span class="bk">⟦ </span>${esc(T("password.title"))}<span class="bk"> ⟧</span></div>
         <div class="field"><div class="fieldLabel">${T("password.current")}</div><input class="input" type="password" id="pwCurrentInput" autocomplete="current-password" /></div>
         <div class="field"><div class="fieldLabel">${T("password.new")}</div><input class="input" type="password" id="pwNewInput" autocomplete="new-password" /></div>
         <div class="field"><div class="fieldLabel">${T("password.confirm")}</div><input class="input" type="password" id="pwConfirmInput" autocomplete="new-password" /></div>
@@ -488,6 +488,7 @@ function regionHasEditedControls(root) {
   }
   return false;
 }
+let lastRenderedTab = null;
 function patchAppShell(regions) {
   const app = document.getElementById("app");
   // #app 里现在不是主界面骨架（刚登录 / 刚从登录页、禁用页切回来）：整个重建，缓存作废
@@ -546,6 +547,8 @@ function render() {
   const headerHtml = `
       <div>
         <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
+        <div class="pageGreeting">${esc(greetingText(displayName))}</div>
+        <div class="pageTitle">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
         <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""}</div>
       </div>
       <div class="headerActions">
@@ -558,10 +561,15 @@ function render() {
         ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
         <div style="position:relative;">
           <button class="themeToggle" data-action="toggle-user-menu" title="${esc(T("header.account"))}">${ICONS.user}</button>
-          <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:220px;">
+          <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:252px;">
             <div style="padding:9px 12px;font-size:11.5px;color:var(--mutedDark);border-bottom:1px solid var(--border);">
               ${esc(session.user.email)} ${isAdmin ? "· admin" : ""}
             </div>
+            <div class="menuLabel">${T("header.layout")}</div>
+            <div class="menuSeg">${LAYOUTS.map((k) => `<button class="${currentLayout() === k ? "on" : ""}" data-action="set-layout" data-layout="${k}">${T("layout." + k)}</button>`).join("")}</div>
+            <div class="menuLabel">${T("header.palette")} · <span class="menuLabelVal">${T("palette." + currentPalette())}</span></div>
+            <div class="paletteRow">${PALETTES.map((k) => `<button class="paletteDot sw-${k}${currentPalette() === k ? " on" : ""}" data-action="set-palette" data-palette="${k}" title="${esc(T("palette." + k))}" aria-label="${esc(T("palette." + k))}"></button>`).join("")}</div>
+            <div class="menuSep"></div>
             <button data-action="open-profile-modal">${T("header.profile")}</button>
             <button data-action="logout">${T("auth.logout")}</button>
           </div>
@@ -572,11 +580,24 @@ function render() {
       <span style="font-size:13px;color:var(--accent);">${ICONS.expand} ${T("header.viewingUser", { email: `<b>${esc(viewingUserEmail)}</b>` })}</span>
       <button class="btn" data-action="exit-view-mode">${T("header.exitViewMode")}</button>
     </div>` : "";
-  const navHtml = TABS.map((tb) => `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}">${tb.icon} ${tab === tb.id ? "[ " + esc(tb.label) + " ]" : esc(tb.label)}</button>`).join("");
+  // navBrand / navFoot 只在侧边栏布局（晴空皮肤）里显示，经典主题下 display:none
+  const navBrandHtml = `<div class="navBrand"><span class="navLogo">${LOGO_MARK}</span><span class="navBrandText"><span><b>IFVG</b> Journal</span>${displayName ? `<small>${esc(displayName)}</small>` : ""}</span></div>`;
+  const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${currentLayout() === "modern" ? navSparkHtml() : ""}
+    <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
+  // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
+  const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", changelog: "nav.groupSystem" };
+  const navHtml = navBrandHtml + TABS.map((tb) => (NAV_GROUPS[tb.id] ? `<div class="navGroup">${esc(T(NAV_GROUPS[tb.id]))}</div>` : "") + `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}" title="${esc(tb.label)}">${tb.icon} <span class="tabLabel">${esc(tb.label)}</span></button>`).join("") + navFootHtml;
   const noticeHtml = (loadError ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(loadError)}</span></div>` : "")
     + (dbOutdated && loadError !== T("error.dbOutdated") ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(T("error.dbOutdated"))}</span></div>` : "");
 
   patchAppShell({ appHeader: headerHtml, appBanner: bannerHtml, appNav: navHtml, appNotice: noticeHtml, tabBody: body });
+  // 切页签时给内容区挂一下 tabEnter，晴空皮肤用它做淡入（经典主题没有对应样式，等于没挂）。
+  // 只在页签真的变了的时候挂：同一页里点个按钮也会重绘 tabBody，每次都淡入一遍会很晃
+  if (lastRenderedTab !== tab) {
+    const tb = document.getElementById("tabBody");
+    if (tb && lastRenderedTab !== null) { tb.classList.remove("tabEnter"); void tb.offsetWidth; tb.classList.add("tabEnter"); }
+    lastRenderedTab = tab;
+  }
   renderModal();
   renderSecondaryModals();
   renderReviewEditor();

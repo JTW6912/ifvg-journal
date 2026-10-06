@@ -23,6 +23,17 @@ document.addEventListener("click", async (e) => {
     try { localStorage.setItem("journal_theme", next); } catch (e) {}
     render();
   }
+  // 布局 / 配色：菜单不关，方便连着点几种颜色比较
+  else if (action === "set-layout") {
+    applyLayout(el.dataset.layout);
+    try { localStorage.setItem("journal_layout", currentLayout()); } catch (e) {}
+    render();
+  }
+  else if (action === "set-palette") {
+    applyPalette(el.dataset.palette);
+    try { localStorage.setItem("journal_palette", currentPalette()); } catch (e) {}
+    render();
+  }
   else if (action === "set-lang") { await setLang(el.dataset.lang); }
   /* ---------- 导出中心 ---------- */
   else if (action === "open-export-center") { exportCenterOpen = true; exportStatus = ""; exportError = ""; userMenuOpen = false; render(); }

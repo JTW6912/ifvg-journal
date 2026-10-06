@@ -58,6 +58,23 @@ function maxDrawdownR(list, rF) {
   });
   return { dd: maxDD, n: ordered.length };
 }
+// 资金曲线：跟 maxDrawdownR 同一个排序口径（按交易日期，同一天按创建时间），返回每一笔之后的累计 R。
+// 只给分析页顶部那张曲线图用，不参与任何统计
+function equityCurve(list, rF) {
+  if (!rF) return [];
+  const dateF = roleField("date");
+  const dayOf = (t) => (dateF && t[dateF.id] ? String(t[dateF.id]) : "9999-12-31");
+  const rows = list.filter((t) => {
+    const raw = t[rF.id];
+    return raw !== undefined && raw !== null && raw !== "" && !isNaN(parseFloat(raw));
+  }).sort((a, b) => {
+    const da = dayOf(a), db = dayOf(b);
+    if (da !== db) return da < db ? -1 : 1;
+    return String(a._created_at || "").localeCompare(String(b._created_at || ""));
+  });
+  let eq = 0;
+  return rows.map((t) => { eq += parseFloat(t[rF.id]); return { date: dateF ? t[dateF.id] || "" : "", eq }; });
+}
 // 标题栏那行摘要用的是固定口径（只算 Taken），故意不吃分析页的筛选：
 // 它代表"这个账号现在整体什么水平"，不该被某一页里临时筛出来的一小撮交易带偏。
 function headerStats() {

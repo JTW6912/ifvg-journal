@@ -8,3 +8,6 @@ node_modules/
 .env*
 
 app.js
+
+# 本地假数据预览（dev/mock.html），不上线
+dev/
