@@ -192,7 +192,8 @@ function hasFieldValue(t, f) {
 
 /* ============================================================
    外观：布局 × 配色 × 日/夜，三条独立的轴，存在本机 localStorage
-   - 布局 classic = 原来的顶部页签（不挂属性）；modern = 侧边栏新版（theme-modern.css，挂 data-layout="modern"）
+   - 布局 classic = 原来的顶部页签（不挂属性）；modern = 侧边栏新版（theme-modern.css，挂 data-layout="modern"）。
+     从没选过的人默认新版；选过经典的人存了 "classic"，一直按经典来
    - 配色 gold = 原来的黑金（不挂属性）；其余见 palettes.css（挂 data-palette）
    index.html 头部有一段内联脚本在首帧前就按同样的规则挂好，避免先闪一下默认样式
    ============================================================ */
@@ -216,7 +217,8 @@ function loadAppearance() {
       localStorage.setItem("journal_palette", "sky");
     }
     localStorage.removeItem("journal_skin");
-    applyLayout(localStorage.getItem("journal_layout"));
+    // 从没选过布局（本机没存）= 新版；手动切回经典会存下 "classic"，之后一直按经典来
+    applyLayout(localStorage.getItem("journal_layout") || "modern");
     applyPalette(localStorage.getItem("journal_palette"));
   } catch (e) {}
 }
