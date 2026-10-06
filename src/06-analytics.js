@@ -49,14 +49,22 @@ function maxDrawdownR(list, rF) {
     if (da !== db) return da < db ? -1 : 1;
     return String(a._created_at || "").localeCompare(String(b._created_at || ""));
   });
-  let equity = 0, peak = 0, maxDD = 0;
-  ordered.forEach((t) => {
+  // 顺带记下这段回撤在哪：peakI 是峰值那笔的下标（-1 = 起点 0R，还没开始交易），troughI 是谷底那笔。
+  // 下标跟 equityCurve() 的点一一对应（同一套排序），曲线图直接拿来画阴影
+  let equity = 0, peak = 0, maxDD = 0, peakI = -1, curPeakI = -1, troughI = -1;
+  ordered.forEach((t, i) => {
     equity += parseFloat(t[rF.id]);
-    if (equity > peak) peak = equity;
+    if (equity > peak) { peak = equity; curPeakI = i; }
     const dd = peak - equity;
-    if (dd > maxDD) maxDD = dd;
+    if (dd > maxDD) { maxDD = dd; peakI = curPeakI; troughI = i; }
   });
-  return { dd: maxDD, n: ordered.length };
+  const range = troughI < 0 ? null : {
+    peakI, troughI, count: troughI - peakI,
+    // from = 回撤里的第一笔（峰值之后那笔），to = 谷底那笔
+    from: dateF ? String(ordered[peakI + 1][dateF.id] || "") : "",
+    to: dateF ? String(ordered[troughI][dateF.id] || "") : "",
+  };
+  return { dd: maxDD, n: ordered.length, range };
 }
 // 资金曲线：跟 maxDrawdownR 同一个排序口径（按交易日期，同一天按创建时间），返回每一笔之后的累计 R。
 // 只给分析页顶部那张曲线图用，不参与任何统计
@@ -114,7 +122,7 @@ function computeStats(list = analysisFilteredTrades()) {
   // 拆解不在这里算：render() 每次重绘都会调 computeStats()，塞进来等于在设置页点个按钮也要把
   // 所有字段拆解白算一遍。拆解由 renderAnalytics() 拿 stats.list 单独算，只在分析页付这个代价。
   return { list, total: list.length, totalFaded: faded.length, w, l, be, bew, bel, wr, sq, totalR, ev,
-           dd: ddInfo ? ddInfo.dd : null, ddSample: ddInfo ? ddInfo.n : 0,
+           dd: ddInfo ? ddInfo.dd : null, ddSample: ddInfo ? ddInfo.n : 0, ddRange: ddInfo ? ddInfo.range : null,
            pf: pfInfo.pf, pfSample: pfInfo.n,
            fadedW: faded.filter(isW).length, fadedL: faded.filter(isL).length,
            hasResult: !!resultF, hasR: !!rF };

@@ -414,6 +414,8 @@
 @keyframes skyFade{from{opacity:0;}to{opacity:1;}}
 [data-layout="modern"] .dashDot.end.neg{background:var(--neg);}
 [data-layout="modern"] .dashDot.peak{width:8px;height:8px;border-width:2px;}
+[data-layout="modern"] .dashDot.trough{width:8px;height:8px;border-width:2px;border-color:var(--neg);}
+[data-layout="modern"] .eqDDBand{fill:var(--neg);fill-opacity:.08;}
 @keyframes skyPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent);}70%{box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 0%,transparent);}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent);}}
 [data-layout="modern"] .dashAxis{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--mutedDark);margin-top:8px;}
 [data-layout="modern"] .dashEmpty{padding:50px 0;text-align:center;color:var(--mutedDark);font-size:12.5px;}

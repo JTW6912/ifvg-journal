@@ -460,6 +460,14 @@ function renderRecentPanel(stats) {
     </div>
   </div>`;
 }
+// 最大回撤发生在哪一段：「09-12 → 09-18 · 6 笔」。两头同一年就省掉年份，同一天就只写一个日期
+function ddRangeText(r) {
+  if (!r || !r.from || !r.to) return r ? T("analytics.ddCount", { n: r.count }) : "";
+  const sameYear = r.from.slice(0, 4) === r.to.slice(0, 4) && /^\d{4}-/.test(r.from);
+  const short = (d) => (sameYear ? d.slice(5) : d);
+  const span = r.from === r.to ? short(r.from) : short(r.from) + " → " + short(r.to);
+  return span + " · " + T("analytics.ddCount", { n: r.count });
+}
 function renderAnalyticsSticky(stats) {
   const links = [["anaScope", "sticky.scope"], ["anaOverview", "sticky.overview"], ["anaCombos", "sticky.combos"], ["anaBreakdowns", "sticky.breakdowns"]];
   return `<div class="analyticsSticky" id="analyticsSticky"><div class="analyticsStickyInner">
@@ -495,6 +503,9 @@ function renderEquityCard(stats) {
   const tone = last >= 0 ? "pos" : "neg";
   // 峰值：曲线最高点，在图上打个小点
   let peakI = 0; vals.forEach((v, i) => { if (v > vals[peakI]) peakI = i; });
+  // 最大回撤那一段：从峰值点到谷底点画一条淡红底，曲线上一眼看出跌在哪
+  const ddr = stats.dd > 0.0001 ? stats.ddRange : null;
+  const ddBand = ddr ? `<rect class="eqDDBand" fill-opacity="0.08" x="${x(ddr.peakI + 1).toFixed(1)}" y="0" width="${(x(ddr.troughI + 1) - x(ddr.peakI + 1)).toFixed(1)}" height="${H}"><title>${esc(T("dash.maxDD") + " -" + stats.dd.toFixed(2) + "R · " + ddRangeText(ddr))}</title></rect>` : "";
   const dot = (i, cls) => `<span class="dashDot ${cls}" style="left:${(x(i) / W * 100).toFixed(2)}%;top:${(y(vals[i]) / H * 100).toFixed(2)}%"></span>`;
   return `<div class="dashCard dashEquity tone-${tone}">
     <div class="dashHead">
@@ -503,7 +514,7 @@ function renderEquityCard(stats) {
         <div class="dashBig ${tone}">${fmtNum(last)}<small>R</small></div>
       </div>
       <div class="dashMeta">
-        ${stats.dd !== null ? `<div><span>${esc(T("dash.maxDD"))}</span><b class="neg">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</b></div>` : ""}
+        ${stats.dd !== null ? `<div${stats.dd > 0.0001 && stats.ddRange ? ` title="${esc(ddRangeText(stats.ddRange))}"` : ""}><span>${esc(T("dash.maxDD"))}</span><b class="neg">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</b></div>` : ""}
         <div><span>${esc(T("dash.peak"))}</span><b>${fmtNum(vals[peakI])}R</b></div>
         <div><span>EV</span><b>${fmtNum(stats.ev, 3)}</b></div>
       </div>
@@ -512,11 +523,12 @@ function renderEquityCard(stats) {
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         <defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" class="eqStop0"/><stop offset="1" class="eqStop1"/></linearGradient></defs>
+        ${ddBand}
         <line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" class="eqZero" vector-effect="non-scaling-stroke"/>
         <path d="${area}" fill="url(#eqFill)"/>
         <path d="${line}" class="eqLine" vector-effect="non-scaling-stroke"/>
       </svg>
-      ${peakI > 0 && peakI < vals.length - 1 ? dot(peakI, "peak") : ""}${dot(vals.length - 1, "end " + tone)}
+      ${peakI > 0 && peakI < vals.length - 1 ? dot(peakI, "peak") : ""}${ddr ? dot(ddr.troughI + 1, "trough") : ""}${dot(vals.length - 1, "end " + tone)}
     </div>
     <div class="dashAxis"><span>${esc(pts[0].date || "")}</span><span>${esc(T("dash.curveBasis", { n: pts.length }))}</span><span>${esc(pts[pts.length - 1].date || "")}</span></div>
   </div>`;
@@ -575,7 +587,7 @@ function renderAnalytics() {
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.totalR")}</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.evPerTrade")}</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox" title="${esc(T("grid.pfTitle", { n: stats.pfSample }))}"><div class="statLabel">${T("analytics.profitFactor")}</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.total ? `<div class="statSub">${esc(T("analytics.pfBasis", { n: stats.pfSample }))}</div>` : ""}</div>` : ""}
-    ${stats.hasR && stats.dd !== null ? `<div class="statBox" title="${esc(T("analytics.maxDDTitle"))}"><div class="statLabel">${T("analytics.maxDD")}</div><div class="statValue" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</div>${stats.ddSample !== stats.total ? `<div class="statSub">${esc(T("analytics.ddBasis", { n: stats.ddSample }))}</div>` : ""}</div>` : ""}
+    ${stats.hasR && stats.dd !== null ? `<div class="statBox" title="${esc(T("analytics.maxDDTitle"))}"><div class="statLabel">${T("analytics.maxDD")}</div><div class="statValue" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</div>${stats.dd > 0.0001 && stats.ddRange ? `<div class="statSub mono">${esc(ddRangeText(stats.ddRange))}</div>` : ""}${stats.ddSample !== stats.total ? `<div class="statSub">${esc(T("analytics.ddBasis", { n: stats.ddSample }))}</div>` : ""}</div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>

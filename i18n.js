@@ -257,6 +257,7 @@ const I18N = {
     "analytics.maxDD": "最大回撤",
     "analytics.maxDDTitle": "按交易日期把 R 累加成一条资金曲线，取「峰值 → 谷底」跌得最深的那一段，单位 R。只统计真的填了 R 的交易。",
     "analytics.ddBasis": "基于填了 R 的 {n} 笔",
+    "analytics.ddCount": "{n} 笔",
     "analytics.fadedLine": "· Faded {n}（本应做的 W {w} / 本应避开的 L {l}）",
 
     "sticky.scope": "范围",
@@ -1378,6 +1379,8 @@ const I18N = {
     "analytics.maxDDTitle": "Trades are ordered by date and their R values compounded into an equity curve; this is the deepest peak-to-trough drop on that curve, in R. Only trades with an R value count.",
     "analytics.ddBasis": "Based on the {n} trades with an R value",
     "analytics.ddBasis_one": "Based on the 1 trade with an R value",
+    "analytics.ddCount": "{n} trades",
+    "analytics.ddCount_one": "1 trade",
     "analytics.fadedLine": "· Faded {n} ({w} would have won / {l} would have lost)",
 
     "sticky.scope": "Scope",
