@@ -166,8 +166,6 @@ function renderCalendar() {
   if (!dateF) return `<div class="notice">${ICONS.alert}<span>${T("calendar.noDateRole")}</span></div>`;
   const filtered = scopedTrades().filter((t) => tradeMatchesFilters(t, activeFilters));
   let html = renderFilterOriginBanner() + `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
-  // 近期表现吃的是跟日历同一批交易（filtered）；没有结果字段就没法算胜率，整块不出
-  if (roleField("result") && filtered.length) html += renderRecentPanel(computeStats(filtered));
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
   if (recordMode === "backtest") html += renderHistoryCoverage(filtered);
   return html;

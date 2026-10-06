@@ -101,9 +101,9 @@ function headerStats() {
   }
   return { n: list.length, wr: w + l ? (w / (w + l)) * 100 : null, ev, hasR };
 }
-// list 默认是分析页那批（analysisFilteredTrades）；月度页传自己筛出来的那批进来，口径照旧
-function computeStats(list = analysisFilteredTrades()) {
+function computeStats() {
   const resultF = roleField("result"), takenF = roleField("taken"), rF = roleField("r_multiple");
+  const list = analysisFilteredTrades();
   const isW = (t) => !!resultF && isWinResult(t[resultF.id]);
   const isL = (t) => !!resultF && isLossResult(t[resultF.id]);
   const isBEW = (t) => !!resultF && resultBucket(t[resultF.id]) === "bewin";
@@ -137,8 +137,8 @@ function computeStats(list = analysisFilteredTrades()) {
    最右边那格是当前分析范围的全体，当基准，前三格标相对它的差值。
    正因为重叠，它不能做成拆解卡——拆解卡各行的语义是互斥分桶，混进重叠窗口会让人以为笔数算错了。
 
-   ⚠ 口径：这块放在月度页，切的是月度页当前筛选（activeFilters）那批交易，不是全部 trades。
-   卡片上写明「基于当前筛选」，用户改了上面的筛选这里会跟着动；跟日历用的是同一批。
+   ⚠ 口径：切的是 computeStats() 那个 list，不是 trades。跟总览、拆解永远是同一批交易的时间切片，
+   不是"从别处另算一批"。卡片上写明「基于当前分析范围」，用户改了上面的筛选这里会跟着动。
    ============================================================ */
 const RECENT_WINDOWS = [3, 7, 30];
 // 按本地自然日往回数，今天算第 1 天：最近 3 天 = 今天 + 昨天 + 前天。

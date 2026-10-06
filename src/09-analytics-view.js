@@ -433,7 +433,7 @@ function renderBreakdownPicker() {
 // 你在第 15 张卡上看到「+17.1pp」时，得知道整体是多少才知道这个差值值不值钱。
 // 用纯 CSS 的 position:sticky，不挂滚动监听：没有 JS 状态要同步，render() 重建它也不会闪，
 // 而且不依赖 scroll 事件（后台标签页/不合成帧的环境里 scroll 事件根本不发）。
-/* ---------- 月度页：近期表现（函数留在这里是因为它沿用拆解那套阈值和样式零件） ----------
+/* ---------- 分析页：近期表现 ----------
    四格一行：最近 3 / 7 / 30 天 + 当前范围全体（基准）。前三格的胜率右边标相对基准的差值。
    n 少的时候胜率会剧烈跳动（3 笔里 2 胜 = 66.7%，纯噪音），所以沿用拆解那套阈值：
    n < BREAKDOWN_MIN_SAMPLE 的格子降透明度并标「样本少」，不让它看起来跟 n=80 那格一样有说服力。 */
@@ -661,6 +661,8 @@ function renderAnalytics() {
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>
     ${stats.totalFaded ? `<span>${esc(T("analytics.fadedLine", { n: stats.totalFaded, w: stats.fadedW, l: stats.fadedL }))}</span>` : ""}
   </div>`;
+
+  html += renderRecentPanel(stats);
 
   html += `<div id="anaCombos" style="margin-bottom:28px;">${renderCombosSection()}</div>`;
 

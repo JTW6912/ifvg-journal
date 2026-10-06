@@ -352,9 +352,9 @@ const I18N = {
 
     /* ---------- 近期表现 ---------- */
     "recent.title": "近期表现",
-    "recent.basis": "按创建日期 · 基于当前筛选",
+    "recent.basis": "按创建日期 · 基于当前分析范围",
     "recent.window": "最近 {n} 天",
-    "recent.all": "当前筛选全部",
+    "recent.all": "当前范围全部",
 
     /* ---------- 虚拟字段（创建/修改日期） ---------- */
     "vfield.group": "记录信息",
@@ -1481,9 +1481,9 @@ const I18N = {
 
     /* ---------- Recent form ---------- */
     "recent.title": "Recent form",
-    "recent.basis": "By created date · within the current filters",
+    "recent.basis": "By created date · within the current analysis scope",
     "recent.window": "Last {n} days",
-    "recent.all": "All filtered",
+    "recent.all": "Whole scope",
 
     /* ---------- Virtual fields (created / updated) ---------- */
     "vfield.group": "Record info",
