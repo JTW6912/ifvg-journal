@@ -283,6 +283,74 @@ function pbMistakeGist(m) {
 }
 
 const PB_TRADE_LINE_RE = (id) => new RegExp("^\\s*[-*+]\\s+(?:\\[[ xX]\\]\\s+)?\\[\\[trade:" + id + "\\]\\](.*)$");
+/* ---------- 笔记 / 标签页面上每笔交易的两样标记 ----------
+   存在 journal_playbook.trade_marks 上：{ 交易id: { fav: true, ev: "pro" | "con" | "key" } }。
+   跟正文分开存：笔记开在编辑器里时也不会跟正在写的正文打架，标记也不会混进用户的文字里。
+   两样是独立的，同一笔可以既收藏又关联：
+     fav  收藏：有意思的单子，留着回头看（系统 / 策略页上对应的是交易身上的 __pb_star）
+     ev   关联：真正决定这条笔记结论的那几笔。待验证分「支持 / 反驳」这个想法；错题只有一种「关联」（确实是这个错）；
+          标签没有这一项（标签页本身就是「有 / 没有」的对比）
+   成绩、便利贴上的「关联」那行、「可以下结论了」的提示都只看 ev。
+   标记跟着「这条笔记里有没有这笔」走：笔记里已经没有的交易，标记读的时候忽略（pbMarkedIds 过一遍成员） */
+const PB_EV_STATES = { verify: ["pro", "con"], mistake: ["key"], tag: [] };
+function pbMarksOf(p) {
+  const m = p && p.trade_marks;
+  return m && typeof m === "object" && !Array.isArray(m) ? m : {};
+}
+function pbMarkOf(p, tradeId) { const v = pbMarksOf(p)[tradeId]; return v && typeof v === "object" ? v : {}; }
+function pbIsFav(p, tradeId) { return !!pbMarkOf(p, tradeId).fav; }
+function pbEvOf(p, tradeId) {
+  const ev = pbMarkOf(p, tradeId).ev;
+  return p && (PB_EV_STATES[p.kind] || []).includes(ev) ? ev : "";
+}
+/* 点一下关联按钮之后的状态：待验证 无 → 支持 → 反驳 → 无；错题 无 ⇄ 关联 */
+function pbEvNext(kind, cur) {
+  const s = PB_EV_STATES[kind] || [];
+  if (!s.length) return "";
+  const i = s.indexOf(cur);
+  return i < 0 ? s[0] : s[i + 1] || "";
+}
+/* 改一笔交易的标记，返回新的整张表（不改原对象）。空了的条目整个删掉，不在库里留一堆 {} */
+function pbMarksWith(p, tradeId, patch) {
+  const out = { ...pbMarksOf(p) };
+  const next = { ...pbMarkOf(p, tradeId), ...patch };
+  Object.keys(next).forEach((k) => { if (!next[k]) delete next[k]; });
+  if (Object.keys(next).length) out[tradeId] = next; else delete out[tradeId];
+  return out;
+}
+/* 这一页现在有哪些交易（笔记看正文里的胶囊，标签看交易身上的 __pb_tags）。body 传进来是因为笔记开在编辑器里时正文以编辑器为准 */
+function pbMemberIds(p, body) {
+  if (!p) return [];
+  if (p.kind === "tag") return trades.filter((t) => pbTradeTagIds(t).includes(p.id)).map((t) => t.id);
+  return extractTradeRefs(body === undefined ? p.body : body);
+}
+/* 按标记挑出来的那一组：which = "fav" | "ev" | "pro" | "con" */
+function pbMarkedTrades(p, list, which) {
+  return list.filter((t) => {
+    if (which === "fav") return pbIsFav(p, t.id);
+    const ev = pbEvOf(p, t.id);
+    return which === "ev" ? !!ev : ev === which;
+  });
+}
+/* 待验证：关联的交易够多、而且支持 / 反驳一边倒时，提示可以下结论了。
+   门槛用分析页的「最少样本」设置，跟字段拆解同一个口径 */
+function pbVerdictHint(p, list) {
+  if (!p || p.kind !== "verify" || pbVerifyStatus(p) !== "watching") return null;
+  const pro = pbMarkedTrades(p, list, "pro").length, con = pbMarkedTrades(p, list, "con").length;
+  const n = pro + con;
+  const floor = currentMinSample();
+  if (n < floor) return null;
+  const share = pro / n;
+  if (share >= 0.7) return { suggest: "works", pro, con, n };
+  if (share <= 0.3) return { suggest: "rejected", pro, con, n };
+  return n >= floor * 2 ? { suggest: "", pro, con, n } : null;   // 样本已经很多还是五五开：多半要拆成更细的条件
+}
+/* 一笔交易在这一页上的「记录」：笔记看正文里胶囊后面那句话，其它页面看交易身上的归类记录 */
+function pbRowNoteOf(p, t, body) {
+  if (pbIsNote(p)) return pbMistakeLineNote(body === undefined ? p.body : body, t.id);
+  return pbTradeNote(t);
+}
+
 /* 错题正文里，紧跟在这笔交易胶囊后面的那句话（「这笔错在哪」）。只认列表项：
    别的地方顺手提到的胶囊没有固定的「后面那句」可言 */
 function pbMistakeLineNote(body, tradeId) {

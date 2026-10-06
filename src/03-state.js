@@ -87,6 +87,7 @@ let pbConvertSwap = true;             // 转的时候正文里的模板标题要
 let pbShowAllTrades = false;          // 页面里「全部交易」默认只列前 30 笔
 let pbScopeOpen = (function () { try { return localStorage.getItem("journal_pb_scope_open") === "true"; } catch (e) { return false; } })();
 let pbNotedOnly = false;
+let pbInlineNoteFor = null;           // 交易区里正在原地改记录的那一笔
 let pbExecFilter = "";              // 页面「全部交易」只看某一类 taken 值（"" = 全部，"__empty" = 没填）              // 页面里「全部交易」只看写了归类记录的
 /* 归类模式：{ ids, i, scope: 'unsorted' | 'all', panel: '' | 'mistake' | 'verify', notice }。ids 是开始时拍下来的队列——
    边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */

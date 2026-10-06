@@ -1012,6 +1012,57 @@ button.pageRef{line-height:1.5;}
 .pbStickyTop{display:flex;align-items:center;gap:8px;min-width:0;}
 .pbStickyTop .pbStickyOwner{flex:1;min-width:0;}
 
+/* ---------- 交易区：关联 / 收藏 / 行内动作 ---------- */
+.pbEvBadge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;line-height:1.6;padding:0 7px;border-radius:9px;white-space:nowrap;flex-shrink:0;}
+.pbEvBadge.ev-pro{color:var(--pos);background:var(--posSoft);}
+.pbEvBadge.ev-con{color:var(--neg);background:var(--negSoft);}
+.pbEvBadge.ev-key{color:var(--verify);background:var(--verifySoft);}
+.pbTileBadge{position:absolute;left:6px;bottom:6px;display:flex;}
+.pbTileBadge .pbEvBadge{box-shadow:0 1px 4px rgba(0,0,0,.35);}
+.pbEvSummary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.pbEvSummary .pbEvBadge{font-size:11.5px;padding:1px 9px;}
+.pbFavStats{margin-bottom:12px;}
+.pbEvBtn{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;align-self:center;padding:2px 9px;border-radius:11px;font-size:11.5px;
+  border:1px dashed var(--borderLight);background:transparent;color:var(--mutedDark);cursor:pointer;font-family:inherit;white-space:nowrap;}
+.pbEvBtn svg{width:10px;height:10px;}
+.pbEvBtn:hover:not(:disabled){border-color:var(--verify);color:var(--verify);}
+.pbEvBtn.ev-pro{border:1px solid var(--pos);color:var(--pos);background:var(--posSoft);font-weight:600;}
+.pbEvBtn.ev-con{border:1px solid var(--neg);color:var(--neg);background:var(--negSoft);font-weight:600;}
+.pbEvBtn.ev-key{border:1px solid var(--verify);color:var(--verify);background:var(--verifySoft);font-weight:600;}
+.pbTradeRow.ev-pro{box-shadow:inset 3px 0 0 var(--pos);}
+.pbTradeRow.ev-con{box-shadow:inset 3px 0 0 var(--neg);}
+.pbTradeRow.ev-key{box-shadow:inset 3px 0 0 var(--verify);}
+.pbRowIcon{flex-shrink:0;align-self:center;width:26px;height:26px;border-radius:6px;border:none;background:transparent;color:var(--mutedDark);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.55;}
+.pbRowIcon svg{width:13px;height:13px;}
+.pbTradeRow:hover .pbRowIcon{opacity:1;}
+.pbRowIcon:hover{background:var(--surface2);color:var(--text);}
+.pbRowIcon.danger:hover{color:var(--neg);}
+@media(hover:none){.pbRowIcon{opacity:1;}}
+.pbRowNote.editable{cursor:text;}
+.pbRowNote.editable:hover{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;}
+.pbRowNote.sub{opacity:.6;font-size:11.5px;}
+.pbRowNoteEdit{flex-basis:100%;padding:0 14px 9px 98px;}
+@media(max-width:640px){.pbRowNoteEdit{padding-left:40px;}}
+.pbRowNoteEdit .input{font-size:12.5px;padding:6px 9px;}
+.pbExecRow.isMark .pbExecName{display:inline-flex;align-items:center;gap:6px;}
+.pbExecRow.isMark .pbExecName svg{width:12px;height:12px;color:var(--accent);}
+.pbExecRow.isSub .pbExecName{padding-left:16px;}
+.pbExecSep{height:1px;background:var(--border);margin:2px 0;}
+.pbSmallSample{font-size:10px;font-weight:500;color:var(--mutedDark);border:1px solid var(--border);border-radius:8px;padding:0 6px;}
+.pbVerdict{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:18px;border-radius:9px;
+  border:1px solid var(--borderLight);background:var(--surface2);font-size:13px;}
+.pbVerdict svg{width:15px;height:15px;flex-shrink:0;}
+.pbVerdict>span{flex:1;min-width:200px;}
+.pbVerdict.is-works{border-color:var(--pos);background:var(--posSoft);}
+.pbVerdict.is-works svg{color:var(--pos);}
+.pbVerdict.is-rejected{border-color:var(--neg);background:var(--negSoft);}
+.pbVerdict.is-rejected svg{color:var(--neg);}
+.pbStickyEv{display:block;margin-top:3px;font-weight:600;opacity:1;}
+.tradePickerRow.isIn{opacity:.6;}
+.tradePickerIn{margin-left:auto;color:var(--pos);display:flex;}
+.tradePickerIn svg{width:14px;height:14px;}
+
 /* 磁贴右上角的「移出」：鼠标移上去才出现（触屏常显） */
 .pbTileRemove{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:var(--r6);border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;opacity:0;transition:opacity .12s,background .12s;}

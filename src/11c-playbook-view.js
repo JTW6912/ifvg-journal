@@ -49,7 +49,7 @@ function pbTileHtml(t, opts) {
   const rm = o.remove && !viewingUserId
     ? `<button class="pbTileRemove" data-action="${o.remove}" data-id="${esc(t.id)}" title="${esc(T(o.removeTitle || "pb.tile.remove"))}">${ICONS.x}</button>` : "";
   return `<div class="pbTile" data-action="open-trade-ref" data-id="${esc(t.id)}">
-    <div class="pbTileImg">${pbThumbHtml(t, "pbTileShot")}${pbTradeStarred(t) ? `<span class="pbTileStar">${ICONS.starFill}</span>` : ""}${rm}</div>
+    <div class="pbTileImg">${pbThumbHtml(t, "pbTileShot")}${(o.fav !== undefined ? o.fav : pbTradeStarred(t)) ? `<span class="pbTileStar">${ICONS.starFill}</span>` : ""}${o.badge ? `<span class="pbTileBadge">${o.badge}</span>` : ""}${rm}</div>
     <div class="pbTileMeta"><span class="mono">${esc(pbTradeDateOf(t) || "—")}</span>${pbTradeResultBits(t)}</div>
     ${o.showLabel && pbTradeLabel(t) ? `<div class="pbTileSub">${esc(pbTradeLabel(t))}</div>` : ""}
     ${o.note ? `<div class="pbTileNote">${esc(o.note)}</div>` : ""}
@@ -66,6 +66,18 @@ function pbStatsLineText(st) {
 }
 /* 待验证便利贴底下那行成绩。验证的意义就是看这类单能不能做，数字直接摆出来 */
 function pbVerifyFootText(m) { return pbStatsLineText(pbStats(pbNoteTrades(m))); }
+/* 便利贴上「关联」那一行：只看真正决定结论的那几笔。没有关联的就不写这一行 */
+function pbEvFootText(m) {
+  const list = pbNoteTrades(m);
+  const ev = pbMarkedTrades(m, list, "ev");
+  if (!ev.length) return "";
+  const st = pbStats(ev);
+  const wr = fmtPct(st.wr), evR = st.hasR ? pbFmtR(st.ev) + "R" : "—";
+  if (m.kind === "verify") {
+    return T("pb.sticky.evVerify", { n: ev.length, pro: pbMarkedTrades(m, list, "pro").length, con: pbMarkedTrades(m, list, "con").length, wr, ev: evR });
+  }
+  return T("pb.sticky.evMistake", { n: ev.length, wr, ev: evR });
+}
 
 /* 标签：有它 vs 没它，差多少。两边都有入场的单才算差值 */
 function pbTagDeltaHtml(c) {
@@ -100,13 +112,16 @@ function pbStickyHtml(m, opts) {
   const owner = pbNoteOwner(m);
   const gist = pbMistakeGist(m);
   let foot;
-  if (isV) foot = esc(pbVerifyFootText(m));
+  const evLine = pbEvFootText(m);
+  const allPrefix = evLine ? esc(T("pb.sticky.allPrefix")) + " " : "";
+  if (isV) foot = allPrefix + esc(pbVerifyFootText(m));
   else {
     const n = pbNoteTrades(m).length;
     const last = pbNoteLastDate(m);
     // 错题也摆成绩：犯这个错的那几笔一共亏了多少，比「出现过几次」更能说明要不要先改它
-    foot = esc(n ? pbStatsLineText(pbStats(pbNoteTrades(m))) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
+    foot = allPrefix + esc(n ? pbStatsLineText(pbStats(pbNoteTrades(m))) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
   }
+  if (evLine) foot += `<span class="pbStickyEv">${esc(evLine)}</span>`;
   const ownerTxt = owner ? pbLabel(owner.id) : T(isV ? "pb.globalVerify" : "pb.globalMistake");
   const top = (o.hideOwner ? "" : `<div class="pbStickyOwner">${esc(ownerTxt)}</div>`) + (isV ? pbStatusPillHtml(m) : "");
   return `<div class="pbSticky${isV ? " isVerify status-" + pbVerifyStatus(m) : ""}" data-action="pb-open" data-id="${esc(m.id)}">
@@ -244,9 +259,14 @@ function pbTakenBadgeHtml(t) {
 }
 /* 页面里的「执行情况」：按 taken 的值各算一份成绩。点一行 = 下面的交易列表只看这一类 */
 function pbExecLabel(v) { return v === PB_EXEC_EMPTY ? T("pb.exec.empty") : v; }
-function pbExecTableHtml(list) {
+/* extra：插在「全部」下面的几行（关联 / 支持 / 反驳 / 其余 / 收藏），{ val, label, list, cls }。
+   少于「最少样本」的行标一个「样本少」，免得几笔就下结论 */
+function pbExecTableHtml(list, extra) {
   const groups = pbExecGroups(list);
-  if (!list.length || !groups.length) return "";
+  const more = (extra || []).filter((r) => r.list.length);   // 0 笔的行不摆，表里只留有内容的
+  if (!list.length || (!groups.length && !more.length)) return "";
+  const floor = currentMinSample();
+  const small = (n) => n && n < floor ? ` <span class="pbSmallSample" title="${esc(T("pb.area.smallSampleTitle", { n: floor }))}">${esc(T("pb.area.smallSample"))}</span>` : "";
   const tone = (v) => (v === null || v === undefined || isNaN(v) ? "" : v > 0.0001 ? "pos" : v < -0.0001 ? "neg" : "");
   const row = (val, label, st, n, cls) => `<button type="button" class="pbExecRow${cls || ""}${pbExecFilter === val ? " on" : ""}" data-action="pb-exec-filter" data-val="${esc(val)}">
       <span class="pbExecName">${label}</span>
@@ -258,6 +278,8 @@ function pbExecTableHtml(list) {
   return `<div class="pbExecTable">
     <div class="pbExecRow head"><span>${esc(T("pb.exec.col"))}</span><span>${esc(T("ex.col.all"))}</span><span>${esc(T("ex.col.wr"))}</span><span>${esc(T("ex.col.ev"))}</span><span>${esc(T("ex.col.totalR"))}</span></div>
     ${row("", esc(T("pb.exec.all")), filteredSummaryStats(list), list.length, " isAll")}
+    ${more.map((r) => row(r.val, r.label + small(r.list.length), filteredSummaryStats(r.list), r.list.length, " isMark" + (r.cls || ""))).join("")}
+    ${more.length && groups.length ? `<div class="pbExecSep"></div>` : ""}
     ${groups.map((g) => row(g.value, `<span class="pbRowTaken${g.value === "Taken" ? " isTaken" : ""}">${esc(pbExecLabel(g.value))}</span>`, g.stats, g.list.length)).join("")}
   </div>`;
 }
@@ -457,21 +479,78 @@ async function pbConvertNote() {
   }
   const p = pbFind(d.id);
   if (p && to === "verify") p.status = "watching";   // 本地那份也记上，打开时从这里读
+  // 错题的「关联」→ 待验证的「支持」；待验证的「支持」→ 错题的「关联」，「反驳」在错题里没有对应，去掉
+  if (p) {
+    const map = to === "verify" ? { key: "pro" } : { pro: "key" };
+    const marks = pbMarksOf(p);
+    const next = {};
+    let changed = false;
+    Object.keys(marks).forEach((id) => {
+      const m = { ...marks[id] };
+      if (m.ev) { const nv = map[m.ev] || ""; if (nv !== m.ev) changed = true; if (nv) m.ev = nv; else delete m.ev; }
+      if (Object.keys(m).some((k) => m[k])) next[id] = m;
+    });
+    if (changed) await pbWriteMarks(p.id, next);
+  }
   openReviewEditor(d.id);
   render();
   showReviewToast(T(to === "verify" ? "pb.convert.doneToVerify" : "pb.convert.doneToMistake"));
 }
 
+/* ============================================================
+   交易区：系统 / 策略 / 错题 / 待验证 / 标签页下面同一套
+     1.（待验证）可以下结论了的提示
+     2.（笔记）关联交易：真正决定结论的那几笔，单独算成绩
+     3. 收藏（系统 / 策略页叫「关注的交易」，存在交易的 __pb_star；笔记 / 标签存在页面的 trade_marks）
+     4. 全部交易：成绩表（全部 / 关联 / 支持 / 反驳 / 其余 / 收藏 / 按 taken 分）+ 列表
+   列表里每一行直接点收藏、点关联、改记录、移出，不用进交易的编辑表单
+   ============================================================ */
+function pbAreaCtx(d) {
+  const page = pbFind(d.id) || d;   // 标记读库里那份：编辑器里那份（editingReview）不带 trade_marks
+  const mode = pbIsNote(d) ? "note" : d.kind === "tag" ? "tag" : "page";
+  const list = mode === "note" ? pbNoteTrades(d) : mode === "tag" ? pbTagTrades(d) : pbTradesOf(d.id);
+  return { d, page, mode, list, body: d.body, evStates: PB_EV_STATES[d.kind] || [], showLabel: mode !== "page" || d.kind === "system" };
+}
+function pbAreaFav(ctx, t) { return ctx.mode === "page" ? pbTradeStarred(t) : pbIsFav(ctx.page, t.id); }
+function pbAreaMatches(ctx, t, f) {
+  if (!f) return true;
+  if (f.indexOf("m:") !== 0) return pbExecMatches(t, f);
+  const which = f.slice(2);
+  if (which === "fav") return pbAreaFav(ctx, t);
+  const ev = pbEvOf(ctx.page, t.id);
+  if (which === "rest") return !ev;
+  return which === "ev" ? !!ev : ev === which;
+}
+function pbAreaFilterLabel(ctx, f) {
+  if (f.indexOf("m:") !== 0) return pbExecLabel(f);
+  const which = f.slice(2);
+  if (which === "fav") return ctx.mode === "page" ? T("pb.section.starred") : T("pb.area.fav");
+  return T("pb.area." + (which === "ev" ? "evRow" : which === "rest" ? "restRow" : which));
+}
+function pbEvLabel(ev) { return T("pb.area." + (ev || "evNone")); }
+function pbEvBadgeHtml(ev) { return ev ? `<span class="pbEvBadge ev-${ev}">${esc(pbEvLabel(ev))}</span>` : ""; }
+
 function pbTradeRowHtml(t, opts) {
   const o = opts || {};
+  const ctx = o.ctx || { mode: "page", page: null, evStates: [] };
   const modelF = roleField("model");
   const tag = modelF ? t[modelF.id] : "";
   const tagTxt = Array.isArray(tag) ? tag.join(", ") : (tag || "");
   const mistakes = pbMistakesWithTrade(t.id);
   const verifies = pbNotesWithTrade(t.id, "verify");
   const ro = !!viewingUserId;
-  return `<div class="pbTradeRow">
-    <button class="pbStarBtn${pbTradeStarred(t) ? " on" : ""}" ${ro ? "disabled" : `data-action="pb-star" data-id="${esc(t.id)}"`} title="${esc(T("pb.starTitle"))}">${pbTradeStarred(t) ? ICONS.starFill : ICONS.star}</button>
+  const fav = pbAreaFav(ctx, t);
+  const favAction = ctx.mode === "page" ? "pb-star" : "pb-fav";
+  const ev = ctx.evStates.length ? pbEvOf(ctx.page, t.id) : "";
+  const evBtn = ctx.evStates.length
+    ? `<button class="pbEvBtn ev-${ev || "none"}" ${ro ? "disabled" : `data-action="pb-ev" data-id="${esc(t.id)}"`} title="${esc(T("pb.area.evBtnTitle." + ctx.page.kind))}">${ev ? "" : ICONS.plus}${esc(pbEvLabel(ev))}</button>` : "";
+  const rmAction = ctx.mode === "note" ? "pb-note-remove-trade" : ctx.mode === "tag" ? "pb-tag-remove-trade" : "";
+  const note = ctx.mode === "page" || !ctx.page ? pbTradeNote(t) : pbRowNoteOf(ctx.page, t, ctx.body);
+  // 笔记页上，交易自己的归类记录（所有页面共用的那句）也摆出来，灰一点、只看不改
+  const pbNote = ctx.mode === "note" && pbTradeNote(t) && pbTradeNote(t) !== note ? pbTradeNote(t) : "";
+  const editing = pbInlineNoteFor === t.id && !ro;
+  return `<div class="pbTradeRow${ev ? " hasEv ev-" + ev : ""}">
+    <button class="pbStarBtn${fav ? " on" : ""}" ${ro ? "disabled" : `data-action="${favAction}" data-id="${esc(t.id)}"`} title="${esc(T(ctx.mode === "page" ? "pb.starTitle" : "pb.area.favTitle"))}">${fav ? ICONS.starFill : ICONS.star}</button>
     <div class="pbTradeRowMain" data-action="open-trade-ref" data-id="${esc(t.id)}">
       ${pbThumbHtml(t, "pbRowShot")}
       <span class="mono pbRowDate">${esc(pbTradeDateOf(t) || "—")}</span>
@@ -479,14 +558,167 @@ function pbTradeRowHtml(t, opts) {
       ${tagTxt ? `<span class="pbRowTag">${esc(tagTxt)}</span>` : ""}
       ${pbTakenBadgeHtml(t)}
       <span class="pbRowSpacer"></span>
-      ${mistakes.length ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
-      ${verifies.length ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
+      ${mistakes.length && ctx.mode !== "note" ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
+      ${verifies.length && ctx.mode !== "note" ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
       ${pbTradeTagIds(t).map((id) => `<span class="pbTagChip small">${esc(pbTitle(pbFind(id)))}</span>`).join("")}
       ${pbTradeResultBits(t)}
     </div>
-    ${pbTradeNote(t) ? `<div class="pbRowNote" data-action="open-trade-ref" data-id="${esc(t.id)}">${esc(pbTradeNote(t))}</div>` : ""}
+    ${evBtn}
+    ${ro ? "" : `<button class="pbRowIcon" data-action="pb-row-note" data-id="${esc(t.id)}" title="${esc(T("pb.area.noteAdd"))}">${ICONS.pencil}</button>`}
+    ${rmAction && !ro ? `<button class="pbRowIcon danger" data-action="${rmAction}" data-id="${esc(t.id)}" title="${esc(T(ctx.mode === "tag" ? "pb.tile.untag" : "pb.tile.remove"))}">${ICONS.x}</button>` : ""}
+    ${editing
+      ? `<div class="pbRowNoteEdit"><input class="input" id="pbRowNoteInput" type="text" value="${esc(note)}" placeholder="${esc(T("pb.area.notePh"))}"
+          onkeydown="window.__pbRowNoteKey(event)" onblur="window.__pbRowNoteBlur(this)" /></div>`
+      : note ? `<div class="pbRowNote${ro ? "" : " editable"}" ${ro ? "" : `data-action="pb-row-note" data-id="${esc(t.id)}"`}>${esc(note)}</div>` : ""}
+    ${pbNote ? `<div class="pbRowNote sub">${esc(T("pb.area.pbNote", { text: pbNote }))}</div>` : ""}
   </div>`;
 }
+
+function pbVerdictHtml(ctx) {
+  const h = pbVerdictHint({ ...ctx.page, status: ctx.d.status }, ctx.list);
+  if (!h) return "";
+  const btns = viewingUserId ? "" : h.suggest === "works"
+    ? `<button class="btn" data-action="pb-verify-status" data-status="works">${esc(T("pb.verdict.toWorks"))}</button>`
+    : h.suggest === "rejected" ? `<button class="btn" data-action="pb-verify-status" data-status="rejected">${esc(T("pb.verdict.toRejected"))}</button>` : "";
+  return `<div class="pbVerdict${h.suggest ? " is-" + h.suggest : ""}">${ICONS.alert}<span>${esc(T(h.suggest ? "pb.verdict.ready" : "pb.verdict.mixed", { n: h.n, pro: h.pro, con: h.con }))}</span>${btns}</div>`;
+}
+
+function pbTradeAreaHtml(d) {
+  if (recordMode !== "live") return pbBacktestNote();
+  const ctx = pbAreaCtx(d);
+  const { list, mode, page } = ctx;
+  const ro = !!viewingUserId;
+  let html = "";
+  if (d.kind === "verify") html += pbVerdictHtml(ctx);
+  const evList = ctx.evStates.length ? pbMarkedTrades(page, list, "ev") : [];
+  const tileNote = (t) => (mode === "page" ? pbTradeNote(t) : pbRowNoteOf(page, t, ctx.body));
+
+  // 关联交易：真正决定这条笔记结论的那几笔
+  if (ctx.evStates.length) {
+    const isV = d.kind === "verify";
+    const pro = isV ? pbMarkedTrades(page, list, "pro").length : 0, con = isV ? pbMarkedTrades(page, list, "con").length : 0;
+    html += `<section class="pbPanel pbEvPanel">${pbSectionHeadHtml(T("pb.area.ev"), evList.length, "", T(isV ? "pb.area.evHintVerify" : "pb.area.evHintMistake"))}
+      ${evList.length
+        ? `<div class="pbEvSummary">${isV ? `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))} ${pro}</span><span class="pbEvBadge ev-con">${esc(T("pb.area.con"))} ${con}</span>` : ""}<span class="pbStatsRow">${pbStatsHtml(pbStats(evList))}</span></div>
+           <div class="pbTileGrid">${evList.map((t) => pbTileHtml(t, { showLabel: true, note: tileNote(t), fav: pbAreaFav(ctx, t), badge: pbEvBadgeHtml(pbEvOf(page, t.id)) })).join("")}</div>`
+        : `<div class="pbEmptyLine">${esc(T("pb.area.evEmpty"))}</div>`}
+    </section>`;
+  }
+
+  // 收藏 / 关注
+  const favList = list.filter((t) => pbAreaFav(ctx, t));
+  const favTitle = mode === "page" ? T("pb.section.starred") : T("pb.area.fav");
+  html += `<section class="pbPanel">${pbSectionHeadHtml(favTitle, favList.length, "", mode === "page" ? T("pb.section.starredHint") : T("pb.area.favHint"))}
+    ${favList.length
+      ? `<div class="pbStatsRow pbFavStats">${pbStatsHtml(pbStats(favList))}</div>
+         <div class="pbTileGrid">${favList.map((t) => pbTileHtml(t, { showLabel: ctx.showLabel, note: tileNote(t), fav: true, badge: pbEvBadgeHtml(ctx.evStates.length ? pbEvOf(page, t.id) : "") })).join("")}</div>`
+      : `<div class="pbEmptyLine">${esc(mode === "page" ? T("pb.noStarred") : T("pb.area.favEmpty"))}</div>`}
+  </section>`;
+
+  // 全部交易
+  const extra = [];
+  if (ctx.evStates.length) {
+    extra.push({ val: "m:ev", label: esc(T("pb.area.evRow")), list: evList });
+    if (d.kind === "verify") {
+      extra.push({ val: "m:pro", label: `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))}</span>`, list: pbMarkedTrades(page, list, "pro"), cls: " isSub" });
+      extra.push({ val: "m:con", label: `<span class="pbEvBadge ev-con">${esc(T("pb.area.con"))}</span>`, list: pbMarkedTrades(page, list, "con"), cls: " isSub" });
+    }
+    if (evList.length) extra.push({ val: "m:rest", label: esc(T("pb.area.restRow")), list: list.filter((t) => !pbEvOf(page, t.id)) });
+  }
+  extra.push({ val: "m:fav", label: `${ICONS.starFill} ${esc(favTitle)}`, list: favList });
+  const noted = list.filter((t) => tileNote(t));
+  const rows = (pbNotedOnly ? noted : list).filter((t) => pbAreaMatches(ctx, t, pbExecFilter));
+  const shown = pbShowAllTrades ? rows : rows.slice(0, PB_TRADES_PREVIEW);
+  const triageBtn = mode !== "page" || ro || !pbUnsortedCount() ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="unsorted">${ICONS.grid} ${esc(T("pb.triage.more", { n: pbUnsortedCount() }))}</button>`;
+  const notedBtn = noted.length ? `<button class="tinyBtn pbAddBtn pbNotedBtn${pbNotedOnly ? " on" : ""}" data-action="pb-noted-only">${ICONS.pencil} ${esc(T("pb.note.onlyNoted", { n: noted.length }))}</button>` : "";
+  const addBtn = mode !== "page" && !ro ? `<button class="tinyBtn pbAddBtn" data-action="pb-area-add">${ICONS.plus} ${esc(T("pb.area.add"))}</button>` : "";
+  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + triageBtn + addBtn, d.kind === "system" ? T("pb.section.tradesHintSystem") : "")}
+    ${pbExecTableHtml(list, extra)}
+    ${pbExecFilter ? `<div class="pbExecNow">${esc(T("pb.exec.showing", { v: pbAreaFilterLabel(ctx, pbExecFilter), n: rows.length }))} <button class="tinyBtn" data-action="pb-exec-filter" data-val="">${esc(T("pb.exec.showAll"))}</button></div>` : ""}
+    ${rows.length
+      ? `<div class="pbTradeList">${shown.map((t) => pbTradeRowHtml(t, { showLabel: ctx.showLabel, ctx })).join("")}</div>
+         ${rows.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: rows.length }))}</button>` : ""}`
+      : `<div class="pbEmptyLine">${esc(T(mode === "page" ? "pb.noTradesLong" : mode === "tag" ? "pb.noTagTrades" : d.kind === "verify" ? "pb.noVerifyTrades" : "pb.noMistakeTrades"))}</div>`}
+  </section>`;
+  return html;
+}
+
+/* ---------- 交易区上的动作 ---------- */
+async function pbAreaSetMark(tradeId, patchFn) {
+  const d = editingReview;
+  const page = d && pbFind(d.id);
+  if (!page || viewingUserId || !(pbIsNote(page) || page.kind === "tag")) return;
+  const p = pbWriteMarks(page.id, pbMarksWith(page, tradeId, patchFn(page)));
+  refreshPbPanels();
+  if (!(await p)) showReviewToast(pbError || T("error.dbOutdated"));
+  refreshPbPanels();
+  render();   // 模型库首页的便利贴在编辑器底下，跟着换
+}
+function pbAreaToggleFav(tradeId) { return pbAreaSetMark(tradeId, (page) => ({ fav: !pbIsFav(page, tradeId) })); }
+function pbAreaCycleEv(tradeId) { return pbAreaSetMark(tradeId, (page) => ({ ev: pbEvNext(page.kind, pbEvOf(page, tradeId)) })); }
+/* 交易从笔记里移出 / 标签摘掉之后，它在这一页上的标记也一起清掉 */
+function pbDropMarks(pageId, tradeId) {
+  const page = pbFind(pageId);
+  if (!page || !Object.keys(pbMarkOf(page, tradeId)).length) return Promise.resolve(true);
+  return pbWriteMarks(pageId, pbMarksWith(page, tradeId, { fav: false, ev: "" }));
+}
+/* 「+ 添加交易」选中一笔：笔记 → 正文「涉及的交易」里加一行；标签 → 给交易打上 */
+async function pbAreaAddTrade(tradeId) {
+  const d = editingReview;
+  if (!d || viewingUserId) return;
+  const t = trades.find((x) => x.id === tradeId);
+  if (!t) return;
+  if (pbMemberIds(pbFind(d.id) || d, d.body).includes(tradeId)) { showReviewToast(T("pb.area.already")); return; }
+  let ok = false;
+  if (pbIsNote(d)) { pbError = null; ok = await pbSetTradeInNote(d.id, tradeId, true, ""); }
+  else if (d.kind === "tag") { ok = await pbPatchTrade(tradeId, { [PB_TAGS_KEY]: pbTagsToggled(t, d.id) }); }
+  refreshPbPanels();
+  render();
+  showReviewToast(ok ? T("pb.area.added") : (pbError || T("error.dbOutdated")));
+}
+/* 行里的记录：点一下原地变输入框，回车 / 移开就存，Esc 放弃 */
+function pbStartRowNote(tradeId) {
+  if (viewingUserId) return;
+  pbInlineNoteFor = tradeId;
+  refreshPbPanels();
+  const inp = document.getElementById("pbRowNoteInput");
+  if (inp) { inp.focus(); const n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} }
+}
+let pbRowNoteSaving = false;
+async function pbSaveRowNote(text) {
+  const id = pbInlineNoteFor;
+  if (!id || pbRowNoteSaving) return;
+  pbRowNoteSaving = true;
+  pbInlineNoteFor = null;
+  try {
+    const d = editingReview;
+    const clean = String(text || "").replace(/\s+/g, " ").trim();
+    if (d && pbIsNote(d)) {
+      // 笔记：改正文里胶囊后面那句话（走编辑器，能 Ctrl+Z）
+      if (clean !== pbMistakeLineNote(d.body, id)) {
+        if (!reviewTiptap || !pbEditorSetLineNote(reviewTiptap, id, clean)) showReviewToast(T("pb.area.noteNoLine"));
+        else await flushReviewSave();
+      }
+    } else {
+      // 系统 / 策略 / 标签：交易身上的归类记录
+      const t = trades.find((x) => x.id === id);
+      if (t && pbTradeNote(t) !== clean) {
+        const ok = await pbPatchTrade(id, { [PB_NOTE_KEY]: clean || undefined });
+        if (!ok) showReviewToast(pbError || T("error.dbOutdated"));
+      }
+    }
+  } finally {
+    pbRowNoteSaving = false;
+    refreshPbPanels();
+  }
+}
+window.__pbRowNoteKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter") { e.preventDefault(); pbSaveRowNote(e.target.value); }
+  else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); pbInlineNoteFor = null; refreshPbPanels(); }
+};
+window.__pbRowNoteBlur = function (el) { if (pbInlineNoteFor) pbSaveRowNote(el.value); };
+
 const PB_TRADES_PREVIEW = 30;
 function pbPanelsForPageHtml(d) {
   let html = "";
@@ -514,9 +746,6 @@ function pbPanelsForPageHtml(d) {
       : `<div class="pbEmptyLine">${esc(T("pb.noTagsHere"))}</div>`}
   </section>`;
   const mistakes = pbMistakesOf(d.id);
-  const list = recordMode === "live" ? pbTradesOf(d.id) : [];
-  const starred = list.filter(pbTradeStarred);
-  const showLabel = d.kind === "system";
 
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.mistakes"), mistakes.length, pbAddBtn("mistake", d.id, "pb.addMistake"), T("pb.section.mistakesHint"))}
     ${mistakes.length
@@ -531,39 +760,10 @@ function pbPanelsForPageHtml(d) {
       : `<div class="pbEmptyLine">${esc(T("pb.noVerifyHere"))}</div>`}
   </section>`;
 
-  if (recordMode !== "live") return html + pbBacktestNote();
-
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.starred"), starred.length, "", T("pb.section.starredHint"))}
-    ${starred.length
-      ? `<div class="pbTileGrid">${starred.map((t) => pbTileHtml(t, { showLabel, note: pbTradeNote(t) })).join("")}</div>`
-      : `<div class="pbEmptyLine">${esc(T("pb.noStarred"))}</div>`}
-  </section>`;
-
-  // 「只看有记录的」：回头集中翻归类时写下的那些话
-  const noted = list.filter((t) => pbTradeNote(t));
-  const rows = (pbNotedOnly ? noted : list).filter((t) => pbExecMatches(t, pbExecFilter));
-  const shown = pbShowAllTrades ? rows : rows.slice(0, PB_TRADES_PREVIEW);
-  const triageBtn = viewingUserId || !pbUnsortedCount() ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="unsorted">${ICONS.grid} ${esc(T("pb.triage.more", { n: pbUnsortedCount() }))}</button>`;
-  const notedBtn = noted.length ? `<button class="tinyBtn pbAddBtn pbNotedBtn${pbNotedOnly ? " on" : ""}" data-action="pb-noted-only">${ICONS.pencil} ${esc(T("pb.note.onlyNoted", { n: noted.length }))}</button>` : "";
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + triageBtn, showLabel ? T("pb.section.tradesHintSystem") : "")}
-    ${pbExecTableHtml(list)}
-    ${pbExecFilter ? `<div class="pbExecNow">${esc(T("pb.exec.showing", { v: pbExecLabel(pbExecFilter), n: rows.length }))} <button class="tinyBtn" data-action="pb-exec-filter" data-val="">${esc(T("pb.exec.showAll"))}</button></div>` : ""}
-    ${rows.length
-      ? `<div class="pbTradeList">${shown.map((t) => pbTradeRowHtml(t, { showLabel })).join("")}</div>
-         ${rows.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: rows.length }))}</button>` : ""}`
-      : `<div class="pbEmptyLine">${esc(T("pb.noTradesLong"))}</div>`}
-  </section>`;
-  return html;
+  return html + pbTradeAreaHtml(d);
 }
 function pbPanelsForNoteHtml(d) {
-  let html = "";
-  const isV = d.kind === "verify";
-  const list = pbNoteTrades(d);
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T(isV ? "pb.section.verifyTrades" : "pb.section.mistakeTrades"), list.length, "", T(isV ? "pb.section.verifyTradesHint" : "pb.section.mistakeTradesHint"))}
-    ${list.length
-      ? `<div class="pbTileGrid">${list.map((t) => pbTileHtml(t, { showLabel: true, note: pbMistakeLineNote(d.body, t.id), remove: "pb-note-remove-trade" })).join("")}</div>`
-      : `<div class="pbEmptyLine">${esc(recordMode === "live" ? T(isV ? "pb.noVerifyTrades" : "pb.noMistakeTrades") : T("pb.backtestNote"))}</div>`}
-  </section>`;
+  let html = pbTradeAreaHtml(d);
   // 相关笔记：这一条正文里链到的，加上别的笔记里链到这一条的——两个方向都算「有关系」。错题和待验证混在一起算
   const outIds = extractPageRefs(d.body);
   const related = pbSortList(pbPages.filter((m) => pbIsNote(m) && m.id !== d.id && (outIds.includes(m.id) || extractPageRefs(m.body).includes(d.id))));
@@ -587,16 +787,12 @@ function pbPanelsForTagHtml(d) {
       ${delta ? `<div class="pbTagDelta">${delta}</div>` : ""}
     </div>
   </section>`;
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.tagTrades"), c.withList.length, "", "")}
-    ${c.withList.length
-      ? `<div class="pbTileGrid">${c.withList.map((t) => pbTileHtml(t, { showLabel: true, remove: "pb-tag-remove-trade", removeTitle: "pb.tile.untag" })).join("")}</div>`
-      : `<div class="pbEmptyLine">${esc(T("pb.noTagTrades"))}</div>`}
-  </section>`;
-  return html;
+  return html + pbTradeAreaHtml(d);
 }
 function pbPanelsHtml() {
   const d = editingReview;
   if (!isPbDoc(d)) return "";
+  syncReviewBody();
   if (d._isNew) return "";
   if (d.kind === "tag") return pbPanelsForTagHtml(d);
   return pbIsNote(d) ? pbPanelsForNoteHtml(d) : pbPanelsForPageHtml(d);
@@ -739,6 +935,20 @@ function pbEditorAddTrade(ed, tradeId, note) {
   ed.view.dispatch(tr);
   return true;
 }
+/* 改「- [[trade:id]] 那句话」里胶囊后面的文字。只改第一行（同一笔一般只列一次） */
+function pbEditorSetLineNote(ed, tradeId, text) {
+  const items = pbEditorTradeItems(ed.state.doc, tradeId);
+  if (!items.length) return false;
+  const { node, pos } = items[0];
+  const para = node.firstChild;
+  const from = pos + 3;                       // listItem 开头 +1 进段落、+1 进内容、+1 跳过胶囊
+  const to = pos + 1 + para.nodeSize - 1;      // 段落内容结尾
+  const tr = ed.state.tr;
+  if (to > from) tr.delete(from, to);
+  if (text) tr.insertText(" " + text, from);
+  ed.view.dispatch(tr);
+  return true;
+}
 async function pbSetTradeInOpenNote(tradeId, on, note) {
   const d = editingReview;
   syncReviewBody();
@@ -768,6 +978,11 @@ async function pbSetTradeInOpenNote(tradeId, on, note) {
 }
 
 async function pbSetTradeInNote(noteId, tradeId, on, note) {
+  const ok = await pbSetTradeInNoteBody(noteId, tradeId, on, note);
+  if (ok && !on) await pbDropMarks(noteId, tradeId);
+  return ok;
+}
+async function pbSetTradeInNoteBody(noteId, tradeId, on, note) {
   const m = pbFind(noteId);
   if (!m || viewingUserId) return false;
   if (editingReview && editingReview.id === noteId) return pbSetTradeInOpenNote(tradeId, on, note);

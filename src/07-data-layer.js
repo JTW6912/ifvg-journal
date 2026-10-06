@@ -498,6 +498,23 @@ function pbRowPayload(p) {
   return row;
 }
 /* 写一页（新建、改名、改归属、往错题里加交易、编辑器自动保存都走这里）。本地数组同步更新，不重拉 */
+/* 笔记 / 标签页面上每笔交易的标记（收藏 / 关联，见 11b 的 trade_marks）。
+   单独 update 这一列：不带正文（笔记开在编辑器里时库里那份正文可能比编辑器旧，整行 upsert 会把它写回去），
+   也不碰 updated_at（标一下不算「编辑过」）。先改本地再写库，写失败改回去 */
+async function pbWriteMarks(pageId, marks) {
+  const p = pbFind(pageId);
+  if (!p || viewingUserId || !sb || !session) return false;
+  const before = p.trade_marks;
+  p.trade_marks = marks;
+  const { error } = await sb.from("journal_playbook").update({ trade_marks: marks }).eq("id", pageId).eq("user_id", session.user.id);
+  if (error) {
+    console.error(error);
+    p.trade_marks = before;
+    pbError = noteDbError(error) ? T("error.dbOutdated") : T("review.saveFailed", { msg: error.message });
+    return false;
+  }
+  return true;
+}
 async function persistPbPage(p) {
   if (viewingUserId || !sb || !session) return false;
   const row = pbRowPayload(p);

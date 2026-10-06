@@ -590,6 +590,7 @@ async function mountReviewTiptap(seq) {
   }
   if (titleHadFocus) { const ti = document.getElementById("reviewTitleInput"); if (ti) ti.focus(); }
   refreshReviewOutline();
+  pbMaybeAutoFoldTrades();
 }
 
 /* 编辑器没加载出来（断网、被拦截）：退回纯文本框，直接写 markdown。
@@ -1142,7 +1143,11 @@ function applyReviewColor(color) {
 let tradePickerRange = null;
 const TRADE_PICKER_LIMIT = 40;
 
-function openTradePicker() {
+/* target：笔记 / 标签页交易区「+ 添加交易」打开时是那一页的 id，选中一笔就加进那一页（不往光标处插胶囊），
+   选完不关，可以接着加；已经在里面的打勾 */
+let tradePickerTarget = null;
+function openTradePicker(target) {
+  tradePickerTarget = target || null;
   const ed = reviewTiptap;
   tradePickerRange = ed ? { from: ed.state.selection.from, to: ed.state.selection.to } : null;
   tradePickerOpen = true;
@@ -1151,6 +1156,7 @@ function openTradePicker() {
 }
 function closeTradePicker() {
   tradePickerOpen = false;
+  tradePickerTarget = null;
   const root = document.getElementById("tradePickerRoot");
   if (root) root.innerHTML = "";
   if (reviewTiptap) reviewTiptap.commands.focus();
@@ -1192,7 +1198,8 @@ function tradePickerResultsHtml() {
     const rVal = rF ? t[rF.id] : "";
     const rTxt = (rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal)))
       ? (parseFloat(rVal) >= 0 ? "+" : "") + rVal + "R" : "";
-    return `<button class="tradePickerRow" data-action="pick-trade" data-id="${esc(t.id)}">
+    const inTarget = tradePickerTarget && editingReview && pbMemberIds(pbFind(editingReview.id) || editingReview, editingReview.body).includes(t.id);
+    return `<button class="tradePickerRow${inTarget ? " isIn" : ""}" data-action="pick-trade" data-id="${esc(t.id)}">
       ${shot
         ? `<img class="tradePickerThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tradePickerThumbEmpty" onerror="window.__imgFallback(this)" />`
         : `<span class="tradePickerThumbEmpty">${ICONS.camera}</span>`}
@@ -1200,6 +1207,7 @@ function tradePickerResultsHtml() {
       <span class="tradePickerModel">${esc((modelF && t[modelF.id]) || "")}</span>
       <span class="mono" style="color:${rc};font-weight:600;">${esc(result || "")}</span>
       <span class="mono" style="color:${rc};">${esc(rTxt)}</span>
+      ${inTarget ? `<span class="tradePickerIn">${ICONS.check}</span>` : ""}
     </button>`;
   }).join("");
   if (all.length > shown.length) {
@@ -1233,7 +1241,12 @@ window.__tradePickerInput = function (el) {
   const box = document.getElementById("tradePickerResults");
   if (box) box.innerHTML = tradePickerResultsHtml();   // 只换结果，输入框留着
 };
+async function pickTradeForTarget(id) {
+  await pbAreaAddTrade(id);
+  if (tradePickerOpen) renderTradePicker();
+}
 function insertTradeRef(id) {
+  if (tradePickerTarget) { pickTradeForTarget(id); return; }
   const ed = reviewTiptap;
   closeTradePicker();
   if (!ed || !/^[A-Za-z0-9_-]+$/.test(id || "")) return;

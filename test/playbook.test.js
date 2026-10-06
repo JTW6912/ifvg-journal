@@ -303,3 +303,56 @@ test("错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的
   // 转完要点还取得到
   assert.strictEqual(call("(b) => pbMistakeGist({ kind: 'verify', body: b })", v).length > 0, true);
 });
+
+/* ---------- 收藏 / 关联标记 ---------- */
+const MPAGES = PAGES.concat([
+  { id: "vm", kind: "verify", parent_id: "st1", title: "想法", status: "watching",
+    body: "## 涉及的交易\n\n- [[trade:a]] x\n- [[trade:b]]\n- [[trade:c]]\n- [[trade:d]]",
+    trade_marks: { a: { fav: true, ev: "pro" }, b: { ev: "con" }, c: { ev: "key" }, gone: { ev: "pro" } },
+    created_at: "2026-10-05T00:00:00Z" },
+  { id: "mm", kind: "mistake", parent_id: "st1", title: "错", body: "- [[trade:a]]", trade_marks: { a: { ev: "key" } }, created_at: "2026-10-05T00:01:00Z" },
+]);
+const MTRADES = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }];
+
+test("关联按类型认：待验证只有支持 / 反驳，错题只有关联；类型不对的值读的时候忽略", () => {
+  const { call } = setup(MPAGES, MTRADES);
+  assert.strictEqual(call("() => pbEvOf(pbFind('vm'), 'a')"), "pro");
+  assert.strictEqual(call("() => pbEvOf(pbFind('vm'), 'c')"), "");      // key 不是待验证的状态
+  assert.strictEqual(call("() => pbEvOf(pbFind('mm'), 'a')"), "key");
+  assert.strictEqual(call("() => pbIsFav(pbFind('vm'), 'a')"), true);
+  assert.deepStrictEqual(call("() => pbMarkedTrades(pbFind('vm'), pbNoteTrades(pbFind('vm')), 'ev').map((t) => t.id)"), ["a", "b"]);
+});
+
+test("点关联按钮的顺序：待验证 无 → 支持 → 反驳 → 无，错题 无 ⇄ 关联，标签没有", () => {
+  const { call } = setup(MPAGES, MTRADES);
+  assert.deepStrictEqual(call("() => ['', 'pro', 'con'].map((v) => pbEvNext('verify', v))"), ["pro", "con", ""]);
+  assert.deepStrictEqual(call("() => ['', 'key'].map((v) => pbEvNext('mistake', v))"), ["key", ""]);
+  assert.strictEqual(call("() => pbEvNext('tag', '')"), "");
+});
+
+test("改标记返回新表、不动原来的；两样都清空了整个条目删掉", () => {
+  const { call } = setup(MPAGES, MTRADES);
+  const r = call("() => { const p = pbFind('vm'); const n = pbMarksWith(p, 'a', { ev: '' }); return { n, orig: p.trade_marks.a }; }");
+  assert.deepStrictEqual(r.n.a, { fav: true });
+  assert.deepStrictEqual(r.orig, { fav: true, ev: "pro" });
+  assert.strictEqual(call("() => 'b' in pbMarksWith(pbFind('vm'), 'b', { ev: '' })"), false);
+  assert.deepStrictEqual(call("() => pbMarksWith(pbFind('vm'), 'd', { fav: true }).d"), { fav: true });
+});
+
+test("可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出", () => {
+  const body = "## 涉及的交易\n\n" + Array.from({ length: 12 }, (_, i) => `- [[trade:t${i}]]`).join("\n");
+  const tr = Array.from({ length: 12 }, (_, i) => ({ id: "t" + i }));
+  const mk = (pro, con, status) => {
+    const marks = {};
+    for (let i = 0; i < pro; i++) marks["t" + i] = { ev: "pro" };
+    for (let i = pro; i < pro + con; i++) marks["t" + i] = { ev: "con" };
+    return { id: "v", kind: "verify", status: status || "watching", body, trade_marks: marks, created_at: "1" };
+  };
+  const hint = (page) => { const { call } = setup(PAGES.concat([page]), tr); call("() => { analysisPrefs.minSample = 5; }"); return call("() => pbVerdictHint(pbFind('v'), pbNoteTrades(pbFind('v')))"); };
+  assert.strictEqual(hint(mk(2, 1)), null);                       // 不够 5 笔
+  assert.strictEqual(hint(mk(5, 1)).suggest, "works");
+  assert.strictEqual(hint(mk(1, 5)).suggest, "rejected");
+  assert.strictEqual(hint(mk(3, 3)), null);                       // 五五开但样本还不到两倍门槛
+  assert.strictEqual(hint(mk(5, 5)).suggest, "");                  // 样本够多还是五五开
+  assert.strictEqual(hint(mk(6, 0, "works")), null);
+});

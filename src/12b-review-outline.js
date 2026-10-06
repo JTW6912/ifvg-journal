@@ -401,3 +401,24 @@ async function writeReviewFolds() {
   const r = reviews.find((x) => x.id === rev.id) || pbFind(rev.id);
   if (r) r.folded_headings = keys;
 }
+
+/* 笔记页下面的交易区比正文里那一长串胶囊好用，第一次打开一条笔记时把「涉及的交易」那一节折起来，
+   正文就只剩用户自己写的「想验证什么 / 结论」。只折一次（记在 localStorage）：用户展开之后不再替他折；
+   已经存过折叠状态的笔记也不动 */
+const PB_AUTOFOLD_KEY = "journal_pb_autofold";
+function pbMaybeAutoFoldTrades() {
+  const d = editingReview;
+  if (!d || !pbIsNote(d) || reviewIsReadOnly() || !reviewFoldKey) return;
+  let done;
+  try { done = JSON.parse(localStorage.getItem(PB_AUTOFOLD_KEY) || "[]"); } catch (e) { done = []; }
+  if (!Array.isArray(done)) done = [];
+  if (done.includes(d.id)) return;
+  const remember = () => { done.push(d.id); try { localStorage.setItem(PB_AUTOFOLD_KEY, JSON.stringify(done.slice(-500))); } catch (e) {} };
+  if ((d.folded_headings || []).length) { remember(); return; }
+  const st = reviewFoldState();
+  const names = pbHeadingNames("pb.tpl.mistakeTrades").map((n) => n.toLowerCase());
+  const h = st && st.heads.find((x) => x.foldable && !x.folded && names.includes(String(x.text || "").toLowerCase()));
+  if (!h || extractTradeRefs(d.body).length < 3) return;   // 只有一两笔时折起来反而看不到
+  toggleReviewFold(h.pos);
+  remember();
+}
