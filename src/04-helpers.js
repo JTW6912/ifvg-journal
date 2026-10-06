@@ -31,13 +31,16 @@ function exportHasActiveFilters() {
   return activeFilters.some(filterNodeIsEffective) || searchQuery.trim() !== "";
 }
 function exportFilteredTrades() {
-  return trades.filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
+  return scopedTrades().filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
 }
+/* 导出范围：all 全部 / datascope 数据范围内（两种模式都按这个范围筛）/ filtered 记录页筛出来的（已经含数据范围） */
 function resolvedExportScope() {
-  return exportScope || (exportHasActiveFilters() ? "filtered" : "all");
+  if (exportScope === "datascope" && !dataScopeActive()) return "all";
+  return exportScope || (exportHasActiveFilters() ? "filtered" : dataScopeActive() ? "datascope" : "all");
 }
 function exportTradeList() {
-  return resolvedExportScope() === "filtered" ? exportFilteredTrades() : trades;
+  const s = resolvedExportScope();
+  return s === "filtered" ? exportFilteredTrades() : s === "datascope" ? trades.filter(tradeInScopeStrict) : trades;
 }
 // 导出的候选列 = 用户字段 + 创建/修改日期。虚拟字段排在最后，跟表格视图保持一致的顺序
 function exportAllFields() {
@@ -271,7 +274,8 @@ function greetingText(name) {
 function navSparkHtml() {
   const takenF = roleField("taken"), rF = roleField("r_multiple");
   if (!rF) return "";
-  const list = takenF ? trades.filter((t) => t[takenF.id] === "Taken") : trades;
+  const base = scopedTrades();
+  const list = takenF ? base.filter((t) => t[takenF.id] === "Taken") : base;
   const vals = [0, ...equityCurve(list, rF).map((p) => p.eq)];
   if (vals.length < 3) return "";
   const W = 200, H = 34;

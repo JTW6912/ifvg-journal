@@ -68,7 +68,7 @@ function pbStatsLineText(st) {
 function pbVerifyFootText(m) { return pbStatsLineText(pbStats(pbNoteTrades(m))); }
 /* 便利贴上「关联」那一行：只看真正决定结论的那几笔。没有关联的就不写这一行 */
 function pbEvFootText(m) {
-  const list = pbNoteTrades(m);
+  const list = pbNoteTrades(m).filter(inDataScope);
   const ev = pbMarkedTrades(m, list, "ev");
   if (!ev.length) return "";
   const st = pbStats(ev);
@@ -158,7 +158,7 @@ function pbMatchesSearch(p, q) {
 function pbSystemCardHtml(sys, q) {
   const st = pbStats(pbTradesOf(sys.id));
   const strategies = pbStrategiesOf(sys.id);
-  const own = trades.filter((t) => pbTradePageId(t) === sys.id).length;
+  const own = scopedTrades().filter((t) => pbTradePageId(t) === sys.id).length;
   const starred = pbTradesOf(sys.id).filter(pbTradeStarred).length;
   const mistakes = pbMistakesOf(sys.id).length;
   const verifies = pbNotesOf(sys.id, "verify").length;
@@ -212,7 +212,7 @@ function pbScopePanelHtml() {
   const ro = !!viewingUserId;
   const cond = pbScopeConditions();
   const active = countFilterConditions(cond);
-  const filed = recordMode === "live" ? trades.filter((t) => pbTradePageId(t)) : [];
+  const filed = recordMode === "live" ? scopedTrades().filter((t) => pbTradePageId(t)) : [];
   const counted = filed.filter(pbCountsInStats).length;
   let html = `<div class="filterPanel pbScopePanel${pbScopeOpen ? " open" : ""}">
     <button class="filterPanelHead" data-action="toggle-pb-scope">
@@ -549,7 +549,7 @@ function pbTradeRowHtml(t, opts) {
   // 笔记页上，交易自己的归类记录（所有页面共用的那句）也摆出来，灰一点、只看不改
   const pbNote = ctx.mode === "note" && pbTradeNote(t) && pbTradeNote(t) !== note ? pbTradeNote(t) : "";
   const editing = pbInlineNoteFor === t.id && !ro;
-  return `<div class="pbTradeRow${ev ? " hasEv ev-" + ev : ""}">
+  return `<div class="pbTradeRow${ev ? " hasEv ev-" + ev : ""}${o.out ? " isOut" : ""}">
     <button class="pbStarBtn${fav ? " on" : ""}" ${ro ? "disabled" : `data-action="${favAction}" data-id="${esc(t.id)}"`} title="${esc(T(ctx.mode === "page" ? "pb.starTitle" : "pb.area.favTitle"))}">${fav ? ICONS.starFill : ICONS.star}</button>
     <div class="pbTradeRowMain" data-action="open-trade-ref" data-id="${esc(t.id)}">
       ${pbThumbHtml(t, "pbRowShot")}
@@ -557,6 +557,7 @@ function pbTradeRowHtml(t, opts) {
       ${o.showLabel ? `<span class="pbRowLabel">${esc(pbTradeLabel(t))}</span>` : ""}
       ${tagTxt ? `<span class="pbRowTag">${esc(tagTxt)}</span>` : ""}
       ${pbTakenBadgeHtml(t)}
+      ${o.out ? `<span class="pbRowOut" title="${esc(T("scope.outTitle"))}">${esc(T("scope.out"))}</span>` : ""}
       <span class="pbRowSpacer"></span>
       ${mistakes.length && ctx.mode !== "note" ? `<span class="pbRowMistake" title="${esc(mistakes.map(pbTitle).join(" / "))}">${esc(T("pb.inMistakes", { n: mistakes.length }))}</span>` : ""}
       ${verifies.length && ctx.mode !== "note" ? `<span class="pbRowVerify" title="${esc(verifies.map(pbTitle).join(" / "))}">${esc(T("pb.inVerify", { n: verifies.length }))}</span>` : ""}
@@ -586,6 +587,9 @@ function pbVerdictHtml(ctx) {
 function pbTradeAreaHtml(d) {
   if (recordMode !== "live") return pbBacktestNote();
   const ctx = pbAreaCtx(d);
+  // 系统 / 策略 / 标签的交易从源头就只取范围内的；笔记的交易是正文里挂的，范围外的单独拎出来放到列表最后
+  const outList = ctx.list.filter((t) => !inDataScope(t));
+  if (outList.length) ctx.list = ctx.list.filter(inDataScope);
   const { list, mode, page } = ctx;
   const ro = !!viewingUserId;
   let html = "";
@@ -638,7 +642,9 @@ function pbTradeAreaHtml(d) {
     ${rows.length
       ? `<div class="pbTradeList">${shown.map((t) => pbTradeRowHtml(t, { showLabel: ctx.showLabel, ctx })).join("")}</div>
          ${rows.length > shown.length ? `<button class="btn pbShowAll" data-action="pb-show-all-trades">${esc(T("pb.showAllTrades", { n: rows.length }))}</button>` : ""}`
-      : `<div class="pbEmptyLine">${esc(T(mode === "page" ? "pb.noTradesLong" : mode === "tag" ? "pb.noTagTrades" : d.kind === "verify" ? "pb.noVerifyTrades" : "pb.noMistakeTrades"))}</div>`}
+      : outList.length ? "" : `<div class="pbEmptyLine">${esc(T(mode === "page" ? "pb.noTradesLong" : mode === "tag" ? "pb.noTagTrades" : d.kind === "verify" ? "pb.noVerifyTrades" : "pb.noMistakeTrades"))}</div>`}
+    ${outList.length && !pbExecFilter ? `<div class="pbOutHead">${esc(T("scope.outHead", { n: outList.length }))}</div>
+      <div class="pbTradeList isOut">${outList.map((t) => pbTradeRowHtml(t, { showLabel: ctx.showLabel, ctx, out: true })).join("")}</div>` : ""}
   </section>`;
   return html;
 }
@@ -1048,7 +1054,7 @@ function pbTagChipsHtml(list, onIds, action, ro) {
    归类模式
    ============================================================ */
 function pbTriageQueue(scope) {
-  const list = trades.filter((t) => scope === "all" || pbTradeIsUnsorted(t));
+  const list = scopedTrades().filter((t) => scope === "all" || pbTradeIsUnsorted(t));   // 只排数据范围内的
   return pbSortTradesDesc(list).map((t) => t.id);
 }
 function startPbTriage(scope) {
@@ -1283,7 +1289,7 @@ function renderPbTriage() {
       <span class="muted">${esc(T("pb.triage.doneCount", { n: tr.done.size }))}</span>
     </div>
     ${scopeSeg}
-  </div>`;
+  </div>${dataScopeOn() ? `<div class="pbTriageScopeNote">${ICONS.filter}<span>${esc(T("scope.triageNote", { cond: comboConditionsText({ conditions: dataScopeConditions() }) }))}</span></div>` : ""}`;
   if (pbError) return bar + `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(pbError)}</span></div>` + pbTriageBodyHtml();
   return bar + pbTriageBodyHtml();
 }

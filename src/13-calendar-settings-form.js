@@ -36,7 +36,7 @@ function renderYearHeatmap(year) {
   const dateF = roleField("date");
   if (!dateF) return "";
   const byDay = {};
-  trades.forEach((t) => {
+  scopedTrades().forEach((t) => {
     const d = String(t[dateF.id] || "");
     if (d.startsWith(year + "-") && tradeMatchesFilters(t, activeFilters)) (byDay[d] = byDay[d] || []).push(t);
   });
@@ -164,7 +164,7 @@ function renderHistoryCoverage(list) {
 function renderCalendar() {
   const dateF = roleField("date");
   if (!dateF) return `<div class="notice">${ICONS.alert}<span>${T("calendar.noDateRole")}</span></div>`;
-  const filtered = trades.filter((t) => tradeMatchesFilters(t, activeFilters));
+  const filtered = scopedTrades().filter((t) => tradeMatchesFilters(t, activeFilters));
   let html = renderFilterOriginBanner() + `<div style="margin-bottom:22px;">${renderFilterPanel(filtered.length, filtered)}</div>`;
   html += `<div style="margin-bottom:22px;">${renderMonthBar()}</div><div style="margin-bottom:22px;">${renderDayCalendar()}</div>`;
   if (recordMode === "backtest") html += renderHistoryCoverage(filtered);

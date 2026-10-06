@@ -356,3 +356,43 @@ test("可以下结论的提示：关联够多才出，一边倒给建议，五�
   assert.strictEqual(hint(mk(5, 5)).suggest, "");                  // 样本够多还是五五开
   assert.strictEqual(hint(mk(6, 0, "works")), null);
 });
+
+/* ---------- 数据范围 ---------- */
+function scopeSetup(conds, tradesList) {
+  const r = setup(PAGES, tradesList);
+  r.ctx.run(`schema = [
+    { id: "ver", label: "schema_version", type: "select", options: ["1", "2"], role: "" },
+    { id: "sess", label: "session", type: "multiselect", options: ["NY", "LDN"], role: "" },
+  ];`);
+  r.ctx.set("__conds", conds);
+  r.ctx.run("analysisPrefs.dataScope = __conds; setDataScopeBypass(false);");
+  return r;
+}
+const ST = [{ id: "a", ver: "2", __pb: "st1" }, { id: "b", ver: "1", __pb: "st1" }, { id: "c", ver: "2" }, { id: "d" }];
+const VER2 = [{ id: "f1", fieldId: "ver", values: ["2"] }];
+
+test("数据范围：没设条件什么都不影响；设了之后列表、模型库、未归类数都只看范围内的", () => {
+  const none = scopeSetup([], ST);
+  assert.strictEqual(none.call("() => scopedTrades().length"), 4);
+  const { call } = scopeSetup(VER2, ST);
+  assert.deepStrictEqual(call("() => scopedTrades().map((t) => t.id)"), ["a", "c"]);
+  assert.deepStrictEqual(call("() => pbTradesOf('st1').map((t) => t.id)"), ["a"]);
+  assert.strictEqual(call("() => pbUnsortedCount()"), 1);   // 只有 c；d 不在范围里
+  assert.strictEqual(call("() => pbCountsInStats(trades[1])"), false);
+});
+
+test("「暂时看全部」：范围还在，只是先不生效", () => {
+  const { call } = scopeSetup(VER2, ST);
+  assert.strictEqual(call("() => { setDataScopeBypass(true); return scopedTrades().length; }"), 4);
+  assert.strictEqual(call("() => dataScopeActive()"), true);
+  assert.strictEqual(call("() => tradeInScopeStrict(trades[1])"), false);   // 导出「数据范围内」不看暂停
+});
+
+test("新交易自动填值：只认平铺的「选择字段 是 一个值」，分组 / 取反 / 多个值都不猜", () => {
+  assert.deepStrictEqual(scopeSetup(VER2, ST).call("() => applyDataScopeDefaults({ ver: '' })"), { ver: "2" });
+  assert.deepStrictEqual(scopeSetup(VER2, ST).call("() => applyDataScopeDefaults({ ver: '1' })"), { ver: "1" });   // 已经填了就不改
+  assert.deepStrictEqual(scopeSetup([{ id: "f", fieldId: "sess", values: ["NY"] }], ST).call("() => dataScopeDefaults()"), { sess: ["NY"] });
+  assert.deepStrictEqual(scopeSetup([{ id: "f", fieldId: "ver", values: ["2"], negate: true }], ST).call("() => dataScopeDefaults()"), {});
+  assert.deepStrictEqual(scopeSetup([{ id: "f", fieldId: "ver", values: ["1", "2"] }], ST).call("() => dataScopeDefaults()"), {});
+  assert.deepStrictEqual(scopeSetup([{ id: "g", op: "or", children: VER2 }], ST).call("() => dataScopeDefaults()"), {});
+});

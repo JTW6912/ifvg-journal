@@ -13,6 +13,7 @@ function defaultAnalysisPrefs() {
     timeBuckets: DEFAULT_TIME_BUCKETS.slice(), // 时间字段拆解用的分段边界，见 TIME BUCKETS 那一段
     minSample: BREAKDOWN_MIN_SAMPLE,           // 低于多少笔就不算数，见 currentMinSample()
     pbScope: [],            // 模型库的成绩口径：哪些交易算进胜率 / R（筛选树，跟组合条件同构），见 11b 的 pbStats
+    dataScope: [],          // 全站的数据范围（筛选树），见 08 的 dataScopeConditions；空 = 不生效
   };
 }
 /* 「多少笔才算数」是方法论，不是设备偏好，所以跟 timeBuckets 一样进数据库跟着账号走，
@@ -49,6 +50,7 @@ function normalizeAnalysisPrefs(raw) {
     timeBuckets: sanitizeTimeBoundaries(raw.timeBuckets),
     minSample: sanitizeMinSample(raw.minSample),
     pbScope: normalizeFilterNodes(raw.pbScope),
+    dataScope: normalizeFilterNodes(raw.dataScope),
   };
 }
 function normalizeCombo(c) {

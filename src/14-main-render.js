@@ -426,10 +426,48 @@ function tradePreviewHtml() {
   </div>`;
 }
 
+/* 数据范围的编辑弹窗：条件编辑器跟记录页的筛选一样（filterNodeListHtml + DATA_SCOPE_CTX） */
+function dataScopeModalHtml() {
+  const cond = dataScopeConditions();
+  const active = dataScopeActive();
+  const inN = trades.filter(tradeInScopeStrict).length;
+  const defs = dataScopeDefaults();
+  const defTxt = Object.keys(defs).map((k) => { const f = resolveField(k); const v = defs[k]; return (f ? f.label : k) + " = " + (Array.isArray(v) ? v.join(", ") : v); }).join("、");
+  return `<div class="overlay" data-action="dismiss-data-scope-overlay">
+    <div class="modal" style="max-width:680px;">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${ICONS.filter} ${esc(T("scope.title"))}</div>
+        <button class="iconBtn" data-action="close-data-scope">${ICONS.x}</button>
+      </div>
+      <div class="modalBody">
+        <p class="scopeIntro">${esc(T("scope.intro"))}</p>
+        ${active ? `<div class="scopeStatus${dataScopeBypass ? " paused" : ""}">
+            <span>${esc(T("scope.count", { mode: recordMode === "backtest" ? T("mode.backtest") : T("mode.live"), in: inN, all: trades.length }))}${dataScopeBypass ? ` · ${esc(T("scope.paused"))}` : ""}</span>
+            <button class="btn" data-action="toggle-data-scope-bypass">${esc(T(dataScopeBypass ? "scope.resume" : "scope.pause"))}</button>
+          </div>` : ""}
+        <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">${filterNodeListHtml(cond, DATA_SCOPE_CTX)}</div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+          <button class="btn" data-action="add-filter" data-filter-ctx="${DATA_SCOPE_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
+          <button class="btn" data-action="add-filter-group" data-filter-ctx="${DATA_SCOPE_CTX}">${ICONS.plus} ${T("filter.addGroup")}</button>
+          ${cond.length ? `<button class="btn" data-action="data-scope-clear">${esc(T("scope.clear"))}</button>` : ""}
+        </div>
+        ${defTxt ? `<div class="scopeHint">${esc(T("scope.defaults", { list: defTxt }))}</div>` : ""}
+        <div class="scopeHint">${esc(T("scope.note"))}</div>
+      </div>
+      <div class="modalFoot"><button class="btn btn-primary" data-action="close-data-scope">${esc(T("common.close"))}</button></div>
+    </div>
+  </div>`;
+}
+/* 数据范围生效时，顶部那行数字和侧栏底部挂一枚标签，点开就是编辑弹窗；不设范围的人看不到 */
+function dataScopePillHtml() {
+  if (!dataScopeActive()) return "";
+  const txt = dataScopeBypass ? T("scope.pillPaused") : T("scope.pill", { in: trades.filter(tradeInScopeStrict).length, all: trades.length });
+  return `<button class="scopePill${dataScopeBypass ? " paused" : ""}" data-action="open-data-scope" title="${esc(comboConditionsText({ conditions: dataScopeConditions() }))}">${ICONS.filter}<span>${esc(txt)}</span></button>`;
+}
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : null))))));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : null)))))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
@@ -443,6 +481,7 @@ function renderSecondaryModals(force) {
     if (input) input.focus();
   }
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
+  else if (want === "datascope") root.innerHTML = dataScopeModalHtml();
   else root.innerHTML = "";
 }
 // render() 每次都整体重建 app 的 innerHTML，滚动容器的节点也跟着被换掉，
@@ -549,7 +588,7 @@ function render() {
         <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
         <div class="pageGreeting">${esc(greetingText(displayName))}</div>
         <div class="pageTitle">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
-        <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""}</div>
+        <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""} ${dataScopePillHtml()}</div>
       </div>
       <div class="headerActions">
         <div class="modeToggle">
@@ -570,6 +609,7 @@ function render() {
             <div class="menuLabel">${T("header.palette")} · <span class="menuLabelVal">${T("palette." + currentPalette())}</span></div>
             <div class="paletteRow">${PALETTES.map((k) => `<button class="paletteDot sw-${k}${currentPalette() === k ? " on" : ""}" data-action="set-palette" data-palette="${k}" title="${esc(T("palette." + k))}" aria-label="${esc(T("palette." + k))}"></button>`).join("")}</div>
             <div class="menuSep"></div>
+            ${viewingUserId ? "" : `<button data-action="open-data-scope">${esc(T("scope.menu"))}${dataScopeActive() ? ` <span class="menuLabelVal">· ${esc(T(dataScopeBypass ? "scope.paused" : "scope.on"))}</span>` : ""}</button>`}
             <button data-action="open-profile-modal">${T("header.profile")}</button>
             <button data-action="logout">${T("auth.logout")}</button>
           </div>
@@ -582,7 +622,7 @@ function render() {
     </div>` : "";
   // navBrand / navFoot 只在侧边栏布局（晴空皮肤）里显示，经典主题下 display:none
   const navBrandHtml = `<div class="navBrand"><span class="navLogo">${LOGO_MARK}</span><span class="navBrandText"><span><b>IFVG</b> Journal</span>${displayName ? `<small>${esc(displayName)}</small>` : ""}</span></div>`;
-  const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${currentLayout() === "modern" ? navSparkHtml() : ""}
+  const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${dataScopePillHtml()}${currentLayout() === "modern" ? navSparkHtml() : ""}
     <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
   // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
   const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", changelog: "nav.groupSystem" };

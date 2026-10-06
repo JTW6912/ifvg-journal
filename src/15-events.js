@@ -51,6 +51,21 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "ex-run") { await runExport(); }
   else if (action === "set-export-scope") { exportScope = el.dataset.value; render(); }
+  else if (action === "open-data-scope") { userMenuOpen = false; dataScopeModalOpen = true; render(); renderSecondaryModals(true); }
+  else if (action === "close-data-scope") { dataScopeModalOpen = false; renderSecondaryModals(true); }
+  else if (action === "dismiss-data-scope-overlay") { if (e.target === el) { dataScopeModalOpen = false; renderSecondaryModals(true); } }
+  else if (action === "toggle-data-scope-bypass") {
+    setDataScopeBypass(!dataScopeBypass);
+    gridPage = 1;
+    render(); refreshPbPanels();
+    if (dataScopeModalOpen) renderSecondaryModals(true);
+  }
+  else if (action === "data-scope-clear") {
+    if (viewingUserId) return;
+    analysisPrefs.dataScope = [];
+    queueSaveAnalysisPrefs();
+    render(); refreshPbPanels(); renderSecondaryModals(true);
+  }
   else if (action === "set-export-columns") {
     exportColumns = el.dataset.value;
     if (exportColumns === "selected" && exportSelectedFields.length === 0) exportSelectedFields = schema.map((f) => f.id);
@@ -73,6 +88,7 @@ document.addEventListener("click", async (e) => {
       [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY, PB_NOTE_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
       blank._resumedDraft = true;
     }
+    applyDataScopeDefaults(blank);   // 设了数据范围（比如 schema_version = 2）就替新交易填上，免得自己被筛掉
     const dateF = roleField("date");
     if (dateF && !blank[dateF.id]) {
       let latest = null;
@@ -90,6 +106,7 @@ document.addEventListener("click", async (e) => {
     clearDraft();
     const blank = { id: uid(), _isNew: true };
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
+    applyDataScopeDefaults(blank);
     editingTrade = blank;
     renderModal(true);
   }
@@ -192,6 +209,7 @@ document.addEventListener("click", async (e) => {
       [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY, PB_NOTE_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });
       blank._resumedDraft = true;
     }
+    applyDataScopeDefaults(blank);
     const dateF = roleField("date");
     if (dateF) blank[dateF.id] = forDate;
     editingTrade = blank;
@@ -1580,6 +1598,7 @@ document.addEventListener("keydown", (e) => {
   if (lightboxUrl) { closeLightbox(); return; }
   if (exportCenterOpen) { if (!exportBusy) { exportCenterOpen = false; render(); } return; }
   if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }
+  if (dataScopeModalOpen) { dataScopeModalOpen = false; renderSecondaryModals(true); return; }
   if (pagePickerOpen) { closePagePicker(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）

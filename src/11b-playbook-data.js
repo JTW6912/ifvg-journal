@@ -128,9 +128,9 @@ function pbSortTradesDesc(list) {
 }
 function pbTradesOf(pageId) {
   const ids = new Set(pbScopeIds(pageId));
-  return pbSortTradesDesc(trades.filter((t) => ids.has(pbTradePageId(t))));
+  return pbSortTradesDesc(scopedTrades().filter((t) => ids.has(pbTradePageId(t))));
 }
-function pbUnsortedCount() { return recordMode === "live" ? trades.filter(pbTradeIsUnsorted).length : 0; }
+function pbUnsortedCount() { return recordMode === "live" ? scopedTrades().filter(pbTradeIsUnsorted).length : 0; }
 
 /* ---------- 统计 ----------
    **默认所有归进来的交易都算**：Taken、Faded、missed、data-gathering……不管做没做。
@@ -141,7 +141,7 @@ function pbUnsortedCount() { return recordMode === "live" ? trades.filter(pbTrad
    「做了 / 没做」另外按 taken 字段的实际值分组摆在页面里（pbExecGroups），不靠口径 */
 function pbScopeConditions() { return (analysisPrefs && analysisPrefs.pbScope) || []; }
 function pbScopeActive() { return pbScopeConditions().some(filterNodeIsEffective); }
-function pbCountsInStats(t) { return tradeMatchesFilters(t, pbScopeConditions()); }
+function pbCountsInStats(t) { return inDataScope(t) && tradeMatchesFilters(t, pbScopeConditions()); }   // 数据范围外的一律不算
 
 /* ---------- 执行情况：按 taken 字段的值分组 ----------
    直接用用户自己填的值（Taken / Faded / missed / data-gathering…），不翻译成「做了 / 没做」——
@@ -229,12 +229,12 @@ function pbTradeTagIds(t) {
   const v = t && t[PB_TAGS_KEY];
   return Array.isArray(v) ? v.filter((id) => { const p = pbFind(id); return !!p && p.kind === "tag"; }) : [];
 }
-function pbTagTrades(tag) { return pbSortTradesDesc(trades.filter((t) => pbTradeTagIds(t).includes(tag.id))); }
+function pbTagTrades(tag) { return pbSortTradesDesc(scopedTrades().filter((t) => pbTradeTagIds(t).includes(tag.id))); }
 function pbTagCompare(tag) {
   const withList = pbTagTrades(tag);
   const ids = new Set(withList.map((t) => t.id));
   const owner = pbNoteOwner(tag);
-  const scope = owner ? pbTradesOf(owner.id) : pbSortTradesDesc(trades);
+  const scope = owner ? pbTradesOf(owner.id) : pbSortTradesDesc(scopedTrades());
   const withoutList = scope.filter((t) => !ids.has(t.id));
   return { with: pbStats(withList), without: pbStats(withoutList), withList, withoutList, owner };
 }

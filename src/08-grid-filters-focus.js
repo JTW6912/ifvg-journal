@@ -59,6 +59,54 @@ function tradeMatchesFilters(t, arr) {
   return (arr || []).every((n) => nodeMatchesTrade(t, n));
 }
 
+/* ============================================================
+   数据范围：全站统一的一层过滤（存在 analysisPrefs.dataScope，跟着账号走）
+   用户反馈：用一个字段（比如 schema_version = 2）区分新交易和旧数据，但筛选是各页各一份，
+   侧栏的数字、分析页、模型库的列表和归类队列里旧数据都还在。
+   规则：
+   - 设了范围之后，侧栏 / 顶部的数字、记录页、日历、分析页、组合、模型库（成绩、列表、未归类数、归类队列、便利贴）
+     都先过这一层，再叠各页自己的筛选。模型库的「统计口径」叠在它上面
+   - **交易本身一笔不少**：复盘、笔记里引用的范围外交易照样能点开；笔记的交易区里范围外的变灰、不算成绩
+   - 默认是空的 = 完全不生效，没设过的用户什么都不变（网站不止一个人在用）
+   - 可以临时「看全部」（dataScopeBypass，只记在这台设备上），不用删条件
+   ============================================================ */
+const DATA_SCOPE_CTX = "datascope";
+const DATA_SCOPE_OFF_KEY = "journal_data_scope_off";
+let dataScopeBypass = (function () { try { return localStorage.getItem(DATA_SCOPE_OFF_KEY) === "1"; } catch (e) { return false; } })();
+function dataScopeConditions() { return (analysisPrefs && analysisPrefs.dataScope) || []; }
+function dataScopeActive() { return dataScopeConditions().some(filterNodeIsEffective); }
+function dataScopeOn() { return dataScopeActive() && !dataScopeBypass; }
+function tradeInScopeStrict(t) { return tradeMatchesFilters(t, dataScopeConditions()); }   // 不管「看全部」开没开
+function inDataScope(t) { return !dataScopeOn() || tradeInScopeStrict(t); }
+function scopedTrades() { return dataScopeOn() ? trades.filter(tradeInScopeStrict) : trades; }
+function setDataScopeBypass(on) {
+  dataScopeBypass = !!on;
+  try { localStorage.setItem(DATA_SCOPE_OFF_KEY, on ? "1" : "0"); } catch (e) {}
+}
+/* 新交易自动填的值：范围里只有平铺的「某个选择字段 是 某一个值」时，新建交易就把这个值填上，
+   免得记了新交易忘了填、结果自己被筛掉。有分组、取反、多个值的条件一律不猜 */
+function dataScopeDefaults() {
+  const out = {};
+  if (!dataScopeActive()) return out;
+  for (const n of dataScopeConditions()) {
+    if (!filterNodeIsEffective(n)) continue;
+    if (isFilterGroup(n)) return {};
+    const f = resolveField(n.fieldId);
+    if (!f || f.virtual || (f.type !== "select" && f.type !== "multiselect")) continue;
+    if (n.negate || (n.values || []).length !== 1) continue;
+    out[f.id] = f.type === "multiselect" ? [n.values[0]] : n.values[0];
+  }
+  return out;
+}
+function applyDataScopeDefaults(blank) {
+  const d = dataScopeDefaults();
+  Object.keys(d).forEach((k) => {
+    const v = blank[k];
+    if (v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) blank[k] = d[k];
+  });
+  return blank;
+}
+
 /* ---------- 路径寻址 ---------- */
 // "2" = 顶层第 2 个；"2.0" = 它的第 0 个孩子。空串代表顶层数组本身
 function parseFilterPath(p) {
@@ -169,6 +217,11 @@ const PB_SCOPE_CTX = "playbook";
 function filterCtxOf(el) {
   if (el.dataset.filterCtx === ANALYSIS_CTX) return { arr: analysisFilters, comboId: "", scope: ANALYSIS_CTX };
   if (el.dataset.filterCtx === PB_SCOPE_CTX) return viewingUserId ? null : { arr: analysisPrefs.pbScope, comboId: "", scope: PB_SCOPE_CTX };
+  if (el.dataset.filterCtx === DATA_SCOPE_CTX) {
+    if (viewingUserId) return null;
+    if (!Array.isArray(analysisPrefs.dataScope)) analysisPrefs.dataScope = [];
+    return { arr: analysisPrefs.dataScope, comboId: "", scope: DATA_SCOPE_CTX };
+  }
   const comboId = el.dataset.comboId || "";
   if (!comboId) return { arr: activeFilters, comboId: "", scope: "grid" };
   const c = findCombo(comboId);
@@ -178,6 +231,7 @@ function filterCtxOf(el) {
 // 展开状态的 key 必须两边算出来一模一样，否则点开的分组下一次 render 就自己合上了
 function ctxKeyOf(ctx) {
   if (ctx.scope === PB_SCOPE_CTX) return PB_SCOPE_CTX;
+  if (ctx.scope === DATA_SCOPE_CTX) return DATA_SCOPE_CTX;
   return ctx.scope === ANALYSIS_CTX ? ANALYSIS_CTX : (ctx.comboId || "");
 }
 // 分析页筛选变了：存自己那份 localStorage，顺便标记"套进来的组合已经被改过"
@@ -190,6 +244,8 @@ function afterFilterChange(ctx) {
   if (ctx.scope === ANALYSIS_CTX) { afterAnalysisFilterChange(); return; }
   // 模型库成绩口径：跟着账号走（存 analysis_prefs），改了卡片和页面上的成绩全部跟着变
   if (ctx.scope === PB_SCOPE_CTX) { queueSaveAnalysisPrefs(); render(); refreshPbPanels(); return; }
+  // 数据范围：跟着账号走，改了全站的数字都跟着变；编辑框画在二级弹窗里，要强制重画
+  if (ctx.scope === DATA_SCOPE_CTX) { gridPage = 1; queueSaveAnalysisPrefs(); render(); refreshPbPanels(); renderSecondaryModals(true); return; }
   if (ctx.comboId) {
     queueSaveAnalysisPrefs();
   } else {
@@ -274,6 +330,7 @@ function legacyTextContains(t, field, needle) {
 function filterCtxAttr(ctx) {
   if (!ctx) return "";
   if (ctx === PB_SCOPE_CTX) return ` data-filter-ctx="${PB_SCOPE_CTX}"`;
+  if (ctx === DATA_SCOPE_CTX) return ` data-filter-ctx="${DATA_SCOPE_CTX}"`;
   return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
 }
 // 选项超过这个数，筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
@@ -512,7 +569,7 @@ function renderFilterPanel(filteredCount, filteredForSummary) {
       ${activeCount
         ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
         : `<span class="filterPanelBadge off">${T("ascope.noFilter")}</span>`}
-      ${filterPanelChainHtml(trades.length, filteredCount, activeCount > 0, T("filter.chainTitle"))}
+      ${filterPanelChainHtml(scopedTrades().length, filteredCount, activeCount > 0, T("filter.chainTitle"))}
       <span class="filterPanelChev">${filterPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
     </button>
     ${!filterPanelOpen && activeCount ? filterPanelSummaryHtml(activeFilters) : ""}`;
@@ -654,7 +711,7 @@ function renderFocusList(pageItems, totalCount, roles) {
 function renderGrid() {
   const modelF = roleField("model"), resultF = roleField("result"), dateF = roleField("date"), rF = roleField("r_multiple"), shotF = roleField("screenshot");
 
-  let filtered = trades.filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
+  let filtered = scopedTrades().filter((t) => tradeMatchesFilters(t, activeFilters) && tradeMatchesSearch(t, searchQuery));
   const sortVal = (t) => {
     if (sortBy === "created_at") return t._created_at || "";
     if (sortBy === "updated_at") return t._updated_at || t._created_at || "";

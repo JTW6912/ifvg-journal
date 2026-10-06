@@ -63,7 +63,7 @@ function renderAnalysisScopePanel(stats) {
       ${activeCount
         ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: activeCount }))}</span>`
         : `<span class="filterPanelBadge off">${T("ascope.noFilter")}</span>`}
-      ${filterPanelChainHtml(trades.length, stats.total, activeCount > 0, T("ascope.chainTitle"))}
+      ${filterPanelChainHtml(scopedTrades().length, stats.total, activeCount > 0, T("ascope.chainTitle"))}
       <span class="filterPanelChev">${analysisPanelOpen ? ICONS.chevUp : ICONS.chevDown}</span>
     </button>
     ${!analysisPanelOpen && activeCount ? filterPanelSummaryHtml(analysisFilters) : ""}`;

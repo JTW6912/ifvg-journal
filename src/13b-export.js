@@ -238,6 +238,7 @@ async function exGather() {
   // 当前模式下「只导出记录页筛出来的」：另一种模式没有筛选这回事，照全部
   const scopedTrades = (m) => {
     const list = data[m].trades;
+    if (resolvedExportScope() === "datascope") return list.filter(tradeInScopeStrict);   // 数据范围两种模式都认
     if (m === recordMode && resolvedExportScope() === "filtered") {
       const keep = new Set(exportFilteredTrades().map((t) => t.id));
       return list.filter((t) => keep.has(t.id));
@@ -845,6 +846,7 @@ function exportCenterHtml() {
         <div class="exRow"><span class="exRowLabel">${esc(T("ex.tradesRange", { mode: exModeLabel(recordMode) }))}</span>
           <div class="chipGroup">
             <button type="button" class="chip ${scope === "all" ? "active" : ""}" data-action="set-export-scope" data-value="all">${T("export.scopeAll", { n: trades.length })}</button>
+            ${dataScopeActive() ? `<button type="button" class="chip ${scope === "datascope" ? "active" : ""}" data-action="set-export-scope" data-value="datascope">${T("export.scopeData", { n: trades.filter(tradeInScopeStrict).length })}</button>` : ""}
             <button type="button" class="chip ${scope === "filtered" ? "active" : ""}" data-action="set-export-scope" data-value="filtered" ${filtered ? "" : "disabled"}>${T("export.scopeFiltered", { n: exportFilteredTrades().length })}</button>
           </div></div>
         <div class="exHint">${esc(T("ex.scopeHint"))}</div>

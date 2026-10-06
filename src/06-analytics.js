@@ -5,7 +5,7 @@
 // 分析页当前在看的那批交易：总览数字、字段拆解、最大回撤全都用这一批，没有任何额外的隐藏过滤。
 // 「看到的数字 = 面板里那几条条件筛出来的结果」是这一页唯一的口径规则，别再往里塞暗逻辑。
 function analysisFilteredTrades() {
-  return trades.filter((t) => tradeMatchesFilters(t, analysisFilters));
+  return scopedTrades().filter((t) => tradeMatchesFilters(t, analysisFilters));
 }
 // Profit Factor：正R之和 ÷ |负R之和|。只统计真的填了 R 的那些交易，n 一并返回好让 UI 标注口径。
 function profitFactorOf(list, rF) {
@@ -79,7 +79,8 @@ function equityCurve(list, rF) {
 // 它代表"这个账号现在整体什么水平"，不该被某一页里临时筛出来的一小撮交易带偏。
 function headerStats() {
   const takenF = roleField("taken"), resultF = roleField("result"), rF = roleField("r_multiple");
-  const list = takenF ? trades.filter((t) => t[takenF.id] === "Taken") : trades;
+  const base = scopedTrades();
+  const list = takenF ? base.filter((t) => t[takenF.id] === "Taken") : base;
   const w = resultF ? list.filter((t) => isWinResult(t[resultF.id])).length : 0;
   const l = resultF ? list.filter((t) => isLossResult(t[resultF.id])).length : 0;
   let ev = null, hasR = false;
@@ -513,7 +514,7 @@ function comboFilterRows(combo) {
 }
 function comboMatchedTrades(combo) {
   const rows = comboFilterRows(combo);
-  return trades.filter((t) => tradeMatchesFilters(t, rows));
+  return scopedTrades().filter((t) => tradeMatchesFilters(t, rows));
 }
 function comboStats(combo) {
   const list = comboMatchedTrades(combo);
@@ -632,12 +633,12 @@ function aggregateTradeStats(list) {
 function tradesOnDate(dateStr) {
   const dateF = roleField("date");
   if (!dateF) return [];
-  return trades.filter((t) => (t[dateF.id] || "") === dateStr && tradeMatchesFilters(t, activeFilters));
+  return scopedTrades().filter((t) => (t[dateF.id] || "") === dateStr && tradeMatchesFilters(t, activeFilters));
 }
 function tradesInMonth(year, month) {
   const dateF = roleField("date");
   if (!dateF) return [];
   const prefix = year + "-" + String(month).padStart(2, "0");
-  return trades.filter((t) => String(t[dateF.id] || "").startsWith(prefix) && tradeMatchesFilters(t, activeFilters));
+  return scopedTrades().filter((t) => String(t[dateF.id] || "").startsWith(prefix) && tradeMatchesFilters(t, activeFilters));
 }
 
