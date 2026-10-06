@@ -67,7 +67,7 @@ function maxDrawdownR(list, rF) {
   return { dd: maxDD, n: ordered.length, range };
 }
 // 资金曲线：跟 maxDrawdownR 同一个排序口径（按交易日期，同一天按创建时间），返回每一笔之后的累计 R。
-// 只给分析页顶部那张曲线图用，不参与任何统计
+// 只给分析页顶部那张曲线图用（含悬停提示），不参与任何统计
 function equityCurve(list, rF) {
   if (!rF) return [];
   const dateF = roleField("date");
@@ -81,7 +81,7 @@ function equityCurve(list, rF) {
     return String(a._created_at || "").localeCompare(String(b._created_at || ""));
   });
   let eq = 0;
-  return rows.map((t) => { eq += parseFloat(t[rF.id]); return { date: dateF ? t[dateF.id] || "" : "", eq }; });
+  return rows.map((t) => { const r = parseFloat(t[rF.id]); eq += r; return { date: dateF ? t[dateF.id] || "" : "", eq, r, trade: t }; });
 }
 // 标题栏那行摘要用的是固定口径（只算 Taken），故意不吃分析页的筛选：
 // 它代表"这个账号现在整体什么水平"，不该被某一页里临时筛出来的一小撮交易带偏。

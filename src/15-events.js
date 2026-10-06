@@ -1633,3 +1633,27 @@ window.addEventListener("beforeunload", (e) => {
   e.returnValue = "";
 });
 
+/* 资金曲线悬停（分析页新版布局）。逻辑在 09-analytics-view.js 的 showEquityHover()，这里只接事件。
+   pointermove 同时覆盖鼠标和手指拖动；点一下（pointerdown）在触屏上也能出提示 */
+let equityHoverChart = null;
+function onEquityPointer(e) {
+  const chart = e.target.closest && e.target.closest(".dashEquity .dashChart");
+  if (equityHoverChart && equityHoverChart !== chart) { hideEquityHover(equityHoverChart); equityHoverChart = null; }
+  if (!chart) return;
+  equityHoverChart = chart;
+  showEquityHover(chart, e.clientX);
+}
+document.addEventListener("pointermove", onEquityPointer);
+document.addEventListener("pointerdown", onEquityPointer);
+// 鼠标直接移出浏览器窗口时不会再有 pointermove，靠 relatedTarget 为空认出来
+document.addEventListener("pointerout", (e) => { if (!e.relatedTarget && equityHoverChart) { hideEquityHover(equityHoverChart); equityHoverChart = null; } });
+// 点曲线上的某一笔 → 打开那一笔的只读预览，左右键能沿着曲线顺序往前往后翻
+document.addEventListener("click", (e) => {
+  const chart = e.target.closest && e.target.closest(".dashEquity .dashChart");
+  if (!chart || !equityHover) return;
+  const i = equityPointAt(chart, e.clientX);
+  if (i < 0) return;
+  tradePreviewNav = { ids: equityHover.pts.map((p) => p.trade.id), index: i, root: null };
+  tradePreviewId = equityHover.pts[i].trade.id;
+  renderSecondaryModals(true);
+});

@@ -505,7 +505,13 @@ function renderEquityCard(stats) {
   let peakI = 0; vals.forEach((v, i) => { if (v > vals[peakI]) peakI = i; });
   // 最大回撤那一段：从峰值点到谷底点画一条淡红底，曲线上一眼看出跌在哪
   const ddr = stats.dd > 0.0001 ? stats.ddRange : null;
-  const ddBand = ddr ? `<rect class="eqDDBand" fill-opacity="0.08" x="${x(ddr.peakI + 1).toFixed(1)}" y="0" width="${(x(ddr.troughI + 1) - x(ddr.peakI + 1)).toFixed(1)}" height="${H}"><title>${esc(T("dash.maxDD") + " -" + stats.dd.toFixed(2) + "R · " + ddRangeText(ddr))}</title></rect>` : "";
+  const ddBand = ddr ? `<rect class="eqDDBand" fill-opacity="0.08" x="${x(ddr.peakI + 1).toFixed(1)}" y="0" width="${(x(ddr.troughI + 1) - x(ddr.peakI + 1)).toFixed(1)}" height="${H}"/>` : "";
+  // 悬停用的数据：每个点在图里的百分比位置 + 那一笔本身。vals[0] 是起点 0R，不对应任何交易，悬停从第 1 笔起
+  equityHover = {
+    pts: pts.map((p, k) => ({ ...p, k: k + 1, xPct: (x(k + 1) / W) * 100, yPct: (y(p.eq) / H) * 100 })),
+    dd: ddr ? { ...ddr, value: stats.dd, peakEq: vals[ddr.peakI + 1], troughEq: vals[ddr.troughI + 1],
+                peakDate: ddr.peakI >= 0 ? pts[ddr.peakI].date : "" } : null,
+  };
   const dot = (i, cls) => `<span class="dashDot ${cls}" style="left:${(x(i) / W * 100).toFixed(2)}%;top:${(y(vals[i]) / H * 100).toFixed(2)}%"></span>`;
   return `<div class="dashCard dashEquity tone-${tone}">
     <div class="dashHead">
@@ -524,14 +530,76 @@ function renderEquityCard(stats) {
         <defs><linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" class="eqStop0"/><stop offset="1" class="eqStop1"/></linearGradient></defs>
         ${ddBand}
+        <line class="eqCross" x1="0" x2="0" y1="0" y2="${H}" vector-effect="non-scaling-stroke"/>
         <line x1="0" x2="${W}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" class="eqZero" vector-effect="non-scaling-stroke"/>
         <path d="${area}" fill="url(#eqFill)"/>
         <path d="${line}" class="eqLine" vector-effect="non-scaling-stroke"/>
       </svg>
       ${peakI > 0 && peakI < vals.length - 1 ? dot(peakI, "peak") : ""}${ddr ? dot(ddr.troughI + 1, "trough") : ""}${dot(vals.length - 1, "end " + tone)}
+      <span class="dashDot hover"></span><div class="eqTip"></div>
     </div>
     <div class="dashAxis"><span>${esc(pts[0].date || "")}</span><span>${esc(T("dash.curveBasis", { n: pts.length }))}</span><span>${esc(pts[pts.length - 1].date || "")}</span></div>
   </div>`;
+}
+/* ---------- 资金曲线悬停 ----------
+   不走 render()：鼠标每动一下都整页重绘太重。renderEquityCard() 把数据存进 equityHover，
+   15-events.js 里的 pointermove 只挪十字线 / 圆点 / 提示框这几个元素。
+   落在最大回撤那一段（峰值之后 → 谷底）时，整段高亮，提示框里多一块回撤的详情 */
+let equityHover = null;
+function equityTimeOf(t) {
+  const tf = schema.find((f) => f.type === "time" && !f.hidden);
+  return tf ? normalizeTimeValue(t[tf.id]) || "" : "";
+}
+function equityTipHtml(p, dd) {
+  const t = p.trade, modelF = roleField("model");
+  const when = [p.date, equityTimeOf(t)].filter(Boolean).join(" ");
+  const model = modelF && t[modelF.id] ? (Array.isArray(t[modelF.id]) ? t[modelF.id].join(" / ") : String(t[modelF.id])) : "";
+  const tone = (v) => (v >= 0 ? "pos" : "neg");
+  let html = `<div class="eqTipHead"><b>${esc(when || "—")}</b><span>${esc(T("dash.tipNth", { n: p.k }))}</span></div>
+    ${model ? `<div class="eqTipSub">${esc(model)}</div>` : ""}
+    <div class="eqTipRow"><span>${esc(T("dash.tipTrade"))}</span><b class="${tone(p.r)}">${fmtNum(p.r)}R</b></div>
+    <div class="eqTipRow"><span>${esc(T("dash.tipCum"))}</span><b class="${tone(p.eq)}">${fmtNum(p.eq)}R</b></div>`;
+  if (dd) {
+    html += `<div class="eqTipDD">
+      <div class="eqTipRow"><span>${esc(T("dash.maxDD"))}</span><b class="neg">-${dd.value.toFixed(2)}R</b></div>
+      <div class="eqTipRow"><span>${esc(T("dash.peak"))}</span><b>${fmtNum(dd.peakEq)}R${dd.peakDate ? ` <em>${esc(dd.peakDate)}</em>` : ""}</b></div>
+      <div class="eqTipRow"><span>${esc(T("dash.trough"))}</span><b class="neg">${fmtNum(dd.troughEq)}R${dd.to ? ` <em>${esc(dd.to)}</em>` : ""}</b></div>
+      <div class="eqTipNote">${esc(T("dash.tipDDPos", { i: p.k - dd.peakI - 1, n: dd.count }))}</div>
+    </div>`;
+  }
+  return html + `<div class="eqTipHint">${esc(T("dash.tipClick"))}</div>`;
+}
+// 鼠标横坐标 → 最近的那一笔（下标从 0 起，对应 equityHover.pts）
+function equityPointAt(chart, clientX) {
+  if (!equityHover || !equityHover.pts.length) return -1;
+  const rect = chart.getBoundingClientRect();
+  const pct = ((clientX - rect.left) / rect.width) * 100;
+  let best = 0;
+  equityHover.pts.forEach((p, i) => { if (Math.abs(p.xPct - pct) < Math.abs(equityHover.pts[best].xPct - pct)) best = i; });
+  return best;
+}
+function showEquityHover(chart, clientX) {
+  const i = equityPointAt(chart, clientX);
+  if (i < 0) return;
+  const p = equityHover.pts[i], dd = equityHover.dd;
+  const inDD = !!dd && i > dd.peakI && i <= dd.troughI;
+  chart.classList.add("hovering");
+  chart.classList.toggle("inDD", inDD);
+  const cross = chart.querySelector(".eqCross");
+  const vbW = chart.querySelector("svg").viewBox.baseVal.width;
+  if (cross) { const xv = (p.xPct / 100) * vbW; cross.setAttribute("x1", xv); cross.setAttribute("x2", xv); }
+  const dot = chart.querySelector(".dashDot.hover");
+  dot.style.left = p.xPct + "%"; dot.style.top = p.yPct + "%";
+  dot.classList.toggle("neg", inDD);
+  const tip = chart.querySelector(".eqTip");
+  tip.innerHTML = equityTipHtml(p, inDD ? dd : null);
+  // 提示框放在点的旁边，过了中线就翻到左边，免得溢出卡片
+  const flip = p.xPct > 55;
+  tip.style.left = flip ? "" : `calc(${p.xPct}% + 14px)`;
+  tip.style.right = flip ? `calc(${100 - p.xPct}% + 14px)` : "";
+}
+function hideEquityHover(chart) {
+  chart.classList.remove("hovering", "inDD");
 }
 function renderWinRingCard(stats) {
   const beAll = stats.be + stats.bew + stats.bel;

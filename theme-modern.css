@@ -415,7 +415,34 @@
 [data-layout="modern"] .dashDot.end.neg{background:var(--neg);}
 [data-layout="modern"] .dashDot.peak{width:8px;height:8px;border-width:2px;}
 [data-layout="modern"] .dashDot.trough{width:8px;height:8px;border-width:2px;border-color:var(--neg);}
-[data-layout="modern"] .eqDDBand{fill:var(--neg);fill-opacity:.08;}
+[data-layout="modern"] .eqDDBand{fill:var(--neg);fill-opacity:.08;transition:fill-opacity .15s;}
+/* 悬停：十字线 + 跟随圆点 + 提示框；落在最大回撤段里整段加深 */
+[data-layout="modern"] .dashEquity .dashChart{cursor:crosshair;touch-action:pan-y;}
+[data-layout="modern"] .eqCross{stroke:var(--mutedDark);stroke-width:1;stroke-dasharray:3 4;opacity:0;}
+[data-layout="modern"] .dashChart.hovering .eqCross{opacity:.7;}
+[data-layout="modern"] .dashChart.inDD .eqDDBand{fill-opacity:.18;}
+[data-layout="modern"] .dashChart.inDD .eqCross{stroke:var(--neg);}
+[data-layout="modern"] .dashDot.hover{opacity:0;animation:none;width:10px;height:10px;border-width:2.5px;z-index:2;}
+[data-layout="modern"] .dashDot.hover.neg{border-color:var(--neg);}
+[data-layout="modern"] .dashChart.hovering .dashDot.hover{opacity:1;}
+[data-layout="modern"] .eqTip{position:absolute;top:4px;z-index:3;min-width:180px;max-width:240px;padding:10px 12px;border-radius:12px;
+  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadowCard);font-size:12px;color:var(--text);
+  pointer-events:none;opacity:0;transition:opacity .12s;}
+[data-layout="modern"] .dashChart.hovering .eqTip{opacity:1;}
+[data-layout="modern"] .dashChart.inDD .eqTip{border-color:color-mix(in srgb,var(--neg) 45%,var(--border));}
+[data-layout="modern"] .eqTipHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px;}
+[data-layout="modern"] .eqTipHead b{font-size:12.5px;font-variant-numeric:tabular-nums;}
+[data-layout="modern"] .eqTipHead span,[data-layout="modern"] .eqTipSub,[data-layout="modern"] .eqTipNote,[data-layout="modern"] .eqTipHint{font-size:11px;color:var(--mutedDark);}
+[data-layout="modern"] .eqTipSub{margin-bottom:4px;}
+[data-layout="modern"] .eqTipRow{display:flex;justify-content:space-between;gap:12px;margin-top:4px;}
+[data-layout="modern"] .eqTipRow span{color:var(--muted);}
+[data-layout="modern"] .eqTipRow b{font-weight:600;font-variant-numeric:tabular-nums;}
+[data-layout="modern"] .eqTipRow b.pos{color:var(--pos);}
+[data-layout="modern"] .eqTipRow b.neg{color:var(--neg);}
+[data-layout="modern"] .eqTipRow em{font-style:normal;font-weight:400;font-size:11px;color:var(--mutedDark);margin-left:4px;}
+[data-layout="modern"] .eqTipDD{margin-top:8px;padding-top:6px;border-top:1px dashed color-mix(in srgb,var(--neg) 40%,var(--border));}
+[data-layout="modern"] .eqTipNote{margin-top:4px;}
+[data-layout="modern"] .eqTipHint{margin-top:8px;}
 @keyframes skyPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent);}70%{box-shadow:0 0 0 10px color-mix(in srgb,var(--accent) 0%,transparent);}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 0%,transparent);}}
 [data-layout="modern"] .dashAxis{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--mutedDark);margin-top:8px;}
 [data-layout="modern"] .dashEmpty{padding:50px 0;text-align:center;color:var(--mutedDark);font-size:12.5px;}
