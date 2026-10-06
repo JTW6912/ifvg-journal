@@ -31,6 +31,7 @@ async function loadProfile() {
   if (error) { console.error(error); currentProfile = null; return; }
   currentProfile = data;
   syncLangFromProfile();
+  syncAppearanceFromProfile();
   sb.rpc("touch_last_seen").then(({ error: e }) => { if (e) console.error(e); });
 }
 /* 当前模式（回测 / 实盘）下的交易，拉全量（见 fetchAllRows）。出错直接抛，由调用方决定怎么提示 */

@@ -29,12 +29,14 @@ active        boolean，默认 true（false = 被禁用，登录后立刻踢出�
 display_name  text，可空，用户自定义显示名（标题栏会用）
 gender        text，'男' / '女'，可空
 last_seen_at  timestamptz，可空，每次登录成功更新一次
+ui_prefs      jsonb，可空，外观 {layout, palette, theme}（20261006000000_ui_prefs.sql）
 created_at    timestamptz
 ```
 - 新用户注册触发器 `handle_new_user()` 自动插入一行
 - RLS：自己读自己那行 OR admin 读所有（`is_admin()`）；只有 admin 能 UPDATE 任意行的 role/active
 - 普通用户改自己的 display_name/gender 走专用函数 `update_own_profile()`（不暴露 role/active，防越权）
 - 更新自己 last_seen_at 走专用函数 `touch_last_seen()`
+- 外观（布局 / 配色 / 日夜）走专用函数 `update_own_ui_prefs(jsonb)`；登录后账号里存过就以账号为准，没存过就把本机的选择补写上去
 
 ### trades（交易记录）
 ```

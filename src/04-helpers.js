@@ -220,6 +220,43 @@ function loadAppearance() {
     applyPalette(localStorage.getItem("journal_palette"));
   } catch (e) {}
 }
+/* ---------- 外观绑账号（profiles.ui_prefs，跟界面语言 profiles.lang 同一个套路） ----------
+   登录后账号里存过就以账号为准（换设备 / 换浏览器也一致），没存过就把本机当前的选择补写上去。
+   本机 localStorage 那份始终同步一份：首帧前的内联脚本只能读它，避免先闪一下默认样式 */
+function currentTheme() { return document.documentElement.dataset.theme === "light" ? "light" : "dark"; }
+function currentAppearance() { return { layout: currentLayout(), palette: currentPalette(), theme: currentTheme() }; }
+function applyAppearance(p) {
+  if (!p || typeof p !== "object") return;
+  if (p.layout) applyLayout(p.layout);
+  if (p.palette) applyPalette(p.palette);
+  if (p.theme === "light") document.documentElement.dataset.theme = "light";
+  else if (p.theme === "dark") delete document.documentElement.dataset.theme;
+  try {
+    localStorage.setItem("journal_layout", currentLayout());
+    localStorage.setItem("journal_palette", currentPalette());
+    localStorage.setItem("journal_theme", currentTheme());
+  } catch (e) {}
+}
+// 连着点几种配色比较时只写最后那一次
+let appearanceSaveTimer = null;
+function persistAppearance() {
+  clearTimeout(appearanceSaveTimer);
+  appearanceSaveTimer = setTimeout(async () => {
+    if (!sb || !session) return;
+    const prefs = currentAppearance();
+    try {
+      const { error } = await sb.rpc("update_own_ui_prefs", { new_prefs: prefs });
+      if (error) console.warn("外观没能同步到账号（数据库可能还没跑 update_own_ui_prefs 迁移）:", error.message);
+      else if (currentProfile) currentProfile.ui_prefs = prefs;
+    } catch (e) { console.warn(e); }
+  }, 500);
+}
+function syncAppearanceFromProfile() {
+  if (!currentProfile) return;
+  const p = currentProfile.ui_prefs;
+  if (p && typeof p === "object" && (p.layout || p.palette || p.theme)) applyAppearance(p);
+  else persistAppearance();
+}
 
 // 新版布局页面大标题上方那行问候（按本地时间分早/午/晚/深夜）
 function greetingText(name) {
