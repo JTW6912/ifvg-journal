@@ -32,6 +32,9 @@ let reviewOutlineKey = null;        // 目录内容没变就不重画（保住 h
 let reviewOutlineActive = -2;
 let reviewOutlineTimer = null;
 let reviewOutlineRaf = 0;
+/* 点目录跳过去的那一项：一直亮着，直到页面被别的原因滚走（用户自己滚、关掉大图时把图对齐到屏幕中间）。
+   { idx, target, t0, arrived }。没有它的话，一节很短时下一节的标题也越过了中线，刚点的那项反而不亮 */
+let reviewOutlineJump = null;
 let reviewFlashTimer = null;
 
 function outlineIsWide() { return !!(window.matchMedia && window.matchMedia(OUTLINE_WIDE_MQ).matches); }
@@ -40,6 +43,7 @@ function outlinePrefersReducedMotion() {
 }
 
 function resetReviewOutline() {
+  reviewOutlineJump = null;
   clearTimeout(reviewOutlineTimer);
   reviewOutlineTimer = null;
   reviewOutlinePopOpen = false;
@@ -107,21 +111,37 @@ function refreshReviewOutline() {
   updateReviewOutlineActive();
 }
 
-/* 滚动时高亮「现在在哪一节」：最后一个顶到顶栏下面那条线的标题 */
+/* 点目录跳过去之后还算不算「刚跳过去」：滚到目标位置之前一直算；到了之后再被滚走（偏开几像素以上）就不算了。
+   平滑滚动被打断、迟迟到不了的，1.2 秒后也当作已经到了，免得一直钉着 */
+function reviewOutlineJumpIdx(sc) {
+  const j = reviewOutlineJump;
+  if (!j) return null;
+  const target = Math.min(j.target, Math.max(0, sc.scrollHeight - sc.clientHeight));
+  const near = Math.abs(sc.scrollTop - target) <= 3;
+  if (near) j.arrived = true;
+  else if (j.arrived || Date.now() - j.t0 > 1200) { reviewOutlineJump = null; return null; }
+  return j.idx;
+}
+
+/* 滚动时高亮「现在在哪一节」：屏幕正中间那块内容属于哪一节。
+   以前看的是「最后一个越过顶栏下面那条线的标题」，但关掉大图时页面会把那张图对齐到屏幕中间，
+   图上面的标题落到了下半屏、没过线，目录就亮成了上一节（用户反馈）。看中线就跟「正在看的东西」对得上 */
 function updateReviewOutlineActive() {
   const nav = document.getElementById("reviewOutline");
   const sc = document.getElementById("reviewScroller");
   if (!nav || nav.hidden || !sc || !reviewOutlineHeads.length) return;
   const scRect = sc.getBoundingClientRect();
-  const line = scRect.top + OUTLINE_SCROLL_GAP + 16;
+  const line = scRect.top + Math.max(OUTLINE_SCROLL_GAP + 16, sc.clientHeight / 2);
   let idx = -1;
   const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 4;
   reviewOutlineHeads.forEach((h, i) => {
     if (h.hidden || !h.el.isConnected) return;
     const top = h.el.getBoundingClientRect().top;
-    // 滚到底了，最后几节可能永远顶不到那条线——那就算屏幕里能看到的最后一个
+    // 滚到底了，最后几节可能永远到不了中线——那就算屏幕里能看到的最后一个
     if (top <= line || (atBottom && top < scRect.bottom - 40)) idx = i;
   });
+  const jumped = reviewOutlineJumpIdx(sc);
+  if (jumped !== null) idx = jumped;
   if (idx === reviewOutlineActive) return;
   reviewOutlineActive = idx;
   nav.querySelectorAll(".outlineItem").forEach((b) => b.classList.toggle("active", +b.dataset.idx === idx));
@@ -160,7 +180,9 @@ function reviewOutlineGo(idx) {
   if (!sc) return;
   const behavior = outlinePrefersReducedMotion() ? "auto" : "smooth";
   if (idx < 0) {
+    reviewOutlineJump = { idx: -1, target: 0, t0: Date.now(), arrived: false };
     sc.scrollTo({ top: 0, behavior });
+    updateReviewOutlineActive();
     closeReviewOutlinePop();
     return;
   }
@@ -177,8 +199,11 @@ function reviewOutlineGo(idx) {
       el = again.el;
     }
   }
-  const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - OUTLINE_SCROLL_GAP;
-  sc.scrollTo({ top: Math.max(0, top), behavior });
+  const top = Math.max(0, el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop - OUTLINE_SCROLL_GAP);
+  reviewOutlineJump = { idx: reviewOutlineHeads.findIndex((x) => x.el === el), target: top, t0: Date.now(), arrived: false };
+  if (reviewOutlineJump.idx < 0) reviewOutlineJump = null;
+  sc.scrollTo({ top, behavior });
+  updateReviewOutlineActive();
   flashReviewHeading(el);
   closeReviewOutlinePop();
 }
