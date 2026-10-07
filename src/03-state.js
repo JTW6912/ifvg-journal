@@ -20,6 +20,7 @@ let calendarMonth = new Date().getMonth() + 1;
 let dayDetailDate = null;
 let tradePreviewId = null;      // 复盘正文里点交易胶囊弹出的只读预览
 let tradePreviewNav = null;     // { ids, index, root } —— 预览里 ←/→ 在「打开它的那个列表」里翻，见 openTradePreview
+let tradePreviewShot = 0;       // 预览里主图显示这笔的第几张截图（多图时下面那排缩略图切换）
 let returnToDayDetail = null;
 let apiDraft = { url: "", key: "" };
 let changelog = [];

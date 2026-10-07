@@ -1194,7 +1194,7 @@ function tradePickerResultsHtml() {
   let html = shown.map((t) => {
     const result = resultF ? t[resultF.id] : "";
     const rc = resultColor(result);
-    const shot = shotF ? t[shotF.id] : null;
+    const shot = shotF ? shotUrls(t[shotF.id])[0] : null;
     const rVal = rF ? t[rF.id] : "";
     const rTxt = (rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal)))
       ? (parseFloat(rVal) >= 0 ? "+" : "") + rVal + "R" : "";

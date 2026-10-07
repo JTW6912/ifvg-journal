@@ -313,6 +313,7 @@ function chipGroupHtml(field, valueArr, multi) {
 }
 function fieldInputHtml(field) {
   const val = formDraft[field.id];
+  if (field.role === "screenshot") return shotInputHtml(field);
   switch (field.type) {
     case "select": return chipGroupHtml(field, val, false);
     case "multiselect": return chipGroupHtml(field, val, true);
@@ -335,6 +336,52 @@ window.__updateUrlPreview = function (fieldId, val) {
   const box = document.getElementById("urlpreview-" + fieldId);
   if (box) box.innerHTML = urlPreviewHtml(val);
 };
+
+/* 截图字段：一行一个链接（见 shotUrls）。只有一张时跟原来一样一个可拖大小的预览；
+   多张时下面一排缩略图，第一张标「封面」，每张可以设为封面 / 移除——都是改上面那个文本框，
+   文本框才是真正被保存的东西（save-trade 照常读 data-form-field） */
+function shotInputHtml(field) {
+  const val = String(formDraft[field.id] || "");
+  const n = shotUrls(val).length;
+  return `<textarea class="input shotInput" rows="${Math.min(6, Math.max(2, n + 1))}" placeholder="${esc(T("modal.shotPlaceholder"))}" spellcheck="false" data-form-field="${esc(field.id)}" data-shot-input="1" oninput="window.__updateShotPreview('${esc(field.id)}', this.value)">${esc(val)}</textarea>
+    <div id="urlpreview-${esc(field.id)}">${shotPreviewHtml(field.id, val)}</div>`;
+}
+function shotPreviewHtml(fieldId, val) {
+  const shots = shotUrls(val).filter((u) => /^https?:\/\//i.test(u));
+  if (shots.length <= 1) return urlPreviewHtml(shots[0] || "");
+  const ro = !!viewingUserId;
+  return `<div class="shotStrip">${shots.map((u, k) => `<div class="shotTile${k === 0 ? " isCover" : ""}">
+      <img src="${esc(imgSrc(u))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(u))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" />
+      <span class="shotTileNo mono">${k === 0 ? esc(T("modal.shotCover")) : k + 1}</span>
+      ${ro ? "" : `<span class="shotTileOps">
+        ${k === 0 ? "" : `<button type="button" data-action="shot-make-cover" data-field="${esc(fieldId)}" data-idx="${k}" title="${esc(T("modal.shotMakeCover"))}">${ICONS.star}</button>`}
+        <button type="button" data-action="shot-remove" data-field="${esc(fieldId)}" data-idx="${k}" title="${esc(T("modal.shotRemove"))}">${ICONS.x}</button>
+      </span>`}
+    </div>`).join("")}</div>
+    <div class="thumbHint">${esc(T("modal.shotHint", { n: shots.length }))}</div>`;
+}
+window.__updateShotPreview = function (fieldId, val) {
+  formDraft[fieldId] = val;
+  const box = document.getElementById("urlpreview-" + fieldId);
+  if (box) box.innerHTML = shotPreviewHtml(fieldId, val);
+};
+/* 缩略图上的「设为封面 / 移除」：按缩略图里的顺序改文本框（只认 http 链接，跟缩略图一一对应），
+   然后整理成一行一个 */
+function editShotList(fieldId, idx, op) {
+  const ta = document.querySelector(`[data-shot-input][data-form-field="${fieldId}"]`);
+  if (!ta) return;
+  const all = shotUrls(ta.value);
+  const http = all.filter((u) => /^https?:\/\//i.test(u));
+  const target = http[idx];
+  if (!target) return;
+  const at = all.indexOf(target);
+  all.splice(at, 1);
+  if (op === "cover") all.unshift(target);
+  ta.value = all.join("\n");
+  ta.rows = Math.min(6, Math.max(2, all.length + 1));
+  window.__updateShotPreview(fieldId, ta.value);
+  saveDraft();
+}
 function timeDigitsToDisplay(digits) {
   digits = digits.slice(0, 4);
   if (digits.length <= 2) return digits;

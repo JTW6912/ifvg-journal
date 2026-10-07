@@ -630,6 +630,37 @@ textarea.input{resize:vertical;}
 .tpEmpty{font-size:12.5px;color:var(--mutedDark);}
 @media(max-width:640px){ .tpShot img{max-height:38vh;} }
 
+/* ---------- 多张截图 ----------
+   封面角上的张数（卡片右下 / 看图和预览左上）、预览里的缩略图条、编辑表单里的缩略图墙 */
+.shotCount{position:absolute;right:8px;bottom:8px;display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;border-radius:var(--r6);background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-family:var(--fontMono);
+  pointer-events:none;line-height:1.5;}
+.shotCount svg{width:12px;height:12px;}
+.focusShot .shotCount,.tpShot .shotCount{right:auto;left:10px;top:10px;bottom:auto;}
+.tpShot:has(+ .tpStrip){margin-bottom:10px;}
+.tpStrip{display:flex;gap:8px;overflow-x:auto;margin-bottom:18px;padding-bottom:2px;}
+.tpStripItem{flex:0 0 auto;width:96px;height:60px;padding:0;border-radius:var(--r6);overflow:hidden;cursor:pointer;
+  border:2px solid var(--border);background:var(--surface2);opacity:.6;transition:opacity .12s,border-color .12s;}
+.tpStripItem img{width:100%;height:100%;object-fit:cover;display:block;}
+.tpStripItem:hover{opacity:1;}
+.tpStripItem.on{border-color:var(--accent);opacity:1;}
+.shotInput{resize:vertical;font-family:var(--fontMono);font-size:12px;line-height:1.7;white-space:pre;overflow-x:auto;}
+.shotStrip{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px;}
+.shotTile{position:relative;aspect-ratio:16/10;border-radius:var(--r8);overflow:hidden;border:1px solid var(--border);background:var(--surface2);}
+.shotTile.isCover{border:2px solid var(--accent);}
+.shotTile img{width:100%;height:100%;object-fit:cover;display:block;}
+.shotTile .thumbFallback{height:100%;margin-top:0;border:none;font-size:10.5px;}
+.shotTileNo{position:absolute;left:6px;top:6px;padding:1px 6px;border-radius:var(--r6);font-size:10.5px;
+  background:rgba(0,0,0,.6);color:#fff;}
+.shotTile.isCover .shotTileNo{background:var(--accent);color:var(--onSolid);}
+.shotTileOps{position:absolute;right:5px;top:5px;display:flex;gap:4px;opacity:0;transition:opacity .12s;}
+.shotTile:hover .shotTileOps,.shotTileOps:focus-within{opacity:1;}
+.shotTileOps button{width:24px;height:24px;border:none;border-radius:var(--r6);background:rgba(0,0,0,.6);color:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+.shotTileOps button:hover{background:rgba(0,0,0,.85);}
+.shotTileOps svg{width:13px;height:13px;}
+@media(hover:none){ .shotTileOps{opacity:1;} }
+
 /* ---------- 复盘分组 ---------- */
 .reviewGroupSection{margin-bottom:18px;border:1px solid transparent;border-radius:var(--r10);transition:border-color .12s ease;}
 .reviewGroupSection.dragOverTarget{border-color:var(--accent);background:var(--accentSoft);}

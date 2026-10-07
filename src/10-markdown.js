@@ -33,6 +33,18 @@ function imgSrc(u) {
   return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : raw;
 }
 
+/* 截图字段可以放多张：一行一个链接，存的仍是一个字符串（老数据就是只有一行的情况，不用迁移）。
+   第一张是「封面」——卡片 / 看图 / 缩略图只显示它；预览、编辑、看大图里才翻得到后面几张。
+   URL 里不会有空白，所以按任意空白切：粘进来的是空格分隔也认 */
+function shotUrls(v) { return String(v || "").split(/\s+/).filter(Boolean); }
+function tradeShots(t) { const f = roleField("screenshot"); return f && t ? shotUrls(t[f.id]) : []; }
+/* 看大图时整组一起翻：挂在 data-urls 上（空格分隔，已经过 imgSrc），见 openLightbox */
+function shotUrlsAttr(shots) { return shots.length > 1 ? ` data-urls="${esc(shots.map(imgSrc).join(" "))}"` : ""; }
+/* 封面角上的「还有几张」，只有一张就不挂 */
+function shotCountBadge(shots) {
+  return shots.length > 1 ? `<span class="shotCount" title="${esc(T("shots.countTitle", { n: shots.length }))}">${ICONS.layers}${shots.length}</span>` : "";
+}
+
 function mdSafeUrl(u) {
   const raw = String(u || "").trim();
   // esc() 把 & 变成了 &amp;，放进 HTML 属性里本来就该是这个形态，不用还原

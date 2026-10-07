@@ -120,7 +120,7 @@ document.addEventListener("click", async (e) => {
     schema.forEach((f) => {
       if (f.type === "select" || f.type === "multiselect") return; // handled via chip clicks already in formDraft
       const inputEl = document.querySelector(`[data-form-field="${f.id}"]`);
-      if (inputEl) formDraft[f.id] = inputEl.value;
+      if (inputEl) formDraft[f.id] = inputEl.dataset.shotInput ? shotUrls(inputEl.value).join("\n") : inputEl.value;   // 截图：整理成一行一个
     });
     const saved = await persistTrade(formDraft);
     if (saved) await pbApplyFormNotes(formDraft.id);   // 表单里勾的错题 / 待验证，交易存好了才写进去
@@ -946,6 +946,9 @@ document.addEventListener("click", async (e) => {
     if (t) { editingTrade = { ...t }; renderModal(true); }
   }
   else if (action === "preview-image") { openLightbox(el, el.dataset.url); }
+  else if (action === "trade-preview-shot") { tradePreviewShot = +el.dataset.idx || 0; renderSecondaryModals(true); }
+  else if (action === "shot-make-cover") { editShotList(el.dataset.field, +el.dataset.idx, "cover"); }
+  else if (action === "shot-remove") { editShotList(el.dataset.field, +el.dataset.idx, "remove"); }
   else if (action === "close-lightbox") { closeLightbox(); }
   else if (action === "lightbox-prev") { stepLightbox(-1); }
   else if (action === "lightbox-next") { stepLightbox(1); }
@@ -1091,6 +1094,22 @@ document.addEventListener("click", async (e) => {
     if (type === "select" || type === "multiselect") newField.options = optsText.split(",").map((s) => s.trim()).filter(Boolean);
     await persistSchema([...schema, newField]);
   }
+});
+
+/* 截图框里粘链接：自动占一整行。不这么做的话光标停在上一个链接末尾时，两个链接会粘成一串 */
+document.addEventListener("paste", (e) => {
+  const ta = e.target;
+  if (!ta || !ta.dataset || !ta.dataset.shotInput) return;
+  const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
+  const urls = shotUrls(text);
+  if (!urls.length) return;
+  e.preventDefault();
+  const start = ta.selectionStart, end = ta.selectionEnd, v = ta.value;
+  const before = v.slice(0, start), after = v.slice(end);
+  const insert = (before && !/\s$/.test(before) ? "\n" : "") + urls.join("\n") + (!after || !/^\s/.test(after) ? "\n" : "");
+  ta.setRangeText(insert, start, end, "end");
+  ta.rows = Math.min(6, Math.max(2, shotUrls(ta.value).length + 1));
+  ta.dispatchEvent(new Event("input", { bubbles: true }));
 });
 
 document.addEventListener("input", (e) => {

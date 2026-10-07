@@ -34,7 +34,7 @@ function pbTradeResultBits(t) {
   return (result ? `<span class="mono pbRes" style="color:${rc};">${esc(result)}</span>` : "")
     + (rTxt ? `<span class="mono pbRes" style="color:${rc};">${esc(rTxt)}</span>` : "");
 }
-function pbShotOf(t) { const shotF = roleField("screenshot"); return shotF ? t[shotF.id] : ""; }
+function pbShotOf(t) { return tradeShots(t)[0] || ""; }
 function pbThumbHtml(t, cls) {
   const shot = pbShotOf(t);
   return shot

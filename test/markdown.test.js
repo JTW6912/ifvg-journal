@@ -51,3 +51,12 @@ test("extractTradeRefs：抽出 [[trade:id]]，去重，保持出现顺序", () 
   assert.deepStrictEqual(Array.from(ctx.run("extractTradeRefs(__s)")), ["t_a1", "t_b2"]);
   assert.deepStrictEqual(Array.from(ctx.run("extractTradeRefs('')")), []);
 });
+
+test("截图字段：一行一个链接，老的单链接照旧", () => {
+  const urls = (s) => { ctx.sandbox.__s = s; return JSON.parse(ctx.run("JSON.stringify(shotUrls(__s))")); };
+  assert.deepStrictEqual(urls("https://a.com/1.png"), ["https://a.com/1.png"]);
+  assert.deepStrictEqual(urls(" https://a.com/1.png\n\n  https://b.com/2.png \r\nhttps://c.com/3.png "), ["https://a.com/1.png", "https://b.com/2.png", "https://c.com/3.png"]);
+  assert.deepStrictEqual(urls("https://a.com/1.png https://b.com/2.png"), ["https://a.com/1.png", "https://b.com/2.png"]);
+  assert.deepStrictEqual(urls(""), []);
+  assert.deepStrictEqual(urls(undefined), []);
+});

@@ -85,7 +85,7 @@ function lightboxHtml() {
   const navHtml = nav ? `
     <button class="lbNav lbPrev" data-action="lightbox-prev" ${nav.index === 0 ? "disabled" : ""} title="${esc(T("lightbox.prev"))}">‹</button>
     <button class="lbNav lbNext" data-action="lightbox-next" ${nav.index === nav.urls.length - 1 ? "disabled" : ""} title="${esc(T("lightbox.next"))}">›</button>
-    <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${nav.ids ? esc(lightboxTradeLabel(nav.ids[nav.index])) + " · " + esc(T("lightbox.tradeHint")) : esc(T("lightbox.hint"))}</div>` : "";
+    <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${nav.ids ? esc(lightboxTradeLabel(nav.ids[nav.index])) + " · " : ""}${lightboxPartText(nav)}${esc(T(nav.ids ? "lightbox.tradeHint" : "lightbox.hint"))}</div>` : "";
   // 有翻页时两侧留出按钮的位置，宽图铺满也不会压在按钮底下
   return `<div class="overlay${nav ? " lbHasNav" : ""}" data-action="close-lightbox"${nav ? "" : ' style="padding:30px;"'}>
     <img src="${esc(lightboxUrl)}" referrerpolicy="no-referrer" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" onclick="event.stopPropagation()" />
@@ -103,7 +103,18 @@ function lightboxHtml() {
    那层会被换掉，节点引用就失效了；对齐时按位置重新去 DOM 里找。
    ⚠ 打开/关闭灯箱只画 #secondaryModalRoot，不走 render()：render() 会重建 #app，
    看图模式的 <img> 全部重建、高度塌掉，刚对齐好的滚动位置就丢了。 */
-let lightboxNav = null;   // { scope: 'app' | 'review' | 'modal', urls: [], index }
+let lightboxNav = null;   // { scope: 'app' | 'review' | 'modal' | 'trade', urls: [], src: [], parts: [], index, ids? }
+
+/* 一笔交易可以有好几张截图（shotUrls）。挂了 data-urls 的元素在列表里摊开成好几张，
+   src[k] = 第 k 张来自 targets 里的第几个元素（对齐背后页面用），parts[k] = [这笔里第几张, 共几张] */
+function lightboxUrlsOf(el) {
+  const list = el.dataset && el.dataset.urls ? el.dataset.urls.split(" ").filter(Boolean) : [];
+  return list.length ? list : [lightboxTargetUrl(el)];
+}
+function lightboxPartText(nav) {
+  const p = nav.parts && nav.parts[nav.index];
+  return p && p[1] > 1 ? esc(T("lightbox.shotOf", { k: p[0], n: p[1] })) + " · " : "";
+}
 
 function lightboxScopeOf(el) {
   if (el && el.closest && el.closest("#reviewEditorRoot")) return "review";
@@ -123,19 +134,17 @@ function lightboxTargetUrl(el) { return (el.dataset && el.dataset.url) || el.get
    （打开预览的那个列表），没截图的那几笔跳过。每翻一笔就把预览也切到那一笔（tradePreviewId 跟着走），
    所以关掉大图回到的就是最后看的那笔的预览；再关预览，背后页面照常标出这一笔（closeTradePreview）。
    列表在打开那一刻定下来，存 id + url 两份：url 给灯箱翻图，id 给预览对位 */
-function lightboxTradeNav(el) {
+function lightboxTradeNav(el, url) {
+  if (!tradePreviewId || !el || !el.closest || !el.closest(".tradePreviewModal")) return null;
   const nav = tradePreviewNav;
-  if (!tradePreviewId || !nav || nav.ids.length < 2 || !el || !el.closest || !el.closest(".tradePreviewModal")) return null;
-  const shotF = roleField("screenshot");
-  if (!shotF) return null;
-  const ids = [], urls = [];
-  nav.ids.forEach((id) => {
-    const t = trades.find((x) => x.id === id);
-    const url = t && t[shotF.id] ? mdSafeUrl(imgSrc(t[shotF.id])) : null;
-    if (url) { ids.push(id); urls.push(url); }
+  const ids = [], urls = [], parts = [];
+  (nav && nav.ids.length ? nav.ids : [tradePreviewId]).forEach((id) => {
+    const list = tradeShots(trades.find((x) => x.id === id)).map((s) => mdSafeUrl(imgSrc(s))).filter(Boolean);
+    list.forEach((u, k) => { ids.push(id); urls.push(u); parts.push([k + 1, list.length]); });
   });
-  const index = ids.indexOf(tradePreviewId);
-  return index >= 0 && ids.length > 1 ? { scope: "trade", ids, urls, index } : null;
+  let index = ids.findIndex((id, k) => id === tradePreviewId && urls[k] === url);
+  if (index < 0) index = ids.indexOf(tradePreviewId);
+  return index >= 0 && urls.length > 1 ? { scope: "trade", ids, urls, parts, index } : null;
 }
 function lightboxTradeLabel(id) {
   const t = trades.find((x) => x.id === id);
@@ -152,10 +161,14 @@ function openLightbox(el, url) {
   if (!safe) return;
   const scope = lightboxScopeOf(el);
   const targets = lightboxTargets(scope);
-  let index = targets.indexOf(el);
-  if (index < 0) index = targets.findIndex((t) => t.contains(el) || (el && el.contains && el.contains(t)));
-  lightboxNav = lightboxTradeNav(el) || (index >= 0 && targets.length > 1 ? { scope, urls: targets.map(lightboxTargetUrl), index } : null);
-  lightboxUrl = lightboxNav && lightboxNav.ids ? lightboxNav.urls[lightboxNav.index] : safe;
+  let ti = targets.indexOf(el);
+  if (ti < 0) ti = targets.findIndex((t) => t.contains(el) || (el && el.contains && el.contains(t)));
+  const urls = [], src = [], parts = [];
+  targets.forEach((t, i) => { const list = lightboxUrlsOf(t); list.forEach((u, k) => { urls.push(u); src.push(i); parts.push([k + 1, list.length]); }); });
+  let index = ti < 0 ? -1 : src.findIndex((s, k) => s === ti && urls[k] === safe);
+  if (ti >= 0 && index < 0) index = src.indexOf(ti);
+  lightboxNav = lightboxTradeNav(el, safe) || (index >= 0 && urls.length > 1 ? { scope, urls, src, parts, index } : null);
+  lightboxUrl = lightboxNav ? lightboxNav.urls[lightboxNav.index] : safe;
   renderSecondaryModals(true);
 }
 function stepLightbox(delta) {
@@ -165,9 +178,10 @@ function stepLightbox(delta) {
   if (next < 0 || next >= nav.urls.length) return;
   nav.index = next;
   lightboxUrl = nav.urls[next];
-  if (nav.ids && tradePreviewNav) {
+  if (nav.ids) {
     tradePreviewId = nav.ids[next];
-    tradePreviewNav.index = Math.max(tradePreviewNav.ids.indexOf(tradePreviewId), 0);
+    tradePreviewShot = nav.parts[next][0] - 1;   // 关掉大图回到预览时，主图就是最后看的那张
+    if (tradePreviewNav) tradePreviewNav.index = Math.max(tradePreviewNav.ids.indexOf(tradePreviewId), 0);
   }
   renderSecondaryModals(true);
   alignLightboxSource();
@@ -183,8 +197,9 @@ function alignLightboxSource() {
   const nav = lightboxNav;
   if (!nav || nav.scope === "trade" || (nav.scope === "modal" && lightboxUrl)) return;
   const targets = lightboxTargets(nav.scope);
-  let el = targets[nav.index];
-  if (!el || lightboxTargetUrl(el) !== nav.urls[nav.index]) el = targets.find((t) => lightboxTargetUrl(t) === nav.urls[nav.index]);
+  const url = nav.urls[nav.index];
+  let el = targets[nav.src[nav.index]];
+  if (!el || !lightboxUrlsOf(el).includes(url)) el = targets.find((t) => lightboxUrlsOf(t).includes(url));
   if (!el) return;
   const row = el.closest("[data-focus-row]");
   if (row) setFocusCursor(+row.dataset.focusRow, "auto");
@@ -217,12 +232,13 @@ function dayDetailModalHtml() {
         ${list.map((t) => {
           const result = resultF ? t[resultF.id] : null;
           const rc = resultColor(result);
-          const shot = shotF ? t[shotF.id] : null;
+          const shots = shotF ? shotUrls(t[shotF.id]) : [];
+          const shot = shots[0] || null;
           const confirming = confirmDeleteId === t.id;
           return `<div class="dayDetailRow">
             <div data-action="open-trade-from-day" data-id="${esc(t.id)}" style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;min-width:0;">
               ${shot
-                ? `<img class="dayDetailThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(imgSrc(shot))}" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
+                ? `<img class="dayDetailThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)} data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
                 : `<div class="dayDetailThumbEmpty">${ICONS.camera}</div>`}
               <span class="mono dayDetailResult" style="color:${rc};">${esc(result || "—")}</span>
               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${modelF ? esc(t[modelF.id] || "") : ""}</span>
@@ -319,6 +335,7 @@ function openTradePreview(el) {
   const index = ids.indexOf(id);
   tradePreviewNav = root ? { ids: index >= 0 ? ids : [id], index: Math.max(index, 0), root } : null;
   tradePreviewId = id;
+  tradePreviewShot = 0;
   renderSecondaryModals(true);
 }
 function stepTradePreview(delta) {
@@ -328,6 +345,7 @@ function stepTradePreview(delta) {
   if (next < 0 || next >= nav.ids.length) return;
   nav.index = next;
   tradePreviewId = nav.ids[next];
+  tradePreviewShot = 0;
   renderSecondaryModals(true);
 }
 function closeTradePreview(keepPlace) {
@@ -373,7 +391,9 @@ function tradePreviewHtml() {
     rF = roleField("r_multiple"), shotF = roleField("screenshot");
   const result = resultF ? t[resultF.id] : "";
   const rc = resultColor(result);
-  const shot = shotF ? t[shotF.id] : null;
+  const shots = shotF ? shotUrls(t[shotF.id]) : [];
+  if (tradePreviewShot >= shots.length) tradePreviewShot = 0;
+  const shot = shots[tradePreviewShot] || null;
   const rVal = rF ? t[rF.id] : undefined;
   const hasR = rVal !== undefined && rVal !== "" && !isNaN(parseFloat(rVal));
 
@@ -410,12 +430,16 @@ function tradePreviewHtml() {
       </div>
       <div class="modalBody tradePreviewBody">
         ${pbTradePreviewHtml(t)}
-        <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"` : ""}>
+        <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)}` : ""}>
           ${shot
             ? `<img src="${esc(imgSrc(shot))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />
+               ${shots.length > 1 ? `<span class="shotCount">${tradePreviewShot + 1} / ${shots.length}</span>` : ""}
                <span class="tpZoomHint">${esc(T("tradePreview.zoomHint"))}</span>`
             : `<div class="tpShotEmpty">${ICONS.camera} ${esc(T("tradePreview.noShot"))}</div>`}
         </div>
+        ${shots.length > 1 ? `<div class="tpStrip">${shots.map((s, k) => `<button class="tpStripItem${k === tradePreviewShot ? " on" : ""}" data-action="trade-preview-shot" data-idx="${k}" title="${esc(T("lightbox.shotOf", { k: k + 1, n: shots.length }))}">
+            <img src="${esc(imgSrc(s))}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          </button>`).join("")}</div>` : ""}
         ${rows ? `<div class="tpFields">${rows}</div>` : `<div class="tpEmpty">${esc(T("tradePreview.empty"))}</div>`}
       </div>
       <div class="modalFoot">
