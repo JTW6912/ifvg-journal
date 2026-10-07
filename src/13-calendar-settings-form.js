@@ -329,7 +329,7 @@ function fieldInputHtml(field) {
 }
 function urlPreviewHtml(val) {
   if (!val || !/^https?:\/\//.test(val)) return "";
-  return `<div class="thumbWrap"><img class="thumb" src="${esc(imgSrc(val))}" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(val))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">${T("modal.urlPreviewHint")}</div>`;
+  return `<div class="thumbWrap"><img class="thumb" src="${esc(imgSrc(val))}" data-action="preview-image" data-url="${esc(imgSrc(val))}" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(val))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" /></div><div class="thumbHint">${T("modal.urlPreviewHint")}</div>`;
 }
 window.__updateUrlPreview = function (fieldId, val) {
   formDraft[fieldId] = val;
@@ -338,7 +338,8 @@ window.__updateUrlPreview = function (fieldId, val) {
 };
 
 /* 截图字段：一行一个链接（见 shotUrls）。只有一张时跟原来一样一个可拖大小的预览；
-   多张时下面一排缩略图，第一张标「封面」，每张可以设为封面 / 移除——都是改上面那个文本框，
+   多张时下面一排缩略图，第一张标「封面」，点图看大图（只在这笔的几张之间翻），
+   每张可以设为封面 / 移除——都是改上面那个文本框，
    文本框才是真正被保存的东西（save-trade 照常读 data-form-field） */
 function shotInputHtml(field) {
   const val = String(formDraft[field.id] || "");
@@ -351,10 +352,10 @@ function shotPreviewHtml(fieldId, val) {
   if (shots.length <= 1) return urlPreviewHtml(shots[0] || "");
   const ro = !!viewingUserId;
   return `<div class="shotStrip">${shots.map((u, k) => `<div class="shotTile${k === 0 ? " isCover" : ""}">
-      <img src="${esc(imgSrc(u))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(u))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" />
+      <img src="${esc(imgSrc(u))}" alt="" data-action="preview-image" data-url="${esc(imgSrc(u))}" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(u))}" data-fallback-class="thumbFallback" onerror="window.__imgFallback(this)" />
       <span class="shotTileNo mono">${k === 0 ? esc(T("modal.shotCover")) : k + 1}</span>
       ${ro ? "" : `<span class="shotTileOps">
-        ${k === 0 ? "" : `<button type="button" data-action="shot-make-cover" data-field="${esc(fieldId)}" data-idx="${k}" title="${esc(T("modal.shotMakeCover"))}">${ICONS.star}</button>`}
+        ${k === 0 ? "" : `<button type="button" class="shotTileCover" data-action="shot-make-cover" data-field="${esc(fieldId)}" data-idx="${k}">${esc(T("modal.shotMakeCover"))}</button>`}
         <button type="button" data-action="shot-remove" data-field="${esc(fieldId)}" data-idx="${k}" title="${esc(T("modal.shotRemove"))}">${ICONS.x}</button>
       </span>`}
     </div>`).join("")}</div>

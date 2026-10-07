@@ -647,8 +647,7 @@ function renderFocusList(pageItems, totalCount, roles) {
   pageItems.forEach((t, i) => {
     const result = resultF ? t[resultF.id] : null;
     const rc = resultColor(result);
-    const shots = shotF ? shotUrls(t[shotF.id]) : [];
-    const shot = shots[0] || null;
+    const shot = shotF ? shotUrls(t[shotF.id])[0] : null;   // 多张时只显示封面
     const rVal = rF ? t[rF.id] : undefined;
     const hasR = rVal !== undefined && rVal !== "";
     // 遮挡只盖"结果"，日期和模型照常显示——不然连是哪一天哪个模型都不知道，没法判断
@@ -686,11 +685,10 @@ function renderFocusList(pageItems, totalCount, roles) {
        在这儿会变成灾难——一边翻一边看，误触一次就弹一个编辑器出来。
        这里点图是看原图（lightbox），要改得点右下角那个明确的"编辑" */
     html += `<div class="focusRow${focusSidePos === "bottom" ? " sideBottom" : ""}${shot ? "" : " noShot"}${i === focusCursor ? " isCurrent" : ""}" data-focus-row="${i}">
-      <div class="focusShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)}` : ""}>
+      <div class="focusShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"` : ""}>
         ${shot
           ? `<img src="${esc(imgSrc(shot))}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="focusShotEmpty" onerror="window.__imgFallback(this)" />
-             ${shotCountBadge(shots)}
-             <span class="focusZoomHint">${esc(T(shots.length > 1 ? "focus.zoomHintMulti" : "focus.zoomHint", { n: shots.length }))}</span>`
+             <span class="focusZoomHint">${esc(T("focus.zoomHint"))}</span>`
           : `<div class="focusShotEmpty">${ICONS.camera} ${esc(T("focus.noShot"))}</div>`}
       </div>
       <div class="focusSide"><div class="focusSideInner">
@@ -809,7 +807,7 @@ function renderGrid() {
         ${cols.map((f) => {
           let v = tradeFieldValue(t, f);
           if (Array.isArray(v)) v = v.join(", ");
-          if (f.role === "screenshot") { const shots = shotUrls(v); v = shots.length > 1 ? `${shots[0]} (+${shots.length - 1})` : (shots[0] || ""); }
+          if (f.role === "screenshot") v = shotUrls(v)[0] || "";   // 只显示封面
           const isResultCol = f.role === "result";
           return `<td style="${isResultCol ? `color:${rc};font-weight:600;` : ""}${f.virtual ? "color:var(--mutedDark);white-space:nowrap;" : ""}${f.role === "screenshot" ? "max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" : ""}">${esc(v ?? "")}</td>`;
         }).join("")}
@@ -830,8 +828,7 @@ function renderGrid() {
   pageItems.forEach((t) => {
     const result = resultF ? t[resultF.id] : null;
     const rc = resultColor(result);
-    const shots = shotF ? shotUrls(t[shotF.id]) : [];
-    const shot = shots[0] || null;
+    const shot = shotF ? shotUrls(t[shotF.id])[0] : null;   // 多张时只显示封面
     const confirming = confirmDeleteId === t.id;
     let bodyHtml = `<div class="cardTop">
           <span class="mono" style="font-size:12px;color:var(--muted);">${dateF ? esc(t[dateF.id] || "—") : "—"}</span>
@@ -853,8 +850,7 @@ function renderGrid() {
       <div class="cardImg">
         ${shot ? `<img src="${esc(imgSrc(shot))}" alt="" loading="lazy" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="cardImgFallback" onerror="window.__imgFallback(this)" />`
                : `<div class="cardImgFallback">${ICONS.camera}</div>`}
-        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)} title="${esc(T("grid.viewLarge"))}">${ICONS.expand}</button>` : ""}
-        ${shotCountBadge(shots)}
+        ${shot ? `<button class="previewIcon" data-action="preview-image" data-url="${esc(imgSrc(shot))}" title="${esc(T("grid.viewLarge"))}">${ICONS.expand}</button>` : ""}
         ${result ? `<span class="resultBadge" style="background:${rc}">${esc(result)}</span>` : ""}
       </div>
       <div class="cardBody">

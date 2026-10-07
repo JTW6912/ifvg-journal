@@ -34,16 +34,13 @@ function imgSrc(u) {
 }
 
 /* 截图字段可以放多张：一行一个链接，存的仍是一个字符串（老数据就是只有一行的情况，不用迁移）。
-   第一张是「封面」——卡片 / 看图 / 缩略图只显示它；预览、编辑、看大图里才翻得到后面几张。
+   第一张是「封面」——除了交易预览和编辑表单，其它地方（卡片 / 看图 / 表格 / 日历 / 缩略图，
+   以及从这些地方点开的大图）一律只认封面，跟只有一张时完全一样；后面几张只在预览和编辑里出现。
    URL 里不会有空白，所以按任意空白切：粘进来的是空格分隔也认 */
 function shotUrls(v) { return String(v || "").split(/\s+/).filter(Boolean); }
 function tradeShots(t) { const f = roleField("screenshot"); return f && t ? shotUrls(t[f.id]) : []; }
-/* 看大图时整组一起翻：挂在 data-urls 上（空格分隔，已经过 imgSrc），见 openLightbox */
+/* 交易预览的主图上挂整组（data-urls，空格分隔，已经过 imgSrc），看大图时这笔的几张一起翻，见 openLightbox */
 function shotUrlsAttr(shots) { return shots.length > 1 ? ` data-urls="${esc(shots.map(imgSrc).join(" "))}"` : ""; }
-/* 封面角上的「还有几张」，只有一张就不挂 */
-function shotCountBadge(shots) {
-  return shots.length > 1 ? `<span class="shotCount" title="${esc(T("shots.countTitle", { n: shots.length }))}">${ICONS.layers}${shots.length}</span>` : "";
-}
 
 function mdSafeUrl(u) {
   const raw = String(u || "").trim();

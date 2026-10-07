@@ -118,6 +118,7 @@ function lightboxPartText(nav) {
 
 function lightboxScopeOf(el) {
   if (el && el.closest && el.closest("#reviewEditorRoot")) return "review";
+  if (el && el.closest && el.closest("#modalRoot")) return "form";
   if (el && el.closest && el.closest("#secondaryModalRoot")) return "modal";
   return "app";
 }
@@ -125,7 +126,7 @@ function lightboxTargets(scope) {
   if (scope === "review") {
     return [...document.querySelectorAll("#reviewEditorRoot .reviewDoc img")].filter((img) => mdSafeUrl(img.getAttribute("src")));
   }
-  const root = document.getElementById(scope === "modal" ? "secondaryModalRoot" : "app");
+  const root = document.getElementById(scope === "modal" ? "secondaryModalRoot" : scope === "form" ? "modalRoot" : "app");
   return root ? [...root.querySelectorAll('[data-action="preview-image"][data-url]')] : [];
 }
 function lightboxTargetUrl(el) { return (el.dataset && el.dataset.url) || el.getAttribute("src") || ""; }
@@ -232,13 +233,12 @@ function dayDetailModalHtml() {
         ${list.map((t) => {
           const result = resultF ? t[resultF.id] : null;
           const rc = resultColor(result);
-          const shots = shotF ? shotUrls(t[shotF.id]) : [];
-          const shot = shots[0] || null;
+          const shot = shotF ? shotUrls(t[shotF.id])[0] : null;   // 多张时只显示封面
           const confirming = confirmDeleteId === t.id;
           return `<div class="dayDetailRow">
             <div data-action="open-trade-from-day" data-id="${esc(t.id)}" style="display:flex;align-items:center;gap:12px;flex:1;cursor:pointer;min-width:0;">
               ${shot
-                ? `<img class="dayDetailThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)} data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
+                ? `<img class="dayDetailThumb" src="${esc(imgSrc(shot))}" loading="lazy" referrerpolicy="no-referrer" data-action="preview-image" data-url="${esc(imgSrc(shot))}" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="dayDetailThumbEmpty" onerror="window.__imgFallback(this)" />`
                 : `<div class="dayDetailThumbEmpty">${ICONS.camera}</div>`}
               <span class="mono dayDetailResult" style="color:${rc};">${esc(result || "—")}</span>
               <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${modelF ? esc(t[modelF.id] || "") : ""}</span>
