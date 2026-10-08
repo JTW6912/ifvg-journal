@@ -535,6 +535,8 @@ textarea.input{resize:vertical;}
 .tagChip span{margin-left:5px;cursor:pointer;}
 .tagChip.dragOverTarget{outline:2px solid var(--accent);outline-offset:1px;background:var(--accentSoft);}
 .filterRow.dragOverTarget{border-color:var(--accent);box-shadow:0 0 0 2px var(--accentSoft) inset;}
+/* 跟 .comboCard .select 同一个坑：字段下拉的宽度按最长选项撑，有人起了很长的字段名就会顶出卡片、压到隔壁那张 */
+.filterRow .select{max-width:100%;min-width:0;}
 .addFieldBox{border:1px dashed var(--borderLight);border-radius:var(--r10);padding:16px;margin-top:10px;}
 .dashLabel{font-size:12.5px;color:var(--accent);margin-bottom:12px;font-family:var(--fontMono);}
 .notice.error{border-color:var(--neg);}
