@@ -1096,6 +1096,11 @@ document.addEventListener("click", async (e) => {
   }
 });
 
+/* 日历格子和全年热力图都是按钮：按下鼠标时不让浏览器放文本光标（点空格子 / 格子缝会冒出一根闪烁的竖线） */
+document.addEventListener("mousedown", (e) => {
+  if (e.button === 0 && e.target.closest && e.target.closest(".yearHeatGrid, .monthBar, .dayGrid, .monthGrid")) e.preventDefault();
+});
+
 /* 截图框里粘链接：自动占一整行。不这么做的话光标停在上一个链接末尾时，两个链接会粘成一串 */
 document.addEventListener("paste", (e) => {
   const ta = e.target;
