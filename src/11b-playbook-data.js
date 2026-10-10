@@ -353,12 +353,33 @@ function pbRowNoteOf(p, t, body) {
 
 /* 错题正文里，紧跟在这笔交易胶囊后面的那句话（「这笔错在哪」）。只认列表项：
    别的地方顺手提到的胶囊没有固定的「后面那句」可言 */
-function pbMistakeLineNote(body, tradeId) {
+function pbMistakeLineNote(body, tradeId, max) {
   if (!/^[A-Za-z0-9_-]+$/.test(tradeId || "")) return "";
   const re = PB_TRADE_LINE_RE(tradeId);
   const line = String(body || "").split("\n").find((l) => re.test(l));
   if (!line) return "";
-  return mdPlainExcerpt(line.match(re)[1].replace(/^\s*[-—:：·]\s*/, ""), 120);
+  return mdPlainExcerpt(line.match(re)[1].replace(/^\s*[-—:：·]\s*/, ""), max || 120);   // 要拿来改的传 Infinity，不截
+}
+/* 正文里有没有这笔交易自己的那一行（「- [[trade:id]] …」）。只是行文里提到的不算——那种没有「那句话」可改 */
+function pbHasTradeLine(body, tradeId) {
+  if (!/^[A-Za-z0-9_-]+$/.test(tradeId || "")) return false;
+  const re = PB_TRADE_LINE_RE(tradeId);
+  return String(body || "").split("\n").some((l) => re.test(l));
+}
+/* 把「- [[trade:id]] 那句话」里胶囊后面的文字换成 note（纯文字，转义成 markdown）。只改第一行，跟编辑器里的 pbEditorSetLineNote 一致。
+   没有这一行就原样返回 */
+function pbSetLineNoteInBody(body, tradeId, note) {
+  const src = String(body || "");
+  if (!/^[A-Za-z0-9_-]+$/.test(tradeId || "")) return src;
+  const re = PB_TRADE_LINE_RE(tradeId);
+  const lines = src.split("\n");
+  const i = lines.findIndex((l) => re.test(l));
+  if (i < 0) return src;
+  const clean = String(note || "").replace(/\s+/g, " ").trim();
+  const cap = "[[trade:" + tradeId + "]]";
+  const at = lines[i].indexOf(cap) + cap.length;
+  lines[i] = lines[i].slice(0, at) + (clean ? " " + mdEscapeText(clean, {}) : "");
+  return lines.join("\n");
 }
 
 /* 往错题正文里加一笔交易：写成「- [[trade:id]] 错在哪」，放进「涉及的交易」那一节的末尾。

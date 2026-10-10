@@ -104,6 +104,17 @@ test("便利贴上那句话：优先「如何规避」，两种语言的标题�
   assert.strictEqual(call("(b) => pbMistakeLineNote(b, 't_a')", "- [[trade:t_a]] 没等确认"), "没等确认");
 });
 
+test("改已关联交易那一行的那句话：只改胶囊后面，别的行不动；没有那一行就原样返回", () => {
+  const { call } = setup(PAGES);
+  const body = "## 涉及的交易\n\n- [[trade:t_a]] 没等确认\n- [[trade:t_b]] 追高";
+  assert.strictEqual(call("(b) => pbSetLineNoteInBody(b, 't_a', '等了 *确认* 还是亏')", body),
+    "## 涉及的交易\n\n- [[trade:t_a]] 等了 \\*确认\\* 还是亏\n- [[trade:t_b]] 追高");
+  assert.strictEqual(call("(b) => pbSetLineNoteInBody(b, 't_b', '  ')", body), "## 涉及的交易\n\n- [[trade:t_a]] 没等确认\n- [[trade:t_b]]");
+  assert.strictEqual(call("(b) => pbSetLineNoteInBody(b, 't_c', 'x')", body), body);
+  assert.strictEqual(call("(b) => pbHasTradeLine(b, 't_a')", body), true);
+  assert.strictEqual(call("(b) => pbHasTradeLine(b, 't_a')", "行文里提到 [[trade:t_a]]"), false);
+});
+
 test("错题候选：策略自己的、它所属系统的、通用的，各归各的", () => {
   const { call } = setup(PAGES.concat([
     { id: "m1", kind: "mistake", parent_id: "st1", title: "追单" },

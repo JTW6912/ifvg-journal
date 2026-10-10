@@ -1301,7 +1301,9 @@ button.pageRef{line-height:1.5;}
 .pbFormNoteInput{display:block;margin:0 0 6px 27px;width:calc(100% - 27px);font-size:12.5px;padding-top:5px;padding-bottom:5px;}
 .pbFormNoteAddText{display:inline-flex;align-items:center;gap:4px;margin:-2px 0 5px 27px;font-size:11.5px;color:inherit;opacity:.65;}
 .pbFormNoteAddText:hover{opacity:1;}
-.pbFormNoteAddText svg{width:11px;height:11px;}
+.pbFormNoteAddText svg{width:11px;height:11px;flex:none;}
+.pbFormNoteAddText.hasText{opacity:.85;max-width:calc(100% - 27px);text-align:left;}
+.pbFormNoteAddText span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .pbFormNewBtns{display:flex;gap:12px;margin-top:9px;}
 .pbFormNewBtns .tinyBtn{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--muted);}
 .pbFormNewBtns .tinyBtn:hover{color:var(--text);}

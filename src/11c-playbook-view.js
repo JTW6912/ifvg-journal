@@ -1004,6 +1004,28 @@ async function pbSetTradeInNoteBody(noteId, tradeId, on, note) {
   }
   return persistPbPage({ ...m, body });
 }
+/* 改一条笔记里这笔交易那一行的那句话。笔记正开在编辑器里就走编辑器（能撤销，也不跟正在写的打架） */
+async function pbSetLineNoteInNote(noteId, tradeId, text) {
+  const m = pbFind(noteId);
+  if (!m || viewingUserId) return false;
+  if (editingReview && editingReview.id === noteId) {
+    if (reviewTiptap) {
+      if (!pbEditorSetLineNote(reviewTiptap, tradeId, text)) return false;
+    } else {
+      syncReviewBody();
+      if (!pbHasTradeLine(editingReview.body, tradeId)) return false;
+      editingReview.body = pbSetLineNoteInBody(editingReview.body, tradeId, text);
+      const ta = document.querySelector(".reviewFallbackInput");
+      if (ta) ta.value = editingReview.body;
+      scheduleReviewSave();
+    }
+    const saved = await flushReviewSave();
+    refreshPbPanels();
+    return saved !== false;
+  }
+  if (!pbHasTradeLine(m.body, tradeId)) return false;
+  return persistPbPage({ ...m, body: pbSetLineNoteInBody(m.body, tradeId, text) });
+}
 async function pbToggleTradeInNote(noteId, tradeId, note) {
   const m = pbFind(noteId);
   if (!m) return false;
@@ -1421,14 +1443,14 @@ function pbTriageKey(e) {
 /* 表单里勾的笔记先记在这里，点「保存」、交易存成功之后才写进笔记正文：
    取消表单的话笔记不该被改；新交易在库里还不存在，也不能先写一个指向它的胶囊。
    renderModal 换了一笔交易时清空（见 13 文件里 formDraft 初始化那一行）。 */
-let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, texts: { 笔记id: 这笔在这条里的那句话 }, textOpen: Set, creating: "" | "mistake" | "verify", newName, showAll: {} }
+let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, texts: { 笔记id: 这笔在这条里的那句话 }, textOpen: Set, textOrig: { 本来关联着的笔记id: 点开时正文里那句 }, creating: "" | "mistake" | "verify", newName, showAll: {} }
 function pbFormNotesState() {
   if (!editingTrade) return null;
   if (!pbFormNotes || pbFormNotes.tradeId !== editingTrade.id) {
     syncReviewBody();
     const bodyOf = (m) => (editingReview && editingReview.id === m.id ? editingReview.body : m.body);
     const init = new Set(pbPages.filter((m) => pbIsNote(m) && extractTradeRefs(bodyOf(m)).includes(editingTrade.id)).map((m) => m.id));
-    pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), texts: {}, textOpen: new Set(), creating: "", newName: "", showAll: {} };
+    pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), texts: {}, textOpen: new Set(), textOrig: {}, creating: "", newName: "", showAll: {} };
   }
   return pbFormNotes;
 }
@@ -1460,19 +1482,24 @@ function pbFormNotesBoxHtml(kind, pageId) {
         <span class="pbMpBox">${on ? ICONS.check : ""}</span>
         <span class="pbFormNoteText"><b>${esc(pbTitle(m))}</b>${g ? `<span>${esc(g)}</span>` : ""}</span>
         ${isV ? pbStatusPillHtml(m) : ""}
-      </button>${on && !ro && !st.init.has(m.id) ? pbFormNoteTextHtml(m.id, isV) : ""}`;
+      </button>${on && !ro ? pbFormNoteTextHtml(m, isV) : ""}`;
     }).join("")}
     ${all.length > list.length ? `<button type="button" class="tinyBtn pbFormMore" data-action="pb-form-notes-more" data-kind="${kind}">${esc(T("pb.form.more", { n: all.length }))}</button>` : ""}
   </div>`;
 }
-/* 刚勾上的笔记底下一个小按钮「写一句」，点了才出输入框：这笔在这条里的那句话，保存时写成「- [[trade:id]] 那句话」。
-   写不写由用户定。本来就关联着的不出——那句话已经在正文里了，去笔记页改 */
-function pbFormNoteTextHtml(id, isV) {
+/* 勾着的笔记底下一个小按钮，点了才出输入框：这笔在这条里的那句话，保存时写成「- [[trade:id]] 那句话」。写不写由用户定。
+   本来就关联着的：按钮上直接显示正文里已有的那句，点开就是改它；正文里只是行文提到、没有自己那一行的没法改，不出按钮 */
+function pbFormNoteBody(m) { return editingReview && editingReview.id === m.id ? editingReview.body : m.body; }
+function pbFormNoteTextHtml(m, isV) {
   const st = pbFormNotes;
-  const v = (st && st.texts[id]) || "";
-  if (!v && !(st && st.textOpen.has(id))) {
-    return `<button type="button" class="tinyBtn pbFormNoteAddText" data-action="pb-form-note-text" data-id="${esc(id)}">${ICONS.pencil} ${esc(T("pb.form.addText"))}</button>`;
+  const id = m.id;
+  if (!st.textOpen.has(id)) {
+    const was = st.init.has(id);
+    if (was && !pbHasTradeLine(pbFormNoteBody(m), st.tradeId)) return "";
+    const cur = was ? pbMistakeLineNote(pbFormNoteBody(m), st.tradeId) : "";
+    return `<button type="button" class="tinyBtn pbFormNoteAddText${cur ? " hasText" : ""}" data-action="pb-form-note-text" data-id="${esc(id)}">${ICONS.pencil} <span>${esc(cur || T("pb.form.addText"))}</span></button>`;
   }
+  const v = st.texts[id] || "";
   return `<input class="input pbFormNoteInput" type="text" data-form-note-text="${esc(id)}" placeholder="${esc(T(isV ? "pb.mp.notePh" : "pb.mp.errPh"))}" value="${esc(v)}" oninput="window.__pbFormNoteTextInput(this)" />`;
 }
 window.__pbFormNoteTextInput = function (el) { if (pbFormNotes) pbFormNotes.texts[el.dataset.formNoteText] = el.value; };
@@ -1542,6 +1569,12 @@ function pbFormNoteToggle(id) {
 function pbFormNoteOpenText(id) {
   const st = pbFormNotesState();
   if (!st || viewingUserId || !st.sel.has(id)) return;
+  // 本来就关联着的：输入框里先放正文里已有的那句（不截断），保存时跟它比，改了才写
+  if (st.init.has(id) && !st.textOpen.has(id)) {
+    const m = pbFind(id);
+    st.textOrig[id] = m ? pbMistakeLineNote(pbFormNoteBody(m), st.tradeId, Infinity) : "";
+    st.texts[id] = st.textOrig[id];
+  }
   st.textOpen.add(id);
   refreshPbFormBlock();
   pbFormFocusNoteText(id);
@@ -1579,6 +1612,12 @@ async function pbApplyFormNotes(tradeId) {
   };
   for (const id of st.sel) if (!st.init.has(id)) await apply(id, true);
   for (const id of st.init) if (!st.sel.has(id)) await apply(id, false);
+  // 本来就关联着、点开改了那句话的：真改了才动正文（没改就不碰，免得把原来的格式抹成纯文字）
+  const norm = (x) => String(x || "").replace(/\s+/g, " ").trim();
+  for (const id of st.init) {
+    if (!st.sel.has(id) || !st.textOpen.has(id) || norm(st.texts[id]) === norm(st.textOrig[id])) continue;
+    if (!(await pbSetLineNoteInNote(id, tradeId, norm(st.texts[id])))) errs.push(T("pb.area.noteNoLine"));
+  }
   if (errs.length) alert(errs.join("\n"));
 }
 /* 只在实盘模式、而且建过模型库页面时出现——没用这个功能的人表单里不该多一栏 */
