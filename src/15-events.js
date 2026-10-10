@@ -928,6 +928,7 @@ document.addEventListener("click", async (e) => {
     if (st) { st.creating = ""; st.newName = ""; refreshPbFormBlock(); }
   }
   else if (action === "pb-form-note-create") { await pbFormNoteCreate(); }
+  else if (action === "pb-form-note-text") { pbFormNoteOpenText(el.dataset.id); }
   else if (action === "pb-form-suggest") {
     if (!editingTrade) return;
     formDraft[PB_KEY] = el.dataset.id;

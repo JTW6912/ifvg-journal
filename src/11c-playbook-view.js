@@ -1421,14 +1421,14 @@ function pbTriageKey(e) {
 /* 表单里勾的笔记先记在这里，点「保存」、交易存成功之后才写进笔记正文：
    取消表单的话笔记不该被改；新交易在库里还不存在，也不能先写一个指向它的胶囊。
    renderModal 换了一笔交易时清空（见 13 文件里 formDraft 初始化那一行）。 */
-let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, texts: { 笔记id: 这笔在这条里的那句话 }, creating: "" | "mistake" | "verify", newName, showAll: {} }
+let pbFormNotes = null;   // { tradeId, init: Set, sel: Set, texts: { 笔记id: 这笔在这条里的那句话 }, textOpen: Set, creating: "" | "mistake" | "verify", newName, showAll: {} }
 function pbFormNotesState() {
   if (!editingTrade) return null;
   if (!pbFormNotes || pbFormNotes.tradeId !== editingTrade.id) {
     syncReviewBody();
     const bodyOf = (m) => (editingReview && editingReview.id === m.id ? editingReview.body : m.body);
     const init = new Set(pbPages.filter((m) => pbIsNote(m) && extractTradeRefs(bodyOf(m)).includes(editingTrade.id)).map((m) => m.id));
-    pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), texts: {}, creating: "", newName: "", showAll: {} };
+    pbFormNotes = { tradeId: editingTrade.id, init, sel: new Set(init), texts: {}, textOpen: new Set(), creating: "", newName: "", showAll: {} };
   }
   return pbFormNotes;
 }
@@ -1465,10 +1465,14 @@ function pbFormNotesBoxHtml(kind, pageId) {
     ${all.length > list.length ? `<button type="button" class="tinyBtn pbFormMore" data-action="pb-form-notes-more" data-kind="${kind}">${esc(T("pb.form.more", { n: all.length }))}</button>` : ""}
   </div>`;
 }
-/* 刚勾上的每条笔记底下各一个输入框：这笔在这条里的那句话，保存时写成「- [[trade:id]] 那句话」。
-   本来就关联着的不出——那句话已经在正文里了，去笔记页改 */
+/* 刚勾上的笔记底下一个小按钮「写一句」，点了才出输入框：这笔在这条里的那句话，保存时写成「- [[trade:id]] 那句话」。
+   写不写由用户定。本来就关联着的不出——那句话已经在正文里了，去笔记页改 */
 function pbFormNoteTextHtml(id, isV) {
-  const v = (pbFormNotes && pbFormNotes.texts[id]) || "";
+  const st = pbFormNotes;
+  const v = (st && st.texts[id]) || "";
+  if (!v && !(st && st.textOpen.has(id))) {
+    return `<button type="button" class="tinyBtn pbFormNoteAddText" data-action="pb-form-note-text" data-id="${esc(id)}">${ICONS.pencil} ${esc(T("pb.form.addText"))}</button>`;
+  }
   return `<input class="input pbFormNoteInput" type="text" data-form-note-text="${esc(id)}" placeholder="${esc(T(isV ? "pb.mp.notePh" : "pb.mp.errPh"))}" value="${esc(v)}" oninput="window.__pbFormNoteTextInput(this)" />`;
 }
 window.__pbFormNoteTextInput = function (el) { if (pbFormNotes) pbFormNotes.texts[el.dataset.formNoteText] = el.value; };
@@ -1534,7 +1538,13 @@ function pbFormNoteToggle(id) {
   const on = !st.sel.has(id);
   if (on) st.sel.add(id); else st.sel.delete(id);
   refreshPbFormBlock();
-  if (on && !st.init.has(id)) pbFormFocusNoteText(id);
+}
+function pbFormNoteOpenText(id) {
+  const st = pbFormNotesState();
+  if (!st || viewingUserId || !st.sel.has(id)) return;
+  st.textOpen.add(id);
+  refreshPbFormBlock();
+  pbFormFocusNoteText(id);
 }
 function pbFormFocusNoteText(id) {
   const inp = [...document.querySelectorAll("[data-form-note-text]")].find((x) => x.dataset.formNoteText === id);
@@ -1555,7 +1565,6 @@ async function pbFormNoteCreate() {
   st.creating = "";
   st.newName = "";
   refreshPbFormBlock();
-  if (m.kind !== "tag") pbFormFocusNoteText(m.id);
 }
 /* save-trade 里、交易存成功之后调：把勾选的变化写进各条笔记 */
 async function pbApplyFormNotes(tradeId) {
