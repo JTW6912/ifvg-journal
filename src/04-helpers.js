@@ -223,19 +223,65 @@ function loadAppearance() {
     // 从没选过布局（本机没存）= 新版；手动切回经典会存下 "classic"，之后一直按经典来
     applyLayout(localStorage.getItem("journal_layout") || "modern");
     applyPalette(localStorage.getItem("journal_palette"));
+    applyCalColors(JSON.parse(localStorage.getItem("journal_cal_colors") || "null"));
   } catch (e) {}
+}
+/* ---------- 月度日历的盈/亏色，可以自己挑（只管日历：月度概览、全年热力图、每日明细） ----------
+   没挑过就用当前配色自带的 --calPos / --calNeg（palettes.css）；挑过的挂在 <html> 的行内样式上，
+   盖过所有配色、日夜共用。跟布局 / 配色一起存进 profiles.ui_prefs（calPos / calNeg） */
+const CAL_HEX = /^#[0-9a-f]{6}$/i;
+let calColorPopOpen = false;
+function customCalColor(k) {
+  const v = document.documentElement.style.getPropertyValue(k === "pos" ? "--calPos" : "--calNeg").trim();
+  return CAL_HEX.test(v) ? v.toLowerCase() : null;
+}
+function setCalColor(k, v) {
+  const prop = k === "pos" ? "--calPos" : "--calNeg";
+  if (v && CAL_HEX.test(v)) document.documentElement.style.setProperty(prop, v.toLowerCase());
+  else document.documentElement.style.removeProperty(prop);
+}
+function applyCalColors(c) {
+  setCalColor("pos", c && c.pos);
+  setCalColor("neg", c && c.neg);
+  saveCalColorsLocal();
+}
+function saveCalColorsLocal() {
+  try {
+    const pos = customCalColor("pos"), neg = customCalColor("neg");
+    if (pos || neg) localStorage.setItem("journal_cal_colors", JSON.stringify({ pos, neg }));
+    else localStorage.removeItem("journal_cal_colors");
+  } catch (e) {}
+}
+// 拾色器里显示的值：挑过的就是挑的那个，没挑过就是当前配色 / 日夜下实际生效的颜色
+function effectiveCalColor(k) {
+  const own = customCalColor(k);
+  if (own) return own;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(k === "pos" ? "--calPos" : "--calNeg").trim();
+  if (CAL_HEX.test(v)) return v.toLowerCase();
+  const m = v.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i);
+  if (m) return ("#" + m[1] + m[1] + m[2] + m[2] + m[3] + m[3]).toLowerCase();
+  const rgb = v.match(/rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)/);
+  if (rgb) return "#" + rgb.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
+  return k === "pos" ? "#0fa37a" : "#e04b4b";
 }
 /* ---------- 外观绑账号（profiles.ui_prefs，跟界面语言 profiles.lang 同一个套路） ----------
    登录后账号里存过就以账号为准（换设备 / 换浏览器也一致），没存过就把本机当前的选择补写上去。
    本机 localStorage 那份始终同步一份：首帧前的内联脚本只能读它，避免先闪一下默认样式 */
 function currentTheme() { return document.documentElement.dataset.theme === "light" ? "light" : "dark"; }
-function currentAppearance() { return { layout: currentLayout(), palette: currentPalette(), theme: currentTheme() }; }
+function currentAppearance() {
+  const p = { layout: currentLayout(), palette: currentPalette(), theme: currentTheme() };
+  const pos = customCalColor("pos"), neg = customCalColor("neg");
+  if (pos) p.calPos = pos;
+  if (neg) p.calNeg = neg;
+  return p;
+}
 function applyAppearance(p) {
   if (!p || typeof p !== "object") return;
   if (p.layout) applyLayout(p.layout);
   if (p.palette) applyPalette(p.palette);
   if (p.theme === "light") document.documentElement.dataset.theme = "light";
   else if (p.theme === "dark") delete document.documentElement.dataset.theme;
+  applyCalColors({ pos: p.calPos, neg: p.calNeg });   // 账号里没存 = 用配色自带的
   try {
     localStorage.setItem("journal_layout", currentLayout());
     localStorage.setItem("journal_palette", currentPalette());

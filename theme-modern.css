@@ -489,6 +489,24 @@
 [data-layout="modern"] .yearHeatTitle{font-size:11.5px;font-weight:600;color:var(--mutedDark);text-transform:uppercase;letter-spacing:.5px;}
 [data-layout="modern"] .yearHeatLegend{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--mutedDark);}
 [data-layout="modern"] .yearHeatLegend .hm{width:12px;height:12px;}
+/* 图例旁边的「颜色」按钮 + 自定义盈/亏色的小浮层 */
+[data-layout="modern"] .yearHeatTools{display:flex;align-items:center;gap:12px;}
+[data-layout="modern"] .calColorWrap{position:relative;}
+[data-layout="modern"] .calColorBtn{font:inherit;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:3px 10px;cursor:pointer;transition:border-color .12s,color .12s;}
+[data-layout="modern"] .calColorBtn:hover,[data-layout="modern"] .calColorBtn.on{border-color:var(--accent);color:var(--text);}
+[data-layout="modern"] .calColorPop{position:absolute;right:0;top:calc(100% + 8px);z-index:30;width:236px;max-width:calc(100vw - 40px);padding:12px 14px 14px;background:var(--surface);
+  border:1px solid var(--borderLight);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);}
+[data-layout="modern"] .calColorTitle{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;}
+[data-layout="modern"] .calColorRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;cursor:pointer;}
+[data-layout="modern"] .calColorName{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);}
+[data-layout="modern"] .calColorName .hm{width:12px;height:12px;}
+[data-layout="modern"] .calColorRow input[type="color"]{width:44px;height:26px;padding:2px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);cursor:pointer;}
+[data-layout="modern"] .calColorRow input[type="color"]::-webkit-color-swatch-wrapper{padding:0;}
+[data-layout="modern"] .calColorRow input[type="color"]::-webkit-color-swatch{border:none;border-radius:5px;}
+[data-layout="modern"] .calColorRow input[type="color"]::-moz-color-swatch{border:none;border-radius:5px;}
+[data-layout="modern"] .calColorHint{font-size:11px;line-height:1.5;color:var(--mutedDark);margin:6px 0 10px;}
+[data-layout="modern"] .calColorReset{width:100%;justify-content:center;font-size:12px;padding:6px 10px;}
+[data-layout="modern"] .calColorReset:disabled{opacity:.45;cursor:default;}
 [data-layout="modern"] .yearHeatLegend span{margin:0 4px;}
 [data-layout="modern"] .yearHeatScroll{overflow-x:auto;padding-bottom:4px;}
 [data-layout="modern"] .yearHeatMonths,[data-layout="modern"] .yearHeatGrid{display:grid;gap:3px;min-width:640px;}

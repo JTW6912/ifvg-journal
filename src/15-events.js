@@ -8,6 +8,8 @@ document.addEventListener("click", async (e) => {
     if (reviewPop) closeReviewPop();
     if (bubbleMode !== "main") { bubbleMode = "main"; updateBubble(); }
   }
+  // 日历颜色浮层：点到浮层和按钮以外就收起
+  if (calColorPopOpen && !e.target.closest(".calColorWrap")) { calColorPopOpen = false; if (!el) render(); }
   if (!el) {
     let changed = false;
     if (userMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-user-menu"]')) { userMenuOpen = false; changed = true; }
@@ -37,6 +39,8 @@ document.addEventListener("click", async (e) => {
     persistAppearance();
     render();
   }
+  else if (action === "toggle-cal-colors") { calColorPopOpen = !calColorPopOpen; render(); }
+  else if (action === "reset-cal-colors") { applyCalColors(null); persistAppearance(); render(); }
   else if (action === "set-lang") { await setLang(el.dataset.lang); }
   /* ---------- 导出中心 ---------- */
   else if (action === "open-export-center") { exportCenterOpen = true; exportStatus = ""; exportError = ""; userMenuOpen = false; render(); }
@@ -1118,6 +1122,8 @@ document.addEventListener("paste", (e) => {
 });
 
 document.addEventListener("input", (e) => {
+  // 拖日历拾色器：只改 CSS 变量，不重画（重画会把正打开的拾色器关掉）
+  if (e.target.dataset.calColor) { setCalColor(e.target.dataset.calColor, e.target.value); return; }
   if (e.target.dataset.formField !== undefined && editingTrade && editingTrade._isNew) {
     formDraft[e.target.dataset.formField] = e.target.value;
     saveDraft();
@@ -1146,6 +1152,14 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("change", async (e) => {
+  if (e.target.dataset.calColor) {
+    setCalColor(e.target.dataset.calColor, e.target.value);
+    saveCalColorsLocal();
+    persistAppearance();
+    const reset = document.querySelector('[data-action="reset-cal-colors"]');
+    if (reset) reset.disabled = false;
+    return;
+  }
   if (e.target.dataset.pbFormPick !== undefined) {
     if (!editingTrade || viewingUserId) return;
     const v = e.target.value;

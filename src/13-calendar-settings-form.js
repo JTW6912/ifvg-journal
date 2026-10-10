@@ -68,9 +68,22 @@ function renderYearHeatmap(year) {
   }
   return `<div class="yearHeat">
     <div class="yearHeatHead"><span class="yearHeatTitle">${esc(T("dash.yearHeat"))}</span>
-      <span class="yearHeatLegend"><span>${esc(T("dash.loss"))}</span><i class="hm neg l4"></i><i class="hm neg l2"></i><i class="hm"></i><i class="hm pos l2"></i><i class="hm pos l4"></i><span>${esc(T("dash.gain"))}</span></span></div>
+      <span class="yearHeatTools"><span class="yearHeatLegend"><span>${esc(T("dash.loss"))}</span><i class="hm neg l4"></i><i class="hm neg l2"></i><i class="hm"></i><i class="hm pos l2"></i><i class="hm pos l4"></i><span>${esc(T("dash.gain"))}</span></span>
+        <span class="calColorWrap"><button class="calColorBtn${calColorPopOpen ? " on" : ""}" data-action="toggle-cal-colors">${esc(T("calColor.button"))}</button>${calColorPopOpen ? renderCalColorPop() : ""}</span></span></div>
     <div class="yearHeatScroll"><div class="yearHeatMonths" style="grid-template-columns:repeat(${col},1fr)">${monthLabels}</div>
     <div class="yearHeatGrid" style="grid-template-columns:repeat(${col},1fr)">${cols}</div></div>
+  </div>`;
+}
+/* 月度日历盈/亏色的小浮层：两个拾色器 + 恢复默认。拖拾色器时实时生效，松手（change）才存 */
+function renderCalColorPop() {
+  const row = (k) => `<label class="calColorRow"><span class="calColorName"><i class="hm ${k} l4"></i>${esc(T(k === "pos" ? "calColor.gain" : "calColor.loss"))}</span>
+    <input type="color" data-cal-color="${k}" value="${effectiveCalColor(k)}" aria-label="${esc(T(k === "pos" ? "calColor.gain" : "calColor.loss"))}"></label>`;
+  const custom = customCalColor("pos") || customCalColor("neg");
+  return `<div class="calColorPop">
+    <div class="calColorTitle">${esc(T("calColor.title"))}</div>
+    ${row("pos")}${row("neg")}
+    <div class="calColorHint">${esc(T("calColor.hint"))}</div>
+    <button class="btn calColorReset" data-action="reset-cal-colors"${custom ? "" : " disabled"}>${esc(T("calColor.reset"))}</button>
   </div>`;
 }
 function renderDayCalendar() {
