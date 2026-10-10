@@ -471,6 +471,7 @@ window.__imgFallback = function (imgEl) {
 let modalRenderedForId = null;
 function renderModal(force) {
   const root = document.getElementById("modalRoot");
+  saveNav();
   if (!editingTrade) { modalRenderedForId = null; root.innerHTML = ""; return; }
   if (!force && modalRenderedForId === editingTrade.id) return; // already showing this trade — don't wipe unsaved input
   modalRenderedForId = editingTrade.id;

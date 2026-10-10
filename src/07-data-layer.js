@@ -186,9 +186,21 @@ async function addOptionToField(fieldId, opt) {
   await persistSchema(next);
 }
 const DRAFT_KEY = "journal_trade_draft";
+/* 改老交易的草稿另存一份（带交易 id）：刷新 / 关掉标签页时没点保存的改动，下次打开这一笔能接着改。
+   点关闭 = 不要了，草稿一起清；点保存成功也清 */
+const EDIT_DRAFT_KEY = "journal_trade_edit_draft";
 function saveDraft() {
-  if (!editingTrade || !editingTrade._isNew) return;
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(formDraft)); } catch (e) {}
+  if (!editingTrade || viewingUserId) return;
+  try {
+    if (editingTrade._isNew) localStorage.setItem(DRAFT_KEY, JSON.stringify(formDraft));
+    else localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({ id: editingTrade.id, data: formDraft }));
+  } catch (e) {}
+}
+function loadEditDraft(id) {
+  try { const raw = localStorage.getItem(EDIT_DRAFT_KEY); const d = raw ? JSON.parse(raw) : null; return d && d.id === id && d.data ? d.data : null; } catch (e) { return null; }
+}
+function clearEditDraft() {
+  try { localStorage.removeItem(EDIT_DRAFT_KEY); } catch (e) {}
 }
 function loadDraft() {
   try { const raw = localStorage.getItem(DRAFT_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
@@ -638,7 +650,8 @@ function pbPatchTrade(id, patch) { return pbPatchTrades([{ id, patch }]); }
 const REVIEW_DRAFT_KEY = "journal_review_draft";
 function saveReviewDraft() {
   if (!editingReview) return;
-  try { localStorage.setItem(REVIEW_DRAFT_KEY, JSON.stringify(editingReview)); } catch (e) {}
+  // _draftAt：打开时跟库里的 updated_at 比，草稿更新才拿来用（别处后来改过就以库里为准）
+  try { localStorage.setItem(REVIEW_DRAFT_KEY, JSON.stringify({ ...editingReview, _draftAt: Date.now() })); } catch (e) {}
 }
 function loadReviewDraft() {
   try { const raw = localStorage.getItem(REVIEW_DRAFT_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }

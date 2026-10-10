@@ -464,6 +464,7 @@ function destroyReviewTiptap() {
 function renderReviewEditor(force) {
   const root = document.getElementById("reviewEditorRoot");
   if (!root) return;
+  saveNav();
   if (!editingReview) { destroyReviewTiptap(); reviewEditorRenderedFor = null; root.innerHTML = ""; return; }
   // 已经在显示这一篇就不重绘——否则正在写的正文和光标位置全没了
   if (!force && reviewEditorRenderedFor === editingReview.id) return;
@@ -1362,6 +1363,12 @@ function openReviewEditor(id) {
     _isNew: false,
   };
   if (isPbDoc(r)) { editingReview.kind = r.kind; editingReview.parent_id = r.parent_id || null; editingReview.status = r.status || null; }
+  // 上次没存上的改动（刷新 / 关标签页 / 断网时停在本地草稿里）：比库里那版新才接上，接上后照常自动保存
+  const dr = viewingUserId ? null : loadReviewDraft();
+  const restored = !!dr && dr.id === r.id && !dr._isNew
+    && ((dr.body || "") !== editingReview.body || (dr.title || "") !== editingReview.title)
+    && (dr._draftAt || 0) > (Date.parse(r.updated_at || "") || 0);
+  if (restored) { editingReview.title = dr.title || ""; editingReview.body = dr.body || ""; }
   reviewSaveState = "idle";
   reviewSavedAt = null;
   reviewSaveError = null;
@@ -1374,6 +1381,7 @@ function openReviewEditor(id) {
   pbShowAllTrades = false;
   pbExecFilter = "";
   renderReviewEditor(true);
+  if (restored) { scheduleReviewSave(); showReviewToast(T("review.draftRestored")); }
   // 从模型库的卡片点进来时，编辑器盖在列表上面；滚动条回到顶
   const sc = document.getElementById("reviewScroller");
   if (sc) sc.scrollTop = 0;
@@ -1390,6 +1398,23 @@ async function navigateEditorTo(id, opts) {
     if (editorBackStack.length > 20) editorBackStack.shift();
   }
   openReviewEditor(id);
+}
+/* 新建了还没落库的一篇（库里找不到）：刷新后从本地草稿重新打开，写过字才算 */
+function restoreNewReviewDraft(id) {
+  const dr = loadReviewDraft();
+  if (!dr || dr.id !== id || !dr._isNew || viewingUserId || (dr.mode && dr.mode !== recordMode)) return;
+  if (!(dr.title || "").trim() && !(dr.body || "").trim()) return;
+  const d = { ...dr };
+  delete d._draftAt;
+  editingReview = d;
+  editorBackStack = [];
+  reviewSaveState = "idle";
+  reviewSavedAt = null;
+  reviewSaveError = null;
+  tradePickerOpen = false;
+  renderReviewEditor(true);
+  scheduleReviewSave();
+  showReviewToast(T("review.draftRestored"));
 }
 function openNewReview(opts) {
   const o = opts || {};

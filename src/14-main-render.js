@@ -573,6 +573,7 @@ function render() {
   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
   if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); return; }
   if (currentProfile && currentProfile.active === false) { app.innerHTML = renderDisabledScreen(); return; }
+  saveNav();   // 刷新后回到这个页签（16-init）
 
   const hs = headerStats();
   const isAdmin = currentProfile && currentProfile.role === "admin";

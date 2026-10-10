@@ -82,31 +82,16 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "export-fields-select-all") { exportSelectedFields = exportAllFields().map((f) => f.id); renderPreservingScroll("exportFieldsScroll"); }
   else if (action === "export-fields-clear") { exportSelectedFields = []; renderPreservingScroll("exportFieldsScroll"); }
-  else if (action === "new-trade") {
-    if (viewingUserId) return;
-    const draft = loadDraft();
-    const blank = { id: uid(), _isNew: true };
-    schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
-    if (draft) {
-      schema.forEach((f) => { if (draft[f.id] !== undefined) blank[f.id] = draft[f.id]; });
-      [PB_KEY, PB_STAR_KEY, PB_TAGS_KEY, PB_NOTE_KEY].forEach((k) => { if (draft[k] !== undefined) blank[k] = draft[k]; });   // 模型库归属不是字段，单独带上
-      blank._resumedDraft = true;
-    }
-    applyDataScopeDefaults(blank);   // 设了数据范围（比如 schema_version = 2）就替新交易填上，免得自己被筛掉
-    const dateF = roleField("date");
-    if (dateF && !blank[dateF.id]) {
-      let latest = null;
-      trades.forEach((t) => { if (!latest || (t._created_at || "") > (latest._created_at || "")) latest = t; });
-      if (latest && latest[dateF.id]) blank[dateF.id] = latest[dateF.id];
-    }
-    editingTrade = blank; renderModal();
-  }
-  else if (action === "edit-trade") {
-    const id = el.dataset.id;
-    editingTrade = { ...trades.find((t) => t.id === id) };
-    renderModal();
-  }
+  else if (action === "new-trade") { startNewTrade(); }
+  else if (action === "edit-trade") { openTradeForEdit(el.dataset.id); }
   else if (action === "clear-draft") {
+    // 改老交易时恢复出来的草稿：扔掉就回到库里那一版
+    if (editingTrade && !editingTrade._isNew) {
+      clearEditDraft();
+      const t = trades.find((x) => x.id === editingTrade.id);
+      if (t) { editingTrade = { ...t }; renderModal(true); }
+      return;
+    }
     clearDraft();
     const blank = { id: uid(), _isNew: true };
     schema.forEach((f) => { blank[f.id] = f.type === "multiselect" ? [] : ""; });
@@ -115,6 +100,8 @@ document.addEventListener("click", async (e) => {
     renderModal(true);
   }
   else if (action === "close-modal") {
+    // 改老交易点了关闭 = 不要这些改动；新交易的草稿留着，下次点「新建交易」接着写
+    if (editingTrade && !editingTrade._isNew) clearEditDraft();
     editingTrade = null;
     if (returnToDayDetail) { dayDetailDate = returnToDayDetail; returnToDayDetail = null; }
     renderModal(); render();
@@ -129,6 +116,7 @@ document.addEventListener("click", async (e) => {
     const saved = await persistTrade(formDraft);
     if (saved) await pbApplyFormNotes(formDraft.id);   // 表单里勾的错题 / 待验证，交易存好了才写进去
     if (wasNew) clearDraft();
+    else if (saved) clearEditDraft();
     editingTrade = null;
     if (returnToDayDetail) { dayDetailDate = returnToDayDetail; returnToDayDetail = null; }
     renderModal(); render();
@@ -1136,7 +1124,7 @@ document.addEventListener("paste", (e) => {
 document.addEventListener("input", (e) => {
   // 拖日历拾色器：只改 CSS 变量，不重画（重画会把正打开的拾色器关掉）
   if (e.target.dataset.calColor) { setCalColor(e.target.dataset.calColor, e.target.value); return; }
-  if (e.target.dataset.formField !== undefined && editingTrade && editingTrade._isNew) {
+  if (e.target.dataset.formField !== undefined && editingTrade && !viewingUserId) {
     formDraft[e.target.dataset.formField] = e.target.value;
     saveDraft();
   }

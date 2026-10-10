@@ -188,6 +188,11 @@ created_at / updated_at
 - 需要"点背景关闭、点内容不关闭"时，用 `e.target === el`（点击目标就是背景本身）判断，不要用 stopPropagation
 - 唯一安全场景：这个元素本身没有 data-action、也没有带 data-action 的子元素，纯粹不想让点击冒泡触发父级动作（比如一个新标签页链接，防止同时触发外层卡片的编辑弹窗）
 
+### 刷新后回到原处 + 本地草稿（16-init.js）
+- **sessionStorage `journal_nav`** = { tab, doc（编辑器开着哪一页）, trade（表单开着哪一笔 / 是不是新建） }。`render()` / `renderModal()` / `renderReviewEditor()` 开头都调 `saveNav()`；数据加载完 `restoreNav()` 切回页签、重开编辑器 / 表单。**恢复之前不写**（`navRestored`），不然加载数据时那几次 render 会先把「主页」写进去。每个浏览器标签页各一份，关掉标签页就没了；在看别人的日志（viewingUserId）时不记不恢复
+- **三份本地草稿（localStorage）**：`journal_trade_draft` 新建交易（点关闭也留着，下次点「新建交易」接着写）；`journal_trade_edit_draft` 改老交易（{ id, data }，点关闭 = 不要了一起清，保存成功也清；`openTradeForEdit()` 打开时跟库里一样就当没有）；`journal_review_draft` 复盘 / 模型库页面（带 `_draftAt`，`openReviewEditor()` 里比库里 `updated_at` 新、内容又不一样才接上，接上后照常自动保存；还没落库的新帖靠 `restoreNewReviewDraft()`）
+- 打开表单统一走 `startNewTrade()` / `openTradeForEdit(id)`，别再在事件里手写一份
+
 ### 改完代码务必做的两件事
 ```bash
 # 1. 语法检查（代码已经拆成独立 js 文件，直接跑）
