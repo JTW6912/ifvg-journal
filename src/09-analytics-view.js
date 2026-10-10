@@ -19,9 +19,9 @@ function strongTagHtml(row) {
 function barRow(row, fieldId, baseWr) {
   const low = row.n < currentMinSample();
   const width = row.wr === null || low ? 0 : row.wr;
-  const color = row.wr === null ? "var(--mutedDark)" : row.wr >= 60 ? "var(--pos)" : row.wr >= 45 ? "var(--accent)" : "var(--neg)";
+  const color = row.wr === null ? "var(--mutedDark)" : row.wr >= 60 ? "var(--pnlPos)" : row.wr >= 45 ? "var(--accent)" : "var(--pnlNeg)";
   const rPart = row.hasR
-    ? ` · <span style="color:${row.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(row.totalR)}R</span> · EV ${fmtNum(row.ev, 2)} · PF <span style="color:${pfColor(row.pf)}">${fmtPF(row.pf)}</span>`
+    ? ` · <span style="color:${row.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(row.totalR)}R</span> · EV ${fmtNum(row.ev, 2)} · PF <span style="color:${pfColor(row.pf)}">${fmtPF(row.pf)}</span>`
     : "";
   const delta = !low && baseWr !== undefined && baseWr !== null && row.wr !== null ? " " + deltaText(row.wr, baseWr, "pp", 1) : "";
   return `<div class="barRow${low ? " lowSample" : ""}">
@@ -112,7 +112,7 @@ function comboBaseline(combo) {
 function deltaText(v, base, unit, digits) {
   if (v === null || v === undefined || base === null || base === undefined) return "";
   const d = v - base;
-  const color = d > 0 ? "var(--pos)" : d < 0 ? "var(--neg)" : "var(--mutedDark)";
+  const color = d > 0 ? "var(--pnlPos)" : d < 0 ? "var(--pnlNeg)" : "var(--mutedDark)";
   return `<span style="color:${color};font-size:11px;">(${d >= 0 ? "+" : ""}${d.toFixed(digits)}${unit})</span>`;
 }
 function renderComboEditor(combo) {
@@ -135,7 +135,7 @@ function renderComboEditor(combo) {
 // 列表模式：一行一个组合。刻意保留 .comboCard 类名、draggable 和 data-combo-id，
 // 拖拽排序/投放分组的处理器全靠这三样定位，换布局不用动一行拖拽代码
 function renderComboRow(combo, s, base, broken, analyzing, deleting) {
-  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pos)" : "var(--neg)";
+  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pnlPos)" : "var(--pnlNeg)";
   const small = !broken && s.n > 0 && s.n < COMBO_SMALL_SAMPLE;
   return `<div class="comboCard listRow${analyzing ? " analyzing" : ""}" ${viewingUserId ? "" : `draggable="true" data-combo-id="${esc(combo.id)}"`} title="${esc(comboConditionsText(combo))}">
     ${viewingUserId ? "" : `<span class="listDrag" title="${esc(T("combo.dragHint"))}">⠿</span>`}
@@ -147,7 +147,7 @@ function renderComboRow(combo, s, base, broken, analyzing, deleting) {
           ${deltaText(s.wr, base.wr, "pp", 1)}
           <span class="mono">n=${s.n}</span>
           <span class="mono">W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</span>
-          ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span>` : ""}
+          ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(s.totalR)}R</span>` : ""}
           ${s.hasR ? `<span class="mono">EV ${fmtNum(s.ev, 3)}</span>` : ""}
           ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}">PF ${fmtPF(s.pf)}</span>` : ""}
         </span>`}
@@ -175,7 +175,7 @@ function renderComboCard(combo) {
   const deleting = comboConfirmDeleteId === combo.id;
 
   // 胜率 >60 绿，其余红——固定两档，一眼看出这个组合整体是不是打得过
-  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pos)" : "var(--neg)";
+  const wrColor = s.wr === null ? "var(--muted)" : s.wr > 60 ? "var(--pnlPos)" : "var(--pnlNeg)";
   let stats;
   if (broken) {
     stats = `<div style="font-size:12.5px;color:var(--neg);margin:2px 0 8px;">${T("combo.broken")}</div>`;
@@ -185,7 +185,7 @@ function renderComboCard(combo) {
       ${deltaText(s.wr, base.wr, "pp", 1)}
       <span class="mono">n=${s.n}</span>
       <span class="mono">W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</span>
-      ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span>` : ""}
+      ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(s.totalR)}R</span>` : ""}
       ${s.hasR ? `<span class="mono">EV ${fmtNum(s.ev, 3)} ${deltaText(s.ev, base.ev, "", 3)}</span>` : ""}
       ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}">PF ${fmtPF(s.pf)}</span>` : ""}
     </div>`;
@@ -446,7 +446,7 @@ function renderRecentPanel(stats) {
       <div class="recentLabel">${esc(label)}${low ? ` <span class="lowSampleTag" title="${esc(T("breakdown.lowSampleTitle", { n: currentMinSample() }))}">${esc(T("breakdown.lowSample"))}</span>` : ""}</div>
       <div class="recentWr" style="color:${s.wr === null ? "var(--mutedDark)" : "var(--accent)"}">${fmtPct(s.wr)}${delta}</div>
       <div class="recentMeta mono">n=${s.n} · W${s.w} L${s.l}${s.be ? " BE" + s.be : ""}</div>
-      ${s.hasR ? `<div class="recentMeta mono"><span style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(s.totalR)}R</span> · EV ${fmtNum(s.ev, 2)}</div>` : ""}
+      ${s.hasR ? `<div class="recentMeta mono"><span style="color:${s.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(s.totalR)}R</span> · EV ${fmtNum(s.ev, 2)}</div>` : ""}
     </div>`;
   };
   return `<div class="recentPanel">
@@ -473,9 +473,9 @@ function renderAnalyticsSticky(stats) {
   return `<div class="analyticsSticky" id="analyticsSticky"><div class="analyticsStickyInner">
     <span class="mono" style="color:var(--mutedDark);">n=${stats.total}</span>
     <span class="mono" style="color:var(--accent);font-weight:600;">${fmtPct(stats.wr)}</span>
-    ${stats.hasR ? `<span class="mono" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}R</span>` : ""}
+    ${stats.hasR ? `<span class="mono" style="color:${stats.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(stats.totalR)}R</span>` : ""}
     ${stats.hasR ? `<span class="mono" style="color:${pfColor(stats.pf)}">PF ${fmtPF(stats.pf)}</span>` : ""}
-    ${stats.hasR && stats.dd !== null ? `<span class="mono" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">DD ${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</span>` : ""}
+    ${stats.hasR && stats.dd !== null ? `<span class="mono" style="color:${stats.dd > 0.0001 ? "var(--pnlNeg)" : "var(--mutedDark)"}">DD ${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</span>` : ""}
     <span class="stickyLinks">${links.map(([id, k]) => `<button class="tinyBtn" data-action="scroll-to-section" data-sec="${id}">${esc(T(k))}</button>`).join("")}</span>
     <button class="tinyBtn stickyTop" data-action="scroll-top" title="${esc(T("sticky.top"))}">${ICONS.up}</button>
   </div></div>`;
@@ -652,10 +652,10 @@ function renderAnalytics() {
     <div class="statBox"><div class="statLabel">${T("analytics.countTrades")}</div><div class="statValue">${stats.total}</div></div>
     <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div><div class="statSub">W${stats.w} · L${stats.l}</div></div>
     <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>
-    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.totalR")}</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
-    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.evPerTrade")}</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pos)" : "var(--neg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.totalR")}</div><div class="statValue" style="color:${stats.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(stats.totalR)}</div></div>` : ""}
+    ${stats.hasR ? `<div class="statBox"><div class="statLabel">${T("analytics.evPerTrade")}</div><div class="statValue" style="color:${stats.ev >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${fmtNum(stats.ev, 3)}</div></div>` : ""}
     ${stats.hasR ? `<div class="statBox" title="${esc(T("grid.pfTitle", { n: stats.pfSample }))}"><div class="statLabel">${T("analytics.profitFactor")}</div><div class="statValue" style="color:${pfColor(stats.pf)}">${fmtPF(stats.pf)}</div>${stats.pfSample !== stats.total ? `<div class="statSub">${esc(T("analytics.pfBasis", { n: stats.pfSample }))}</div>` : ""}</div>` : ""}
-    ${stats.hasR && stats.dd !== null ? `<div class="statBox" title="${esc(T("analytics.maxDDTitle"))}"><div class="statLabel">${T("analytics.maxDD")}</div><div class="statValue" style="color:${stats.dd > 0.0001 ? "var(--neg)" : "var(--mutedDark)"}">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</div>${stats.dd > 0.0001 && stats.ddRange ? `<div class="statSub mono">${esc(ddRangeText(stats.ddRange))}</div>` : ""}${stats.ddSample !== stats.total ? `<div class="statSub">${esc(T("analytics.ddBasis", { n: stats.ddSample }))}</div>` : ""}</div>` : ""}
+    ${stats.hasR && stats.dd !== null ? `<div class="statBox" title="${esc(T("analytics.maxDDTitle"))}"><div class="statLabel">${T("analytics.maxDD")}</div><div class="statValue" style="color:${stats.dd > 0.0001 ? "var(--pnlNeg)" : "var(--mutedDark)"}">${stats.dd > 0.0001 ? "-" : ""}${stats.dd.toFixed(2)}R</div>${stats.dd > 0.0001 && stats.ddRange ? `<div class="statSub mono">${esc(ddRangeText(stats.ddRange))}</div>` : ""}${stats.ddSample !== stats.total ? `<div class="statSub">${esc(T("analytics.ddBasis", { n: stats.ddSample }))}</div>` : ""}</div>` : ""}
   </div>
   <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;font-size:12.5px;color:var(--muted);">
     <span>BE ${stats.be} · BE→W ${stats.bew} · BE→L ${stats.bel}</span>

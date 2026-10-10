@@ -632,6 +632,9 @@ function render() {
             <div class="menuSeg">${LAYOUTS.map((k) => `<button class="${currentLayout() === k ? "on" : ""}" data-action="set-layout" data-layout="${k}">${T("layout." + k)}</button>`).join("")}</div>
             <div class="menuLabel">${T("header.palette")} · <span class="menuLabelVal">${T("palette." + currentPalette())}</span></div>
             <div class="paletteRow">${PALETTES.map((k) => `<button class="paletteDot sw-${k}${currentPalette() === k ? " on" : ""}" data-action="set-palette" data-palette="${k}" title="${esc(T("palette." + k))}" aria-label="${esc(T("palette." + k))}"></button>`).join("")}</div>
+            <div class="menuLabel">${T("calColor.title")}</div>
+            <div class="menuPnl">${["pos", "neg"].map((k) => `<label class="menuPnlPick"><input type="color" data-cal-color="${k}" value="${effectiveCalColor(k)}"><span>${esc(T(k === "pos" ? "calColor.gain" : "calColor.loss"))}</span></label>`).join("")}
+              <button data-action="reset-cal-colors"${customCalColor("pos") || customCalColor("neg") ? "" : " disabled"}>${esc(T("calColor.resetShort"))}</button></div>
             <div class="menuSep"></div>
             ${viewingUserId ? "" : `<button data-action="open-data-scope">${esc(T("scope.menu"))}${dataScopeActive() ? ` <span class="menuLabelVal">· ${esc(T(dataScopeBypass ? "scope.paused" : "scope.on"))}</span>` : ""}</button>`}
             <button data-action="open-profile-modal">${T("header.profile")}</button>

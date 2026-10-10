@@ -30,8 +30,8 @@ function fmtPF(pf) {
 }
 function pfColor(pf) {
   if (pf === null || pf === undefined) return "var(--muted)";
-  if (pf === Infinity) return "var(--pos)";
-  return pf >= 1 ? "var(--pos)" : "var(--neg)";
+  if (pf === Infinity) return "var(--pnlPos)";
+  return pf >= 1 ? "var(--pnlPos)" : "var(--pnlNeg)";
 }
 // 最大回撤：按交易日期把 R 累加成一条资金曲线，取「峰值 → 谷底」的最大跌幅，单位 R，返回正数。
 // 只算真的填了 R 的交易；没填日期的排到最后，免得它们插进曲线中间把回撤算歪。

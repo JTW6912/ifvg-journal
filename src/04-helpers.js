@@ -88,8 +88,8 @@ function isLossResult(v) { return resultBucket(v) === "loss"; }
 function isAnyBEResult(v) { const b = resultBucket(v); return b === "be" || b === "bewin" || b === "beloss"; }
 function resultColor(v) {
   const b = resultBucket(v);
-  if (b === "win" || b === "bewin") return "var(--pos)";
-  if (b === "loss" || b === "beloss") return "var(--neg)";
+  if (b === "win" || b === "bewin") return "var(--pnlPos)";
+  if (b === "loss" || b === "beloss") return "var(--pnlNeg)";
   return "var(--muted)";
 }
 
@@ -226,17 +226,18 @@ function loadAppearance() {
     applyCalColors(JSON.parse(localStorage.getItem("journal_cal_colors") || "null"));
   } catch (e) {}
 }
-/* ---------- 月度日历的盈/亏色，可以自己挑（只管日历：月度概览、全年热力图、每日明细） ----------
-   没挑过就用当前配色自带的 --calPos / --calNeg（palettes.css）；挑过的挂在 <html> 的行内样式上，
-   盖过所有配色、日夜共用。跟布局 / 配色一起存进 profiles.ui_prefs（calPos / calNeg） */
+/* ---------- 盈/亏色，可以自己挑（全站「赚 / 亏」的地方都用它：结果标签、R、资金曲线、胜率环、日历……） ----------
+   没挑过就用当前配色自带的 --pnlPos / --pnlNeg（palettes.css）；挑过的挂在 <html> 的行内样式上，
+   盖过所有配色、日夜共用。跟布局 / 配色一起存进 profiles.ui_prefs。
+   存储的键名（ui_prefs.calPos / calNeg、localStorage journal_cal_colors）是最早只管日历时起的，已有人存过，别改 */
 const CAL_HEX = /^#[0-9a-f]{6}$/i;
 let calColorPopOpen = false;
 function customCalColor(k) {
-  const v = document.documentElement.style.getPropertyValue(k === "pos" ? "--calPos" : "--calNeg").trim();
+  const v = document.documentElement.style.getPropertyValue(k === "pos" ? "--pnlPos" : "--pnlNeg").trim();
   return CAL_HEX.test(v) ? v.toLowerCase() : null;
 }
 function setCalColor(k, v) {
-  const prop = k === "pos" ? "--calPos" : "--calNeg";
+  const prop = k === "pos" ? "--pnlPos" : "--pnlNeg";
   if (v && CAL_HEX.test(v)) document.documentElement.style.setProperty(prop, v.toLowerCase());
   else document.documentElement.style.removeProperty(prop);
 }
@@ -256,7 +257,7 @@ function saveCalColorsLocal() {
 function effectiveCalColor(k) {
   const own = customCalColor(k);
   if (own) return own;
-  const v = getComputedStyle(document.documentElement).getPropertyValue(k === "pos" ? "--calPos" : "--calNeg").trim();
+  const v = getComputedStyle(document.documentElement).getPropertyValue(k === "pos" ? "--pnlPos" : "--pnlNeg").trim();
   if (CAL_HEX.test(v)) return v.toLowerCase();
   const m = v.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i);
   if (m) return ("#" + m[1] + m[1] + m[2] + m[2] + m[3] + m[3]).toLowerCase();

@@ -1156,8 +1156,7 @@ document.addEventListener("change", async (e) => {
     setCalColor(e.target.dataset.calColor, e.target.value);
     saveCalColorsLocal();
     persistAppearance();
-    const reset = document.querySelector('[data-action="reset-cal-colors"]');
-    if (reset) reset.disabled = false;
+    document.querySelectorAll('[data-action="reset-cal-colors"]').forEach((b) => { b.disabled = false; });
     return;
   }
   if (e.target.dataset.pbFormPick !== undefined) {

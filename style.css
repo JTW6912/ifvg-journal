@@ -84,7 +84,7 @@ a{color:var(--accent);}
 .btn-danger{color:var(--neg);border-color:var(--neg);}
 .icon{width:14px;height:14px;display:inline-block;vertical-align:-2px;}
 .exportMenu{position:absolute;right:0;top:110%;background:var(--surface);border:1px solid var(--borderLight);
-  border-radius:var(--r8);overflow:hidden;z-index:20;min-width:150px;display:none;}
+  border-radius:var(--r8);overflow:hidden;z-index:30;min-width:150px;display:none;}
 .exportMenu.open{display:block;}
 /* 账号菜单里的「界面风格」小节 */
 .exportMenu .menuLabel{padding:8px 12px 3px;font-size:10.5px;letter-spacing:.5px;color:var(--mutedDark);font-family:var(--fontMono);}
@@ -102,6 +102,14 @@ a{color:var(--accent);}
   background:linear-gradient(135deg,var(--b) 0 46%,var(--a) 54% 100%);transition:transform .12s,box-shadow .12s;}
 .exportMenu .paletteDot:hover{transform:scale(1.12);background:linear-gradient(135deg,var(--b) 0 46%,var(--a) 54% 100%);}
 .exportMenu .paletteDot.on{box-shadow:0 0 0 2px var(--accent);}
+/* 盈亏颜色：两个小拾色器 + 恢复默认（全站的赚 / 亏都用这组颜色，见 palettes.css 的 --pnlPos） */
+.exportMenu .menuPnl{display:flex;align-items:center;gap:12px;padding:4px 12px 10px;}
+.exportMenu .menuPnlPick{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);cursor:pointer;}
+.exportMenu .menuPnlPick input[type="color"]{width:28px;height:22px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);cursor:pointer;}
+.exportMenu .menuPnlPick input[type="color"]::-webkit-color-swatch-wrapper{padding:0;}
+.exportMenu .menuPnlPick input[type="color"]::-webkit-color-swatch{border:none;border-radius:4px;}
+.exportMenu .menuPnlPick input[type="color"]::-moz-color-swatch{border:none;border-radius:4px;}
+.exportMenu .menuPnl button{width:auto;margin-left:auto;padding:4px 8px;font-size:11.5px;color:var(--muted);border-radius:var(--r6);}
 .authCard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:24px;}
 .exportMenu button{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;background:transparent;
   border:none;color:var(--text);font-size:12.5px;cursor:pointer;text-align:left;font-family:var(--fontUI);}
@@ -311,21 +319,21 @@ a{color:var(--accent);}
   font-family:var(--fontUI);font-size:12.5px;flex-wrap:wrap;}
 .findingRow:hover{background:var(--surface2);}
 .findingDir{font-size:10px;flex-shrink:0;}
-.findingDir.up{color:var(--pos);}
-.findingDir.down{color:var(--neg);}
+.findingDir.up{color:var(--pnlPos);}
+.findingDir.down{color:var(--pnlNeg);}
 .findingWhat{color:var(--text);min-width:0;}
 .findingWhat b{font-weight:600;}
 .findingMeta{font-size:11px;color:var(--mutedDark);}
 .findingDiff{font-size:11.5px;margin-left:auto;}
-.findingDiff.up{color:var(--pos);}
-.findingDiff.down{color:var(--neg);}
+.findingDiff.up{color:var(--pnlPos);}
+.findingDiff.down{color:var(--pnlNeg);}
 .findingsNote{font-size:10.5px;color:var(--mutedDark);line-height:1.7;margin-top:8px;
   padding-top:8px;border-top:1px solid var(--border);}
 /* 过了 FDR 校正的行才有这个徽章。刻意不显示 p 值 —— 用途是排序，不是下结论 */
 .bdStrongTag{font-size:10px;border-radius:4px;padding:0 5px;white-space:nowrap;
   font-family:var(--fontMono);}
-.bdStrongTag.up{color:var(--pos);background:var(--posSoft);border:1px solid var(--pos);}
-.bdStrongTag.down{color:var(--neg);background:var(--negSoft);border:1px solid var(--neg);}
+.bdStrongTag.up{color:var(--pnlPos);background:var(--pnlPosSoft);border:1px solid var(--pnlPos);}
+.bdStrongTag.down{color:var(--pnlNeg);background:var(--pnlNegSoft);border:1px solid var(--pnlNeg);}
 /* 从重点发现跳过去之后闪一下：一屏十几张卡，不闪的话用户不知道跳到哪张了 */
 .breakdownCard.bdFlash{animation:bdFlash 1.2s ease-out;}
 @keyframes bdFlash{0%{box-shadow:0 0 0 2px var(--accent);}100%{box-shadow:0 0 0 2px transparent;}}
@@ -449,32 +457,32 @@ a{color:var(--accent);}
 .monthBarCell{border:1px solid var(--border);background:var(--surface2);border-radius:var(--r9);padding:10px 6px;text-align:center;cursor:pointer;font-family:var(--fontUI);transition:border-color .12s,transform .12s;}
 .monthBarCell:hover{border-color:var(--accent);transform:translateY(-1px);}
 .monthBarCell.current{outline:2px solid var(--accent);outline-offset:-1px;}
-.monthBarCell.pos{border-color:var(--pos);background:var(--posSoft);}
-.monthBarCell.neg{border-color:var(--neg);background:var(--negSoft);}
+.monthBarCell.pos{border-color:var(--pnlPos);background:var(--pnlPosSoft);}
+.monthBarCell.neg{border-color:var(--pnlNeg);background:var(--pnlNegSoft);}
 .monthBarCell.neutral{border-color:var(--accent);background:var(--accentSoft);}
 .monthBarLabel{font-family:var(--fontMono);font-size:12px;color:var(--text);}
 .monthBarValue{font-size:11px;margin-top:4px;font-family:var(--fontMono);color:var(--muted);}
-.monthBarCell.pos .monthBarValue{color:var(--pos);}
-.monthBarCell.neg .monthBarValue{color:var(--neg);}
+.monthBarCell.pos .monthBarValue{color:var(--pnlPos);}
+.monthBarCell.neg .monthBarValue{color:var(--pnlNeg);}
 .dayGrid{display:grid;grid-template-columns:repeat(7,1fr) 84px;gap:6px;margin-bottom:10px;}
 .dayGridHead{text-align:center;font-size:11px;color:var(--mutedDark);font-family:var(--fontMono);padding-bottom:4px;}
 .dayCell{border:1px solid var(--border);background:var(--surface2);border-radius:var(--r9);min-height:64px;padding:6px 8px;cursor:pointer;transition:border-color .12s,transform .12s;}
 .dayCell:not(.outMonth):hover{border-color:var(--accent);transform:translateY(-1px);}
 .dayCell.outMonth{opacity:.28;cursor:default;}
-.dayCell.pos{border-color:var(--pos);background:var(--posSoft);}
-.dayCell.neg{border-color:var(--neg);background:var(--negSoft);}
+.dayCell.pos{border-color:var(--pnlPos);background:var(--pnlPosSoft);}
+.dayCell.neg{border-color:var(--pnlNeg);background:var(--pnlNegSoft);}
 .dayCell.neutral{border-color:var(--accent);background:var(--accentSoft);}
 .dayCellNum{font-family:var(--fontMono);font-size:12px;color:var(--muted);text-align:right;}
 .dayCellInfo{font-size:11px;margin-top:6px;color:var(--text);line-height:1.5;}
-.dayCell.pos .dayCellInfo{color:var(--pos);}
-.dayCell.neg .dayCellInfo{color:var(--neg);}
+.dayCell.pos .dayCellInfo{color:var(--pnlPos);}
+.dayCell.neg .dayCellInfo{color:var(--pnlNeg);}
 .weekCell{border:1px solid var(--border);background:var(--surface2);border-radius:var(--r9);min-height:64px;padding:6px 4px;display:flex;align-items:center;justify-content:center;text-align:center;}
-.weekCell.pos{border-color:var(--pos);background:var(--posSoft);}
-.weekCell.neg{border-color:var(--neg);background:var(--negSoft);}
+.weekCell.pos{border-color:var(--pnlPos);background:var(--pnlPosSoft);}
+.weekCell.neg{border-color:var(--pnlNeg);background:var(--pnlNegSoft);}
 .weekCell.neutral{border-color:var(--accent);background:var(--accentSoft);}
 .weekCellInfo{font-size:12px;font-weight:600;color:var(--text);font-family:var(--fontMono);}
-.weekCell.pos .weekCellInfo{color:var(--pos);}
-.weekCell.neg .weekCellInfo{color:var(--neg);}
+.weekCell.pos .weekCellInfo{color:var(--pnlPos);}
+.weekCell.neg .weekCellInfo{color:var(--pnlNeg);}
 .weekCellInfo.muted{color:var(--mutedDark);font-weight:400;}
 .dayDetailRow{display:flex;align-items:center;gap:12px;padding:10px 6px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;}
 .calendarPanel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r12);padding:20px;}
@@ -1004,7 +1012,7 @@ button.pageRef{line-height:1.5;}
 .pbStatsRow.small{font-size:11.5px;gap:3px 10px;}
 .pbStat b{color:var(--text);font-weight:600;font-size:13px;}
 .pbStatsRow.small .pbStat b{font-size:12px;}
-.pbStat b.pos{color:var(--pos);} .pbStat b.neg{color:var(--neg);}
+.pbStat b.pos{color:var(--pnlPos);} .pbStat b.neg{color:var(--pnlNeg);}
 .pbStat.muted{color:var(--mutedDark);font-size:11px;}
 .pbStatsEmpty{font-size:11.5px;color:var(--mutedDark);}
 
@@ -1469,7 +1477,7 @@ button.pageRef{line-height:1.5;}
 .pbExecRow.head{cursor:default;background:var(--surface2);font-size:11px;color:var(--mutedDark);font-family:var(--fontMono);}
 .pbExecRow.isAll .pbExecName{font-weight:600;}
 .pbExecRow.on{background:var(--accentSoft);box-shadow:inset 3px 0 0 var(--accent);}
-.pbExecRow .pos{color:var(--pos);} .pbExecRow .neg{color:var(--neg);}
+.pbExecRow .pos{color:var(--pnlPos);} .pbExecRow .neg{color:var(--pnlNeg);}
 .pbExecNow{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--accent);margin:0 2px 10px;}
 .pbExecNow .tinyBtn{color:var(--muted);text-decoration:underline;font-size:12px;}
 .pbScopePresets{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}

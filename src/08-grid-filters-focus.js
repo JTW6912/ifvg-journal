@@ -525,7 +525,7 @@ function renderFilterSummary(filtered) {
   return `<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:16px;padding:11px 14px;background:var(--surface2);border-radius:8px;">
     <span class="mono" style="color:var(--accent);font-weight:600;">${T("grid.winRate")} ${fmtPct(s.wr)}</span>
     <span>W ${s.w} · L ${s.l} · BE ${s.be} · BE→W ${s.bew} · BE→L ${s.bel}</span>
-    ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pos)" : "var(--neg)"}">${T("grid.total")} ${fmtNum(s.totalR)}R · EV ${fmtNum(s.ev, 3)}</span>` : ""}
+    ${s.hasR ? `<span class="mono" style="color:${s.totalR >= 0 ? "var(--pnlPos)" : "var(--pnlNeg)"}">${T("grid.total")} ${fmtNum(s.totalR)}R · EV ${fmtNum(s.ev, 3)}</span>` : ""}
     ${s.hasR ? `<span class="mono" style="color:${pfColor(s.pf)}" title="${esc(T("grid.pfTitle", { n: s.pfSample }))}">PF ${fmtPF(s.pf)}</span>` : ""}
     ${!viewingUserId ? `<button class="tinyBtn" data-action="save-filters-as-combo" style="margin-left:auto;color:var(--accent);font-size:12px;">${ICONS.plus} ${T("grid.saveFiltersAsCombo")}</button>` : ""}
   </div>`;

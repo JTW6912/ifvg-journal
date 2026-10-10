@@ -598,7 +598,7 @@ function exMarkdownFiles(ctx) {
    网页报告：一个自带样式、不带脚本的 .html，双击就能开、能打印
    ============================================================ */
 const EX_REPORT_CSS = `
-:root{--bg:#F6F4EF;--surface:#fff;--surface2:#EFEBE1;--border:#E1DACB;--text:#211D16;--muted:#6C6558;--dim:#9B9385;--accent:#A87526;--accentSoft:rgba(168,117,38,.12);--pos:#2E8F5C;--neg:#B23A2C;--info:#2C6BD6;--note:#FBF2D5;--noteEdge:#E0C27A}
+:root{--bg:#F6F4EF;--surface:#fff;--surface2:#EFEBE1;--border:#E1DACB;--text:#211D16;--muted:#6C6558;--dim:#9B9385;--accent:#A87526;--accentSoft:rgba(168,117,38,.12);--pos:#2E8F5C;--neg:#B23A2C;--pnlPos:var(--pos);--pnlNeg:var(--neg);--info:#2C6BD6;--note:#FBF2D5;--noteEdge:#E0C27A}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.7 -apple-system,'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif}
 a{color:var(--info)}.mono{font-family:ui-monospace,'JetBrains Mono',Consolas,monospace}
 .toc{position:fixed;top:0;left:0;bottom:0;width:250px;overflow:auto;padding:24px 18px;border-right:1px solid var(--border);background:var(--surface)}
