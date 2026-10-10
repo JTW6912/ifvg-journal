@@ -7,6 +7,10 @@
    - 胜/负/待验证/标签/便利贴这些「语义色」各配色共用一套（下面两段），个别配色撞色时单独改
    ============================================================ */
 
+/* 月度日历的盈/亏色：每种配色单独调过色相和饱和度，不跟主色撞、也不显得突兀；
+   没配的（黑金）就用 --pos / --neg */
+:where(:root){--calPos:var(--pos); --calNeg:var(--neg);}
+
 /* ---------- 非黑金配色共用的语义色 ---------- */
 :root[data-palette][data-theme="light"]{
   --pos:#0FA37A; --posSoft:rgba(15,163,122,.11); --posFaint:rgba(15,163,122,.07);
@@ -35,12 +39,14 @@
   --accent:#2B7DE9; --accentSoft:rgba(43,125,233,.10); --accentHover:#1F6AD3; --accent2:#5AB2FF;
   --text:#10233F; --muted:#5A6B85; --mutedDark:#8E9CB3;
   --info:#5B5FEF; --infoSoft:rgba(91,95,239,.11);
+  --calPos:#0E9C88; --calNeg:#E0566B;
 }
 :root[data-palette="sky"]:not([data-theme="light"]){
   --bg:#0A1322; --surface:#101C30; --surface2:#16253D; --border:#213350; --borderLight:#2D4366;
   --accent:#4A97FF; --accentSoft:rgba(74,151,255,.15); --accentHover:#68A9FF; --accent2:#7CC4FF;
   --text:#E5EDF9; --muted:#97A7C0; --mutedDark:#66789A;
   --info:#8E90FA; --infoSoft:rgba(142,144,250,.16);
+  --calPos:#2CC4AA; --calNeg:#F26B7E;
 }
 
 /* ---------- 紫罗兰 ---------- */
@@ -50,6 +56,7 @@
   --text:#1E1638; --muted:#645B80; --mutedDark:#9A92B5;
   --info:#2F7BEA; --infoSoft:rgba(47,123,234,.11);
   --verify:#C2410C; --verifySoft:rgba(194,65,12,.10);
+  --calPos:#1C9C84; --calNeg:#D94F7A;
 }
 :root[data-palette="violet"]:not([data-theme="light"]){
   --bg:#0F0C1C; --surface:#17132A; --surface2:#1F1A37; --border:#2C2550; --borderLight:#3A3166;
@@ -57,6 +64,7 @@
   --text:#ECE8FA; --muted:#A79FC4; --mutedDark:#6F6890;
   --info:#5EA2FF; --infoSoft:rgba(94,162,255,.16);
   --verify:#FB923C; --verifySoft:rgba(251,146,60,.15);
+  --calPos:#3CC8A6; --calNeg:#F06D94;
 }
 
 /* ---------- 樱花粉 ---------- */
@@ -65,6 +73,7 @@
   --accent:#D63F84; --accentSoft:rgba(214,63,132,.10);
   --text:#3A1628; --muted:#856070; --mutedDark:#B597A5;
   --info:#3B82F6; --infoSoft:rgba(59,130,246,.11);
+  --calPos:#2A9A76; --calNeg:#E05A3C;
 }
 :root[data-palette="rose"]:not([data-theme="light"]){
   --bg:#1A0E15; --surface:#23131C; --surface2:#2D1925; --border:#3F2434; --borderLight:#522F43;
@@ -72,6 +81,7 @@
   --text:#F8E9F0; --muted:#C6A2B3; --mutedDark:#8C6B7B;
   --info:#6AA8FF; --infoSoft:rgba(106,168,255,.16);
   --onAccent:#2A0716;
+  --calPos:#45C597; --calNeg:#F27656;
 }
 
 /* ---------- 落日橙 ---------- */
@@ -81,6 +91,7 @@
   --text:#2E1B0C; --muted:#7D6450; --mutedDark:#B09A88;
   --info:#2F7BEA; --infoSoft:rgba(47,123,234,.11);
   --note:#FFF4E0;
+  --calPos:#4A975A; --calNeg:#C93A40;
 }
 :root[data-palette="sunset"]:not([data-theme="light"]){
   --bg:#16100B; --surface:#1F1710; --surface2:#291E15; --border:#3A2B1E; --borderLight:#4C3827;
@@ -88,6 +99,7 @@
   --text:#F6ECE2; --muted:#C2AA96; --mutedDark:#85705E;
   --info:#66A6FF; --infoSoft:rgba(102,166,255,.16);
   --onAccent:#1F0F02;
+  --calPos:#6CC07C; --calNeg:#EE5F62;
 }
 
 /* ---------- 深海青 ---------- */
@@ -97,6 +109,7 @@
   --text:#0D2A30; --muted:#4F6E75; --mutedDark:#8BA7AD;
   --info:#5B5FEF; --infoSoft:rgba(91,95,239,.11);
   --tag:#C2410C; --tagSoft:rgba(194,65,12,.10);
+  --calPos:#2B9B58; --calNeg:#DE6656;
 }
 :root[data-palette="ocean"]:not([data-theme="light"]){
   --bg:#08151A; --surface:#0E1F25; --surface2:#142A31; --border:#1E3A43; --borderLight:#2A4C56;
@@ -105,6 +118,7 @@
   --info:#8E90FA; --infoSoft:rgba(142,144,250,.16);
   --tag:#FB923C; --tagSoft:rgba(251,146,60,.15);
   --onAccent:#04191C;
+  --calPos:#52C97E; --calNeg:#F27C6E;
 }
 
 /* ---------- 石墨（黑白极简） ---------- */
@@ -113,6 +127,7 @@
   --accent:#27272A; --accentSoft:rgba(39,39,42,.08); --accent2:#71717A;
   --text:#18181B; --muted:#63636B; --mutedDark:#9C9CA3;
   --info:#2F6FEB; --infoSoft:rgba(47,111,235,.11);
+  --calPos:#3F7A5D; --calNeg:#B0544B;
 }
 :root[data-palette="graphite"]:not([data-theme="light"]){
   --bg:#0B0B0C; --surface:#151517; --surface2:#1C1C1F; --border:#2A2A2E; --borderLight:#3A3A3F;
@@ -120,6 +135,7 @@
   --text:#EDEDEF; --muted:#A1A1AA; --mutedDark:#6B6B73;
   --info:#6AA8FF; --infoSoft:rgba(106,168,255,.16);
   --onAccent:#111113;
+  --calPos:#72AE8E; --calNeg:#D47A71;
 }
 
 /* ---------- 菜单里的色板小圆点（按钮本身不随配色变，永远显示自己那种颜色） ---------- */
