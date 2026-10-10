@@ -93,7 +93,7 @@ function pbTagCardHtml(tag, opts) {
   const c = pbTagCompare(tag);
   const owner = c.owner;
   const delta = pbTagDeltaHtml(c);
-  return `<div class="pbTagCard" data-action="pb-open" data-id="${esc(tag.id)}">
+  return `<div class="pbTagCard" data-action="pb-open" data-id="${esc(tag.id)}"${o.drag && !viewingUserId ? ` draggable="true" data-pb-drag="tag"` : ""}>
     <div class="pbTagHead">
       <span class="pbTagName">${ICONS.tag}${esc(pbTitle(tag))}</span>
       ${o.hideOwner ? "" : `<span class="pbTagOwner">${esc(owner ? pbLabel(owner.id) : T("pb.globalTag"))}</span>`}
@@ -106,28 +106,49 @@ function pbTagCardHtml(tag, opts) {
 /* 便利贴：一条笔记。上面是归属，中间标题 + 一句话。
    错题底下是出现过几次、最近一次是哪天——一眼看得出这个错是不是还在反复犯；
    待验证底下是关联交易的成绩，右上角是状态 */
+/* o.drag = 能拖（模型库首页的墙上）；o.q = 搜索词，命中的分支行高亮；o.status = 待验证按状态筛时，对上的分支行高亮 */
 function pbStickyHtml(m, opts) {
   const o = opts || {};
   const isV = m.kind === "verify";
   const owner = pbNoteOwner(m);
   const gist = pbMistakeGist(m);
+  const branches = pbBranchesOf(m);
+  const hasB = branches.length > 0;
+  // 问题卡片的成绩算上所有分支；关联那一行只看自己页面上的标记，问题卡片上不摆
+  const list = hasB ? pbFamilyTrades(m) : pbNoteTrades(m);
   let foot;
-  const evLine = pbEvFootText(m);
+  const evLine = hasB ? "" : pbEvFootText(m);
   const allPrefix = evLine ? esc(T("pb.sticky.allPrefix")) + " " : "";
-  if (isV) foot = allPrefix + esc(pbVerifyFootText(m));
+  if (isV) foot = allPrefix + esc(pbStatsLineText(pbStats(list)));
   else {
-    const n = pbNoteTrades(m).length;
-    const last = pbNoteLastDate(m);
+    const last = list.map(pbTradeDateOf).filter(Boolean).sort().pop() || "";
     // 错题也摆成绩：犯这个错的那几笔一共亏了多少，比「出现过几次」更能说明要不要先改它
-    foot = allPrefix + esc(n ? pbStatsLineText(pbStats(pbNoteTrades(m))) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
+    foot = allPrefix + esc(list.length ? pbStatsLineText(pbStats(list)) : T("pb.sticky.none")) + (last ? ` · ${esc(T("pb.sticky.last", { date: last }))}` : "");
   }
   if (evLine) foot += `<span class="pbStickyEv">${esc(evLine)}</span>`;
-  const ownerTxt = owner ? pbLabel(owner.id) : T(isV ? "pb.globalVerify" : "pb.globalMistake");
-  const top = (o.hideOwner ? "" : `<div class="pbStickyOwner">${esc(ownerTxt)}</div>`) + (isV ? pbStatusPillHtml(m) : "");
-  return `<div class="pbSticky${isV ? " isVerify status-" + pbVerifyStatus(m) : ""}" data-action="pb-open" data-id="${esc(m.id)}">
+  const root = pbBranchRoot(m);
+  const ownerTxt = root ? T("pb.branch.of", { name: pbTitle(root) }) : owner ? pbLabel(owner.id) : T(isV ? "pb.globalVerify" : "pb.globalMistake");
+  const pill = !isV ? "" : hasB ? `<span class="pbStatusPill isBranches">${esc(T("pb.branch.count", { n: branches.length }))}</span>` : pbStatusPillHtml(m);
+  const top = (o.hideOwner && !root ? "" : `<div class="pbStickyOwner">${esc(ownerTxt)}</div>`) + pill;
+  const drag = o.drag && !viewingUserId ? ` draggable="true" data-pb-drag="note"` : "";
+  let branchHtml = "";
+  if (hasB) {
+    const unsplit = pbUnsplitTrades(m).length;
+    branchHtml = `<div class="pbBranchList">${branches.map((b) => {
+      const bl = pbNoteTrades(b), st = pbStats(bl);
+      const hit = (o.q && pbMatchesSearch(b, o.q)) || (o.status && pbVerifyStatus(b) === o.status);
+      return `<button type="button" class="pbBranchRow${isV ? " status-" + pbVerifyStatus(b) : ""}${hit ? " hit" : ""}" data-action="pb-open" data-id="${esc(b.id)}"${o.drag && !viewingUserId ? ` draggable="true" data-pb-drag="branch"` : ""}>
+        <span class="pbBranchName">${esc(pbTitle(b))}</span>
+        ${isV ? pbStatusPillHtml(b) : ""}
+        <span class="pbBranchStat mono">${bl.length ? esc(T("pb.branch.stat", { n: st.n, wr: fmtPct(st.wr) })) : "—"}</span>
+      </button>`;
+    }).join("")}${unsplit ? `<div class="pbBranchRow unsplit"><span class="pbBranchName">${esc(T("pb.branch.unsplit"))}</span><span class="pbBranchStat mono">${esc(T("pb.branch.unsplitN", { n: unsplit }))}</span></div>` : ""}</div>`;
+  }
+  return `<div class="pbSticky${isV ? " isVerify" + (hasB ? " hasBranches" : " status-" + pbVerifyStatus(m)) : ""}${hasB && !isV ? " hasBranches" : ""}" data-action="pb-open" data-id="${esc(m.id)}"${drag}>
     ${top ? `<div class="pbStickyTop">${top}</div>` : ""}
     <div class="pbStickyTitle">${esc(pbTitle(m))}</div>
-    ${gist ? `<div class="pbStickyGist">${esc(gist)}</div>` : `<div class="pbStickyGist muted">${esc(T(isV ? "pb.sticky.noGistVerify" : "pb.sticky.noGist"))}</div>`}
+    ${gist ? `<div class="pbStickyGist">${esc(gist)}</div>` : hasB ? "" : `<div class="pbStickyGist muted">${esc(T(isV ? "pb.sticky.noGistVerify" : "pb.sticky.noGist"))}</div>`}
+    ${branchHtml}
     <div class="pbStickyFoot mono">${foot}</div>
   </div>`;
 }
@@ -164,7 +185,7 @@ function pbSystemCardHtml(sys, q) {
   const verifies = pbNotesOf(sys.id, "verify").length;
   const tagsN = pbNotesOf(sys.id, "tag").length;
   const excerpt = mdPlainExcerpt(String(sys.body || "").replace(/^\s{0,3}#{1,6}\s.*$/gm, ""), 150);
-  return `<div class="pbSysCard" data-action="pb-open" data-id="${esc(sys.id)}">
+  return `<div class="pbSysCard" data-action="pb-open" data-id="${esc(sys.id)}"${viewingUserId ? "" : ` draggable="true" data-pb-drag="system"`}>
     <div class="pbSysHead">
       <div class="pbSysTitle display">${esc(pbTitle(sys))}</div>
       ${pbKindBadge("system")}
@@ -176,7 +197,7 @@ function pbSystemCardHtml(sys, q) {
       ${strategies.map((s) => {
         const ss = pbStats(pbTradesOf(s.id));
         const hit = q && pbMatchesSearch(s, q);
-        return `<button class="pbStratRow${hit ? " hit" : ""}" data-action="pb-open" data-id="${esc(s.id)}">
+        return `<button class="pbStratRow${hit ? " hit" : ""}" data-action="pb-open" data-id="${esc(s.id)}"${viewingUserId ? "" : ` draggable="true" data-pb-drag="strategy"`}>
           <span class="pbStratName">${esc(pbTitle(s))}</span>
           <span class="pbStratStats">${pbStatsHtml(ss, true)}</span>
         </button>`;
@@ -327,46 +348,170 @@ function renderPlaybook() {
   html += `<div class="pbLibMistakes pbLibTags">`;
   html += pbSectionHeadHtml(T("pb.tagLibrary"), tagAll.length, pbAddBtn("tag", "", "pb.addGlobalTag"), T("pb.tagLibraryHint"));
   html += tagList.length
-    ? `<div class="pbTagGrid">${tagList.map((g) => pbTagCardHtml(g)).join("")}</div>`
+    ? `<div class="pbTagGrid">${tagList.map((g) => pbTagCardHtml(g, { drag: true })).join("")}</div>`
     : `<div class="pbEmptyLine">${esc(tagAll.length ? T("pb.emptySearch") : T("pb.noTags"))}</div>`;
   html += `</div>`;
 
   // 错题库：全部错题，按归属筛
-  const all = pbSortList(pbMistakes());
+  const all = pbTopNotes(pbSortList(pbMistakes()));
   const bySystem = (sysId) => all.filter((m) => { const o = pbMistakeOwner(m); return o && (o.id === sysId || o.parent_id === sysId); });
-  const globals = pbGlobalMistakes();
+  const globals = pbTopNotes(pbGlobalMistakes());
+  // 搜索：问题本身或它的任何一个分支命中，整张卡就留着（命中的分支行会高亮）
+  const famMatch = (m) => pbMatchesSearch(m, q) || pbBranchesOf(m).some((b) => pbMatchesSearch(b, q));
   let list = all;
   if (pbMistakeFilter === "__global") list = globals;
   else if (pbMistakeFilter !== "all" && pbFind(pbMistakeFilter)) list = bySystem(pbMistakeFilter);
-  if (q) list = list.filter((m) => pbMatchesSearch(m, q));
+  if (q) list = list.filter(famMatch);
   const chip = (val, label, n) => `<button class="chip ${pbMistakeFilter === val ? "active" : ""}" data-action="pb-mistake-filter" data-val="${esc(val)}">${esc(label)} <span class="mono pbChipN">${n}</span></button>`;
   html += `<div class="pbLibMistakes">`;
-  html += pbSectionHeadHtml(T("pb.mistakeLibrary"), all.length, pbAddBtn("mistake", "", "pb.addGlobalMistake"), T("pb.mistakeLibraryHint"));
+  const dragHint = readOnly ? "" : " · " + T("pb.dragHint");
+  html += pbSectionHeadHtml(T("pb.mistakeLibrary"), all.length, pbAddBtn("mistake", "", "pb.addGlobalMistake"), T("pb.mistakeLibraryHint") + dragHint);
   if (all.length) {
     html += `<div class="chipGroup pbFilterChips">${chip("all", T("pb.filterAll"), all.length)}${systems.map((s) => chip(s.id, pbTitle(s), bySystem(s.id).length)).join("")}${chip("__global", T("pb.globalMistake"), globals.length)}</div>`;
   }
   html += list.length
-    ? `<div class="pbStickyGrid">${list.map((m) => pbStickyHtml(m)).join("")}</div>`
+    ? `<div class="pbStickyGrid">${list.map((m) => pbStickyHtml(m, { drag: true, q })).join("")}</div>`
     : `<div class="pbEmptyLine">${esc(all.length ? T("pb.emptySearch") : T("pb.noMistakes"))}</div>`;
   html += `</div>`;
 
   // 待验证区：按状态筛（观察中 / 验证可做 / 已否定）
-  const vAll = pbSortList(pbNotes("verify"));
-  const vCount = (s) => vAll.filter((v) => pbVerifyStatus(v) === s).length;
-  let vList = pbVerifyFilter === "all" ? vAll : vAll.filter((v) => pbVerifyStatus(v) === pbVerifyFilter);
-  if (q) vList = vList.filter((v) => pbMatchesSearch(v, q));
+  const vAll = pbTopNotes(pbSortList(pbNotes("verify")));
+  // 有分支的问题自己不算状态，看分支：任何一个分支对得上这个状态，整张卡就算进来
+  const vStatuses = (v) => { const b = pbBranchesOf(v); return b.length ? b.map(pbVerifyStatus) : [pbVerifyStatus(v)]; };
+  const vCount = (s) => vAll.filter((v) => vStatuses(v).includes(s)).length;
+  let vList = pbVerifyFilter === "all" ? vAll : vAll.filter((v) => vStatuses(v).includes(pbVerifyFilter));
+  if (q) vList = vList.filter(famMatch);
   const vChip = (val, label, n) => `<button class="chip ${pbVerifyFilter === val ? "active" : ""}" data-action="pb-verify-filter" data-val="${esc(val)}">${esc(label)} <span class="mono pbChipN">${n}</span></button>`;
   html += `<div class="pbLibMistakes pbLibVerify">`;
-  html += pbSectionHeadHtml(T("pb.verifyLibrary"), vAll.length, pbAddBtn("verify", "", "pb.addGlobalVerify"), T("pb.verifyLibraryHint"));
+  html += pbSectionHeadHtml(T("pb.verifyLibrary"), vAll.length, pbAddBtn("verify", "", "pb.addGlobalVerify"), T("pb.verifyLibraryHint") + dragHint);
   if (vAll.length) {
     html += `<div class="chipGroup pbFilterChips">${vChip("all", T("pb.filterAll"), vAll.length)}${PB_VERIFY_STATUSES.map((s) => vChip(s, T("pb.status." + s), vCount(s))).join("")}</div>`;
   }
   html += vList.length
-    ? `<div class="pbStickyGrid">${vList.map((v) => pbStickyHtml(v)).join("")}</div>`
+    ? `<div class="pbStickyGrid">${vList.map((v) => pbStickyHtml(v, { drag: true, q, status: pbVerifyFilter === "all" ? "" : pbVerifyFilter })).join("")}</div>`
     : `<div class="pbEmptyLine">${esc(vAll.length ? T("pb.emptySearch") : T("pb.noVerify"))}</div>`;
   html += `</div>`;
   return html;
 }
+
+/* ============================================================
+   模型库首页的拖拽：排顺序、把一条笔记拖进另一条当分支
+     system   系统卡片          左右半边 = 插到前 / 后
+     strategy 系统卡片里的策略行 上下半边 = 插到前 / 后；拖到别的系统的策略行上 = 换到那个系统
+     tag      标签卡片          左右半边
+     note     笔记卡片（顶层）  拖到另一张卡片：两边 = 排序，中间 = 放进去当分支；拖到分支行 = 放进那个问题、插在那一行前 / 后
+     branch   卡片里的分支行    拖到别的分支行 = 换位置（可以换问题）；拖到卡片中间 = 放进那张卡；拖到卡片两边 = 拎出来变回顶层
+   顺序存在 sort_order 上，交易表单、归类模式的列表都按它排（pbSortList），拖完那边自然跟着变。
+   ⚠ 同级重排用的是完整的同级列表（含筛选 / 搜索藏起来的），只动被拖的那一张
+   ============================================================ */
+let pbDrag = null;   // { type, id, el }
+let pbDropEl = null;
+function pbClearDrop() {
+  if (pbDropEl) { delete pbDropEl.dataset.pbDrop; delete pbDropEl.dataset.pbDropLabel; pbDropEl = null; }
+}
+/* 拖到 el 上、指针在 (x, y) 时会怎样：{ el, zone: "before" | "after" | "into" } 或 null（这里放不下） */
+function pbDropTarget(e) {
+  if (!pbDrag) return null;
+  const d = pbFind(pbDrag.id);
+  if (!d) return null;
+  // 只找这一类拖拽认的目标：拖系统卡片经过卡片里的策略行，认的还是外面那张系统卡片
+  const sel = pbDrag.type === "note" || pbDrag.type === "branch" ? '[data-pb-drag="note"],[data-pb-drag="branch"]' : `[data-pb-drag="${pbDrag.type}"]`;
+  const el = e.target.closest && e.target.closest(sel);
+  if (!el || el === pbDrag.el || pbDrag.el.contains(el)) return null;
+  const t = pbFind(el.dataset.id);
+  if (!t || t.id === d.id) return null;
+  const r = el.getBoundingClientRect();
+  const fx = (e.clientX - r.left) / Math.max(1, r.width), fy = (e.clientY - r.top) / Math.max(1, r.height);
+  const side = (f) => (f < 0.5 ? "before" : "after");
+  const tt = el.dataset.pbDrag;
+  if (pbDrag.type === "system") return tt === "system" ? { el, t, zone: side(fx) } : null;
+  if (pbDrag.type === "strategy") return tt === "strategy" ? { el, t, zone: side(fy) } : null;
+  if (pbDrag.type === "tag") return tt === "tag" ? { el, t, zone: side(fx) } : null;
+  // 笔记 / 分支：只在同种类之间（错题拖不进待验证）
+  if (t.kind !== d.kind) return null;
+  if (tt === "note") {
+    if (pbDrag.type === "branch" && pbBranchRoot(d) && pbBranchRoot(d).id === t.id && fx > 0.28 && fx < 0.72) return null;   // 本来就在这张卡里
+    if (fx > 0.28 && fx < 0.72 && pbCanBranchUnder(d, t)) return { el, t, zone: "into" };
+    return { el, t, zone: side(fx) };
+  }
+  if (tt === "branch") {
+    const root = pbBranchRoot(t);
+    if (!root || root.id === d.id || !pbCanBranchUnder(d, root)) return null;
+    return { el, t, zone: side(fy) };
+  }
+  return null;
+}
+/* 算出这一次放下要改哪几行（同一行的几处改动合成一条） */
+function pbDropPatches(d, t, zone, type) {
+  const out = {};
+  const add = (list) => list.forEach((it) => { out[it.id] = { ...(out[it.id] || {}), ...it.patch }; });
+  const after = zone === "after";
+  if (type === "system") add(pbReorderPatches(pbSystems(), d.id, t.id, after));
+  else if (type === "tag") add(pbReorderPatches(pbTags(), d.id, t.id, after));
+  else if (type === "strategy") {
+    if (d.parent_id !== t.parent_id) add([{ id: d.id, patch: { parent_id: t.parent_id } }]);
+    add(pbReorderPatches(pbStrategiesOf(t.parent_id).filter((s) => s.id !== d.id), d.id, t.id, after));
+  } else if (pbIsBranch(t)) {
+    // 放到某个分支行前 / 后：进那个问题
+    const root = pbBranchRoot(t);
+    if (d.branch_of !== root.id || d.parent_id !== root.parent_id) add([{ id: d.id, patch: { branch_of: root.id, parent_id: root.parent_id || null } }]);
+    add(pbReorderPatches(pbBranchesOf(root).filter((b) => b.id !== d.id), d.id, t.id, after));
+  } else if (zone === "into") {
+    add([{ id: d.id, patch: { branch_of: t.id, parent_id: t.parent_id || null } }]);
+    add(pbReorderPatches(pbBranchesOf(t).filter((b) => b.id !== d.id), d.id, "", false));
+  } else {
+    // 放到一张卡片前 / 后：顶层排序；是分支的话先拎出来
+    if (d.branch_of) add([{ id: d.id, patch: { branch_of: null } }]);
+    const tops = pbNotes(d.kind).filter((m) => !pbIsBranch(m) && m.id !== d.id);
+    add(pbReorderPatches(tops, d.id, t.id, after));
+  }
+  return Object.keys(out).map((id) => ({ id, patch: out[id] }));
+}
+async function pbDropApply(d, t, zone, type) {
+  const items = pbDropPatches(d, t, zone, type);
+  if (!items.length) return;
+  const wasRoot = pbBranchRoot(d);
+  const ok = await pbSaveStructure(items);
+  render();
+  if (!ok) { showReviewToast(pbError || T("error.dbOutdated")); return; }
+  const nowRoot = pbBranchRoot(d);
+  if (nowRoot && (!wasRoot || wasRoot.id !== nowRoot.id)) showReviewToast(T("pb.branch.movedIn", { name: pbTitle(nowRoot) }));
+  else if (wasRoot && !nowRoot) showReviewToast(T("pb.branch.movedOut"));
+}
+document.addEventListener("dragstart", (e) => {
+  const el = e.target.closest && e.target.closest("[data-pb-drag]");
+  if (!el || tab !== "playbook" || viewingUserId) return;
+  pbDrag = { type: el.dataset.pbDrag, id: el.dataset.id, el };
+  e.dataTransfer.effectAllowed = "move";
+  try { e.dataTransfer.setData("text/plain", el.dataset.id); } catch (err) {}
+  el.classList.add("pbDragging");
+});
+document.addEventListener("dragover", (e) => {
+  if (!pbDrag) return;
+  const hit = pbDropTarget(e);
+  if (!hit) { pbClearDrop(); return; }
+  e.preventDefault();
+  if (pbDropEl && pbDropEl !== hit.el) pbClearDrop();
+  pbDropEl = hit.el;
+  hit.el.dataset.pbDrop = hit.zone;
+  if (hit.zone === "into") hit.el.dataset.pbDropLabel = T("pb.branch.dropInto", { name: pbTitle(hit.t) });
+  else delete hit.el.dataset.pbDropLabel;
+});
+document.addEventListener("drop", (e) => {
+  if (!pbDrag) return;
+  const hit = pbDropTarget(e);
+  const drag = pbDrag;
+  pbClearDrop();
+  if (!hit) return;
+  e.preventDefault();
+  pbDropApply(pbFind(drag.id), hit.t, hit.zone, drag.type);
+});
+document.addEventListener("dragend", () => {
+  if (!pbDrag) return;
+  if (pbDrag.el) pbDrag.el.classList.remove("pbDragging");
+  pbDrag = null;
+  pbClearDrop();
+});
 
 /* ============================================================
    编辑器里：属性行 + 下面那几栏
@@ -380,14 +525,124 @@ function pbParentSelectHtml(d) {
       </select></label>`;
   }
   if (pbIsChild(d)) {
+    const root = pbBranchRoot(pbFind(d.id) || d);
     const cur = pbNoteOwner(d) ? d.parent_id : "";
-    return `<label class="pbMetaField"><span>${esc(T("pb.meta.mistakeOf"))}</span>
+    // 分支的归属跟着它的问题走，这里不给改，只给「挂在哪个问题下」
+    const owner = root ? "" : `<label class="pbMetaField"><span>${esc(T("pb.meta.mistakeOf"))}</span>
       <select class="select" data-pb-parent>
         <option value="" ${cur ? "" : "selected"}>${esc(T(PB_GLOBAL_KEY[d.kind]))}</option>
         ${pbAssignOptions().map((o) => `<option value="${esc(o.id)}" ${cur === o.id ? "selected" : ""}>${o.depth ? "　" : ""}${esc(o.label)}</option>`).join("")}
       </select></label>`;
+    return owner + pbBranchSelectHtml(d, root);
   }
   return "";
+}
+/* 「挂到问题下」：笔记当别的笔记的分支。有分支的笔记自己不能再当分支（两层封顶），这一格不出 */
+function pbBranchSelectHtml(d, root) {
+  const self = pbFind(d.id);
+  if (!pbIsNote(d) || !self || pbHasBranches(self)) return "";
+  const opts = pbSortList(pbNotes(d.kind).filter((m) => pbCanBranchUnder(self, m) || (root && m.id === root.id)));
+  if (!opts.length && !root) return "";
+  return `<label class="pbMetaField"><span>${esc(T("pb.branch.under"))}</span>
+    <select class="select" data-pb-branch>
+      <option value="" ${root ? "" : "selected"}>${esc(T("pb.branch.none"))}</option>
+      ${opts.map((m) => `<option value="${esc(m.id)}" ${root && root.id === m.id ? "selected" : ""}>${esc(pbTitle(m))}</option>`).join("")}
+    </select></label>`;
+}
+/* 改「挂在哪个问题下」：分支的归属跟着问题，放回顶层时归属不变 */
+async function pbSetBranchOf(id, rootId) {
+  const m = pbFind(id);
+  const root = pbFind(rootId);
+  if (!m || viewingUserId) return;
+  if (rootId && !pbCanBranchUnder(m, root)) return;
+  await flushReviewSave();
+  const items = rootId
+    ? [{ id, patch: { branch_of: rootId, parent_id: root.parent_id || null } }].concat(pbReorderPatches(pbBranchesOf(root).filter((b) => b.id !== id), id, "", false))
+    : [{ id, patch: { branch_of: null } }];
+  const merged = {};
+  items.forEach((it) => { merged[it.id] = { ...(merged[it.id] || {}), ...it.patch }; });
+  const ok = await pbSaveStructure(Object.keys(merged).map((k) => ({ id: k, patch: merged[k] })));
+  refreshPbPanels();
+  render();
+  showReviewToast(!ok ? pbError || T("error.dbOutdated") : rootId ? T("pb.branch.movedIn", { name: pbTitle(root) }) : T("pb.branch.movedOut"));
+}
+/* 改笔记的归属（系统 / 策略 / 通用）：它的分支一起挪 */
+async function pbSetNoteParent(id, parentId) {
+  const m = pbFind(id);
+  if (!m || viewingUserId) return;
+  const ids = [id].concat(pbBranchesOf(m).map((b) => b.id));
+  const ok = await pbSaveStructure(ids.map((x) => ({ id: x, patch: { parent_id: parentId || null } })));
+  refreshPbPanels();
+  render();
+  if (!ok) showReviewToast(pbError || T("error.dbOutdated"));
+}
+
+/* ---------- 合并两条笔记 ----------
+   写重复了的两条：把这一条（src）的交易、正文、标记、分支全并进选中的那条（dst），然后删掉 src。
+   别的笔记 / 复盘里链到 src 的 [[page:]] 改成链到 dst */
+let pbMergeAskId = null;
+let pbMergeTarget = "";
+function pbMergeTargets(d) {
+  const self = pbFind(d.id);
+  if (!self) return [];
+  const own = new Set(pbBranchesOf(self).map((b) => b.id));
+  return pbSortList(pbNotes(d.kind).filter((m) => m.id !== d.id && !own.has(m.id)));
+}
+function pbMergeControlHtml(d) {
+  if (!pbIsNote(d) || reviewIsReadOnly() || d._isNew || pbMergeAskId === d.id || !pbMergeTargets(d).length) return "";
+  return `<button class="tinyBtn pbConvertBtn" data-action="pb-merge-ask">${ICONS.layers} ${esc(T("pb.merge.btn"))}</button>`;
+}
+function pbMergeConfirmHtml(d) {
+  const list = pbMergeTargets(d);
+  if (!list.some((m) => m.id === pbMergeTarget)) pbMergeTarget = "";
+  return `<div class="pbConvertConfirm">
+    <span>${esc(T("pb.merge.confirm", { name: pbTitle(d) }))}</span>
+    <select class="select" data-pb-merge-target>
+      <option value="">${esc(T("pb.merge.pick"))}</option>
+      ${list.map((m) => `<option value="${esc(m.id)}" ${pbMergeTarget === m.id ? "selected" : ""}>${esc(pbLabel(m.id))}</option>`).join("")}
+    </select>
+    <span class="pbConvertBtns">
+      <button class="btn btn-primary" data-action="pb-merge-do" ${pbMergeTarget ? "" : "disabled"}>${esc(T("pb.merge.do"))}</button>
+      <button class="tinyBtn" data-action="pb-merge-cancel">${esc(T("common.cancel"))}</button>
+    </span>
+  </div>`;
+}
+async function pbMergeNote() {
+  const d = editingReview;
+  const dstId = pbMergeTarget;
+  pbMergeAskId = null;
+  pbMergeTarget = "";
+  if (!d || !pbIsNote(d) || reviewIsReadOnly() || !dstId) return;
+  if (!(await flushReviewSave())) { refreshReviewWeekRow(); return; }
+  const src = pbFind(d.id), dst = pbFind(dstId);
+  if (!src || !dst || dst.kind !== src.kind) return;
+  const fail = () => { showReviewToast(pbError || T("error.dbOutdated")); refreshReviewWeekRow(); };
+  // 1. 正文：交易那几行（连同那句话）和剩下的正文
+  if (!(await persistPbPage({ ...dst, body: pbMergeNoteBodies(dst.body, src.body, pbTitle(src)) }))) return fail();
+  // 2. 收藏 / 关联标记：dst 上没标过的才搬
+  const sm = pbMarksOf(src), dm = { ...pbMarksOf(dst) };
+  let changed = false;
+  Object.keys(sm).forEach((tid) => { if (!dm[tid] || !Object.keys(dm[tid]).some((k) => dm[tid][k])) { dm[tid] = { ...sm[tid] }; changed = true; } });
+  if (changed && !(await pbWriteMarks(dst.id, dm))) return fail();
+  // 3. src 的分支挂到 dst 下（dst 本身是分支的话，挂到 dst 的问题下，两层封顶）
+  const home = pbBranchRoot(dst) || dst;
+  const bs = pbBranchesOf(src);
+  if (bs.length && !(await pbSaveStructure(bs.map((b) => ({ id: b.id, patch: { branch_of: home.id, parent_id: home.parent_id || null } }))))) return fail();
+  // 4. 别处链到 src 的改成链到 dst
+  const ref = "[[page:" + src.id + "]]", to = "[[page:" + dst.id + "]]";
+  for (const p of pbPages.filter((x) => x.id !== src.id && String(x.body || "").includes(ref))) {
+    await persistPbPage({ ...p, body: p.body.split(ref).join(to) });
+  }
+  for (const r of reviews.filter((x) => String(x.body || "").includes(ref))) {
+    r.body = r.body.split(ref).join(to);
+    await persistReview(r, { silent: true });
+  }
+  // 5. 换到 dst，再删 src（先换走，免得编辑器把 src 又存回去）
+  openReviewEditor(dst.id);
+  editorBackStack = editorBackStack.filter((x) => x !== src.id);
+  if (!(await deletePbPage(src.id))) showReviewToast(pbError || T("error.dbOutdated"));
+  else showReviewToast(T("pb.merge.done", { name: pbTitle(dst) }));
+  render();
 }
 function pbDeleteControlHtml(d) {
   if (reviewIsReadOnly() || d._isNew) return "";
@@ -402,6 +657,8 @@ function pbDeleteControlHtml(d) {
   const m = pbIsChild(d) ? 0 : pbPages.filter((x) => pbIsChild(x) && x.parent_id === d.id).length;
   const bits = [];
   if (d.kind === "tag") { const k = pbTagTrades(d).length; if (k) bits.push(T("pb.deleteTagTrades", { n: k })); }
+  const nb = pbBranchesOf(pbFind(d.id)).length;
+  if (nb) bits.push(T("pb.deleteBranches", { n: nb }));
   if (n) bits.push(T(d.kind === "strategy" ? "pb.deleteTradesUp" : "pb.deleteTradesClear", { n }));
   if (m) bits.push(T(d.kind === "strategy" ? "pb.deleteMistakesUp" : "pb.deleteMistakesGlobal", { n: m }));
   return `<span class="pbDelConfirm"><span>${esc(T("pb.deleteConfirm"))}${bits.length ? " " + esc(bits.join("；")) : ""}</span>
@@ -417,23 +674,32 @@ function pbVerifyStatusHtml(d) {
 }
 function pbMetaRowInnerHtml() {
   const d = editingReview;
+  const self = pbFind(d.id);
+  // 有分支的问题：成绩算上全部分支，状态不摆（结论看分支）
+  const hasB = !!self && pbHasBranches(self);
+  const noteList = pbIsNote(d) ? (hasB ? pbFamilyTrades(self) : pbNoteTrades(d)) : [];
   let stats = "";
   if (d.kind === "mistake") {
     // 错题页也给成绩：犯这个错的那几笔一共怎么样
-    const last = pbNoteLastDate(d);
-    stats = (recordMode === "live" ? pbStatsHtml(pbStats(pbNoteTrades(d))) : `<span class="pbStat"><b class="mono">${pbNoteTrades(d).length}</b> ${esc(T("pb.stat.occurrences"))}</span>`)
+    const last = noteList.map(pbTradeDateOf).filter(Boolean).sort().pop() || "";
+    stats = (recordMode === "live" ? pbStatsHtml(pbStats(noteList)) : `<span class="pbStat"><b class="mono">${noteList.length}</b> ${esc(T("pb.stat.occurrences"))}</span>`)
       + (last ? `<span class="pbStat">${esc(T("pb.sticky.last", { date: last }))}</span>` : "");
   } else if (recordMode === "live") {
-    stats = pbStatsHtml(pbStats(d.kind === "verify" ? pbNoteTrades(d) : d.kind === "tag" ? pbTagTrades(d) : pbTradesOf(d.id)));
+    stats = pbStatsHtml(pbStats(d.kind === "verify" ? noteList : d.kind === "tag" ? pbTagTrades(d) : pbTradesOf(d.id)));
   }
-  const promote = d.kind === "verify" && pbVerifyStatus(d) === "works" && !reviewIsReadOnly() && !d._isNew
+  // 有分支的不能直接升级（分支各自升级）
+  const promote = d.kind === "verify" && !hasB && pbVerifyStatus(d) === "works" && !reviewIsReadOnly() && !d._isNew
     ? `<button class="tinyBtn pbPromoteBtn" data-action="pb-verify-promote">${ICONS.up} ${esc(T("pb.promote.btn"))}</button>` : "";
+  // 顶层的笔记能拆分支；分支自己不能再拆
+  const newBranch = pbIsNote(d) && self && !pbIsBranch(self) && !reviewIsReadOnly() && !d._isNew
+    ? `<button class="tinyBtn pbConvertBtn" data-action="pb-new-branch" data-id="${esc(d.id)}">${ICONS.plus} ${esc(T("pb.branch.new"))}</button>` : "";
   return `${pbKindBadge(d.kind)}
     ${pbParentSelectHtml(d)}
-    ${d.kind === "verify" ? pbVerifyStatusHtml(d) : ""}
+    ${d.kind === "verify" ? (hasB ? `<span class="pbStatusPill isBranches">${esc(T("pb.branch.count", { n: pbBranchesOf(self).length }))}</span>` : pbVerifyStatusHtml(d)) : ""}
     <span class="pbMetaStats">${stats}${stats && pbScopeActive() && d.kind !== "mistake" ? `<span class="pbStat muted pbScopeMark" title="${esc(comboConditionsText({ conditions: pbScopeConditions() }))}">${esc(T("pb.scope.mark"))}</span>` : ""}</span>
-    <span class="pbMetaRight">${promote}${pbConvertControlHtml(d)}${pbDeleteControlHtml(d)}</span>
-    ${pbConvertAskId === d.id ? pbConvertConfirmHtml(d) : ""}`;
+    <span class="pbMetaRight">${newBranch}${promote}${pbMergeControlHtml(d)}${pbConvertControlHtml(d)}${pbDeleteControlHtml(d)}</span>
+    ${pbConvertAskId === d.id ? pbConvertConfirmHtml(d) : ""}
+    ${pbMergeAskId === d.id ? pbMergeConfirmHtml(d) : ""}`;
 }
 
 /* ---------- 错题 ⇄ 待验证 ----------
@@ -442,6 +708,8 @@ function pbMetaRowInnerHtml() {
    待验证被标成「已否定」时按钮换成醒目的「转到错题库」——证明不能做的想法，正好就是一条要避开的错 */
 function pbConvertControlHtml(d) {
   if (!pbIsNote(d) || reviewIsReadOnly() || d._isNew || pbConvertAskId === d.id) return "";
+  // 分支跟问题必须是同一种：有分支的不让转，分支转了就从问题里拎出来（见 pbConvertNote）
+  if (pbHasBranches(pbFind(d.id))) return "";
   const rejected = d.kind === "verify" && pbVerifyStatus(d) === "rejected";
   const label = T(d.kind === "mistake" ? "pb.convert.toVerify" : rejected ? "pb.convert.rejectedBtn" : "pb.convert.toMistake");
   return `${rejected ? `<span class="pbConvertHint">${esc(T("pb.convert.rejectedHint"))}</span>` : ""}
@@ -466,6 +734,9 @@ async function pbConvertNote() {
   pbConvertAskId = null;
   if (!d || !pbIsNote(d) || reviewIsReadOnly()) return;
   await flushReviewSave();
+  if (pbHasBranches(pbFind(d.id))) return;
+  // 是分支的话先拎出来：分支跟它的问题得是同一种
+  if (pbIsBranch(pbFind(d.id)) && !(await pbSaveStructure([{ id: d.id, patch: { branch_of: null } }]))) { showReviewToast(pbError || T("error.dbOutdated")); return; }
   const before = { kind: d.kind, status: d.status, body: d.body };
   const to = d.kind === "mistake" ? "verify" : "mistake";
   d.kind = to;
@@ -509,7 +780,9 @@ function pbAreaCtx(d) {
   const page = pbFind(d.id) || d;   // 标记读库里那份：编辑器里那份（editingReview）不带 trade_marks
   const mode = pbIsNote(d) ? "note" : d.kind === "tag" ? "tag" : "page";
   const list = mode === "note" ? pbNoteTrades(d) : mode === "tag" ? pbTagTrades(d) : pbTradesOf(d.id);
-  return { d, page, mode, list, body: d.body, evStates: PB_EV_STATES[d.kind] || [], showLabel: mode !== "page" || d.kind === "system" };
+  // 有分支的问题：每一行可以直接挪进某个分支（这就是「手动分类」）
+  const branchTargets = mode === "note" && !viewingUserId ? pbBranchesOf(pbFind(d.id)) : [];
+  return { d, page, mode, list, body: d.body, evStates: PB_EV_STATES[d.kind] || [], showLabel: mode !== "page" || d.kind === "system", branchTargets };
 }
 function pbAreaFav(ctx, t) { return ctx.mode === "page" ? pbTradeStarred(t) : pbIsFav(ctx.page, t.id); }
 function pbAreaMatches(ctx, t, f) {
@@ -565,6 +838,7 @@ function pbTradeRowHtml(t, opts) {
       ${pbTradeResultBits(t)}
     </div>
     ${evBtn}
+    ${ctx.branchTargets && ctx.branchTargets.length ? pbMoveToBranchHtml(t, ctx.branchTargets) : ""}
     ${ro ? "" : `<button class="pbRowIcon" data-action="pb-row-note" data-id="${esc(t.id)}" title="${esc(T("pb.area.noteAdd"))}">${ICONS.pencil}</button>`}
     ${rmAction && !ro ? `<button class="pbRowIcon danger" data-action="${rmAction}" data-id="${esc(t.id)}" title="${esc(T(ctx.mode === "tag" ? "pb.tile.untag" : "pb.tile.remove"))}">${ICONS.x}</button>` : ""}
     ${editing
@@ -575,12 +849,42 @@ function pbTradeRowHtml(t, opts) {
   </div>`;
 }
 
+/* 问题页上每一行的「移到分支」：已经在某个分支里的那几个不列 */
+function pbMoveToBranchHtml(t, branches) {
+  const free = branches.filter((b) => !pbNoteTradeIds(b).includes(t.id));
+  if (!free.length) return `<span class="pbRowInBranch" title="${esc(T("pb.branch.inAllTitle"))}">${esc(T("pb.branch.inAll"))}</span>`;
+  return `<select class="select pbRowMove" data-pb-move-trade="${esc(t.id)}" title="${esc(T("pb.branch.moveTitle"))}">
+    <option value="">${esc(T("pb.branch.move"))}</option>
+    ${free.map((b) => `<option value="${esc(b.id)}">${esc(pbTitle(b))}</option>`).join("")}
+  </select>`;
+}
+/* 把问题页上的一笔挪进某个分支：那一行连同后面那句话原样搬过去，收藏 / 关联标记跟着走，问题上那一行删掉 */
+async function pbMoveTradeToBranch(tradeId, branchId) {
+  const d = editingReview;
+  const src = d && pbFind(d.id);
+  const dst = pbFind(branchId);
+  if (!src || !dst || viewingUserId || !pbBranchesOf(src).some((b) => b.id === branchId)) return;
+  syncReviewBody();
+  const raw = pbTradeLineRaw(d.body, tradeId);
+  pbError = null;
+  let ok = true;
+  if (!pbNoteTradeIds(dst).includes(tradeId)) ok = await persistPbPage({ ...dst, body: pbAppendTradeToBody(dst.body, tradeId, raw, true) });
+  const mark = pbMarkOf(src, tradeId);
+  if (ok && Object.keys(mark).some((k) => mark[k]) && !Object.keys(pbMarkOf(dst, tradeId)).length) ok = await pbWriteMarks(dst.id, pbMarksWith(dst, tradeId, mark));
+  if (ok) ok = await pbSetTradeInNote(src.id, tradeId, false, "");
+  refreshPbPanels();
+  render();
+  showReviewToast(ok ? T("pb.branch.moved", { name: pbTitle(dst) }) : pbError || T("error.dbOutdated"));
+}
+
 function pbVerdictHtml(ctx) {
   const h = pbVerdictHint({ ...ctx.page, status: ctx.d.status }, ctx.list);
   if (!h) return "";
   const btns = viewingUserId ? "" : h.suggest === "works"
     ? `<button class="btn" data-action="pb-verify-status" data-status="works">${esc(T("pb.verdict.toWorks"))}</button>`
-    : h.suggest === "rejected" ? `<button class="btn" data-action="pb-verify-status" data-status="rejected">${esc(T("pb.verdict.toRejected"))}</button>` : "";
+    : h.suggest === "rejected" ? `<button class="btn" data-action="pb-verify-status" data-status="rejected">${esc(T("pb.verdict.toRejected"))}</button>`
+    // 五五开：多半是混了两种情况，直接拆成分支
+    : !pbIsBranch(ctx.page) ? `<button class="btn" data-action="pb-new-branch" data-id="${esc(ctx.page.id)}">${ICONS.plus} ${esc(T("pb.branch.split"))}</button>` : "";
   return `<div class="pbVerdict${h.suggest ? " is-" + h.suggest : ""}">${ICONS.alert}<span>${esc(T(h.suggest ? "pb.verdict.ready" : "pb.verdict.mixed", { n: h.n, pro: h.pro, con: h.con }))}</span>${btns}</div>`;
 }
 
@@ -751,7 +1055,7 @@ function pbPanelsForPageHtml(d) {
       ? `<div class="pbTagGrid">${tagsHere.map((g) => pbTagCardHtml(g, { hideOwner: g.parent_id === d.id })).join("")}</div>`
       : `<div class="pbEmptyLine">${esc(T("pb.noTagsHere"))}</div>`}
   </section>`;
-  const mistakes = pbMistakesOf(d.id);
+  const mistakes = pbTopNotes(pbMistakesOf(d.id));
 
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.mistakes"), mistakes.length, pbAddBtn("mistake", d.id, "pb.addMistake"), T("pb.section.mistakesHint"))}
     ${mistakes.length
@@ -759,7 +1063,7 @@ function pbPanelsForPageHtml(d) {
       : `<div class="pbEmptyLine">${esc(T("pb.noMistakesHere"))}</div>`}
   </section>`;
 
-  const verifies = pbNotesOf(d.id, "verify");
+  const verifies = pbTopNotes(pbNotesOf(d.id, "verify"));
   html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.verify"), verifies.length, pbAddBtn("verify", d.id, "pb.addVerify"), T("pb.section.verifyHint"))}
     ${verifies.length
       ? `<div class="pbStickyGrid">${verifies.map((v) => pbStickyHtml(v, { hideOwner: v.parent_id === d.id })).join("")}</div>`
@@ -768,8 +1072,43 @@ function pbPanelsForPageHtml(d) {
 
   return html + pbTradeAreaHtml(d);
 }
+/* 问题页 / 分支页最上面：几个分支并排比成绩。真正想知道的就是「哪个分支能做」。
+   最后两行是「还没分到分支的」（挂在问题自己身上的）和合计 */
+function pbBranchTableHtml(root, currentId) {
+  const branches = pbBranchesOf(root);
+  const isV = root.kind === "verify";
+  const tone = (v) => (v === null || v === undefined || isNaN(v) ? "" : v > 0.0001 ? "pos" : v < -0.0001 ? "neg" : "");
+  const live = recordMode === "live";
+  const row = (id, label, list, cls) => {
+    const st = pbStats(list.filter(inDataScope));
+    return `<button type="button" class="pbExecRow${cls || ""}${id === currentId ? " on" : ""}" ${id ? `data-action="pb-open" data-id="${esc(id)}"` : "disabled"}>
+      <span class="pbExecName">${label}</span>
+      <span class="mono">${list.length}</span>
+      <span class="mono">${live ? esc(fmtPct(st.wr)) : "—"}</span>
+      <span class="mono ${tone(st.ev)}">${live && st.hasR ? esc(pbFmtR(st.ev)) : "—"}</span>
+      <span class="mono ${tone(st.totalR)}">${live && st.hasR ? esc(pbFmtR(st.totalR)) : "—"}</span>
+    </button>`;
+  };
+  const unsplit = pbUnsplitTrades(root);
+  const head = currentId === root.id
+    ? pbSectionHeadHtml(T("pb.branch.section"), branches.length, viewingUserId ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-new-branch" data-id="${esc(root.id)}">${ICONS.plus} ${esc(T("pb.branch.new"))}</button>`, T("pb.branch.sectionHint"))
+    : pbSectionHeadHtml(T("pb.branch.siblings", { name: pbTitle(root) }), branches.length, "", "");
+  return `<section class="pbPanel pbBranchPanel">${head}
+    <div class="pbExecTable pbBranchTable">
+      <div class="pbExecRow head"><span>${esc(T("pb.branch.col"))}</span><span>${esc(T("ex.col.all"))}</span><span>${esc(T("ex.col.wr"))}</span><span>${esc(T("ex.col.ev"))}</span><span>${esc(T("ex.col.totalR"))}</span></div>
+      ${branches.map((b) => row(b.id, `${esc(pbTitle(b))}${isV ? " " + pbStatusPillHtml(b) : ""}`, pbNoteTrades(b))).join("")}
+      ${unsplit.length ? row(currentId === root.id ? "" : root.id, `<span class="muted">${esc(T("pb.branch.unsplit"))}</span>`, unsplit, " isSub") : ""}
+      ${row(currentId === root.id ? "" : root.id, esc(T("pb.branch.total")), pbFamilyTrades(root), " isAll")}
+    </div>
+  </section>`;
+}
 function pbPanelsForNoteHtml(d) {
-  let html = pbTradeAreaHtml(d);
+  const self = pbFind(d.id);
+  const root = self ? pbBranchRoot(self) : null;
+  let html = "";
+  if (self && pbHasBranches(self)) html += pbBranchTableHtml(self, self.id);
+  else if (root) html += pbBranchTableHtml(root, self.id);
+  html += pbTradeAreaHtml(d);
   // 相关笔记：这一条正文里链到的，加上别的笔记里链到这一条的——两个方向都算「有关系」。错题和待验证混在一起算
   const outIds = extractPageRefs(d.body);
   const related = pbSortList(pbPages.filter((m) => pbIsNote(m) && m.id !== d.id && (outIds.includes(m.id) || extractPageRefs(m.body).includes(d.id))));
@@ -818,7 +1157,8 @@ function refreshPbPanels() {
 function pbNameModalHtml() {
   const m = pbNameModal;
   const parent = pbFind(m.parentId);
-  const title = m.kind === "system" ? T("pb.newSystem")
+  const title = m.branchOf && pbFind(m.branchOf) ? T("pb.branch.newOf", { name: pbTitle(pbFind(m.branchOf)) })
+    : m.kind === "system" ? T("pb.newSystem")
     : m.kind === "strategy" ? T("pb.newStrategyOf", { name: parent ? pbTitle(parent) : "" })
     : m.kind === "verify" ? (parent ? T("pb.newVerifyOf", { name: pbLabel(parent.id) }) : T("pb.addGlobalVerify"))
     : m.kind === "tag" ? (parent ? T("pb.newTagOf", { name: pbLabel(parent.id) }) : T("pb.addGlobalTag"))
@@ -848,8 +1188,17 @@ function pbNameModalHtml() {
 /* ============================================================
    动作（事件委托里调这些）
    ============================================================ */
-async function pbCreatePage(kind, parentId, title, body) {
+async function pbCreatePage(kind, parentId, title, body, branchOf) {
   const p = { id: newPbId(), kind, parent_id: parentId || null, title: title || "", body: body === undefined ? pbTemplateBody(kind) : body, sort_order: null, folded_headings: [] };
+  // 新建分支：挂在问题下面，排在已有分支的最后
+  const root = branchOf ? pbFind(branchOf) : null;
+  if (root && pbIsNote(root) && root.kind === kind && !pbIsBranch(root)) {
+    p.branch_of = root.id;
+    p.parent_id = root.parent_id || null;
+    // 排在最后：已有分支都排过序就接在最大的后面；有没排过的就不给序号（没排过的按创建先后排在后面，它最新）
+    const bs = pbBranchesOf(root);
+    p.sort_order = bs.length && bs.every((b) => b.sort_order !== null && b.sort_order !== undefined) ? Math.max(...bs.map((b) => b.sort_order)) + 1 : null;
+  }
   const ok = await persistPbPage(p);
   return ok ? pbFind(p.id) : null;
 }
@@ -1046,11 +1395,19 @@ async function pbPromoteVerify() {
   const ids = pbNoteTradeIds(d).filter((id) => trades.some((t) => t.id === id));
   if (!confirm(T("pb.promote.confirm", { name: pbTitle(d), sys: pbTitle(sys), n: ids.length }))) return;
   await flushReviewSave();
-  const before = { kind: d.kind, parent_id: d.parent_id };
+  const lib = pbFind(d.id);
+  if (lib && pbHasBranches(lib)) return;
+  const before = { kind: d.kind, parent_id: d.parent_id, libParent: lib ? lib.parent_id : null, libBranch: lib ? lib.branch_of : undefined };
   d.kind = "strategy";
   d.parent_id = sys.id;
+  // persistReview 的位置以库里那份为准，这里两边一起改
+  if (lib) { lib.parent_id = sys.id; if (lib.branch_of !== undefined) lib.branch_of = null; }
   scheduleReviewSave();
-  if (!(await flushReviewSave())) { d.kind = before.kind; d.parent_id = before.parent_id; refreshPbPanels(); return; }
+  if (!(await flushReviewSave())) {
+    d.kind = before.kind; d.parent_id = before.parent_id;
+    if (lib) { lib.parent_id = before.libParent; lib.branch_of = before.libBranch; }
+    refreshPbPanels(); return;
+  }
   if (ids.length) await pbPatchTrades(ids.map((id) => ({ id, patch: { [PB_KEY]: d.id } })));
   refreshPbPanels();
   render();
@@ -1268,7 +1625,7 @@ function pbTriageNotePanelHtml(t, kind) {
   const pageId = pbTradePageId(t);
   const c = pbNoteCandidates(pageId, kind);
   const has = (m) => pbNoteTradeIds(m).includes(t.id);
-  const group = (label, all) => { const list = all.filter((m) => !pbVerifyRejected(m) || has(m)); return list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + list.map((m) => `<button class="pbMpRow${has(m) ? " on" : ""}${isV ? " isVerify" : ""}" data-action="pb-triage-toggle-note" data-id="${esc(m.id)}">
+  const group = (label, all) => { const list = all.filter((m) => !pbVerifyRejected(m) || has(m)); return list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + pbNestBranches(list).map(({ m, depth }) => `<button class="pbMpRow${has(m) ? " on" : ""}${isV ? " isVerify" : ""}${depth ? " isBranch" : ""}" data-action="pb-triage-toggle-note" data-id="${esc(m.id)}">
       <span class="pbMpBox">${has(m) ? ICONS.check : ""}</span>
       <span class="pbMpTitle">${esc(pbTitle(m))}</span>
       ${isV ? pbStatusPillHtml(m) : ""}
@@ -1468,20 +1825,25 @@ function pbFormNotesBoxHtml(kind, pageId) {
   const extra = pbSortList(pbNotes(kind).filter((m) => (st.sel.has(m.id) || st.init.has(m.id)) && !candIds.has(m.id)));
   const all = extra.concat(cands);
   if (!all.length) return "";
-  const list = st.showAll[kind] ? all : all.filter((m, i) => i < PB_FORM_NOTES_LIMIT || st.sel.has(m.id));
+  // 分支缩进排在问题下面：勾分支 = 这笔属于这个具体的分支；勾问题 = 还没想好是哪个分支，以后在问题页上再分
+  const nested = pbNestBranches(all);
+  const groupOn = new Set(nested.filter((x) => st.sel.has(x.m.id)).map((x) => x.group));
+  const list = st.showAll[kind] ? nested : nested.filter((x) => x.group < PB_FORM_NOTES_LIMIT || groupOn.has(x.group));
   const page = pbFind(pageId);
   const head = isV
     ? (page ? T("pb.form.verifyHead", { name: pbTitle(page) }) : T("pb.form.verifyHeadGlobal"))
     : (page ? T("pb.form.remind", { name: pbTitle(page) }) : T("pb.form.remindGlobal"));
   return `<div class="pbReminders${isV ? " isVerify" : ""}">
     <div class="pbRemindersHead">${isV ? ICONS.search : ICONS.alert} <span>${esc(head)}</span>${ro ? "" : `<span class="pbRemindersHint">${esc(T("pb.form.checkHint"))}</span>`}</div>
-    ${list.map((m) => {
+    ${list.map(({ m, depth }) => {
       const on = st.sel.has(m.id);
       const g = pbMistakeGist(m);
-      return `<button type="button" class="pbReminder pbFormNote${on ? " on" : ""}" ${ro ? "disabled" : `data-action="pb-form-note" data-id="${esc(m.id)}"`}>
+      const nb = depth ? 0 : pbBranchesOf(m).length;
+      const pill = !isV ? "" : nb ? `<span class="pbStatusPill isBranches">${esc(T("pb.branch.count", { n: nb }))}</span>` : pbStatusPillHtml(m);
+      return `<button type="button" class="pbReminder pbFormNote${on ? " on" : ""}${depth ? " isBranch" : ""}${nb ? " isRoot" : ""}" ${ro ? "disabled" : `data-action="pb-form-note" data-id="${esc(m.id)}"`}>
         <span class="pbMpBox">${on ? ICONS.check : ""}</span>
         <span class="pbFormNoteText"><b>${esc(pbTitle(m))}</b>${g ? `<span>${esc(g)}</span>` : ""}</span>
-        ${isV ? pbStatusPillHtml(m) : ""}
+        ${pill}
       </button>${on && !ro ? pbFormNoteTextHtml(m, isV) : ""}`;
     }).join("")}
     ${all.length > list.length ? `<button type="button" class="tinyBtn pbFormMore" data-action="pb-form-notes-more" data-kind="${kind}">${esc(T("pb.form.more", { n: all.length }))}</button>` : ""}

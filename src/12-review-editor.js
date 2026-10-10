@@ -1369,6 +1369,8 @@ function openReviewEditor(id) {
   pagePickerOpen = false;
   pbConfirmDeleteId = null;
   pbConvertAskId = null;
+  pbMergeAskId = null;
+  pbMergeTarget = "";
   pbShowAllTrades = false;
   pbExecFilter = "";
   renderReviewEditor(true);

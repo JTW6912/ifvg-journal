@@ -68,12 +68,81 @@ function pbStrategiesOf(sysId) { return pbSortList(pbPages.filter((p) => p.kind 
 function pbOrphanStrategies() { return pbSortList(pbPages.filter((p) => p.kind === "strategy" && !pbFind(p.parent_id))); }
 function pbHasPages() { return pbPages.some((p) => p.kind === "system" || p.kind === "strategy"); }
 
-/* 一页往上的那一串（不含自己）：笔记 → 策略 → 系统 */
+/* 一页往上的那一串（不含自己）：分支 → 问题 → 策略 → 系统 */
 function pbAncestors(p) {
   const out = [];
-  let cur = p && pbFind(p.parent_id);
-  while (cur && out.length < 3) { out.unshift(cur); cur = pbFind(cur.parent_id); }
+  // 编辑器手里那份（editingReview）不带 branch_of，分支关系读库里那份
+  const root = pbBranchRoot((p && pbFind(p.id)) || p);
+  if (root) out.push(root);
+  let cur = pbFind((root || p || {}).parent_id);
+  while (cur && out.length < 4) { out.unshift(cur); cur = pbFind(cur.parent_id); }
   return out;
+}
+
+/* ---------- 笔记的分支（最多两层） ----------
+   一条错题 / 待验证可以当「问题」，下面挂几条更具体的「分支」：branch_of = 问题的 id。
+   例：「不知道价格要去哪里」下面挂「mech 看不到回调」「HTF 延续看不到外部 DOL」。
+   - 分支只能挂在同种类、自己不是分支的笔记下面（两层封顶）；有分支的笔记不能再去当别人的分支
+   - 分支的 parent_id（归属哪个系统 / 策略）始终跟问题一样，改问题归属时一起改（pbSetNoteParent）。
+     所以按 parent_id 找「这一页下面的笔记」的地方天然把分支也算进去
+   - 问题自己也能直接挂交易：「知道是这个问题，还没想清楚是哪个分支」，以后再手动分下去
+   - 问题有了分支之后，自己的状态不再显示，结论看分支
+   ⚠ branch_of 指向已删除 / 种类不对 / 本身也是分支的笔记，一律按「不是分支」读，不报错 */
+function pbBranchRoot(m) {
+  if (!m || !m.branch_of || !pbIsNote(m)) return null;
+  const r = pbFind(m.branch_of);
+  return r && r.id !== m.id && r.kind === m.kind && !r.branch_of ? r : null;
+}
+function pbIsBranch(m) { return !!pbBranchRoot(m); }
+function pbBranchesOf(m) {
+  if (!m || !pbIsNote(m) || pbIsBranch(m)) return [];
+  return pbSortList(pbPages.filter((x) => x.branch_of === m.id && x.kind === m.kind && x.id !== m.id));
+}
+function pbHasBranches(m) { return pbBranchesOf(m).length > 0; }
+/* 一组笔记里的顶层：问题和普通的一条。分支跟着它的问题出现，不单独占位置。
+   问题不在这组里的分支（比如问题被筛掉了）也算顶层，不能凭空消失 */
+function pbTopNotes(list) {
+  const ids = new Set(list.map((m) => m.id));
+  return list.filter((m) => { const r = pbBranchRoot(m); return !r || !ids.has(r.id); });
+}
+/* 列表里把分支排到各自的问题后面：[{ m, depth, group }]，depth 1 = 分支，group = 第几组（问题的序号）。
+   顶层按原来的顺序，分支按分支自己的顺序；问题不在列表里的分支当顶层 */
+function pbNestBranches(list) {
+  const out = [];
+  const tops = pbTopNotes(list);
+  const inList = new Set(list.map((m) => m.id));
+  tops.forEach((m, g) => {
+    out.push({ m, depth: 0, group: g });
+    pbBranchesOf(m).forEach((b) => { if (inList.has(b.id)) out.push({ m: b, depth: 1, group: g }); });
+  });
+  return out;
+}
+/* m 能不能挂到 root 下面当分支 */
+function pbCanBranchUnder(m, root) {
+  return !!m && !!root && m.id !== root.id && pbIsNote(m) && root.kind === m.kind && !pbIsBranch(root) && !pbHasBranches(m);
+}
+/* 问题连同分支涉及的全部交易（去重）：问题卡片上的总成绩 */
+function pbFamilyTrades(m) {
+  const ids = new Set(pbNoteTradeIds(m));
+  pbBranchesOf(m).forEach((b) => pbNoteTradeIds(b).forEach((id) => ids.add(id)));
+  return pbSortTradesDesc(trades.filter((t) => ids.has(t.id)));
+}
+/* 挂在问题自己身上、还没分到任何分支的交易 */
+function pbUnsplitTrades(m) {
+  const inBranch = new Set();
+  pbBranchesOf(m).forEach((b) => pbNoteTradeIds(b).forEach((id) => inBranch.add(id)));
+  return pbNoteTrades(m).filter((t) => !inBranch.has(t.id));
+}
+/* 同级重排：把 id 放到 targetId 前面 / 后面（targetId 空 = 放到最后），返回要改 sort_order 的那几行。
+   siblings 是完整的同级列表（含筛选、搜索藏起来的），所以只动被拖的那一张，别的相对顺序不变 */
+function pbReorderPatches(siblings, id, targetId, after) {
+  const list = pbSortList(siblings).filter((p) => p.id !== id);
+  let at = targetId ? list.findIndex((p) => p.id === targetId) : -1;
+  if (at < 0) at = list.length; else if (after) at++;
+  const moving = pbFind(id);
+  if (!moving) return [];
+  list.splice(at, 0, moving);
+  return list.map((p, i) => ({ id: p.id, patch: { sort_order: i } })).filter((it) => pbFind(it.id).sort_order !== it.patch.sort_order);
 }
 /* 「RIFVG › 趋势延续」。交易表单、筛选、归类都用这一个写法 */
 function pbLabel(id) {
@@ -83,7 +152,8 @@ function pbLabel(id) {
     const sys = pbFind(p.parent_id);
     return sys ? pbTitle(sys) + " › " + pbTitle(p) : pbTitle(p);
   }
-  return pbTitle(p);
+  const root = pbBranchRoot(p);
+  return root ? pbTitle(root) + " › " + pbTitle(p) : pbTitle(p);
 }
 
 /* 交易能归到哪些页面：系统，紧跟着它的衍生策略。交易表单 / 归类 / 筛选共用这一份顺序 */
@@ -385,12 +455,13 @@ function pbSetLineNoteInBody(body, tradeId, note) {
 /* 往错题正文里加一笔交易：写成「- [[trade:id]] 错在哪」，放进「涉及的交易」那一节的末尾。
    找不到那一节就在文末补一节。已经引用过这笔就原样返回。
    note 是用户随手打的一句话，要转义成 markdown 的普通文字（不然里面的 * [ 会被当成语法） */
-function pbAppendTradeToBody(body, tradeId, note) {
+function pbAppendTradeToBody(body, tradeId, note, raw) {
   const src = String(body || "");
   if (!/^[A-Za-z0-9_-]+$/.test(tradeId || "")) return src;
   if (extractTradeRefs(src).includes(tradeId)) return src;
   const clean = String(note || "").replace(/\s+/g, " ").trim();
-  const item = "- [[trade:" + tradeId + "]]" + (clean ? " " + mdEscapeText(clean, {}) : "");
+  // raw = note 已经是 markdown（从别的笔记里原样搬过来的那句），不再转义，格式照留
+  const item = "- [[trade:" + tradeId + "]]" + (clean ? " " + (raw ? clean : mdEscapeText(clean, {})) : "");
   const lines = src.replace(/\r\n?/g, "\n").split("\n");
   const names = pbHeadingNames("pb.tpl.mistakeTrades");
   const at = lines.findIndex((l) => pbIsHeadingLine(l, names));
@@ -419,6 +490,47 @@ function pbRemoveTradeFromBody(body, tradeId) {
   const kept = lines.filter((l) => !re.test(l));
   const out = kept.join("\n").replace(/\n{3,}/g, "\n\n");
   return { body: out, removed: kept.length !== lines.length, stillLinked: extractTradeRefs(out).includes(tradeId) };
+}
+/* 「- [[trade:id]] 那句话」里那句话的 markdown 原文（不转成纯文字）：把一笔从一条笔记挪到另一条时原样带过去 */
+function pbTradeLineRaw(body, tradeId) {
+  if (!/^[A-Za-z0-9_-]+$/.test(tradeId || "")) return "";
+  const re = PB_TRADE_LINE_RE(tradeId);
+  const line = String(body || "").split("\n").find((l) => re.test(l));
+  return line ? line.match(re)[1].trim() : "";
+}
+/* 合并两条笔记：把 src 的正文并进 dst。
+   - src 里列着的交易一行一行搬进 dst「涉及的交易」，那句话原样带过去；dst 已经有这笔的，dst 那行没写字才用 src 的那句
+   - src 剩下的正文（去掉交易那几行）不是空模板的话，接在 dst 最后，单开一节「合并自「src 标题」」，里面的标题降一级
+   返回新的 dst 正文 */
+function pbMergeNoteBodies(dstBody, srcBody, srcTitle) {
+  let out = String(dstBody || "");
+  const src = String(srcBody || "").replace(/\r\n?/g, "\n");
+  const anyLine = /^\s*[-*+]\s+(?:\[[ xX]\]\s+)?\[\[trade:([A-Za-z0-9_-]+)\]\]/;
+  src.split("\n").forEach((l) => {
+    const m = l.match(anyLine);
+    if (!m) return;
+    const id = m[1], note = pbTradeLineRaw(src, id);
+    if (!extractTradeRefs(out).includes(id)) out = pbAppendTradeToBody(out, id, note, true);
+    else if (note && pbHasTradeLine(out, id) && !pbTradeLineRaw(out, id)) {
+      const lines = out.split("\n");
+      const re = PB_TRADE_LINE_RE(id);
+      const i = lines.findIndex((x) => re.test(x));
+      lines[i] = lines[i].replace(/\s+$/, "") + " " + note;
+      out = lines.join("\n");
+    }
+  });
+  const isHead = (l) => /^\s{0,3}#{1,6}\s/.test(l);
+  let rest = src.split("\n").filter((l) => !anyLine.test(l));
+  // 只剩标题和空行（没动过的模板）就不搬
+  if (!rest.some((l) => l.trim() && !isHead(l))) return out;
+  // 下面直到下一个标题都是空的标题（比如交易搬走以后的「涉及的交易」）也不搬
+  rest = rest.filter((l, i) => {
+    if (!isHead(l)) return true;
+    for (let j = i + 1; j < rest.length; j++) { if (isHead(rest[j])) return false; if (rest[j].trim()) return true; }
+    return false;
+  });
+  const demoted = rest.map((l) => l.replace(/^(\s{0,3})(#{1,5})(\s)/, "$1#$2$3")).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return out.replace(/\s+$/, "") + "\n\n## " + T("pb.merge.fromHead", { title: srcTitle }) + "\n\n" + demoted;
 }
 
 /* ---------- 归类时的建议 ----------

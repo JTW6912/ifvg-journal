@@ -787,7 +787,7 @@ document.addEventListener("click", async (e) => {
     if (!m || !name) { if (input) input.focus(); return; }
     pbNameModal = null;
     renderSecondaryModals(true);
-    const p = await pbCreatePage(m.kind, m.parentId, name);
+    const p = await pbCreatePage(m.kind, m.parentId, name, undefined, m.branchOf);
     if (!p) { render(); refreshPbPanels(); return; }
     if (m.from === "triage" && pbTriage) {
       // 归类时现建的系统：顺手把眼前这一笔归进去，然后接着归类，不跳去编辑页面
@@ -799,6 +799,17 @@ document.addEventListener("click", async (e) => {
     render();
     await pbOpenDoc(p.id);
   }
+  else if (action === "pb-new-branch") {
+    // 在一条笔记下面新建分支：种类、归属都跟着它
+    const root = pbFind(el.dataset.id);
+    if (viewingUserId || !root || !pbIsNote(root) || pbIsBranch(root)) return;
+    await flushReviewSave();
+    pbNameModal = { kind: root.kind, parentId: root.parent_id || null, branchOf: root.id, name: "", from: "" };
+    renderSecondaryModals(true);
+  }
+  else if (action === "pb-merge-ask") { pbMergeAskId = editingReview ? editingReview.id : null; pbMergeTarget = ""; refreshReviewWeekRow(); }
+  else if (action === "pb-merge-cancel") { pbMergeAskId = null; pbMergeTarget = ""; refreshReviewWeekRow(); }
+  else if (action === "pb-merge-do") { await pbMergeNote(); }
   else if (action === "pb-ask-delete") { pbConfirmDeleteId = el.dataset.id; refreshReviewWeekRow(); }
   else if (action === "pb-cancel-delete") { pbConfirmDeleteId = null; refreshReviewWeekRow(); }
   else if (action === "pb-confirm-delete") {
@@ -1171,12 +1182,24 @@ document.addEventListener("change", async (e) => {
   }
   if (e.target.dataset.pbConvertSwap !== undefined) { pbConvertSwap = e.target.checked; return; }
   if (e.target.dataset.pbParent !== undefined) {
-    // 模型库页面的属性行：策略换系统 / 错题换归属。走编辑器那套自动保存
+    // 模型库页面的属性行：策略换系统 / 笔记换归属（分支一起挪）。位置以库里那份为准，不走编辑器的保存
     if (!editingReview || !isPbDoc(editingReview) || reviewIsReadOnly()) return;
-    editingReview.parent_id = e.target.value || null;
-    scheduleReviewSave();
-    await flushReviewSave();
-    refreshPbPanels();
+    await pbSetNoteParent(editingReview.id, e.target.value || null);
+    return;
+  }
+  if (e.target.dataset.pbBranch !== undefined) {
+    if (!editingReview || !isPbDoc(editingReview) || reviewIsReadOnly()) return;
+    await pbSetBranchOf(editingReview.id, e.target.value || "");
+    return;
+  }
+  if (e.target.dataset.pbMoveTrade !== undefined) {
+    const to = e.target.value;
+    if (to) await pbMoveTradeToBranch(e.target.dataset.pbMoveTrade, to);
+    return;
+  }
+  if (e.target.dataset.pbMergeTarget !== undefined) {
+    pbMergeTarget = e.target.value || "";
+    refreshReviewWeekRow();
     return;
   }
   if (e.target.dataset.reviewWeekDate !== undefined) {

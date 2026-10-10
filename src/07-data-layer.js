@@ -424,7 +424,9 @@ async function persistReview(rev, opts) {
   if (viewingUserId || !sb || !session) return false;
   // 模型库页面走自己的表，编辑器那一套（自动保存、草稿、已保存徽章）照旧
   if (isPbDoc(rev)) {
-    const ok = await persistPbPage(rev);
+    // 位置（归属 / 排序 / 分支）以库里那份为准：拖拽、挪分支都是在编辑器外面改的，编辑器手里那份可能是旧的
+    const lib = pbFind(rev.id);
+    const ok = await persistPbPage(lib ? { ...rev, parent_id: lib.parent_id, sort_order: lib.sort_order, branch_of: lib.branch_of } : rev);
     if (ok) { reviewSaveError = null; if (!(opts && opts.silent)) clearReviewDraft(); }
     else reviewSaveError = pbError;
     return ok;
@@ -495,6 +497,9 @@ function pbRowPayload(p) {
   // status 只有待验证用得上。只在待验证上写这一列：系统 / 策略 / 错题的保存不依赖它，
   // 迁移没跑之前那几样照常能存
   if (p.kind === "verify") row.status = pbVerifyStatus(p);
+  // branch_of（笔记的分支，见 11b）：这一行本来就带着这一列才写（库里读出来是 null 也算带着），
+  // 新建的页面不带就不写——插入时用默认值 null，更新时保持原值
+  if (p.branch_of !== undefined) row.branch_of = p.branch_of || null;
   return row;
 }
 /* 写一页（新建、改名、改归属、往错题里加交易、编辑器自动保存都走这里）。本地数组同步更新，不重拉 */
@@ -547,6 +552,9 @@ async function deletePbPage(id) {
     const tagged = trades.filter((t) => pbTradeTagIds(t).includes(p.id));
     if (tagged.length && !(await pbPatchTrades(tagged.map((t) => ({ id: t.id, patch: { [PB_TAGS_KEY]: pbTagsToggled(t, p.id) } }))))) return false;
   }
+  // 删的是有分支的笔记：分支各自变回顶层的一条，不跟着删
+  const branches = pbPages.filter((m) => m.branch_of === p.id);
+  if (branches.length && !(await pbSaveStructure(branches.map((m) => ({ id: m.id, patch: { branch_of: null } }))))) return false;
   if (pbIsPage(p)) {
     const orphans = pbPages.filter((m) => pbIsChild(m) && m.parent_id === p.id);
     for (const m of orphans) { m.parent_id = up; if (!(await persistPbPage(m))) return false; }
@@ -563,6 +571,31 @@ async function deletePbPage(id) {
     return false;
   }
   pbPages = pbPages.filter((x) => x.id !== id);
+  return true;
+}
+
+/* 改一批页面的位置：归属（parent_id）/ 排序（sort_order）/ 分支（branch_of）。拖拽、挪分支、合并都走这里。
+   只 update 这几列：不带正文（编辑器开着的那页库里的正文可能是旧的），也不碰 updated_at（挪个位置不算「编辑过」）。
+   先改本地再写库，有一行写失败就整批改回去。编辑器正开着其中一页的话，它手里那份归属也跟着改 */
+async function pbSaveStructure(items) {
+  if (viewingUserId || !sb || !session) return false;
+  items = items.filter((it) => pbFind(it.id));
+  if (!items.length) return true;
+  const before = items.map((it) => { const p = pbFind(it.id); const b = {}; Object.keys(it.patch).forEach((k) => { b[k] = p[k]; }); return b; });
+  const apply = (patches) => items.forEach((it, i) => {
+    Object.assign(pbFind(it.id), patches[i]);
+    if (editingReview && editingReview.id === it.id && "parent_id" in patches[i]) editingReview.parent_id = patches[i].parent_id;
+  });
+  apply(items.map((it) => it.patch));
+  const res = await Promise.all(items.map((it) => sb.from("journal_playbook").update(it.patch).eq("id", it.id).eq("user_id", session.user.id)));
+  const bad = res.find((r) => r.error);
+  if (bad) {
+    console.error(bad.error);
+    apply(before);
+    pbError = noteDbError(bad.error) ? T("error.dbOutdated") : T("review.saveFailed", { msg: bad.error.message });
+    return false;
+  }
+  pbError = null;
   return true;
 }
 

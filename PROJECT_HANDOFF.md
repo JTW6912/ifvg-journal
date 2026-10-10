@@ -143,9 +143,12 @@ linked_trade_ids  text[] —— 正文里 [[trade:xxx]] 的冗余索引（错题
 sort_order        double precision, 可空 —— 同级顺序，null = 按创建先后
 folded_headings   jsonb —— 跟复盘一样
 trade_marks       jsonb, 默认 {} —— 笔记 / 标签页面上每笔交易的标记：{ 交易id: { fav: true, ev: "pro" | "con" | "key" } }（见下面「交易区」）
+branch_of         text, 可空 —— 笔记的分支：= 所属问题（同种类、自己不是分支的笔记）的 id；null = 顶层。最多两层
 created_at / updated_at
 ```
 - 建表在 `supabase/migrations/20261003000000_playbook.sql`，`status` 在 `20261004000000_playbook_verify.sql`。RLS 跟复盘一样：自己读写 + admin 只读
+- `branch_of` 在 `20261010000000_playbook_branches.sql`（2026-10-10 已在线上跑过）。`pbRowPayload()` 只在这一行本来就带着 `branch_of` 键时写它（库里读出来是 null 也算带着），新建页面不带
+- **位置（parent_id / sort_order / branch_of）以 `pbPages` 那份为准**：拖拽、挪分支、改归属都走 `pbSaveStructure()`（只 update 这几列，不带正文、不碰 updated_at，失败整批回滚，编辑器开着那页的 parent_id 也同步改）。`persistReview()` 存模型库页面时这三列从 `pbFind(id)` 取、不信编辑器手里那份——所以**别再直接改 `editingReview.parent_id` 然后 flush**，那样会被库里的旧值盖回去（升级成策略那里两边一起改了）
 - `pbRowPayload()` **只在待验证上写 `status`**：系统 / 策略 / 错题的保存不依赖这一列，迁移没跑之前那几样照常能存
 - **跨回测 / 实盘只有一份**（没有 mode 列）。所以只在 `loadAll()` 里拉，`reloadModeData()` 不拉
 - **交易属于哪一页存在交易自己身上**：`trades.data.__pb`（页面 id；`"__none"` = 确认过不属于任何模型）、`trades.data.__pb_star`（关注）、`trades.data.__pb_tags`（打了哪些标签，标签 id 数组）、`trades.data.__pb_note`（归类记录，纯文本）。不是用户字段，不在 schema 里；指向已删除页面的 `__pb` 一律按「未归类」读（`pbTradePageId()`）
@@ -356,6 +359,9 @@ JS
   - **「也写进页面」**：跨好几笔才看得出来的发现，不该只挂在某一笔上——一键追加到这笔所归页面正文的「归类时的发现」一节（`pbAppendFindingToBody()`，`- 日期 [[trade:id]] 那句话`，没有这一节就在文末补），在页面正文和目录里都看得到
   - **交易表单顶上的「模型库」一栏**只在实盘 + 建过页面（或笔记）时出现；选了策略就把它的错题和待验证（策略自己的 + 所属系统的 + 通用的）摆出来，进场前看一眼。**每条前面能勾**：勾上 = 这笔也算进这条笔记。勾选先记在 `pbFormNotes`（11c），**点保存、`persistTrade()` 返回 true 之后**才由 `pbApplyFormNotes()` 写进各条笔记正文——取消表单笔记不动，新交易也不会先写一个指向不存在交易的胶囊。**要改的那条笔记正开在编辑器里**（在笔记页点开一笔交易 → 编辑，表单盖在编辑器上面）时，`pbSetTradeInNote()` 不改库里那份，而是走 `pbSetTradeInOpenNote()` 给编辑器发一个 ProseMirror 事务（`pbEditorAddTrade` / `pbEditorRemoveTrade`，规则跟 markdown 版一样只认「开头是这笔胶囊」的列表项），能 Ctrl+Z、折叠不乱，然后马上 `flushReviewSave()`。以前这里是悄悄跳过，用户取消勾选后保存什么都不变。笔记页 / 标签页的交易磁贴左上角有 ×（悬停才出现），分别是移出这条笔记、摘掉这个标签。
   - **交易区（`pbTradeAreaHtml()`）**：系统 / 策略 / 错题 / 待验证 / 标签页下面同一套——（待验证）可以下结论了的提示 → 关联交易 → 收藏 → 全部交易（成绩表 + 列表）。列表每一行直接点收藏、点关联、原地改记录（`pbStartRowNote` / `pbSaveRowNote`）、移出，不用进交易编辑表单。上下文在 `pbAreaCtx()`：系统 / 策略页的收藏是交易身上的 `__pb_star`、记录是 `__pb_note`；笔记页的收藏 / 关联存在页面的 `trade_marks`、记录是正文里胶囊后面那句话（改它走 `pbEditorSetLineNote()` 编辑器事务，能 Ctrl+Z），交易自己的归类记录灰色只读挂在下面；标签页收藏存 `trade_marks`、记录是 `__pb_note`
+  - **拖拽排序**（11c「模型库首页的拖拽」那一节，自己挂 document 的 dragstart / dragover / drop / dragend，跟 15 文件那套 DRAGGABLES 不相干）：系统卡片、卡片里的策略行（能拖到别的系统）、标签卡片、错题 / 待验证卡片都能拖，顺序写 `sort_order`。交易表单的「模型库」下拉框、表单和归类模式里的笔记列表都走 `pbSortList()`，拖完自然跟着变。重排用 `pbReorderPatches()`：传**完整**的同级列表（含筛选 / 搜索藏起来的），只动被拖的那张，只写变了的行。只在首页的墙上能拖，编辑器里的面板不能
+  - **笔记的分支**（错题和待验证都有，用户主要用待验证）：「问题 → 分支」两层封顶（`pbCanBranchUnder()`）。分支的 `parent_id` 始终等于问题的（`pbSetNoteParent()` 一起改），所以按 parent_id 找笔记的地方天然包含分支；要「只要顶层」的地方用 `pbTopNotes()`，要「分支缩进排在问题后面」用 `pbNestBranches()`。问题自己也能挂交易 = 还没想好是哪个分支（`pbUnsplitTrades()`），问题页每一行有「移到分支…」（`pbMoveTradeToBranch()`：那一行连同那句话原样搬，标记跟着走）。问题有分支后自己的状态不显示、成绩算全家（`pbFamilyTrades()`，去重），不能转错题 / 待验证、不能升级成策略（分支各自来）；分支转换时先拎出来。墙上拖到另一张卡片**正中间**（横向 28%–72%）= 放进去当分支，两边 = 排序；分支行拖到卡片两边 = 拎出来。笔记页属性行有「挂到问题下」下拉框（拖不方便时用），五五开的提示上有「拆成分支」。删问题时分支变回独立的
+  - **合并两条笔记**（`pbMergeNote()`，属性行「合并到…」）：src 的交易行（连同那句话，`pbMergeNoteBodies()`）、剩下的正文（单开一节「合并自「标题」」、标题降一级、空模板和空节不搬）、标记（dst 没标过的才搬）、分支都并进 dst，别处的 `[[page:src]]` 改成 dst，最后**先换到 dst 再删 src**（不然编辑器会把 src 存回去）
   - **收藏和关联是两回事**（用户明确要求分开）：收藏 = 有意思的单子，不影响结论；关联 = 真正决定这条笔记结论的那几笔（待验证分支持 / 反驳，点一下支持再点反驳；错题只有一种「关联」；标签没有）。成绩、便利贴上「关联」那一行、`pbVerdictHint()` 的提示都只看关联。**`trade_marks` 单独 update 那一列（`pbWriteMarks()`），不走整行 upsert**：笔记开在编辑器里时 `pbPages` 里的正文可能比编辑器旧，整行写会把旧正文写回去；`pbRowPayload()` 也刻意不带它，编辑器的自动保存不会覆盖标记。移出 / 摘标签时 `pbDropMarks()` 一起清；错题 ⇄ 待验证互转时关联值跟着换（key ↔ pro，反驳去掉）
   - 可以下结论的提示：关联笔数 ≥ 分析页「最少样本」、支持占比 ≥ 70% 或 ≤ 30% 时给切换状态的按钮；样本到两倍门槛还五五开时提示拆细。成绩表里少于门槛的行标「样本少」
   - 第一次打开一条笔记时，正文里「涉及的交易」那一节自动折起来（交易区比那串胶囊好用）。每条笔记只自动折一次，记在 localStorage `journal_pb_autofold`；已经存过折叠状态的不动`renderModal` 换一笔交易时清空 `pbFormNotes`。表单里「新建错题 / 新建待验证」是马上建页面（空模板），勾选照样等保存。每条刚勾上的笔记底下有个「写一句」小按钮，点了才出输入框（`pbFormNotes.textOpen` / `texts[笔记id]`），写不写由用户定，保存时各自写成那条笔记里「- [[trade:id]] 那句话」；本来就关联着的笔记，按钮上显示正文里已有的那句，点开就是改它（`textOrig` 记点开时的原文，真改了才用 `pbSetLineNoteInNote` 写回，没改不碰正文，免得格式被抹成纯文字）；正文里只是行文提到、没有自己那一行的不出按钮

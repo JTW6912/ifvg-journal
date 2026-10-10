@@ -407,3 +407,53 @@ test("新交易自动填值：只认平铺的「选择字段 是 一个值」，
   assert.deepStrictEqual(scopeSetup([{ id: "f", fieldId: "ver", values: ["1", "2"] }], ST).call("() => dataScopeDefaults()"), {});
   assert.deepStrictEqual(scopeSetup([{ id: "g", op: "or", children: VER2 }], ST).call("() => dataScopeDefaults()"), {});
 });
+
+const BR = [
+  { id: "q", kind: "verify", title: "不知道价格要去哪里", created_at: "2026-10-01T00:00:00Z" },
+  { id: "a", kind: "verify", title: "mech 看不到回调", branch_of: "q", sort_order: 1, created_at: "2026-10-01T00:01:00Z" },
+  { id: "b", kind: "verify", title: "HTF 延续", branch_of: "q", sort_order: 0, created_at: "2026-10-01T00:02:00Z" },
+  { id: "x", kind: "verify", title: "独立的一条", created_at: "2026-10-01T00:03:00Z" },
+  { id: "m", kind: "mistake", title: "错题", created_at: "2026-10-01T00:04:00Z" },
+  { id: "bad", kind: "verify", title: "挂在分支下面（脏数据）", branch_of: "a", created_at: "2026-10-01T00:05:00Z" },
+];
+
+test("分支：两层封顶，种类要一致；指向分支 / 不存在的 branch_of 按顶层读", () => {
+  const { call } = setup(BR);
+  assert.deepStrictEqual(call("() => pbBranchesOf(pbFind('q')).map((m) => m.id)"), ["b", "a"]);   // 按 sort_order
+  assert.strictEqual(call("() => pbIsBranch(pbFind('bad'))"), false);
+  assert.deepStrictEqual(call("() => pbTopNotes(pbNotes('verify')).map((m) => m.id)"), ["q", "x", "bad"]);
+  assert.strictEqual(call("() => pbCanBranchUnder(pbFind('x'), pbFind('q'))"), true);
+  assert.strictEqual(call("() => pbCanBranchUnder(pbFind('x'), pbFind('a'))"), false);   // a 自己是分支
+  assert.strictEqual(call("() => pbCanBranchUnder(pbFind('q'), pbFind('x'))"), false);   // q 有分支
+  assert.strictEqual(call("() => pbCanBranchUnder(pbFind('m'), pbFind('x'))"), false);   // 种类不同
+  assert.deepStrictEqual(call("() => pbNestBranches(pbNotes('verify')).map((e) => e.depth + ':' + e.m.id)"), ["0:q", "1:b", "1:a", "0:x", "0:bad"]);
+  assert.strictEqual(call("() => pbLabel('a')"), "不知道价格要去哪里 › mech 看不到回调");
+});
+
+test("问题的交易：全部（去重）和还没分到分支的", () => {
+  const pages = BR.map((p) => ({ ...p }));
+  pages[0].body = "- [[trade:t1]]\n- [[trade:t2]]";
+  pages[1].body = "- [[trade:t2]]\n- [[trade:t3]]";
+  const { call } = setup(pages, [{ id: "t1" }, { id: "t2" }, { id: "t3" }]);
+  assert.deepStrictEqual(call("() => pbFamilyTrades(pbFind('q')).map((t) => t.id).sort()"), ["t1", "t2", "t3"]);
+  assert.deepStrictEqual(call("() => pbUnsplitTrades(pbFind('q')).map((t) => t.id)"), ["t1"]);
+});
+
+test("重排：只动被拖的那一张，排到目标前 / 后，没变的行不写", () => {
+  const { call } = setup(BR);
+  const r = call("() => pbReorderPatches(pbTopNotes(pbNotes('verify')).filter((m) => m.id !== 'bad'), 'x', 'q', false)");
+  assert.deepStrictEqual(r, [{ id: "x", patch: { sort_order: 0 } }, { id: "q", patch: { sort_order: 1 } }]);
+  // b 已经是 0、a 已经是 1：把 b 放到 a 后面 → 两个都要改
+  assert.deepStrictEqual(call("() => pbReorderPatches(pbBranchesOf(pbFind('q')), 'b', 'a', true)"), [{ id: "a", patch: { sort_order: 0 } }, { id: "b", patch: { sort_order: 1 } }]);
+  assert.deepStrictEqual(call("() => pbReorderPatches(pbBranchesOf(pbFind('q')), 'b', 'a', false)"), []);
+});
+
+test("合并正文：交易行连同那句话搬过去，剩下的正文单开一节、标题降一级，空模板不搬", () => {
+  const { call } = setup(PAGES);
+  const dst = "## 想验证什么\n\n要不要做\n\n## 涉及的交易\n\n- [[trade:t1]]";
+  const src = "## 想验证什么\n\n**周一**更差\n\n## 涉及的交易\n\n- [[trade:t1]] 那句\n- [[trade:t2]] 第二笔 *斜体*";
+  assert.strictEqual(call("(a, b) => pbMergeNoteBodies(a, b, '周一')", dst, src),
+    "## 想验证什么\n\n要不要做\n\n## 涉及的交易\n\n- [[trade:t1]] 那句\n- [[trade:t2]] 第二笔 *斜体*\n\n## 合并自「周一」\n\n### 想验证什么\n\n**周一**更差");
+  assert.strictEqual(call("(a, b) => pbMergeNoteBodies(a, b, 'x')", dst, "## 想验证什么\n\n## 涉及的交易\n\n- [[trade:t3]]"),
+    dst + "\n- [[trade:t3]]");
+});
