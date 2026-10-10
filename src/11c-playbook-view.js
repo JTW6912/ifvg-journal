@@ -1496,13 +1496,43 @@ function pbFormNoteTextHtml(m, isV) {
   if (!st.textOpen.has(id)) {
     const was = st.init.has(id);
     if (was && !pbHasTradeLine(pbFormNoteBody(m), st.tradeId)) return "";
-    const cur = was ? pbMistakeLineNote(pbFormNoteBody(m), st.tradeId) : "";
+    // 点开写过又收起来的，按钮上显示刚写的那句；没动过的显示正文里已有的
+    const cur = id in st.texts ? st.texts[id].replace(/\s+/g, " ").trim() : was ? pbMistakeLineNote(pbFormNoteBody(m), st.tradeId) : "";
     return `<button type="button" class="tinyBtn pbFormNoteAddText${cur ? " hasText" : ""}" data-action="pb-form-note-text" data-id="${esc(id)}">${ICONS.pencil} <span>${esc(cur || T("pb.form.addText"))}</span></button>`;
   }
   const v = st.texts[id] || "";
-  return `<input class="input pbFormNoteInput" type="text" data-form-note-text="${esc(id)}" placeholder="${esc(T(isV ? "pb.mp.notePh" : "pb.mp.errPh"))}" value="${esc(v)}" oninput="window.__pbFormNoteTextInput(this)" />`;
+  return `<input class="input pbFormNoteInput" type="text" data-form-note-text="${esc(id)}" placeholder="${esc(T(isV ? "pb.mp.notePh" : "pb.mp.errPh"))}" value="${esc(v)}"
+    oninput="window.__pbFormNoteTextInput(this)" onkeydown="window.__pbFormNoteTextKey(event)" />`;
 }
 window.__pbFormNoteTextInput = function (el) { if (pbFormNotes) pbFormNotes.texts[el.dataset.formNoteText] = el.value; };
+/* Esc / 回车 = 收起输入框，写的字留着（保存交易时照样写进去）。Esc 一定要拦住，不然冒泡到全局会把整个交易表单关掉 */
+window.__pbFormNoteTextKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key !== "Escape" && e.key !== "Enter") return;
+  e.preventDefault();
+  e.stopPropagation();
+  const id = e.target.dataset.formNoteText;
+  if (!pbFormNotes) return;
+  pbFormNotes.texts[id] = e.target.value;
+  pbFormNotes.textOpen.delete(id);
+  refreshPbFormBlock();
+  const btn = [...document.querySelectorAll('[data-action="pb-form-note-text"]')].find((x) => x.dataset.id === id);
+  if (btn) btn.focus();
+};
+/* 新建笔记起名字的框：回车 = 建，Esc = 不建了（同样不能让 Esc 冒泡关掉表单） */
+window.__pbFormNewNameKey = function (e) {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    window.__pbFormNotesInput(e.target, "newName");
+    pbFormNoteCreate();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (pbFormNotes) { pbFormNotes.creating = ""; pbFormNotes.newName = ""; }
+    refreshPbFormBlock();
+  }
+};
 function pbFormNotesExtraHtml() {
   const st = pbFormNotesState();
   if (!st || viewingUserId) return "";
@@ -1511,7 +1541,7 @@ function pbFormNotesExtraHtml() {
     html += `<div class="pbMpNew pbFormNew">
       <input class="input" id="pbFormNewName" type="text" placeholder="${esc(T("pb.form.newPh." + st.creating))}" value="${esc(st.newName)}"
         oninput="window.__pbFormNotesInput(this,'newName')"
-        onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();window.__pbFormNotesInput(this,'newName');document.querySelector('[data-action=&quot;pb-form-note-create&quot;]').click();}" />
+        onkeydown="window.__pbFormNewNameKey(event)" />
       <button type="button" class="btn" data-action="pb-form-note-create">${ICONS.plus} ${esc(T("pb.form.create"))}</button>
       <button type="button" class="iconBtn" data-action="pb-form-note-cancel">${ICONS.x}</button>
     </div>`;
@@ -1570,7 +1600,7 @@ function pbFormNoteOpenText(id) {
   const st = pbFormNotesState();
   if (!st || viewingUserId || !st.sel.has(id)) return;
   // 本来就关联着的：输入框里先放正文里已有的那句（不截断），保存时跟它比，改了才写
-  if (st.init.has(id) && !st.textOpen.has(id)) {
+  if (st.init.has(id) && !(id in st.textOrig)) {
     const m = pbFind(id);
     st.textOrig[id] = m ? pbMistakeLineNote(pbFormNoteBody(m), st.tradeId, Infinity) : "";
     st.texts[id] = st.textOrig[id];
@@ -1615,7 +1645,7 @@ async function pbApplyFormNotes(tradeId) {
   // 本来就关联着、点开改了那句话的：真改了才动正文（没改就不碰，免得把原来的格式抹成纯文字）
   const norm = (x) => String(x || "").replace(/\s+/g, " ").trim();
   for (const id of st.init) {
-    if (!st.sel.has(id) || !st.textOpen.has(id) || norm(st.texts[id]) === norm(st.textOrig[id])) continue;
+    if (!st.sel.has(id) || !(id in st.textOrig) || norm(st.texts[id]) === norm(st.textOrig[id])) continue;
     if (!(await pbSetLineNoteInNote(id, tradeId, norm(st.texts[id])))) errs.push(T("pb.area.noteNoLine"));
   }
   if (errs.length) alert(errs.join("\n"));
