@@ -17,6 +17,17 @@
 :where(:root[data-theme="light"]){
   --pnlPosSoft:color-mix(in srgb,var(--pnlPos) 12%,transparent); --pnlNegSoft:color-mix(in srgb,var(--pnlNeg) 12%,transparent);}
 
+/* Logo 色（侧边栏品牌标 + 标签页图标）：每种配色一个深色方块 + 一条亮色缺口带，日 / 夜共用一套，
+   换配色就换 logo。--logoEdge 是方块的细边，深色主题下靠它看出轮廓。
+   黑金不用金黑，用品牌默认的午夜蓝 × 薄荷 */
+:where(:root){--logoBg:#0E1A3D; --logoLine:#FFFFFF; --logoBand:#3DDCB0; --logoEdge:#2B3D6E;}
+:root[data-palette="sky"]{--logoBg:#0F2A5C; --logoBand:#6CC0FF; --logoEdge:#2A4A85;}
+:root[data-palette="violet"]{--logoBg:#1A1240; --logoBand:#B49BFF; --logoEdge:#3A2D7A;}
+:root[data-palette="rose"]{--logoBg:#3A1028; --logoBand:#FF6FAA; --logoEdge:#64304D;}
+:root[data-palette="sunset"]{--logoBg:#2B1408; --logoBand:#FF8A3D; --logoEdge:#573420;}
+:root[data-palette="ocean"]{--logoBg:#072A33; --logoBand:#2CD3E0; --logoEdge:#1F4E59;}
+:root[data-palette="graphite"]{--logoBg:#18181B; --logoLine:#A1A1AA; --logoBand:#F4F4F5; --logoEdge:#3A3A3F;}
+
 /* ---------- 非黑金配色共用的语义色 ---------- */
 :root[data-palette][data-theme="light"]{
   --pos:#0FA37A; --posSoft:rgba(15,163,122,.11); --posFaint:rgba(15,163,122,.07);

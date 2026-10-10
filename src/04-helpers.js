@@ -211,6 +211,17 @@ function applyLayout(v) {
 function applyPalette(v) {
   if (v && v !== "gold" && PALETTES.includes(v)) document.documentElement.dataset.palette = v;
   else delete document.documentElement.dataset.palette;
+  updateFavicon();
+}
+// 标签页图标跟着配色换：data URI 里读不到 CSS 变量，只能把当前配色的 logo 色值填进去重新生成。
+// 小尺寸下线条和缺口带加粗一点，16px 也看得清
+function updateFavicon() {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  const cs = getComputedStyle(document.documentElement);
+  const c = (k, d) => cs.getPropertyValue(k).trim() || d;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="6" y="6" width="88" height="88" rx="24" fill="${c("--logoBg", "#0E1A3D")}" stroke="${c("--logoEdge", "#2B3D6E")}" stroke-width="3"/><g fill="none" stroke="${c("--logoLine", "#FFFFFF")}" stroke-width="6"><rect x="23" y="54" width="10" height="24" rx="2.5"/><rect x="45" y="22" width="10" height="56" rx="2.5"/><rect x="67" y="22" width="10" height="16" rx="2.5"/></g><rect x="1" y="41" width="98" height="10" rx="5" fill="${c("--logoBand", "#3DDCB0")}"/></svg>`;
+  link.href = "data:image/svg+xml," + encodeURIComponent(svg);
 }
 function loadAppearance() {
   try {

@@ -343,8 +343,7 @@
   /* 侧边栏顶部品牌 */
   [data-layout="modern"] .navBrand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px;}
   [data-layout="modern"] .navLogo{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-  [data-layout="modern"] .navLogo svg{display:block;}
-  [data-layout="modern"] .navBrandText{display:flex;flex-direction:column;font-family:var(--fontDisplay);font-size:16px;font-weight:600;
+  [data-layout="modern"] .navLogo svg{display:block;}  [data-layout="modern"] .navBrandText{display:flex;flex-direction:column;font-family:var(--fontDisplay);font-size:16px;font-weight:600;
     color:var(--text);line-height:1.15;letter-spacing:-.2px;min-width:0;}
   [data-layout="modern"] .navBrandText b{font-weight:800;}
   [data-layout="modern"] .navBrandText small{font-family:var(--fontBody);font-size:11.5px;font-weight:500;color:var(--mutedDark);
