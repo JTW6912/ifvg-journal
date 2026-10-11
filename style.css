@@ -1331,6 +1331,12 @@ button.pageRef{line-height:1.5;}
 .pbProgress{width:160px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden;display:inline-block;}
 .pbProgress i{display:block;height:100%;background:var(--accent);transition:width .2s;}
 .pbTriageBar .reviewPeriodSeg{margin-left:auto;}
+.pbTriageFilter{display:inline-flex;align-items:center;gap:6px;margin-left:auto;color:var(--muted);}
+.pbTriageFilter svg{width:13px;height:13px;flex-shrink:0;}
+.pbTriageFilter select.input{width:auto;max-width:240px;padding:4px 8px;font-size:12px;}
+.pbTriageFilter.on{color:var(--accent);}
+.pbTriageFilter.on select.input{border-color:var(--accent);color:var(--text);font-weight:600;}
+.pbTriageFilter + .reviewPeriodSeg{margin-left:0;}
 .pbTriageBar .reviewPeriodSeg .tinyBtn{padding:4px 12px;font-size:12px;color:var(--muted);background:transparent;}
 .pbTriageMain{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start;}
 .pbTriageShot{position:sticky;top:12px;background:var(--surface2);border-radius:var(--r10);border:1px solid var(--border);
@@ -1418,7 +1424,7 @@ button.pageRef{line-height:1.5;}
 @media(max-width:1000px){
   .pbTriageMain{grid-template-columns:1fr;}
   .pbTriageShot{position:static;}
-  .pbTriageBar .reviewPeriodSeg{margin-left:0;}
+  .pbTriageBar .reviewPeriodSeg,.pbTriageFilter{margin-left:0;}
 }
 @media(max-width:640px){
   .pbTriageProgress{width:100%;}

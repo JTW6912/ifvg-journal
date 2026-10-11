@@ -938,9 +938,11 @@ function pbTradeAreaHtml(d) {
   const rows = (pbNotedOnly ? noted : list).filter((t) => pbAreaMatches(ctx, t, pbExecFilter));
   const shown = pbShowAllTrades ? rows : rows.slice(0, PB_TRADES_PREVIEW);
   const triageBtn = mode !== "page" || ro || !pbUnsortedCount() ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="unsorted">${ICONS.grid} ${esc(T("pb.triage.more", { n: pbUnsortedCount() }))}</button>`;
+  // 在归类模式里把这一类逐笔过一遍：改归别的模型、打标签、丢进待验证都在那边一键完成
+  const reviewBtn = ro || !list.length ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-triage-start" data-scope="all" data-filter="${esc(d.id)}" title="${esc(T("pb.triage.reviewThisHint"))}">${ICONS.grid} ${esc(T("pb.triage.reviewThis"))}</button>`;
   const notedBtn = noted.length ? `<button class="tinyBtn pbAddBtn pbNotedBtn${pbNotedOnly ? " on" : ""}" data-action="pb-noted-only">${ICONS.pencil} ${esc(T("pb.note.onlyNoted", { n: noted.length }))}</button>` : "";
   const addBtn = mode !== "page" && !ro ? `<button class="tinyBtn pbAddBtn" data-action="pb-area-add">${ICONS.plus} ${esc(T("pb.area.add"))}</button>` : "";
-  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + triageBtn + addBtn, d.kind === "system" ? T("pb.section.tradesHintSystem") : "")}
+  html += `<section class="pbPanel">${pbSectionHeadHtml(T("pb.section.trades"), list.length, notedBtn + reviewBtn + triageBtn + addBtn, d.kind === "system" ? T("pb.section.tradesHintSystem") : "")}
     ${pbExecTableHtml(list, extra)}
     ${pbExecFilter ? `<div class="pbExecNow">${esc(T("pb.exec.showing", { v: pbAreaFilterLabel(ctx, pbExecFilter), n: rows.length }))} <button class="tinyBtn" data-action="pb-exec-filter" data-val="">${esc(T("pb.exec.showAll"))}</button></div>` : ""}
     ${rows.length
@@ -1432,15 +1434,39 @@ function pbTagChipsHtml(list, onIds, action, ro) {
 /* ============================================================
    归类模式
    ============================================================ */
-function pbTriageQueue(scope) {
-  const list = scopedTrades().filter((t) => scope === "all" || pbTradeIsUnsorted(t));   // 只排数据范围内的
+/* 归类时只排某一类：某个模型（系统连同它的衍生策略）、某个标签、某条待验证 / 错题（连同分支）里的交易。
+   回头把一类交易重新过一遍、改归到别的模型，或者挨个丢进新开的待验证，用的就是这个 */
+function pbTriageFilterIds(filterId) {
+  const p = pbFind(filterId);
+  if (!p) return null;
+  if (pbIsPage(p)) { const ids = new Set(pbScopeIds(p.id)); return new Set(trades.filter((t) => ids.has(pbTradePageId(t))).map((t) => t.id)); }
+  if (p.kind === "tag") return new Set(trades.filter((t) => pbTradeTagIds(t).includes(p.id)).map((t) => t.id));
+  return new Set(pbFamilyTrades(p).map((t) => t.id));
+}
+function pbTriageQueue(scope, filterId) {
+  const only = pbTriageFilterIds(filterId);
+  const list = scopedTrades().filter((t) => (scope === "all" || pbTradeIsUnsorted(t)) && (!only || only.has(t.id)));   // 只排数据范围内的
   return pbSortTradesDesc(list).map((t) => t.id);
 }
-function startPbTriage(scope) {
+/* 队列开始时拍下来：过程中把这笔改归到别的模型、摘掉标签，它也不会从眼前消失 */
+function startPbTriage(scope, filterId) {
   if (viewingUserId || recordMode !== "live") return;
-  const sc = scope === "all" ? "all" : "unsorted";
-  pbTriage = { ids: pbTriageQueue(sc), i: 0, scope: sc, panel: "", errText: "", newNote: "", done: new Set(), starred: 0, mistakes: 0 };
+  const f = pbFind(filterId) ? filterId : "";
+  // 筛的是某个模型：里面的交易都已经归过类了，「只看未归类」会是空的
+  const sc = scope === "all" || (f && pbIsPage(pbFind(f))) ? "all" : "unsorted";
+  pbTriage = { ids: pbTriageQueue(sc, f), i: 0, scope: sc, filter: f, panel: "", errText: "", newNote: "", done: new Set(), starred: 0, mistakes: 0 };
   window.scrollTo({ top: 0 });
+}
+function pbTriageFilterSelectHtml(cur) {
+  const opt = (id, label) => `<option value="${esc(id)}" ${cur === id ? "selected" : ""}>${esc(label)}</option>`;
+  const group = (key, list) => list.length ? `<optgroup label="${esc(T(key))}">${list.join("")}</optgroup>` : "";
+  const pages = pbAssignOptions().map((o) => opt(o.id, (o.depth ? "  └ " : "") + o.label));
+  const notes = (kind) => pbNestBranches(pbSortList(pbNotes(kind))).map(({ m, depth }) => opt(m.id, (depth ? "  └ " : "") + (kind === "tag" ? pbTagLabel(m) : pbTitle(m))));
+  return `<label class="pbTriageFilter${cur ? " on" : ""}">${ICONS.filter}
+    <select class="input" data-pb-triage-filter aria-label="${esc(T("pb.triage.filter"))}">
+      ${opt("", T("pb.triage.filterAny"))}
+      ${group("pb.triage.filterPages", pages)}${group("pb.triage.filterTags", notes("tag"))}${group("pb.triage.filterVerify", notes("verify"))}${group("pb.triage.filterMistakes", notes("mistake"))}
+    </select></label>`;
 }
 function pbTriageCurrent() {
   if (!pbTriage) return null;
@@ -1656,7 +1682,7 @@ function renderPbTriage() {
   const total = tr.ids.length;
   const scopeSeg = `<span class="reviewPeriodSeg">
     <button class="tinyBtn ${tr.scope === "unsorted" ? "on" : ""}" data-action="pb-triage-scope" data-scope="unsorted">${esc(T("pb.triage.scopeUnsorted"))}</button>
-    <button class="tinyBtn ${tr.scope === "all" ? "on" : ""}" data-action="pb-triage-scope" data-scope="all">${esc(T("pb.triage.scopeAll"))}</button>
+    <button class="tinyBtn ${tr.scope === "all" ? "on" : ""}" data-action="pb-triage-scope" data-scope="all">${esc(T(tr.filter ? "pb.triage.scopeAllOf" : "pb.triage.scopeAll"))}</button>
   </span>`;
   const pct = total ? Math.round((Math.min(tr.i, total) / total) * 100) : 100;
   const bar = `<div class="pbTriageBar">
@@ -1667,6 +1693,7 @@ function renderPbTriage() {
       <span class="pbProgress"><i style="width:${pct}%"></i></span>
       <span class="muted">${esc(T("pb.triage.doneCount", { n: tr.done.size }))}</span>
     </div>
+    ${pbTriageFilterSelectHtml(tr.filter || "")}
     ${scopeSeg}
   </div>${dataScopeOn() ? `<div class="pbTriageScopeNote">${ICONS.filter}<span>${esc(T("scope.triageNote", { cond: comboConditionsText({ conditions: dataScopeConditions() }) }))}</span></div>` : ""}`;
   if (pbError) return bar + `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(pbError)}</span></div>` + pbTriageBodyHtml();
@@ -1681,12 +1708,12 @@ function pbTriageBodyHtml() {
   if (tr.i >= tr.ids.length) {
     return `<div class="pbTriageDone">
       <div class="pbTriageDoneMark">${ICONS.check}</div>
-      <div class="display pbTriageDoneTitle">${esc(tr.ids.length ? T("pb.triage.finished") : T("pb.triage.nothing"))}</div>
+      <div class="display pbTriageDoneTitle">${esc(tr.ids.length ? T("pb.triage.finished") : T(tr.filter ? "pb.triage.nothingFiltered" : "pb.triage.nothing"))}</div>
       ${tr.ids.length ? `<p class="mono">${esc(T("pb.triage.summary", { n: tr.done.size, s: tr.starred, m: tr.mistakes }))}</p>` : ""}
       <div class="pbTriageDoneBtns">
         <button class="btn btn-primary" data-action="pb-triage-exit">${esc(T("pb.triage.backToLib"))}</button>
         ${tr.ids.length ? `<button class="btn" data-action="pb-triage-prev">${esc(T("pb.triage.prev"))}</button>` : ""}
-        ${tr.scope === "unsorted" ? `<button class="btn" data-action="pb-triage-scope" data-scope="all">${esc(T("pb.triage.reviewAll"))}</button>` : ""}
+        ${tr.scope === "unsorted" ? `<button class="btn" data-action="pb-triage-scope" data-scope="all">${esc(T(tr.filter ? "pb.triage.reviewAllOf" : "pb.triage.reviewAll"))}</button>` : ""}
       </div>
     </div>`;
   }
