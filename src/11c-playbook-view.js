@@ -1443,19 +1443,57 @@ function pbTriageFilterIds(filterId) {
   if (p.kind === "tag") return new Set(trades.filter((t) => pbTradeTagIds(t).includes(p.id)).map((t) => t.id));
   return new Set(pbFamilyTrades(p).map((t) => t.id));
 }
-function pbTriageQueue(scope, filterId) {
+/* conds：按交易字段筛（clean LQ raid = barely、result = BE → L……），跟记录页的筛选是同一套条件树 */
+function pbTriageQueue(scope, filterId, conds) {
   const only = pbTriageFilterIds(filterId);
-  const list = scopedTrades().filter((t) => (scope === "all" || pbTradeIsUnsorted(t)) && (!only || only.has(t.id)));   // 只排数据范围内的
+  const list = scopedTrades().filter((t) => (scope === "all" || pbTradeIsUnsorted(t)) && (!only || only.has(t.id)) && tradeMatchesFilters(t, conds));   // 只排数据范围内的
   return pbSortTradesDesc(list).map((t) => t.id);
 }
-/* 队列开始时拍下来：过程中把这笔改归到别的模型、摘掉标签，它也不会从眼前消失 */
-function startPbTriage(scope, filterId) {
+/* 队列开始时拍下来：过程中把这笔改归到别的模型、改了字段，它也不会从眼前消失。
+   换范围 / 换筛选时把 prev（上一轮的 pbTriage）传进来，字段条件和面板开合跟着带过去；从外面新进来就是空的 */
+function startPbTriage(scope, filterId, prev) {
   if (viewingUserId || recordMode !== "live") return;
   const f = pbFind(filterId) ? filterId : "";
+  const c = prev ? prev.conds : [];
   // 筛的是某个模型：里面的交易都已经归过类了，「只看未归类」会是空的
   const sc = scope === "all" || (f && pbIsPage(pbFind(f))) ? "all" : "unsorted";
-  pbTriage = { ids: pbTriageQueue(sc, f), i: 0, scope: sc, filter: f, panel: "", errText: "", newNote: "", done: new Set(), starred: 0, mistakes: 0 };
+  pbTriage = { ids: pbTriageQueue(sc, f, c), i: 0, scope: sc, filter: f, conds: c, condOpen: !!(prev && prev.condOpen),
+    scopeTouched: !!(prev && prev.scopeTouched), panel: "", errText: "", newNote: "", done: new Set(), starred: 0, mistakes: 0 };
   window.scrollTo({ top: 0 });
+}
+/* 字段条件改了：重新排队，从第一笔开始。头一次设上条件、又没手动点过范围时顺手切到「全部」——
+   按字段筛多半是回头看已经归过类的那一批，停在「只看未归类」上大概率是空的 */
+function pbTriageRequeue() {
+  const tr = pbTriage;
+  if (!tr) return;
+  pbTriageSaveNote();
+  if (tr.scope === "unsorted" && !tr.scopeTouched && tr.conds.some(filterNodeIsEffective)) tr.scope = "all";
+  tr.ids = pbTriageQueue(tr.scope, tr.filter, tr.conds);
+  tr.i = 0; tr.panel = ""; tr.errText = "";
+  window.scrollTo({ top: 0 });
+}
+function pbTriageCondPanelHtml() {
+  const tr = pbTriage;
+  const cond = tr.conds;
+  const active = countFilterConditions(cond);
+  const head = `<button class="filterPanelHead" data-action="pb-triage-cond-toggle">
+      ${ICONS.filter}
+      <span class="filterPanelTitle">${esc(T("pb.triage.cond"))}</span>
+      ${active ? `<span class="filterPanelBadge">${esc(T("filter.activeCount", { n: active }))}</span>` : `<span class="filterPanelBadge off">${esc(T("ascope.noFilter"))}</span>`}
+      <span class="filterPanelChev">${tr.condOpen ? ICONS.chevUp : ICONS.chevDown}</span>
+    </button>`;
+  if (!tr.condOpen) return `<div class="filterPanel pbTriageCond">${head}${active ? filterPanelSummaryHtml(cond) : ""}</div>`;
+  return `<div class="filterPanel pbTriageCond open">${head}
+    <div class="filterPanelBody">
+      <div class="pbScopeHint">${esc(T("pb.triage.condHint"))}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;width:100%;">${filterNodeListHtml(cond, TRIAGE_CTX)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn" data-action="add-filter" data-filter-ctx="${TRIAGE_CTX}">${ICONS.plus} ${T("filter.addCondition")}</button>
+        <button class="btn" data-action="add-filter-group" data-filter-ctx="${TRIAGE_CTX}">${ICONS.plus} ${T("filter.addGroup")}</button>
+        ${cond.length ? `<button class="btn" data-action="pb-triage-cond-clear">${esc(T("pb.triage.condClear"))}</button>` : ""}
+      </div>
+    </div>
+  </div>`;
 }
 function pbTriageFilterSelectHtml(cur) {
   const opt = (id, label) => `<option value="${esc(id)}" ${cur === id ? "selected" : ""}>${esc(label)}</option>`;
@@ -1695,7 +1733,8 @@ function renderPbTriage() {
     </div>
     ${pbTriageFilterSelectHtml(tr.filter || "")}
     ${scopeSeg}
-  </div>${dataScopeOn() ? `<div class="pbTriageScopeNote">${ICONS.filter}<span>${esc(T("scope.triageNote", { cond: comboConditionsText({ conditions: dataScopeConditions() }) }))}</span></div>` : ""}`;
+  </div>${dataScopeOn() ? `<div class="pbTriageScopeNote">${ICONS.filter}<span>${esc(T("scope.triageNote", { cond: comboConditionsText({ conditions: dataScopeConditions() }) }))}</span></div>` : ""}
+  ${pbTriageCondPanelHtml()}`;
   if (pbError) return bar + `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(pbError)}</span></div>` + pbTriageBodyHtml();
   return bar + pbTriageBodyHtml();
 }
@@ -1708,7 +1747,7 @@ function pbTriageBodyHtml() {
   if (tr.i >= tr.ids.length) {
     return `<div class="pbTriageDone">
       <div class="pbTriageDoneMark">${ICONS.check}</div>
-      <div class="display pbTriageDoneTitle">${esc(tr.ids.length ? T("pb.triage.finished") : T(tr.filter ? "pb.triage.nothingFiltered" : "pb.triage.nothing"))}</div>
+      <div class="display pbTriageDoneTitle">${esc(tr.ids.length ? T("pb.triage.finished") : T(tr.filter || tr.conds.some(filterNodeIsEffective) ? "pb.triage.nothingFiltered" : "pb.triage.nothing"))}</div>
       ${tr.ids.length ? `<p class="mono">${esc(T("pb.triage.summary", { n: tr.done.size, s: tr.starred, m: tr.mistakes }))}</p>` : ""}
       <div class="pbTriageDoneBtns">
         <button class="btn btn-primary" data-action="pb-triage-exit">${esc(T("pb.triage.backToLib"))}</button>

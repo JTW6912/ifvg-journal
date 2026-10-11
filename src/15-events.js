@@ -870,9 +870,12 @@ document.addEventListener("click", async (e) => {
     pbTriageSaveNote();
     // 筛着某个模型时点「只看未归类」：模型里的都归过了，那就是不要这个筛选了
     const f = pbTriage && pbTriage.filter;
-    startPbTriage(el.dataset.scope, el.dataset.scope === "all" || !pbIsPage(pbFind(f)) ? f : "");
+    startPbTriage(el.dataset.scope, el.dataset.scope === "all" || !pbIsPage(pbFind(f)) ? f : "", pbTriage);
+    if (pbTriage) pbTriage.scopeTouched = true;
     render();
   }
+  else if (action === "pb-triage-cond-toggle") { if (pbTriage) { pbTriage.condOpen = !pbTriage.condOpen; render(); } }
+  else if (action === "pb-triage-cond-clear") { if (pbTriage) { pbTriage.conds.length = 0; pbTriageRequeue(); render(); } }
   else if (action === "pb-triage-assign") { await pbTriageAssign(el.dataset.id); }
   else if (action === "pb-triage-star") { await pbTriageStar(); }
   else if (action === "pb-triage-panel") { pbTriageOpenPanel(el.dataset.kind); }
@@ -1169,7 +1172,7 @@ document.addEventListener("change", async (e) => {
     if (!pbTriage) return;
     pbTriageSaveNote();
     // 换了一类：从这一类的全部交易过起（只想看其中没归类的，再点「只看未归类」）
-    startPbTriage(e.target.value ? "all" : pbTriage.scope, e.target.value);
+    startPbTriage(e.target.value ? "all" : pbTriage.scope, e.target.value, pbTriage);
     render();
     return;
   }

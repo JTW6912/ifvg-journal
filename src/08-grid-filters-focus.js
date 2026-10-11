@@ -213,10 +213,13 @@ function pruneFilterNodes(arr) {
 //   两个都没有                 → 记录页的 activeFilters
 // ⚠ 加新的筛选入口时一定要带上自己的上下文属性，否则会默默落到记录页那份上，把用户的记录页筛选改掉
 //   data-filter-ctx="playbook" → 模型库的成绩口径 analysisPrefs.pbScope
+//   data-filter-ctx="triage"   → 归类模式这一轮的字段条件 pbTriage.conds（不存，退出归类就没了）
 const PB_SCOPE_CTX = "playbook";
+const TRIAGE_CTX = "triage";
 function filterCtxOf(el) {
   if (el.dataset.filterCtx === ANALYSIS_CTX) return { arr: analysisFilters, comboId: "", scope: ANALYSIS_CTX };
   if (el.dataset.filterCtx === PB_SCOPE_CTX) return viewingUserId ? null : { arr: analysisPrefs.pbScope, comboId: "", scope: PB_SCOPE_CTX };
+  if (el.dataset.filterCtx === TRIAGE_CTX) return pbTriage ? { arr: pbTriage.conds, comboId: "", scope: TRIAGE_CTX } : null;
   if (el.dataset.filterCtx === DATA_SCOPE_CTX) {
     if (viewingUserId) return null;
     if (!Array.isArray(analysisPrefs.dataScope)) analysisPrefs.dataScope = [];
@@ -231,6 +234,7 @@ function filterCtxOf(el) {
 // 展开状态的 key 必须两边算出来一模一样，否则点开的分组下一次 render 就自己合上了
 function ctxKeyOf(ctx) {
   if (ctx.scope === PB_SCOPE_CTX) return PB_SCOPE_CTX;
+  if (ctx.scope === TRIAGE_CTX) return TRIAGE_CTX;
   if (ctx.scope === DATA_SCOPE_CTX) return DATA_SCOPE_CTX;
   return ctx.scope === ANALYSIS_CTX ? ANALYSIS_CTX : (ctx.comboId || "");
 }
@@ -244,6 +248,8 @@ function afterFilterChange(ctx) {
   if (ctx.scope === ANALYSIS_CTX) { afterAnalysisFilterChange(); return; }
   // 模型库成绩口径：跟着账号走（存 analysis_prefs），改了卡片和页面上的成绩全部跟着变
   if (ctx.scope === PB_SCOPE_CTX) { queueSaveAnalysisPrefs(); render(); refreshPbPanels(); return; }
+  // 归类模式：按新条件重新排队，从第一笔开始
+  if (ctx.scope === TRIAGE_CTX) { pbTriageRequeue(); render(); return; }
   // 数据范围：跟着账号走，改了全站的数字都跟着变；编辑框画在二级弹窗里，要强制重画
   if (ctx.scope === DATA_SCOPE_CTX) { gridPage = 1; queueSaveAnalysisPrefs(); render(); refreshPbPanels(); renderSecondaryModals(true); return; }
   if (ctx.comboId) {
@@ -330,17 +336,18 @@ function legacyTextContains(t, field, needle) {
 function filterCtxAttr(ctx) {
   if (!ctx) return "";
   if (ctx === PB_SCOPE_CTX) return ` data-filter-ctx="${PB_SCOPE_CTX}"`;
+  if (ctx === TRIAGE_CTX) return ` data-filter-ctx="${TRIAGE_CTX}"`;
   if (ctx === DATA_SCOPE_CTX) return ` data-filter-ctx="${DATA_SCOPE_CTX}"`;
   return ctx === ANALYSIS_CTX ? ` data-filter-ctx="${ANALYSIS_CTX}"` : ` data-combo-id="${esc(ctx)}"`;
 }
 // 选项超过这个数，筛选行默认只显示已选中的那几个，其余收进「+N 更多」。
 // 5 是按「一行放得下」定的：超过就会折行，条件卡立刻高一倍。
 // 分析页和记录页/月度页都启用；组合编辑器不启用——那是个专门展开来编辑条件的地方，
-// 正在挑值的时候把选项藏起来只会碍事
+// 正在挑值的时候把选项藏起来只会碍事。归类模式的字段筛选同理：打开它就是来挑值的
 const COLLAPSE_CHIPS_OVER = 5;
 // 展开状态的 key 必须带上下文，否则记录页第 0 行和分析页第 0 行会互相影响
 function chipKey(ctx, idx) {
-  return (ctx === ANALYSIS_CTX ? "analysis" : ctx === PB_SCOPE_CTX ? "playbook" : ctx || "grid") + ":" + idx;
+  return (ctx === ANALYSIS_CTX ? "analysis" : ctx === PB_SCOPE_CTX ? "playbook" : ctx === TRIAGE_CTX ? "triage" : ctx || "grid") + ":" + idx;
 }
 function filterRowValuesHtml(field, path, f, ctx) {
   const cid = filterCtxAttr(ctx);
