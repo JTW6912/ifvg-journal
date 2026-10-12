@@ -1217,6 +1217,12 @@ document.addEventListener("change", async (e) => {
     if (to) await pbMoveTradeToBranch(e.target.dataset.pbMoveTrade, to);
     return;
   }
+  if (e.target.dataset.tpPbNote !== undefined) {
+    // 交易预览顶上那行：把这笔加进某条待验证（归属不动）
+    const to = e.target.value;
+    if (to) await tpPbAct("note", e.target.dataset.tpPbNote, to);
+    return;
+  }
   if (e.target.dataset.tpPbAssign !== undefined) {
     // 交易预览顶上那行：系统 / 策略页上的这笔改归到别的系统 / 策略
     const to = e.target.value;

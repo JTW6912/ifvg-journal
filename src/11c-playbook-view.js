@@ -2142,13 +2142,42 @@ function tpPbBarHtml(t) {
         ${pbAssignOptions().filter((o) => o.id !== cur).map((o) => `<option value="${esc(o.id)}">${o.depth ? "└ " : ""}${esc(o.label)}</option>`).join("")}
       </select>` : "";
   const branch = c.branchTargets && c.branchTargets.length ? pbMoveToBranchHtml(t, c.branchTargets) : "";
+  const toVerify = tpPbVerifySelectHtml(t, c);
   const rmKey = c.mode === "tag" ? "tp.pb.untag" : c.mode === "page" ? "tp.pb.unassign" : "tp.pb.remove";
   return `<div class="tpPbBar">${where}
     <button class="tpPbBtn${fav ? " on" : ""}" data-action="tp-pb-fav" data-id="${id}" title="${esc(T(c.mode === "page" ? "pb.starTitle" : "pb.area.favTitle"))}">${fav ? ICONS.starFill : ICONS.star} ${esc(T(c.mode === "page" ? "tp.pb.star" : "pb.area.fav"))}</button>
-    ${evBtns}${branch}${assign}
+    ${evBtns}${branch}${assign}${toVerify}
     <span class="tpPbSpacer"></span>
     <button class="tpPbBtn danger" data-action="tp-pb-remove" data-id="${id}" title="${esc(T(rmKey + "Title"))}">${ICONS.x} ${esc(T(rmKey))}</button>
   </div>`;
+}
+/* 「加进待验证…」：只是把这笔挂进那条待验证的正文，交易本身的归属（系统 / 策略）不动。
+   先列这笔所属模型的（策略自己的 + 它系统的），再是通用的，最后是别的；已经在里面的不列 */
+function tpPbVerifySelectHtml(t, c) {
+  const pid = pbTradePageId(t) || (c.mode === "page" ? c.d.id : "");
+  const free = (list) => list.filter((m) => m.id !== c.d.id && !pbNoteTradeIds(m).includes(t.id));
+  const cand = pid ? pbNoteCandidates(pid, "verify") : { own: [], fromSystem: [], global: pbGlobalNotes("verify") };
+  const seen = new Set();
+  const take = (list) => list.filter((m) => !seen.has(m.id) && seen.add(m.id));
+  const groups = [
+    ["tp.pb.verifyOwn", take([...cand.own, ...cand.fromSystem])],
+    ["tp.pb.verifyGlobal", take(cand.global)],
+    ["tp.pb.verifyOther", take(pbSortList(pbNotes("verify")))],
+  ].map(([k, list]) => [k, free(list)]).filter(([, list]) => list.length);
+  if (!groups.length) return "";
+  const opt = ({ m, depth }) => `<option value="${esc(m.id)}">${depth ? "└ " : ""}${esc(pbTitle(m))}${pbVerifyStatus(m) !== "watching" ? " · " + esc(T("pb.status." + pbVerifyStatus(m))) : ""}</option>`;
+  // 分支跟着它的问题排；问题本身已经有这笔（只剩分支能选）时，问题那一行不列，分支照样缩进
+  const nest = (list) => {
+    const ids = new Set(list.map((m) => m.id));
+    const out = [];
+    list.filter((m) => !pbIsBranch(m)).forEach((m) => { out.push({ m, depth: 0 }); pbBranchesOf(m).forEach((b) => ids.has(b.id) && out.push({ m: b, depth: 1 })); });
+    list.filter((m) => pbIsBranch(m) && !ids.has(pbBranchRoot(m).id)).forEach((m) => out.push({ m: { ...m, title: pbLabel(m.id) }, depth: 0 }));
+    return out;
+  };
+  return `<select class="select pbRowMove tpPbVerify" data-tp-pb-note="${esc(t.id)}" title="${esc(T("tp.pb.verifyTitle"))}">
+    <option value="">${esc(T("tp.pb.verify"))}</option>
+    ${groups.map(([k, list]) => `<optgroup label="${esc(T(k))}">${nest(list).map(opt).join("")}</optgroup>`).join("")}
+  </select>`;
 }
 /* 预览里归类那一块（操作行 + 归到哪 / 在哪些笔记里）。只换这一块，截图不跟着重画 */
 function tpPbWrapHtml(t) { return tpPbBarHtml(t) + pbTradePreviewHtml(t); }
@@ -2176,6 +2205,12 @@ async function tpPbAct(kind, tradeId, val) {
     const p = pbPatchTrade(tradeId, { [PB_KEY]: d.id });
     refreshPbPanels();
     done(await p, T("pb.area.added"));
+  } else if (kind === "note") {
+    // 只是挂进那条笔记，交易的归属不动
+    const m = pbFind(val);
+    if (!m) return;
+    const ok = await pbSetTradeInNote(m.id, tradeId, true, "");
+    done(ok, T("tp.pb.verifyAdded", { name: pbLabel(m.id) }));
   } else if (kind === "assign") {
     if (!pbFind(val)) return;
     const p = pbPatchTrade(tradeId, { [PB_KEY]: val });

@@ -1357,7 +1357,10 @@ button.pageRef{line-height:1.5;}
 .tpPbBtn:hover{border-color:var(--accent);color:var(--accent);}
 .tpPbBtn.on{border-color:var(--accent);color:var(--accent);font-weight:600;}
 .tpPbBtn.danger:hover{border-color:var(--neg);color:var(--neg);}
-.tpPbBar .pbRowMove{height:24px;}
+/* 写成 select.select.pbRowMove 是为了压过现代版式的 [data-layout="modern"] .select{padding:6px 10px}——
+   那个上下 6px 塞进 26px 高的框，字只剩一半露在外面 */
+select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
+.tpPbBar .pbRowMove{max-width:180px;}
 .pbFormNoteWrap{margin-top:10px;}
 .pbFormNoteWrap .pbFormTagsLabel{display:block;margin-bottom:5px;}
 .pbFormNoteArea{font-size:12.5px;line-height:1.6;resize:vertical;min-height:52px;}
