@@ -950,6 +950,10 @@ document.addEventListener("click", async (e) => {
     if (el.classList.contains("overlay") && e.target !== el) return;   // 点内容不关闭（不能用 stopPropagation）
     closeTradePreview();
   }
+  else if (action === "tp-pb-fav") { await tpPbAct("fav", el.dataset.id); }
+  else if (action === "tp-pb-ev") { await tpPbAct("ev", el.dataset.id, el.dataset.ev); }
+  else if (action === "tp-pb-add") { await tpPbAct("add", el.dataset.id); }
+  else if (action === "tp-pb-remove") { await tpPbAct("remove", el.dataset.id); }
   else if (action === "trade-preview-prev") { stepTradePreview(-1); }
   else if (action === "trade-preview-next") { stepTradePreview(1); }
   else if (action === "edit-trade-from-preview") {
@@ -1200,6 +1204,12 @@ document.addEventListener("change", async (e) => {
   if (e.target.dataset.pbMoveTrade !== undefined) {
     const to = e.target.value;
     if (to) await pbMoveTradeToBranch(e.target.dataset.pbMoveTrade, to);
+    return;
+  }
+  if (e.target.dataset.tpPbAssign !== undefined) {
+    // 交易预览顶上那行：系统 / 策略页上的这笔改归到别的系统 / 策略
+    const to = e.target.value;
+    if (to) await tpPbAct("assign", e.target.dataset.tpPbAssign, to);
     return;
   }
   if (e.target.dataset.pbMergeTarget !== undefined) {

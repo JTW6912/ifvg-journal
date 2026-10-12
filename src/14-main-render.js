@@ -429,7 +429,7 @@ function tradePreviewHtml() {
         <span class="tpHeadRight">${tradePreviewNavHtml()}<button class="iconBtn" data-action="close-trade-preview">${ICONS.x}</button></span>
       </div>
       <div class="modalBody tradePreviewBody">
-        ${pbTradePreviewHtml(t)}
+        <div id="tpPbWrap">${tpPbWrapHtml(t)}</div>
         <div class="tpShot"${shot ? ` data-action="preview-image" data-url="${esc(imgSrc(shot))}"${shotUrlsAttr(shots)}` : ""}>
           ${shot
             ? `<img src="${esc(imgSrc(shot))}" alt="" referrerpolicy="no-referrer" data-fallback-url="${esc(imgSrc(shot))}" data-fallback-class="tpShotEmpty" onerror="window.__imgFallback(this)" />

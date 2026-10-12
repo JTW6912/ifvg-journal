@@ -780,8 +780,9 @@ function pbAreaCtx(d) {
   const page = pbFind(d.id) || d;   // 标记读库里那份：编辑器里那份（editingReview）不带 trade_marks
   const mode = pbIsNote(d) ? "note" : d.kind === "tag" ? "tag" : "page";
   const list = mode === "note" ? pbNoteTrades(d) : mode === "tag" ? pbTagTrades(d) : pbTradesOf(d.id);
-  // 有分支的问题：每一行可以直接挪进某个分支（这就是「手动分类」）
-  const branchTargets = mode === "note" && !viewingUserId ? pbBranchesOf(pbFind(d.id)) : [];
+  // 有分支的问题：每一行可以直接挪进某个分支（这就是「手动分类」）；分支页上可以挪进同一个问题下的别的分支
+  const self = pbFind(d.id), root = pbBranchRoot(self);
+  const branchTargets = mode !== "note" || viewingUserId ? [] : root ? pbBranchesOf(root).filter((b) => b.id !== d.id) : pbBranchesOf(self);
   return { d, page, mode, list, body: d.body, evStates: PB_EV_STATES[d.kind] || [], showLabel: mode !== "page" || d.kind === "system", branchTargets };
 }
 function pbAreaFav(ctx, t) { return ctx.mode === "page" ? pbTradeStarred(t) : pbIsFav(ctx.page, t.id); }
@@ -858,12 +859,14 @@ function pbMoveToBranchHtml(t, branches) {
     ${free.map((b) => `<option value="${esc(b.id)}">${esc(pbTitle(b))}</option>`).join("")}
   </select>`;
 }
-/* 把问题页上的一笔挪进某个分支：那一行连同后面那句话原样搬过去，收藏 / 关联标记跟着走，问题上那一行删掉 */
+/* 把问题页（或分支页）上的一笔挪进某个分支：那一行连同后面那句话原样搬过去，收藏 / 关联标记跟着走，问题上那一行删掉 */
 async function pbMoveTradeToBranch(tradeId, branchId) {
   const d = editingReview;
   const src = d && pbFind(d.id);
   const dst = pbFind(branchId);
-  if (!src || !dst || viewingUserId || !pbBranchesOf(src).some((b) => b.id === branchId)) return;
+  // 问题 → 它的分支，或者分支 → 同一个问题下的别的分支
+  const family = pbBranchesOf(pbBranchRoot(src) || src);
+  if (!src || !dst || viewingUserId || src.id === branchId || !family.some((b) => b.id === branchId)) return;
   syncReviewBody();
   const raw = pbTradeLineRaw(d.body, tradeId);
   pbError = null;
@@ -1151,6 +1154,7 @@ function refreshPbPanels() {
   if (isPbDoc(editingReview)) refreshReviewWeekRow();
   const crumbs = document.querySelector("#reviewEditorRoot .reviewCrumbs");
   if (crumbs && isPbDoc(editingReview)) crumbs.innerHTML = reviewCrumbsHtml();
+  refreshTradePreviewPb();   // 预览开着时，它顶上那行收藏 / 关联跟着变
 }
 
 /* ============================================================
@@ -2101,4 +2105,96 @@ function pbTradePreviewHtml(t) {
     ${verifies.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.verify"))}</span>${verifies.map((m) => pageRefHtml(m.id)).join("")}</div>` : ""}
     ${tagIds.length ? `<div class="tpPbRow"><span class="tpPbLabel">${esc(T("pb.kind.tag"))}</span>${tagIds.map((id) => pageRefHtml(id)).join("")}</div>` : ""}
   </div>`;
+}
+
+/* ---------- 交易预览里的「这一页上的操作」 ----------
+   从模型库某一页点开一笔交易时，预览顶上多一行：这笔在这一页上的收藏 / 关联 / 移到分支 / 改归 / 移出。
+   跟列表行上那几个按钮是同一套动作，省得关掉预览、回列表里找那一行再点。
+   不在这一页的（刚移出的、或从正文别处点开的）只给一个「加到这一页」，移错了也能直接加回来 */
+function tpPbCtx(t) {
+  const d = editingReview;
+  if (!t || !isPbDoc(d) || d._isNew || recordMode !== "live" || viewingUserId) return null;
+  syncReviewBody();
+  const ctx = pbAreaCtx(d);
+  const member = ctx.mode === "page" ? pbScopeIds(d.id).includes(pbTradePageId(t)) : pbMemberIds(ctx.page, d.body).includes(t.id);
+  return { ...ctx, member };
+}
+function tpPbBarHtml(t) {
+  const c = tpPbCtx(t);
+  if (!c) return "";
+  const id = esc(t.id);
+  const where = `<span class="tpPbWhere">${esc(T(c.member ? "tp.pb.in" : "tp.pb.notIn", { name: pbTitle(c.page) }))}</span>`;
+  if (!c.member) {
+    // 刚挪进了同一个问题下的某个分支：说一声在哪，不再给「加回来」（加回来就两边都有了）
+    const fam = c.mode === "note" ? pbBranchRoot(pbFind(c.d.id)) || pbFind(c.d.id) : null;
+    const inBranch = fam ? pbBranchesOf(fam).find((b) => b.id !== c.d.id && pbNoteTradeIds(b).includes(t.id)) : null;
+    if (inBranch) return `<div class="tpPbBar isOut"><span class="tpPbWhere">${esc(T("tp.pb.inBranch", { name: pbTitle(inBranch) }))}</span>${pageRefHtml(inBranch.id)}</div>`;
+    return `<div class="tpPbBar isOut">${where}<button class="tpPbBtn" data-action="tp-pb-add" data-id="${id}">${ICONS.plus} ${esc(T("tp.pb.add"))}</button></div>`;
+  }
+  const fav = pbAreaFav(c, t);
+  const ev = pbEvOf(c.page, t.id);
+  const evBtns = c.evStates.map((s) => `<button class="pbEvBtn ev-${ev === s ? s : "none"}" data-action="tp-pb-ev" data-id="${id}" data-ev="${s}" title="${esc(T("tp.pb.evTitle"))}">${ev === s ? ICONS.check : ICONS.plus}${esc(pbEvLabel(s))}</button>`).join("");
+  // 系统 / 策略页：改归到别的系统 / 策略（「移到分支」在这里就是挪进某个衍生策略）
+  const cur = pbTradePageId(t);
+  const assign = c.mode === "page"
+    ? `<select class="select pbRowMove" data-tp-pb-assign="${id}" title="${esc(T("tp.pb.assignTitle"))}">
+        <option value="">${esc(T("tp.pb.assign"))}</option>
+        ${pbAssignOptions().filter((o) => o.id !== cur).map((o) => `<option value="${esc(o.id)}">${o.depth ? "└ " : ""}${esc(o.label)}</option>`).join("")}
+      </select>` : "";
+  const branch = c.branchTargets && c.branchTargets.length ? pbMoveToBranchHtml(t, c.branchTargets) : "";
+  const rmKey = c.mode === "tag" ? "tp.pb.untag" : c.mode === "page" ? "tp.pb.unassign" : "tp.pb.remove";
+  return `<div class="tpPbBar">${where}
+    <button class="tpPbBtn${fav ? " on" : ""}" data-action="tp-pb-fav" data-id="${id}" title="${esc(T(c.mode === "page" ? "pb.starTitle" : "pb.area.favTitle"))}">${fav ? ICONS.starFill : ICONS.star} ${esc(T(c.mode === "page" ? "tp.pb.star" : "pb.area.fav"))}</button>
+    ${evBtns}${branch}${assign}
+    <span class="tpPbSpacer"></span>
+    <button class="tpPbBtn danger" data-action="tp-pb-remove" data-id="${id}" title="${esc(T(rmKey + "Title"))}">${ICONS.x} ${esc(T(rmKey))}</button>
+  </div>`;
+}
+/* 预览里归类那一块（操作行 + 归到哪 / 在哪些笔记里）。只换这一块，截图不跟着重画 */
+function tpPbWrapHtml(t) { return tpPbBarHtml(t) + pbTradePreviewHtml(t); }
+function refreshTradePreviewPb() {
+  const el = tradePreviewId && document.getElementById("tpPbWrap");
+  const t = el && trades.find((x) => x.id === tradePreviewId);
+  if (t) el.innerHTML = tpPbWrapHtml(t);
+}
+async function tpPbAct(kind, tradeId, val) {
+  const t = trades.find((x) => x.id === tradeId);
+  const c = tpPbCtx(t);
+  const d = editingReview;
+  if (!c) return;
+  const done = (ok, msg) => {
+    refreshPbPanels(); render();
+    if (msg || !ok) showReviewToast(ok ? msg : pbError || T("error.dbOutdated"));
+  };
+  pbError = null;
+  if (kind === "fav") {
+    if (c.mode === "page") await pbToggleStar(tradeId); else await pbAreaToggleFav(tradeId);
+  } else if (kind === "ev") {
+    await pbAreaSetMark(tradeId, (page) => ({ ev: pbEvOf(page, tradeId) === val ? "" : val }));
+  } else if (kind === "add") {
+    if (c.mode !== "page") return pbAreaAddTrade(tradeId);
+    const p = pbPatchTrade(tradeId, { [PB_KEY]: d.id });
+    refreshPbPanels();
+    done(await p, T("pb.area.added"));
+  } else if (kind === "assign") {
+    if (!pbFind(val)) return;
+    const p = pbPatchTrade(tradeId, { [PB_KEY]: val });
+    refreshPbPanels();
+    done(await p, T("pb.branch.moved", { name: pbLabel(val) }));
+  } else if (kind === "remove") {
+    if (c.mode === "note") {
+      const ok = await pbSetTradeInNote(d.id, tradeId, false);
+      if (!ok && !pbError) pbError = T("pb.err.inlineRef", { title: pbTitle(d) });
+      done(ok, T("pb.tile.removed"));
+    } else if (c.mode === "tag") {
+      let ok = await pbPatchTrade(tradeId, { [PB_TAGS_KEY]: pbTagsToggled(t, d.id) });
+      if (ok) ok = await pbDropMarks(d.id, tradeId);
+      done(ok, T("pb.tile.untagged"));
+    } else {
+      // 系统 / 策略页：变回「未归类」，回到归类模式的待分队列里；关注的星标是相对这一页说的，一起去掉
+      const p = pbPatchTrade(tradeId, { [PB_KEY]: undefined, [PB_STAR_KEY]: undefined });
+      refreshPbPanels();
+      done(await p, T("tp.pb.unassigned"));
+    }
+  }
 }
