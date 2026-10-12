@@ -88,6 +88,8 @@ async function bootstrapAuth() {
   if (session && currentProfile && currentProfile.active !== false) restoreNav();
   sb.auth.onAuthStateChange(async (event, newSession) => {
     session = newSession; // keep session object current regardless of event type
+    if (accountSwitching) return;   // 切账号会整页刷新，这里不用再加载一遍
+    if (event === "TOKEN_REFRESHED") rememberAccount(newSession);   // refresh token 轮换了，存着的那份要跟上
     if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED" || event === "INITIAL_SESSION") return;
     if (session) {
       await loadProfile();

@@ -10,6 +10,8 @@ document.addEventListener("click", async (e) => {
   }
   // 日历颜色浮层：点到浮层和按钮以外就收起
   if (calColorPopOpen && !e.target.closest(".calColorWrap")) { calColorPopOpen = false; if (!el) render(); }
+  // 左上角账号浮层：点到浮层和头像以外就收起
+  if (acctPopOpen && !e.target.closest(".acctPop") && !e.target.closest('[data-action="toggle-acct-pop"]')) { acctPopOpen = false; renderAcctPop(); document.querySelector(".navBrand")?.classList.remove("open"); }
   if (!el) {
     let changed = false;
     if (userMenuOpen && !e.target.closest(".exportMenu") && !e.target.closest('[data-action="toggle-user-menu"]')) { userMenuOpen = false; changed = true; }
@@ -577,6 +579,15 @@ document.addEventListener("click", async (e) => {
     }
   }
   else if (action === "toggle-user-menu") { userMenuOpen = !userMenuOpen; render(); }
+  /* ---------- 多账号（07b-accounts） ---------- */
+  else if (action === "toggle-acct-pop") { acctPopOpen = !acctPopOpen; userMenuOpen = false; render(); }
+  else if (action === "switch-account") {
+    const a = loadAccounts().find((x) => x.id === el.dataset.id);
+    if (a && !a.rt && !(session && session.user.id === a.id)) await goReloginAccount(a);
+    else await switchToAccount(el.dataset.id);
+  }
+  else if (action === "forget-account") { forgetAccount(el.dataset.id); render(); }
+  else if (action === "add-account") { await addAccount(); }
   else if (action === "open-profile-modal") {
     userMenuOpen = false;
     profileModalOpen = true; profileError = ""; profileSuccess = ""; passwordError = ""; passwordSuccess = "";
@@ -969,7 +980,7 @@ document.addEventListener("click", async (e) => {
   else if (action === "close-lightbox") { closeLightbox(); }
   else if (action === "lightbox-prev") { stepLightbox(-1); }
   else if (action === "lightbox-next") { stepLightbox(1); }
-  else if (action === "logout") { userMenuOpen = false; await doLogout(); }
+  else if (action === "logout") { userMenuOpen = false; acctPopOpen = false; await doLogout(); }
   else if (action === "set-record-mode") {
     if (recordMode === el.dataset.mode) return;
     recordMode = el.dataset.mode;
@@ -1671,6 +1682,7 @@ document.addEventListener("keydown", (e) => {
   if (focusKeyNav(e)) return;
   if (pbTriageKey(e)) return;
   if (e.key !== "Escape") return;
+  if (acctPopOpen) { acctPopOpen = false; render(); return; }
   if (lightboxUrl) { closeLightbox(); return; }
   if (exportCenterOpen) { if (!exportBusy) { exportCenterOpen = false; render(); } return; }
   if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }

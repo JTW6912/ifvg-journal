@@ -121,6 +121,36 @@ a{color:var(--accent);}
 .exportMenu button:hover{background:var(--surface2);}
 .exportMenu button:disabled{opacity:.4;cursor:not-allowed;}
 .exportMenu button:disabled:hover{background:transparent;}
+/* 多账号：左上角头像浮层、右上角账号菜单、登录页共用的账号行（07b-accounts.js） */
+.acctPop{position:fixed;z-index:60;width:272px;max-width:calc(100vw - 24px);background:var(--surface);border:1px solid var(--borderLight);
+  border-radius:var(--r12);box-shadow:var(--shadowPop);padding:6px;}
+.acctPopLabel{padding:6px 8px 5px;font-size:10.5px;letter-spacing:.5px;color:var(--mutedDark);font-family:var(--fontMono);text-transform:uppercase;}
+.acctPopSep{height:1px;background:var(--border);margin:5px 2px;}
+.acctPopItem{display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;border:none;background:transparent;color:var(--text);
+  font-size:12.5px;font-family:var(--fontUI);cursor:pointer;border-radius:var(--r8);text-align:left;}
+.acctPopItem:hover{background:var(--surface2);}
+.acctPopItem svg{width:15px;height:15px;color:var(--muted);}
+.acctList{display:flex;flex-direction:column;gap:1px;}
+.acctRow{display:flex;align-items:center;border-radius:var(--r8);}
+.acctRow:hover{background:var(--surface2);}
+.acctPick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:7px 8px;border:none;background:transparent;
+  color:var(--text);cursor:pointer;text-align:left;font-family:var(--fontUI);}
+.acctRow.isCur .acctPick{cursor:default;}
+.acctText{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.3;}
+.acctText b{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acctText small{font-size:11px;color:var(--mutedDark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acctCheck{color:var(--accent);display:flex;}
+.acctForget{flex:none;display:flex;align-items:center;justify-content:center;width:26px;height:26px;margin-right:4px;padding:0;border:none;
+  border-radius:var(--r6);background:transparent;color:var(--mutedDark);cursor:pointer;opacity:0;}
+.acctRow:hover .acctForget,.acctForget:focus-visible{opacity:1;}
+@media(hover:none){.acctForget{opacity:1;}}
+.acctForget:hover{background:var(--surface);color:var(--neg);}
+.acctAvatar{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;background:hsl(var(--acctHue,210) 52% 46%);font-family:var(--fontUI);}
+div.authCard.acctAuthCard{margin-bottom:14px;padding:8px;}
+.exportMenu .acctList{padding:0 4px 2px;}
+.exportMenu .acctPick{width:auto;padding:7px 8px;}
+.exportMenu .acctForget{width:26px;padding:0;}
 .nav{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);}
 /* 页签多了之后窄屏放不下：横向滚动，别把字挤成竖排 */
 @media(max-width:900px){.nav{overflow-x:auto;scrollbar-width:none;}.nav::-webkit-scrollbar{display:none;}.nav .tab{white-space:nowrap;flex-shrink:0;}}

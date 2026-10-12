@@ -32,6 +32,7 @@ async function loadProfile() {
   currentProfile = data;
   syncLangFromProfile();
   syncAppearanceFromProfile();
+  rememberAccount(session);   // 名字可能改了，token 也可能刚刷新过（07b-accounts）
   sb.rpc("touch_last_seen").then(({ error: e }) => { if (e) console.error(e); });
 }
 /* 当前模式（回测 / 实盘）下的交易，拉全量（见 fetchAllRows）。出错直接抛，由调用方决定怎么提示 */
@@ -689,7 +690,9 @@ async function doRegister(email, password) {
   authScreenMode = "login"; render();
 }
 async function doLogout() {
+  const id = session && session.user ? session.user.id : null;
   await sb.auth.signOut();
+  if (id) forgetAccount(id);   // token 已经被吊销了，留着也切不回去
 }
 async function loadAdminUsers() {
   if (!sb || !currentProfile || currentProfile.role !== "admin") return;

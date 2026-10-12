@@ -7,12 +7,13 @@ function renderAuthScreen() {
   <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:auto;padding:40px 16px;">
     <div style="max-width:380px;width:100%;">
       <div class="brand authBrand" style="text-align:center;margin-bottom:28px;"><span class="accent">IFVG</span> Trade Journal</div>
+      ${!isRegister ? authSavedAccountsHtml() : ""}
       <div class="authCard">
         <div style="display:flex;gap:6px;margin-bottom:18px;">
           <button class="btn ${!isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="login">${T("auth.login")}</button>
           <button class="btn ${isRegister ? "btn-primary" : ""}" style="flex:1;" data-action="auth-mode" data-mode="register">${T("auth.register")}</button>
         </div>
-        <div class="field"><div class="fieldLabel">${T("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" /></div>
+        <div class="field"><div class="fieldLabel">${T("auth.email")}</div><input class="input" type="email" id="authEmail" autocomplete="username" value="${esc(authPrefillEmail)}" /></div>
         <div class="field"><div class="fieldLabel">${T("auth.password")}</div><input class="input" type="password" id="authPassword" autocomplete="${isRegister ? "new-password" : "current-password"}" /></div>
         ${!isRegister ? `<label style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);margin-bottom:14px;cursor:pointer;">
           <input type="checkbox" id="rememberMeCheck" checked style="width:14px;height:14px;" />${T("auth.rememberMe")}
@@ -571,7 +572,7 @@ function render() {
   const app = document.getElementById("app");
 
   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
-  if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); return; }
+  if (!session) { app.innerHTML = renderAuthScreen(); renderModal(); renderAcctPop(); return; }
   if (currentProfile && currentProfile.active === false) { app.innerHTML = renderDisabledScreen(); return; }
   saveNav();   // 刷新后回到这个页签（16-init）
 
@@ -639,6 +640,10 @@ function render() {
             <div class="menuSep"></div>
             ${viewingUserId ? "" : `<button data-action="open-data-scope">${esc(T("scope.menu"))}${dataScopeActive() ? ` <span class="menuLabelVal">· ${esc(T(dataScopeBypass ? "scope.paused" : "scope.on"))}</span>` : ""}</button>`}
             <button data-action="open-profile-modal">${T("header.profile")}</button>
+            <div class="menuSep"></div>
+            <div class="menuLabel">${T("account.switch")}</div>
+            <div class="acctList">${accountRowsHtml({ othersOnly: true })}</div>
+            <button data-action="add-account">${T("account.add")}</button>
             <button data-action="logout">${T("auth.logout")}</button>
           </div>
         </div>
@@ -649,7 +654,8 @@ function render() {
       <button class="btn" data-action="exit-view-mode">${T("header.exitViewMode")}</button>
     </div>` : "";
   // navBrand / navFoot 只在侧边栏布局（晴空皮肤）里显示，经典主题下 display:none
-  const navBrandHtml = `<div class="navBrand"><span class="navLogo">${LOGO_MARK}</span><span class="navBrandText"><span><b>IFVG</b> Journal</span>${displayName ? `<small>${esc(displayName)}</small>` : ""}</span></div>`;
+  // 点品牌这块（头像）弹出账号切换浮层，见 07b-accounts.js
+  const navBrandHtml = `<button class="navBrand${acctPopOpen ? " open" : ""}" data-action="toggle-acct-pop" title="${esc(T("account.switch"))}"><span class="navLogo">${LOGO_MARK}</span><span class="navBrandText"><span><b>IFVG</b> Journal</span><small>${esc(displayName || session.user.email)}</small></span><span class="navBrandChev">${ICONS.chevDown}</span></button>`;
   const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${dataScopePillHtml()}${currentLayout() === "modern" ? navSparkHtml() : ""}
     <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
   // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
@@ -670,5 +676,6 @@ function render() {
   renderSecondaryModals();
   renderReviewEditor();
   renderExportCenter();
+  renderAcctPop();
 }
 

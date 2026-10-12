@@ -649,3 +649,16 @@
 [data-layout="modern"] .headerActions .btn-primary{padding:10px 16px;border-radius:12px;}
 [data-layout="modern"] .headerActions .btn-primary svg{transition:transform .2s;}
 [data-layout="modern"] .headerActions .btn-primary:hover svg{transform:rotate(90deg);}
+
+/* 左上角头像（品牌块）= 账号切换按钮，点开的浮层在 style.css 的 .acctPop */
+@media(min-width:900px){
+  [data-layout="modern"] .navBrand{width:100%;padding:6px 8px;margin-bottom:16px;border:none;border-radius:14px;background:transparent;
+    cursor:pointer;text-align:left;font:inherit;color:inherit;flex-shrink:0;transition:background .15s;}
+  [data-layout="modern"] .navBrand:hover,[data-layout="modern"] .navBrand.open{background:var(--surface2);}
+  [data-layout="modern"] .navBrandChev{margin-left:auto;color:var(--mutedDark);display:flex;transition:transform .18s;}
+  [data-layout="modern"] .navBrand.open .navBrandChev{transform:rotate(180deg);}
+}
+@media(min-width:900px) and (max-width:1199px){
+  [data-layout="modern"] .navBrand{padding:4px 0;}
+  [data-layout="modern"] .navBrandChev{display:none;}
+}
