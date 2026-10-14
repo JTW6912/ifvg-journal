@@ -420,6 +420,45 @@ function normalizeTimeValue(raw) {
   return String(hn).padStart(2, "0") + ":" + String(mn).padStart(2, "0");
 }
 const IMG_RETRY_DELAYS = [700, 1800]; // ms — a couple of short backoffs before giving up
+/* 原图彻底打不开时换成备份：GitHub Actions 每天把所有外链截图转 WebP 存到自建图床
+   （scripts/image-backup.mjs），对照表在 image_backups。只能拿已知的原链接去查，一次页面里
+   同时坏掉的图攒一下合成一次 rpc；查过的记住，不重复问 */
+const imgBackupCache = new Map();
+let imgBackupQueue = null;
+function lookupImageBackup(url) {
+  if (!sb || !url) return Promise.resolve(null);
+  if (imgBackupCache.has(url)) return imgBackupCache.get(url);
+  const p = new Promise((resolve) => {
+    if (!imgBackupQueue) {
+      const q = imgBackupQueue = new Map();
+      setTimeout(async () => {
+        imgBackupQueue = null;
+        let found = new Map();
+        try {
+          const { data, error } = await sb.rpc("lookup_image_backups", { urls: [...q.keys()] });
+          if (error) throw error;
+          found = new Map((data || []).map((r) => [r.source_url, r.backup_url]));
+        } catch (e) { console.warn("lookup_image_backups", e); }
+        q.forEach((res, u) => res(found.get(u) || null));
+      }, 50);
+    }
+    imgBackupQueue.set(url, resolve);
+  });
+  imgBackupCache.set(url, p);
+  return p;
+}
+// 换成备份图成功返回 true；同一张 <img> 只换一次，备份也坏了就交给调用方
+async function swapToImageBackup(imgEl, url) {
+  if (imgEl.dataset.backupTried) return false;
+  imgEl.dataset.backupTried = "1";
+  const backup = await lookupImageBackup(url);
+  if (!backup || !imgEl.isConnected) return false;
+  imgEl.dataset.fallbackUrl = backup;
+  imgEl.src = backup;
+  return true;
+}
+// 没有占位图的地方（大图、预览缩略条）只做换备份这一步
+window.__imgBackupOnly = function (imgEl) { swapToImageBackup(imgEl, imgEl.dataset.fallbackUrl || imgEl.getAttribute("src")); };
 window.__imgFallback = function (imgEl) {
   const url = imgEl.dataset.fallbackUrl || "";
   const retryCount = parseInt(imgEl.dataset.retryCount || "0", 10);
@@ -430,6 +469,10 @@ window.__imgFallback = function (imgEl) {
       if (!imgEl.isConnected) return;
       imgEl.src = url + sep + "_retry=" + Date.now();
     }, IMG_RETRY_DELAYS[retryCount]);
+    return;
+  }
+  if (!imgEl.dataset.backupTried) {
+    swapToImageBackup(imgEl, url).then((swapped) => { if (!swapped && imgEl.isConnected) window.__imgFallback(imgEl); });
     return;
   }
   const originalImgHtml = imgEl.outerHTML;

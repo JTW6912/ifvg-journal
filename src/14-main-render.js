@@ -89,7 +89,7 @@ function lightboxHtml() {
     <div class="lbCount mono">${nav.index + 1} / ${nav.urls.length} · ${nav.ids ? esc(lightboxTradeLabel(nav.ids[nav.index])) + " · " : ""}${lightboxPartText(nav)}${esc(T(nav.ids ? "lightbox.tradeHint" : "lightbox.hint"))}</div>` : "";
   // 有翻页时两侧留出按钮的位置，宽图铺满也不会压在按钮底下
   return `<div class="overlay${nav ? " lbHasNav" : ""}" data-action="close-lightbox"${nav ? "" : ' style="padding:30px;"'}>
-    <img src="${esc(lightboxUrl)}" referrerpolicy="no-referrer" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" onclick="event.stopPropagation()" />
+    <img src="${esc(lightboxUrl)}" referrerpolicy="no-referrer" onerror="window.__imgBackupOnly(this)" style="max-width:100%;max-height:100%;border-radius:10px;display:block;" onclick="event.stopPropagation()" />
     <button class="iconBtn" data-action="close-lightbox" style="position:absolute;top:20px;right:24px;background:rgba(0,0,0,.5);color:#fff;">${ICONS.x}</button>
     ${navHtml}
   </div>`;
@@ -439,7 +439,7 @@ function tradePreviewHtml() {
             : `<div class="tpShotEmpty">${ICONS.camera} ${esc(T("tradePreview.noShot"))}</div>`}
         </div>
         ${shots.length > 1 ? `<div class="tpStrip">${shots.map((s, k) => `<button class="tpStripItem${k === tradePreviewShot ? " on" : ""}" data-action="trade-preview-shot" data-idx="${k}" title="${esc(T("lightbox.shotOf", { k: k + 1, n: shots.length }))}">
-            <img src="${esc(imgSrc(s))}" alt="" loading="lazy" referrerpolicy="no-referrer" />
+            <img src="${esc(imgSrc(s))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="window.__imgBackupOnly(this)" />
           </button>`).join("")}</div>` : ""}
         ${rows ? `<div class="tpFields">${rows}</div>` : `<div class="tpEmpty">${esc(T("tradePreview.empty"))}</div>`}
       </div>

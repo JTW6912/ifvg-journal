@@ -1,0 +1,34 @@
+# 每天把所有用户的外链截图转 WebP 80% 备份到自建图床（scripts/image-backup.mjs）
+# 在 GitHub 的机器上跑，不走本地网络。仓库是公开的：脚本只打印数量，不打印链接和密钥。
+name: Image backup
+
+on:
+  schedule:
+    - cron: "0 19 * * *" # 北京时间每天 03:00
+  workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: "本次最多处理几张"
+        required: false
+        default: "5000"
+
+concurrency:
+  group: image-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save --no-package-lock sharp@0.33.5
+      - run: node scripts/image-backup.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          IMG_API_TOKEN: ${{ secrets.IMG_API_TOKEN }}
+          MAX_PER_RUN: ${{ inputs.max_per_run || '5000' }}
