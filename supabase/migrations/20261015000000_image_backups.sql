@@ -1,4 +1,4 @@
--- 截图备份：所有用户的外链截图（FX Replay / TradingView / ibb）每天由 GitHub Actions
+-- 截图备份：所有用户的外链截图（只管 FX Replay / TradingView 两种）每天由 GitHub Actions
 -- 转成 WebP 80% 存一份到自建图床（Cloudflare R2）。原链接一个字都不改，这张表只是「原图 → 备份」的对照。
 -- source_url 存的是网页上 <img> 实际加载的地址（TradingView 快照页已换成 s3 直链，即 imgSrc() 的结果），
 -- 前端原图加载失败时拿这个地址来查备份。
@@ -6,7 +6,7 @@ create table if not exists image_backups (
   source_url    text primary key,
   backup_url    text,
   backup_key    text,
-  kind          text,                       -- fxreplay / tradingview / ibb / other
+  kind          text,                       -- fxreplay / tradingview
   orig_bytes    integer,
   backup_bytes  integer,
   status        text not null default 'ok' check (status in ('ok', 'failed')),

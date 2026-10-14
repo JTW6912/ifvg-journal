@@ -1,7 +1,8 @@
 /* 截图备份：把所有用户交易 / 复盘 / 打法里的外链截图转成 WebP 80%，存一份到自建图床。
    - 只备份，不改任何原链接；对照关系写进 image_backups 表（见 supabase/migrations/20261015000000_image_backups.sql）
    - 可以反复跑：表里已经 ok 的跳过，失败的下次再试（最多 MAX_ATTEMPTS 次）
-   - 优先级：FX Replay（最容易丢）→ TradingView → 其他
+   - 只备份 FX Replay 和 TradingView 两种；用户自己图床上的图不管
+   - 优先级：FX Replay（最容易丢）→ TradingView
    - 仓库是公开的，Actions 日志谁都能看：这里只打印数量，不打印任何链接和密钥
 
    需要的环境变量：SUPABASE_URL、SUPABASE_SERVICE_ROLE_KEY、IMG_API_TOKEN
@@ -62,9 +63,6 @@ function classify(raw) {
   if (tv) return { key: `https://s3.tradingview.com/snapshots/${tv[1][0].toLowerCase()}/${tv[1]}.png`, kind: "tradingview", prio: 1 };
   if (/^https?:\/\/fxr-snapshots[a-z0-9-]*\.s3[a-z0-9.-]*\.amazonaws\.com\/\S+/i.test(u)) return { key: u, kind: "fxreplay", prio: 0 };
   if (/^https?:\/\/s3\.tradingview\.com\/snapshots\/\S+/i.test(u)) return { key: u, kind: "tradingview", prio: 1 };
-  // ibb.co 存的是网页，要先从页面里找 og:image；key 仍是网页地址（前端 <img> 加载的就是它）
-  if (/^https?:\/\/(?:www\.)?ibb\.co\/[A-Za-z0-9]+\/?$/i.test(u)) return { key: u, kind: "ibb", prio: 2 };
-  if (/\.(png|jpe?g|gif|webp)(?:[?#]\S*)?$/i.test(u)) return { key: u, kind: "other", prio: 2 };
   return null;
 }
 
@@ -102,17 +100,9 @@ async function download(url) {
   return { type, buf };
 }
 
-async function resolveIbb(pageUrl) {
-  const { buf } = await download(pageUrl);
-  const m = buf.toString("utf8").match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
-  if (!m) throw new Error("ibb 页面里没找到图片");
-  return m[1];
-}
-
 let sharp;
 async function toWebp(item) {
-  const src = item.kind === "ibb" ? await resolveIbb(item.key) : item.key;
-  const { type, buf } = await download(src);
+  const { type, buf } = await download(item.key);
   if (!/^image\//i.test(type)) throw new Error(`不是图片（${type.split(";")[0] || "无类型"}）`);
   const webp = await sharp(buf, { animated: false }).webp({ quality: 80 }).toBuffer();
   return { origBytes: buf.length, webp };
