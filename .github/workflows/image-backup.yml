@@ -1,4 +1,4 @@
-# 每天把所有用户的外链截图转 WebP 80% 备份到自建图床（scripts/image-backup.mjs）
+# 每天把所有用户的外链截图转无损 WebP 备份到自建图床（scripts/image-backup.mjs）
 # 在 GitHub 的机器上跑，不走本地网络。仓库是公开的：脚本只打印数量，不打印链接和密钥。
 name: Image backup
 

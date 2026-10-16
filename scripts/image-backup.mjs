@@ -1,6 +1,8 @@
-/* 截图备份：把所有用户交易 / 复盘 / 打法里的外链截图转成 WebP 80%，存一份到自建图床。
+/* 截图备份：把所有用户交易 / 复盘 / 打法里的外链截图转成无损 WebP，存一份到自建图床。
+   截图大多是纯色背景 + 线条文字，无损 WebP 比有损 q80 还小一半，画质和原图逐像素一致
    - 只备份，不改任何原链接；对照关系写进 image_backups 表（见 supabase/migrations/20261015000000_image_backups.sql）
    - 可以反复跑：表里已经 ok 的跳过，失败的下次再试（最多 MAX_ATTEMPTS 次）
+   - 编码方式（ENCODING）换了的话，老格式的备份会重新做一份；重做失败（比如原图已经没了）就留着老备份不动
    - 只备份 FX Replay 和 TradingView 两种；用户自己图床上的图不管
    - 优先级：FX Replay（最容易丢）→ TradingView
    - 仓库是公开的，Actions 日志谁都能看：这里只打印数量，不打印任何链接和密钥
@@ -16,6 +18,7 @@ const IMG_API = "https://img-gallery.wjt6912.workers.dev";
 const MAX_PER_RUN = parseInt(process.env.MAX_PER_RUN || "5000", 10);
 const DRY_RUN = process.env.DRY_RUN === "1";
 const MAX_ATTEMPTS = 7;
+const ENCODING = "webp-lossless";
 const BATCH = 10;          // 每批上传几张
 const PAUSE_MS = 1000;     // 批次之间停一下，不猛刷
 const MAX_BYTES = 25 * 1024 * 1024;
@@ -104,7 +107,7 @@ let sharp;
 async function toWebp(item) {
   const { type, buf } = await download(item.key);
   if (!/^image\//i.test(type)) throw new Error(`不是图片（${type.split(";")[0] || "无类型"}）`);
-  const webp = await sharp(buf, { animated: false }).webp({ quality: 80 }).toBuffer();
+  const webp = await sharp(buf, { animated: false }).webp({ lossless: true }).toBuffer();
   return { origBytes: buf.length, webp };
 }
 
@@ -135,11 +138,13 @@ const shortErr = (e) => String((e && e.message) || e).slice(0, 200);
 
 async function main() {
   const { images, rowCount } = await findImages();
-  const existing = new Map((await sbSelectAll("image_backups", "source_url,status,attempts")).map((r) => [r.source_url, r]));
+  const existing = new Map((await sbSelectAll("image_backups", "source_url,status,attempts,encoding")).map((r) => [r.source_url, r]));
   const todo = images
     .filter((it) => {
       const ex = existing.get(it.key);
-      return !ex || (ex.status !== "ok" && ex.attempts < MAX_ATTEMPTS);
+      if (!ex) return true;
+      if (ex.status === "ok") return ex.encoding !== ENCODING;
+      return ex.attempts < MAX_ATTEMPTS;
     })
     .sort((a, b) => a.prio - b.prio)
     .slice(0, MAX_PER_RUN);
@@ -147,13 +152,16 @@ async function main() {
   const byKind = {};
   for (const it of images) byKind[it.kind] = (byKind[it.kind] || 0) + 1;
   console.log(`扫描 ${rowCount} 行，找到 ${images.length} 张图：${JSON.stringify(byKind)}`);
-  console.log(`已备份 ${[...existing.values()].filter((r) => r.status === "ok").length}，本次要处理 ${todo.length}`);
+  const okRows = [...existing.values()].filter((r) => r.status === "ok");
+  console.log(`已备份 ${okRows.length}（其中老格式 ${okRows.filter((r) => r.encoding !== ENCODING).length}），本次要处理 ${todo.length}`);
   if (DRY_RUN || !todo.length) return;
 
   sharp = (await import("sharp")).default;
-  let ok = 0, failed = 0, origTotal = 0, webpTotal = 0;
+  let ok = 0, failed = 0, kept = 0, origTotal = 0, webpTotal = 0;
   const reasons = {};
+  // 已经有老格式备份的，重做失败不能把它标成 failed：前端还要靠那份老备份
   const fail = (it, err) => {
+    if ((existing.get(it.key) || {}).status === "ok") { kept++; return null; }
     failed++;
     reasons[err] = (reasons[err] || 0) + 1;
     return { source_url: it.key, kind: it.kind, status: "failed", error: err,
@@ -178,17 +186,17 @@ async function main() {
         if (!(await verify(r.url))) return rows.push(fail(f.it, "备份链接校验失败"));
         ok++; origTotal += f.origBytes; webpTotal += f.webp.length;
         rows.push({ source_url: f.it.key, backup_url: r.url, backup_key: r.key, kind: f.it.kind,
-          orig_bytes: f.origBytes, backup_bytes: f.webp.length, status: "ok", error: null,
+          orig_bytes: f.origBytes, backup_bytes: f.webp.length, status: "ok", error: null, encoding: ENCODING,
           attempts: ((existing.get(f.it.key) || {}).attempts || 0) + 1, updated_at: new Date().toISOString() });
       }));
     }
-    await sbUpsert(rows);
+    await sbUpsert(rows.filter(Boolean));
     if ((i / BATCH) % 10 === 0) console.log(`进度 ${Math.min(i + BATCH, todo.length)}/${todo.length}（成功 ${ok}，失败 ${failed}）`);
     await sleep(PAUSE_MS);
   }
 
   const mb = (n) => (n / 1048576).toFixed(1) + "MB";
-  console.log(`完成：成功 ${ok}，失败 ${failed}；原图 ${mb(origTotal)} → WebP ${mb(webpTotal)}`);
+  console.log(`完成：成功 ${ok}，失败 ${failed}，重做没成功保留老备份 ${kept}；原图 ${mb(origTotal)} → WebP ${mb(webpTotal)}`);
   if (failed) console.log(`失败原因：${JSON.stringify(reasons)}`);
 }
 
