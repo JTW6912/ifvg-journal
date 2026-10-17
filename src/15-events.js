@@ -20,8 +20,6 @@ document.addEventListener("click", async (e) => {
   }
   const action = el.dataset.action;
 
-  // 目标 / 纪律 / 积分的所有按钮（13d 的 handleGoalAction）
-  if (action.startsWith("goal-")) { await handleGoalAction(action, el, e); return; }
   if (action === "switch-tab") { flushAnalysisPrefs(); tab = el.dataset.tab; confirmDeleteId = null; comboConfirmDeleteId = null; render(); }
   else if (action === "toggle-theme") {
     const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
@@ -1178,7 +1176,6 @@ document.addEventListener("input", (e) => {
   }
 });
 document.addEventListener("change", async (e) => {
-  if (e.target.dataset.goalInput !== undefined) { handleGoalInput(e.target); return; }
   if (e.target.dataset.calColor) {
     setCalColor(e.target.dataset.calColor, e.target.value);
     saveCalColorsLocal();
@@ -1629,7 +1626,7 @@ document.addEventListener("drop", (e) => {
   }
 });
 // 800ms 的 debounce 还没到就关页面的话，把没写完的分析设置补上
-window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); flushReviewPrefs(); flushGoalPrefs(); });
+window.addEventListener("beforeunload", () => { flushAnalysisPrefs(); flushReviewPrefs(); });
 
 /* 看图模式的 J/K · ↑/↓ 翻笔。
    排在 Escape 那一串前面，但自己先把所有"正在输入/有弹层"的情况让开：
@@ -1696,7 +1693,6 @@ document.addEventListener("keydown", (e) => {
   if (exportCenterOpen) { if (!exportBusy) { exportCenterOpen = false; render(); } return; }
   if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }
   if (dataScopeModalOpen) { dataScopeModalOpen = false; renderSecondaryModals(true); return; }
-  if (goalSettleState || goalPlanDay || goalEditState) { goalSettleState = null; goalPlanDay = null; goalEditState = null; renderSecondaryModals(true); return; }
   if (pagePickerOpen) { closePagePicker(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）

@@ -139,10 +139,9 @@ function virtualFields() {
   ];
   if (pbHasPages()) out.push(playbookVirtualField(), pbNoteVirtualField());
   if (pbTags().length) out.push(pbTagsVirtualField());
-  if (goalHasDisciplineData()) out.push(disciplineVirtualField());   // 结算过的交易日：守纪律 / 违规 / 没结算（13c）
   return out;
 }
-function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK || id === VF_PB_TAGS || id === VF_PB_NOTE || id === VF_DISCIPLINE; }
+function isVirtualFieldId(id) { return id === VF_CREATED || id === VF_UPDATED || id === VF_PLAYBOOK || id === VF_PB_TAGS || id === VF_PB_NOTE; }
 // 按 id 找字段：先虚拟字段，再用户自己的 schema。找不到返回 null（调用方按"字段已删除"处理）
 function resolveField(id) {
   if (id === VF_PLAYBOOK) return playbookVirtualField();   // 页面全删光了也认得：存着它的条件不该被当成「字段已删除」
@@ -166,7 +165,6 @@ function tradeFieldValue(t, field) {
   if (field.id === VF_PLAYBOOK) return pbTradeLabel(t);
   if (field.id === VF_PB_TAGS) return pbTradeTagLabels(t);
   if (field.id === VF_PB_NOTE) return pbTradeNote(t);
-  if (field.id === VF_DISCIPLINE) return goalTradeDisciplineValue(t);
   return t[field.id];
 }
 
