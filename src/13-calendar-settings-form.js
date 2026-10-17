@@ -118,7 +118,7 @@ function renderDayCalendar() {
       const stats = dayStats[c.dateStr];
       const tone = stats.count > 0 ? stats.tone : "";
       return `<div class="dayCell ${tone}${c.dateStr === todayStr ? " isToday" : ""}" data-action="open-day-detail" data-date="${c.dateStr}"${stats.count > 0 ? ` style="--heat:${heatOf(stats).toFixed(3)}"` : ""}>
-        <div class="dayCellNum">${c.day}</div>
+        <div class="dayCellNum">${c.day}${goalCalBadge(c.dateStr)}</div>
         ${stats.count > 0 ? `<div class="dayCellInfo">${esc(T("dayDetail.summary", { n: stats.count }))}${stats.hasR ? `<br>${fmtNum(stats.rSum)}R${stats.wr !== null ? ` · ${fmtPct(stats.wr)}` : ""}` : ""}</div>` : ""}
       </div>`;
     }).join("");
@@ -215,8 +215,8 @@ function renderAdminPanel() {
       <div class="settingsRowBody ${openSettingsRow === "__admin_users__" ? "open" : ""}">
         ${adminUsers === null
           ? `<div style="font-size:12px;color:var(--mutedDark);">${T("admin.autoLoad")}</div>`
-          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>${esc(T("admin.colEmail"))}</th><th>${esc(T("admin.colName"))}</th><th>${esc(T("admin.colRole"))}</th><th>${esc(T("admin.colStatus"))}</th>${["tradeCount", "last_seen_at", "created_at"].map((key, i) => {
-                const label = [T("admin.colTrades"), T("admin.colLastSeen"), T("admin.colCreated")][i];
+          : `<div style="overflow-x:auto;"><table class="adminTable"><thead><tr><th>${esc(T("admin.colEmail"))}</th><th>${esc(T("admin.colName"))}</th><th>${esc(T("admin.colRole"))}</th><th>${esc(T("admin.colStatus"))}</th>${["tradeCount", "points", "last_seen_at", "created_at"].map((key, i) => {
+                const label = [T("admin.colTrades"), T("admin.colPoints"), T("admin.colLastSeen"), T("admin.colCreated")][i];
                 const active = adminUsersSortBy === key;
                 const arrow = active ? (adminUsersSortDir === "asc" ? " ▲" : " ▼") : "";
                 return `<th data-action="sort-admin-users" data-key="${key}" style="cursor:pointer;user-select:none;${active ? "color:var(--accent);" : ""}">${label}${arrow}</th>`;
@@ -227,6 +227,7 @@ function renderAdminPanel() {
                 <td><span class="pill ${u.role === "admin" ? "on" : ""}">${esc(u.role)}</span></td>
                 <td><span class="pill ${u.active ? "on" : "off"}">${esc(u.active ? T("admin.active") : T("admin.disabled"))}</span></td>
                 <td class="mono">${u.tradeCount !== undefined ? u.tradeCount : "—"}</td>
+                <td class="mono">${u.points !== undefined ? u.points : "—"}</td>
                 <td class="mono" style="font-size:11px;color:var(--mutedDark);">${u.last_seen_at ? esc(new Date(u.last_seen_at).toLocaleString(localeTag(), { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })) : esc(T("admin.neverLoggedIn"))}</td>
                 <td class="mono" style="font-size:11px;color:var(--mutedDark);">${esc(String(u.created_at || "").slice(0, 10))}</td>
                 <td style="white-space:nowrap;">
@@ -539,6 +540,7 @@ function renderModal(force) {
         <button class="tinyBtn" data-action="clear-draft" style="color:var(--accent);text-decoration:underline;">${T("modal.clearDraft")}</button>
       </div>` : ""}
       <div class="modalBody ${readOnly ? "readOnlyFields" : ""}" ${readOnly ? 'style="opacity:.75;"' : ""}>
+        ${isNew && !readOnly ? goalFormWarningHtml() : ""}
         ${pbFormBlockHtml()}
         ${activeF.map(fieldHtml).join("")}
         ${legacyF.length ? `<div class="legacyFields">

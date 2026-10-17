@@ -41,6 +41,7 @@ async function loadTrades(uid) {
     .eq("user_id", uid).eq("mode", recordMode).order("created_at", { ascending: true }).order("id", { ascending: true }));
   if (error) throw error;
   trades = (tradeRows || []).map(tradeFromRow);
+  tradesMode = recordMode;
 }
 function tradeFromRow(r) {
   return { id: r.id, _created_at: r.created_at, _updated_at: r.updated_at, ...r.data };
@@ -48,6 +49,7 @@ function tradeFromRow(r) {
 /* 切回测 / 实盘只需要换这两样：交易和复盘各有一套，字段配置、分析配置、更新日志两边共用，不用再拉一遍 */
 async function reloadModeData() {
   if (!sb || !session) return;
+  const prevTrades = trades, prevReviews = reviews, prevMode = tradesMode;
   try {
     await loadTrades(viewingUserId || session.user.id);
     loadError = null;
@@ -57,6 +59,8 @@ async function reloadModeData() {
     trades = [];
   }
   try { await loadReviews(); } catch (e) { console.error(e); }
+  // 目标 / 纪律只看实盘：从实盘切走时把刚才那批留着当缓存（13c）
+  try { await goalAfterModeSwitch(prevTrades, prevReviews, prevMode); goalTouch(); } catch (e) { console.error(e); }
 }
 async function loadAll() {
   if (!sb || !session) return;
@@ -80,6 +84,7 @@ async function loadAll() {
       ? schemaRow.focus_fields : defaultFocusFields();
     analysisPrefs = normalizeAnalysisPrefs(schemaRow && schemaRow.analysis_prefs);
     reviewPrefs = normalizeReviewPrefs(schemaRow && schemaRow.review_prefs);
+    goalPrefs = normalizeGoalPrefs(schemaRow && schemaRow.goal_prefs);
     await loadTrades(uid);
     loadError = null;
 
@@ -93,6 +98,8 @@ async function loadAll() {
     try { await loadReviews(); } catch (e) { console.error(e); }
     // 模型库跨回测/实盘只有一份，所以只在这里拉，切模式（reloadModeData）不用重拉
     try { await loadPlaybook(); } catch (e) { console.error(e); }
+    // 目标 / 纪律 / 积分（13c）：表没建的话只在目标卡片上提示，不影响别的
+    try { await loadGoals(); } catch (e) { console.error(e); }
 
     // 分析页筛选：本地存过就用存的，没存过给默认（只看 Taken）。跟记录页那份各存各的，互不影响
     seedAnalysisFilters();
@@ -160,6 +167,7 @@ async function persistTrade(trade) {
   if (error) { console.error(error); alert(T("error.saveTrade", { msg: error.message })); return false; }
   if (modeAtSave !== recordMode) return true;   // 保存途中用户切了模式：这一笔不属于现在显示的这批
   applySavedTrade(tradeFromRow(data));
+  goalTouch(); queueGoalSync();
   render();
   return true;
 }
@@ -179,6 +187,7 @@ async function removeTrade(id) {
     return;
   }
   trades = trades.filter((t) => t.id !== id);
+  goalTouch(); queueGoalSync();
   render();
 }
 async function addOptionToField(fieldId, opt) {
@@ -469,6 +478,7 @@ async function persistReview(rev, opts) {
   if (i >= 0) reviews[i] = { ...reviews[i], ...row };
   else reviews.unshift({ ...row, created_at: new Date().toISOString() });
   if (!(opts && opts.silent)) clearReviewDraft();
+  goalTouch(); queueGoalSync();
   return true;
 }
 
@@ -477,6 +487,7 @@ async function deleteReview(id) {
   const { error } = await sb.from("journal_reviews").delete().eq("id", id).eq("user_id", session.user.id);
   if (error) { console.error(error); return; }
   reviews = reviews.filter((r) => r.id !== id);
+  goalTouch(); queueGoalSync();
 }
 
 /* ============================================================
@@ -546,6 +557,7 @@ async function persistPbPage(p) {
   const i = pbPages.findIndex((x) => x.id === row.id);
   if (i >= 0) pbPages[i] = { ...pbPages[i], ...row };
   else pbPages.push({ ...row, folded_headings: p.folded_headings || [], created_at: new Date().toISOString() });
+  goalTouch(); queueGoalSync();
   return true;
 }
 
@@ -642,6 +654,7 @@ async function pbPatchTrades(items) {
   }
   pbError = null;
   if (modeAtSave === recordMode) (data || []).forEach((r) => applySavedTrade(tradeFromRow(r)));
+  goalTouch(); queueGoalSync();
   return true;
 }
 function pbPatchTrade(id, patch) { return pbPatchTrades([{ id, patch }]); }
@@ -704,6 +717,15 @@ async function loadAdminUsers() {
     const counts = await loadTradeCountsByUser();
     if (counts) adminUsers = adminUsers.map((u) => ({ ...u, tradeCount: counts[u.id] || 0 }));
   } catch (e) { console.error(e); }
+  // 积分（points_ledger 的合计）：函数没建就不显示这一列
+  try {
+    const { data: pts, error: pErr } = await sb.rpc("admin_points_totals");
+    if (!pErr && Array.isArray(pts)) {
+      const by = {};
+      pts.forEach((r) => { by[r.user_id] = Number(r.points) || 0; });
+      adminUsers = adminUsers.map((u) => ({ ...u, points: by[u.id] || 0 }));
+    }
+  } catch (e) { console.error(e); }
 }
 /* 每个用户各有多少笔交易。优先走数据库里的聚合函数 admin_trade_counts()（supabase/migrations 里建的），
    一次请求只回「用户数」那么多行；函数还没建就退回分页拉全表的 user_id 在前端数——慢，但数是对的。 */
@@ -725,7 +747,7 @@ function sortAdminUsers(list) {
   const dir = adminUsersSortDir === "asc" ? 1 : -1;
   return [...list].sort((a, b) => {
     let av = a[key], bv = b[key];
-    if (key === "tradeCount") { av = av || 0; bv = bv || 0; }
+    if (key === "tradeCount" || key === "points") { av = av || 0; bv = bv || 0; }
     else { av = av ? new Date(av).getTime() : 0; bv = bv ? new Date(bv).getTime() : 0; }
     return (av - bv) * dir;
   });

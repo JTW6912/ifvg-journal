@@ -45,7 +45,7 @@ function openTradeForEdit(id) {
    恢复之前不写：不然加载数据时那几次 render 会先把「主页」写进去，把要恢复的盖掉
    ============================================================ */
 const NAV_KEY = "journal_nav";
-const NAV_TABS = ["grid", "analytics", "calendar", "reviews", "playbook", "changelog", "settings", "admin"];
+const NAV_TABS = ["grid", "analytics", "calendar", "goals", "reviews", "playbook", "changelog", "settings", "admin"];
 let navRestored = false;
 function saveNav() {
   if (!navRestored || !session || viewingUserId || authLoading) return;
@@ -102,6 +102,8 @@ async function bootstrapAuth() {
       analysisPrefs = defaultAnalysisPrefs(); analysisPrefsError = null;
       activeComboId = null; activeFromAnalysis = false; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false;
       comboGroupModal = null; comboGroupConfirmDeleteId = null;
+      goalPrefs = normalizeGoalPrefs(null); goalDays = {}; goalActivity = []; goalLedger = {}; goalLoaded = false; goalError = null;
+      goalLive = { trades: null, reviews: null }; goalSettleState = null; goalPlanDay = null; goalEditState = null; goalTouch();
     }
     render();
   });
@@ -115,4 +117,5 @@ async function bootstrapAuth() {
   applyLangAttr();
   await bootstrapAuth();
   render();
+  startActivityTracking();   // 使用时长 + 计时器的钟（13e）
 })();

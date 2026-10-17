@@ -729,7 +729,9 @@ function renderGrid() {
     return sortDir === "desc" ? -cmp : cmp;
   });
 
-  let html = renderFilterOriginBanner();
+  // 目标卡片（13d）：只看实盘，所以只在实盘模式下挂在记录页顶上
+  let html = recordMode === "live" ? goalCardHtml(false) : "";
+  html += renderFilterOriginBanner();
   html += `<div style="position:relative;margin-bottom:12px;max-width:340px;">
     <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mutedDark);pointer-events:none;">${ICONS.search}</span>
     <input type="text" class="input" data-action="search-input" placeholder="${esc(T("grid.searchPlaceholder"))}" value="${esc(searchQuery)}" style="padding-left:34px;" />

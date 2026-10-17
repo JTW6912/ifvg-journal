@@ -492,7 +492,7 @@ function dataScopePillHtml() {
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : null)))))));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : (goalSettleState ? "goalsettle" : (goalPlanDay ? "goalplan" : (goalEditState ? "goaledit" : null))))))))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
@@ -507,6 +507,9 @@ function renderSecondaryModals(force) {
   }
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else if (want === "datascope") root.innerHTML = dataScopeModalHtml();
+  else if (want === "goalsettle") root.innerHTML = goalSettleModalHtml();
+  else if (want === "goalplan") root.innerHTML = goalPlanModalHtml();
+  else if (want === "goaledit") root.innerHTML = goalEditModalHtml();
   else root.innerHTML = "";
 }
 // render() 每次都整体重建 app 的 innerHTML，滚动容器的节点也跟着被换掉，
@@ -583,13 +586,14 @@ function render() {
     { id: "grid", label: T("tab.grid"), icon: ICONS.grid },
     { id: "analytics", label: T("tab.analytics"), icon: ICONS.chart },
     { id: "calendar", label: T("tab.calendar"), icon: ICONS.calendar },
+    { id: GOAL_TAB, label: T("tab.goals"), icon: ICONS.target },
     { id: "changelog", label: T("tab.changelog"), icon: ICONS.clock },
     { id: "settings", label: T("tab.settings"), icon: ICONS.settings },
   ];
   // 复盘只在实盘模式下出现——回测那批数据不需要写周复盘，页签也就不该占位置
-  TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
+  TABS.splice(4, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
   // 模型库跨回测/实盘只有一份，两种模式下都在；回测模式下只是交易不参与归类（页面上有说明）
-  TABS.splice(4, 0, { id: "playbook", label: T("tab.playbook"), icon: ICONS.layers });
+  TABS.splice(5, 0, { id: "playbook", label: T("tab.playbook"), icon: ICONS.layers });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   applyFocusHeight();
   let body = "";
@@ -597,6 +601,7 @@ function render() {
     if (tab === "grid") body = renderGrid();
     else if (tab === "analytics") body = renderAnalytics();
     else if (tab === "calendar") body = renderCalendar();
+    else if (tab === GOAL_TAB) body = renderGoals();
     else if (tab === "reviews") body = renderReviews();
     else if (tab === "playbook") body = renderPlaybook();
     else if (tab === "changelog") body = renderChangelog();

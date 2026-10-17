@@ -154,6 +154,15 @@ created_at / updated_at
 - **交易属于哪一页存在交易自己身上**：`trades.data.__pb`（页面 id；`"__none"` = 确认过不属于任何模型）、`trades.data.__pb_star`（关注）、`trades.data.__pb_tags`（打了哪些标签，标签 id 数组）、`trades.data.__pb_note`（归类记录，纯文本）。不是用户字段，不在 schema 里；指向已删除页面的 `__pb` 一律按「未归类」读（`pbTradePageId()`）
 - 为什么不跟 journal_reviews 共表：复盘按 mode 分两套、有分组和拖拽，模型库是跨模式的一份，混在一起复盘那边每一处查询都要多排除一次
 
+### 目标 / 纪律 / 积分（2026-10-17，`20261017000000_goals.sql`）
+代码在 `src/13c-goals-data.js`（计算）/ `13d-goals-view.js`（记录页卡片 + 「目标」页签 + 结算弹窗）/ `13e-activity.js`（使用时长 + 计时器）。
+- `journal_schema.goal_prefs` jsonb：记录节奏（daily / weekly）、开始日期、目标清单、纪律规则阈值、自评纪律项
+- `goal_days`（user_id, day 主键）：手动目标勾选、自评纪律、盘前计划、休息日、结算时间 + 结算快照（违反了哪几条、纪律分）
+- `activity_daily`（user_id, day, area 主键）：使用秒数。只能通过 `add_activity(day, area, seconds)` 往上加（自动计时每次 ≤ 15 分钟，计时器 / 补录 ≤ 6 小时，一天一区域 ≤ 16 小时）
+- `points_ledger`（user_id, source, period 主键）：积分。**是前端 `computeGoalPoints()` 算出来的缓存**，(来源, 周期) 唯一、重算就覆盖；管理员后台的「积分」列走 `admin_points_totals()`
+- 只算实盘（模型库除外，它跨模式）；纪律按交易日期、只有周一到周五；结算后才评纪律，快照存下来，改规则不回头改老成绩
+- 撤掉这一套：`supabase/rollback/20261017000000_goals_down.sql`（只删上面这些），前端退回 tag `backup-before-goals-2026-10-17`
+
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
 - `update_own_profile(new_display_name, new_gender)` — 普通用户改自己名字/性别专用，改不了权限
