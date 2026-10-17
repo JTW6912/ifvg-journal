@@ -1693,7 +1693,7 @@ function pbTriageNotePanelHtml(t, kind) {
   const pageId = pbTradePageId(t);
   const c = pbNoteCandidates(pageId, kind);
   const has = (m) => pbNoteTradeIds(m).includes(t.id);
-  const group = (label, all) => { const list = all.filter((m) => !pbVerifyRejected(m) || has(m)); return list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + pbNestBranches(list).map(({ m, depth }) => `<button class="pbMpRow${has(m) ? " on" : ""}${isV ? " isVerify" : ""}${depth ? " isBranch" : ""}" data-action="pb-triage-toggle-note" data-id="${esc(m.id)}">
+  const group = (label, all) => { const list = pbRejectedLast(all); return list.length ? `<div class="pbMpGroup">${esc(label)}</div>` + pbNestBranches(list).map(({ m, depth }) => `<button class="pbMpRow${has(m) ? " on" : ""}${isV ? " isVerify" : ""}${depth ? " isBranch" : ""}" data-action="pb-triage-toggle-note" data-id="${esc(m.id)}">
       <span class="pbMpBox">${has(m) ? ICONS.check : ""}</span>
       <span class="pbMpTitle">${esc(pbTitle(m))}</span>
       ${isV ? pbStatusPillHtml(m) : ""}
@@ -1888,8 +1888,8 @@ function pbFormNotesBoxHtml(kind, pageId) {
   const isV = kind === "verify";
   const ro = !!viewingUserId;
   const c = pbNoteCandidates(pageId, kind);
-  // 已否定的想法有结论了，不再摆出来让人勾——除非这笔本来就在里面
-  const cands = c.own.concat(c.fromSystem, c.global).filter((m) => !pbVerifyRejected(m) || st.sel.has(m.id) || st.init.has(m.id));
+  // 已否定的照样能勾（拿新数据继续验证），只是排到最后
+  const cands = pbRejectedLast(c.own.concat(c.fromSystem, c.global));
   const candIds = new Set(cands.map((m) => m.id));
   // 这笔本来就在里面、或者刚勾上的，就算不在候选里（比如挂在别的策略下）也得列出来，不然没法取消
   const extra = pbSortList(pbNotes(kind).filter((m) => (st.sel.has(m.id) || st.init.has(m.id)) && !candIds.has(m.id)));

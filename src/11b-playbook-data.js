@@ -46,8 +46,13 @@ function pbIsNote(d) { return !!d && PB_NOTE_KINDS.includes(d.kind); }
 function pbIsChild(d) { return !!d && PB_CHILD_KINDS.includes(d.kind); }
 function pbIsPage(d) { return !!d && (d.kind === "system" || d.kind === "strategy"); }
 function pbVerifyStatus(d) { return d && PB_VERIFY_STATUSES.includes(d.status) ? d.status : "watching"; }
-/* 已否定的待验证：有结论了，记交易 / 归类时不再摆出来让人勾 */
+/* 已否定的待验证：有结论了，但新数据照样能往里放（继续验证）。记交易 / 归类时排到最后 */
 function pbVerifyRejected(d) { return !!d && d.kind === "verify" && pbVerifyStatus(d) === "rejected"; }
+/* 候选列表里把已否定的挪到最后，其余顺序不变。有分支的问题自己不算状态，不挪 */
+function pbRejectedLast(list) {
+  const late = (m) => pbVerifyRejected(m) && !pbHasBranches(m);
+  return list.filter((m) => !late(m)).concat(list.filter(late));
+}
 function newPbId() { return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function pbFind(id) { return id ? pbPages.find((p) => p.id === id) || null : null; }
 function pbTitle(p) { return (p && (p.title || "").trim()) || T("pb.untitled"); }

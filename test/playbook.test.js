@@ -193,6 +193,17 @@ test("待验证的状态：认不出的一律按观察中；status 只在待验�
   assert.strictEqual(call("() => 'status' in pbRowPayload(pbFind('sys'))"), false);
 });
 
+test("已否定的待验证照样当候选（继续验证），只是排到最后；有分支的问题不挪", () => {
+  const { call } = setup([
+    { id: "r1", kind: "verify", status: "rejected", body: "" },
+    { id: "w1", kind: "verify", status: "watching", body: "" },
+    { id: "q", kind: "verify", status: "rejected", body: "" },
+    { id: "qb", kind: "verify", status: "watching", branch_of: "q", body: "" },
+    { id: "k1", kind: "verify", status: "works", body: "" },
+  ]);
+  assert.deepStrictEqual(call("() => pbRejectedLast(pbPages).map((m) => m.id)"), ["w1", "q", "qb", "k1", "r1"]);
+});
+
 test("待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」", () => {
   const { call } = setup(VPAGES);
   const tpl = call("() => pbTemplateBody('verify')");
