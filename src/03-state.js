@@ -81,7 +81,8 @@ let pbError = null;                   // 模型库页面上常驻的一条错误
 let pbSearch = "";
 let pbMistakeFilter = "all";          // 错题库按归属筛：all / 系统 id / "__global"
 let pbVerifyFilter = "all";           // 待验证区按状态筛：all / watching / works / rejected
-let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗
+let pbNameModal = null;               // { kind, parentId, mode: 'new' | 'rename', id, name } —— 新建/改名的小弹窗；evGroup 有值时是关联交易分组的新建/改名
+let pbEvGroupSel = {};                // 页面 id → 关联交易正在看哪一组（组 id，"" = 第一组）。只是界面状态，不存库
 let pbConfirmDeleteId = null;
 let pbConvertAskId = null;            // 错题 ⇄ 待验证：正在问「确定要转吗」的那一条
 let pbConvertSwap = true;             // 转的时候正文里的模板标题要不要一起对调（默认要）

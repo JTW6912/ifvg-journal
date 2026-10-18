@@ -783,6 +783,13 @@ document.addEventListener("click", async (e) => {
     const m = pbNameModal;
     const input = document.getElementById("pbNameInput");
     const name = (input ? input.value : "").trim();
+    if (m && m.evGroup) {
+      // 关联交易分组：名字可以留空（空着就叫「第 N 组」）
+      pbNameModal = null;
+      renderSecondaryModals(true);
+      await pbEvGroupSave(m.gid, name, m.evGroup === "new");
+      return;
+    }
     if (!m || !name) { if (input) input.focus(); return; }
     pbNameModal = null;
     renderSecondaryModals(true);
@@ -910,6 +917,26 @@ document.addEventListener("click", async (e) => {
   else if (action === "pb-triage-tag") { await pbTriageToggleTag(el.dataset.id); }
   else if (action === "pb-fav") { await pbAreaToggleFav(el.dataset.id); }
   else if (action === "pb-ev") { await pbAreaCycleEv(el.dataset.id); }
+  else if (action === "pb-evg-pick") { pbEvGroupPick(el.dataset.gid); }
+  else if (action === "pb-evg-new" || action === "pb-evg-rename") {
+    const page = editingReview && pbFind(editingReview.id);
+    if (!page || viewingUserId) return;
+    const isNew = action === "pb-evg-new";
+    const gid = isNew ? "" : el.dataset.gid || "";
+    const gs = pbEvGroups(page);
+    const placeholder = isNew ? T("pb.evg.nth", { n: gs.length + 1 }) : T("pb.evg.nth", { n: Math.max(0, gs.findIndex((g) => g.id === gid)) + 1 });
+    pbNameModal = { evGroup: isNew ? "new" : "rename", gid, name: isNew ? "" : (gs.find((g) => g.id === gid) || {}).name || "", placeholder };
+    renderSecondaryModals(true);
+  }
+  else if (action === "pb-evg-delete") {
+    const m = pbNameModal;
+    if (!m || !m.evGroup || !m.gid) return;
+    // 点两下才删：第一下换成「再点一次确认删除」
+    if (!m.confirmDel) { m.confirmDel = true; const input = document.getElementById("pbNameInput"); if (input) m.name = input.value; renderSecondaryModals(true); return; }
+    pbNameModal = null;
+    renderSecondaryModals(true);
+    await pbEvGroupDelete(m.gid);
+  }
   else if (action === "pb-row-note") { pbStartRowNote(el.dataset.id); }
   else if (action === "pb-area-add") { if (editingReview && !reviewIsReadOnly()) openTradePicker(editingReview.id); }
   else if (action === "pb-note-remove-trade") {

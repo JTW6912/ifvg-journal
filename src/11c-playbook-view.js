@@ -622,7 +622,10 @@ async function pbMergeNote() {
   // 2. 收藏 / 关联标记：dst 上没标过的才搬
   const sm = pbMarksOf(src), dm = { ...pbMarksOf(dst) };
   let changed = false;
-  Object.keys(sm).forEach((tid) => { if (!dm[tid] || !Object.keys(dm[tid]).some((k) => dm[tid][k])) { dm[tid] = { ...sm[tid] }; changed = true; } });
+  pbMarkTradeIds(sm).forEach((tid) => { if (!dm[tid] || !Object.keys(dm[tid]).some((k) => dm[tid][k])) { dm[tid] = { ...sm[tid] }; changed = true; } });
+  // src 开过的关联交易分组也搬过去（组 id 各不相同，搬过去的那几笔的 evg 照样对得上）
+  const dGroups = pbEvGroups(dst), extraGroups = pbEvGroups(src).slice(1).filter((g) => !dGroups.some((x) => x.id === g.id));
+  if (extraGroups.length) { dm[PB_EVG_KEY] = dGroups.concat(extraGroups); changed = true; }
   if (changed && !(await pbWriteMarks(dst.id, dm))) return fail();
   // 3. src 的分支挂到 dst 下（dst 本身是分支的话，挂到 dst 的问题下，两层封顶）
   const home = pbBranchRoot(dst) || dst;
@@ -756,9 +759,16 @@ async function pbConvertNote() {
     const marks = pbMarksOf(p);
     const next = {};
     let changed = false;
-    Object.keys(marks).forEach((id) => {
+    if (marks[PB_EVG_KEY]) next[PB_EVG_KEY] = marks[PB_EVG_KEY];
+    pbMarkTradeIds(marks).forEach((id) => {
       const m = { ...marks[id] };
       if (m.ev) { const nv = map[m.ev] || ""; if (nv !== m.ev) changed = true; if (nv) m.ev = nv; else delete m.ev; }
+      // 后面几组也一样换
+      if (m.evg && typeof m.evg === "object") {
+        const evg = {};
+        Object.keys(m.evg).forEach((g) => { const nv = map[m.evg[g]] || ""; if (nv !== m.evg[g]) changed = true; if (nv) evg[g] = nv; });
+        if (Object.keys(evg).length) m.evg = evg; else delete m.evg;
+      }
       if (Object.keys(m).some((k) => m[k])) next[id] = m;
     });
     if (changed) await pbWriteMarks(p.id, next);
@@ -891,6 +901,22 @@ function pbVerdictHtml(ctx) {
   return `<div class="pbVerdict${h.suggest ? " is-" + h.suggest : ""}">${ICONS.alert}<span>${esc(T(h.suggest ? "pb.verdict.ready" : "pb.verdict.mixed", { n: h.n, pro: h.pro, con: h.con }))}</span>${btns}</div>`;
 }
 
+/* 关联交易上面那排组：只有一组时不摆（跟原来一样）。正在看的那组带一个改名按钮 */
+function pbEvGroupTabsHtml(page, list) {
+  const gs = pbEvGroups(page);
+  if (gs.length < 2) return "";
+  const cur = pbEvGroupId(page);
+  const ro = !!viewingUserId;
+  return `<div class="pbEvgTabs">${gs.map((g) => {
+    const n = list.filter((t) => pbEvOf(page, t.id, g.id)).length;
+    const on = g.id === cur;
+    return `<span class="pbEvgTab${on ? " on" : ""}">
+      <button type="button" class="pbEvgPick" data-action="pb-evg-pick" data-gid="${esc(g.id)}">${esc(pbEvGroupName(page, g.id))}<span class="mono pbEvgCount">${n}</span></button>
+      ${on && !ro ? `<button type="button" class="pbEvgEdit" data-action="pb-evg-rename" data-gid="${esc(g.id)}" title="${esc(T("pb.evg.renameTitle"))}">${ICONS.pencil}</button>` : ""}
+    </span>`;
+  }).join("")}</div>`;
+}
+
 function pbTradeAreaHtml(d) {
   if (recordMode !== "live") return pbBacktestNote();
   const ctx = pbAreaCtx(d);
@@ -908,7 +934,9 @@ function pbTradeAreaHtml(d) {
   if (ctx.evStates.length) {
     const isV = d.kind === "verify";
     const pro = isV ? pbMarkedTrades(page, list, "pro").length : 0, con = isV ? pbMarkedTrades(page, list, "con").length : 0;
-    html += `<section class="pbPanel pbEvPanel">${pbSectionHeadHtml(T("pb.area.ev"), evList.length, "", T(isV ? "pb.area.evHintVerify" : "pb.area.evHintMistake"))}
+    const newGroup = ro || !pbFind(d.id) ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-evg-new">${ICONS.plus} ${esc(T("pb.evg.new"))}</button>`;
+    html += `<section class="pbPanel pbEvPanel">${pbSectionHeadHtml(T("pb.area.ev"), evList.length, newGroup, T(isV ? "pb.area.evHintVerify" : "pb.area.evHintMistake"))}
+      ${pbEvGroupTabsHtml(page, list)}
       ${evList.length
         ? `<div class="pbEvSummary">${isV ? `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))} ${pro}</span><span class="pbEvBadge ev-con">${esc(T("pb.area.con"))} ${con}</span>` : ""}<span class="pbStatsRow">${pbStatsHtml(pbStats(evList))}</span></div>
            <div class="pbTileGrid">${evList.map((t) => pbTileHtml(t, { showLabel: true, note: tileNote(t), fav: pbAreaFav(ctx, t), badge: pbEvBadgeHtml(pbEvOf(page, t.id)) })).join("")}</div>`
@@ -970,12 +998,49 @@ async function pbAreaSetMark(tradeId, patchFn) {
   render();   // 模型库首页的便利贴在编辑器底下，跟着换
 }
 function pbAreaToggleFav(tradeId) { return pbAreaSetMark(tradeId, (page) => ({ fav: !pbIsFav(page, tradeId) })); }
-function pbAreaCycleEv(tradeId) { return pbAreaSetMark(tradeId, (page) => ({ ev: pbEvNext(page.kind, pbEvOf(page, tradeId)) })); }
+function pbAreaCycleEv(tradeId) { return pbAreaSetMark(tradeId, (page) => pbEvPatch(page, tradeId, pbEvNext(page.kind, pbEvOf(page, tradeId)))); }
+/* ---------- 关联交易分组的动作 ---------- */
+function pbEvGroupPick(gid) {
+  const d = editingReview;
+  const page = d && pbFind(d.id);
+  if (!page) return;
+  pbEvGroupSel[page.id] = gid || "";
+  // 筛的是「支持 / 反驳 / 关联」那几行的话，换了组就不是那一批了，放开
+  if (pbExecFilter && pbExecFilter.indexOf("m:") === 0 && pbExecFilter !== "m:fav") pbExecFilter = "";
+  refreshPbPanels();
+  render();
+}
+async function pbEvGroupSave(gid, name, isNew) {
+  const d = editingReview;
+  const page = d && pbFind(d.id);
+  if (!page || viewingUserId) return;
+  const gs = pbEvGroups(page);
+  let id = gid;
+  if (isNew) { id = pbNewEvGroupId(); gs.push({ id, name }); }
+  else { const g = gs.find((x) => x.id === gid); if (!g) return; g.name = name; }
+  const ok = await pbWriteMarks(page.id, pbMarksWithGroups(page, gs));
+  if (ok && isNew) pbEvGroupSel[page.id] = id;
+  refreshPbPanels();
+  render();
+  if (!ok) showReviewToast(pbError || T("error.dbOutdated"));
+  else if (isNew) showReviewToast(T("pb.evg.created", { name: pbEvGroupName(page, id) }));
+}
+async function pbEvGroupDelete(gid) {
+  const d = editingReview;
+  const page = d && pbFind(d.id);
+  if (!page || viewingUserId || !gid) return;
+  const name = pbEvGroupName(page, gid);
+  const ok = await pbWriteMarks(page.id, pbMarksWithGroups(page, pbEvGroups(page).filter((g) => g.id !== gid)));
+  if (ok && pbEvGroupSel[page.id] === gid) pbEvGroupSel[page.id] = "";
+  refreshPbPanels();
+  render();
+  showReviewToast(ok ? T("pb.evg.deleted", { name }) : pbError || T("error.dbOutdated"));
+}
 /* 交易从笔记里移出 / 标签摘掉之后，它在这一页上的标记也一起清掉 */
 function pbDropMarks(pageId, tradeId) {
   const page = pbFind(pageId);
   if (!page || !Object.keys(pbMarkOf(page, tradeId)).length) return Promise.resolve(true);
-  return pbWriteMarks(pageId, pbMarksWith(page, tradeId, { fav: false, ev: "" }));
+  return pbWriteMarks(pageId, pbMarksWith(page, tradeId, { fav: false, ev: "", evg: null }));
 }
 /* 「+ 添加交易」选中一笔：笔记 → 正文「涉及的交易」里加一行；标签 → 给交易打上 */
 async function pbAreaAddTrade(tradeId) {
@@ -1160,8 +1225,36 @@ function refreshPbPanels() {
 /* ============================================================
    新建页面的小弹窗（画在 #secondaryModalRoot，盖得住编辑器）
    ============================================================ */
+/* 关联交易分组的新建 / 改名。改名时第二组起还能删（第一组是原来那套，不能删） */
+function pbEvGroupModalHtml(m) {
+  const isNew = m.evGroup === "new";
+  const del = !isNew && m.gid
+    ? `<button class="btn btn-danger pbEvgDel" data-action="pb-evg-delete" data-gid="${esc(m.gid)}" style="margin-right:auto;">${esc(T(m.confirmDel ? "pb.evg.deleteConfirm" : "pb.evg.delete"))}</button>` : "";
+  return `<div class="overlay" data-action="dismiss-pb-name-overlay">
+    <div class="modal" style="max-width:440px;">
+      <div class="modalHead">
+        <div class="display" style="font-size:16px;font-weight:600;">${esc(T(isNew ? "pb.evg.newTitle" : "pb.evg.renameTitle"))}</div>
+        <button class="iconBtn" data-action="close-pb-name-modal">${ICONS.x}</button>
+      </div>
+      <div class="modalBody">
+        <div class="field" style="margin-bottom:8px;">
+          <div class="fieldLabel">${esc(T("pb.evg.nameLabel"))}</div>
+          <input type="text" class="input" id="pbNameInput" value="${esc(m.name || "")}" placeholder="${esc(m.placeholder || "")}" maxlength="60"
+            onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();document.querySelector('[data-action=&quot;save-pb-name-modal&quot;]').click();}" />
+        </div>
+        <div class="pbModalHint">${esc(T(isNew ? "pb.evg.newHint" : m.gid ? "pb.evg.deleteHint" : "pb.evg.firstHint"))}</div>
+      </div>
+      <div class="modalFoot">
+        ${del}
+        <button class="btn" data-action="close-pb-name-modal">${esc(T("common.cancel"))}</button>
+        <button class="btn btn-primary" data-action="save-pb-name-modal">${esc(T(isNew ? "pb.create" : "common.save"))}</button>
+      </div>
+    </div>
+  </div>`;
+}
 function pbNameModalHtml() {
   const m = pbNameModal;
+  if (m.evGroup) return pbEvGroupModalHtml(m);
   const parent = pbFind(m.parentId);
   const title = m.branchOf && pbFind(m.branchOf) ? T("pb.branch.newOf", { name: pbTitle(pbFind(m.branchOf)) })
     : m.kind === "system" ? T("pb.newSystem")
@@ -2133,7 +2226,8 @@ function tpPbBarHtml(t) {
   }
   const fav = pbAreaFav(c, t);
   const ev = pbEvOf(c.page, t.id);
-  const evBtns = c.evStates.map((s) => `<button class="pbEvBtn ev-${ev === s ? s : "none"}" data-action="tp-pb-ev" data-id="${id}" data-ev="${s}" title="${esc(T("tp.pb.evTitle"))}">${ev === s ? ICONS.check : ICONS.plus}${esc(pbEvLabel(s))}</button>`).join("");
+  const evGroup = c.evStates.length && pbEvGroups(c.page).length > 1 ? `<span class="tpPbWhere">${esc(pbEvGroupName(c.page, pbEvGroupId(c.page)))}</span>` : "";
+  const evBtns = evGroup + c.evStates.map((s) => `<button class="pbEvBtn ev-${ev === s ? s : "none"}" data-action="tp-pb-ev" data-id="${id}" data-ev="${s}" title="${esc(T("tp.pb.evTitle"))}">${ev === s ? ICONS.check : ICONS.plus}${esc(pbEvLabel(s))}</button>`).join("");
   // 系统 / 策略页：改归到别的系统 / 策略（「移到分支」在这里就是挪进某个衍生策略）
   const cur = pbTradePageId(t);
   const assign = c.mode === "page"
@@ -2199,7 +2293,7 @@ async function tpPbAct(kind, tradeId, val) {
   if (kind === "fav") {
     if (c.mode === "page") await pbToggleStar(tradeId); else await pbAreaToggleFav(tradeId);
   } else if (kind === "ev") {
-    await pbAreaSetMark(tradeId, (page) => ({ ev: pbEvOf(page, tradeId) === val ? "" : val }));
+    await pbAreaSetMark(tradeId, (page) => pbEvPatch(page, tradeId, pbEvOf(page, tradeId) === val ? "" : val));
   } else if (kind === "add") {
     if (c.mode !== "page") return pbAreaAddTrade(tradeId);
     const p = pbPatchTrade(tradeId, { [PB_KEY]: d.id });

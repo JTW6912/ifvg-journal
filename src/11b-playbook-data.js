@@ -359,7 +359,8 @@ function pbMistakeGist(m) {
 
 const PB_TRADE_LINE_RE = (id) => new RegExp("^\\s*[-*+]\\s+(?:\\[[ xX]\\]\\s+)?\\[\\[trade:" + id + "\\]\\](.*)$");
 /* ---------- 笔记 / 标签页面上每笔交易的两样标记 ----------
-   存在 journal_playbook.trade_marks 上：{ 交易id: { fav: true, ev: "pro" | "con" | "key" } }。
+   存在 journal_playbook.trade_marks 上：{ 交易id: { fav: true, ev: "pro" | "con" | "key", evg: { 组id: … } } }
+   （evg 和保留键 __groups 是关联交易的分组，见下面「关联交易分组」）。
    跟正文分开存：笔记开在编辑器里时也不会跟正在写的正文打架，标记也不会混进用户的文字里。
    两样是独立的，同一笔可以既收藏又关联：
      fav  收藏：有意思的单子，留着回头看（系统 / 策略页上对应的是交易身上的 __pb_star）
@@ -372,11 +373,68 @@ function pbMarksOf(p) {
   const m = p && p.trade_marks;
   return m && typeof m === "object" && !Array.isArray(m) ? m : {};
 }
-function pbMarkOf(p, tradeId) { const v = pbMarksOf(p)[tradeId]; return v && typeof v === "object" ? v : {}; }
+function pbMarkOf(p, tradeId) { const v = tradeId === PB_EVG_KEY ? null : pbMarksOf(p)[tradeId]; return v && typeof v === "object" ? v : {}; }
+/* 逐笔过一遍标记表时用：跳过分组列表那个保留键 */
+function pbMarkTradeIds(marks) { return Object.keys(marks || {}).filter((k) => k !== PB_EVG_KEY); }
 function pbIsFav(p, tradeId) { return !!pbMarkOf(p, tradeId).fav; }
-function pbEvOf(p, tradeId) {
-  const ev = pbMarkOf(p, tradeId).ev;
+/* gid 不传 = 页面上正在看的那一组 */
+function pbEvOf(p, tradeId, gid) {
+  const g = gid === undefined ? pbEvGroupId(p) : gid;
+  const m = pbMarkOf(p, tradeId);
+  const ev = g ? m.evg && m.evg[g] : m.ev;
   return p && (PB_EV_STATES[p.kind] || []).includes(ev) ? ev : "";
+}
+/* 改一笔在某一组里的关联状态，返回给 pbMarksWith 的 patch */
+function pbEvPatch(p, tradeId, val, gid) {
+  const g = gid === undefined ? pbEvGroupId(p) : gid;
+  if (!g) return { ev: val || "" };
+  const evg = { ...(pbMarkOf(p, tradeId).evg || {}) };
+  if (val) evg[g] = val; else delete evg[g];
+  return { evg: Object.keys(evg).length ? evg : null };
+}
+
+/* ---------- 关联交易分组 ----------
+   一条笔记的关联交易可以开好几组（例：「这种能不能做」「FVG 回踩 50% 才能做」），每组一套独立的支持 / 反驳，
+   同一笔在这组是支持、在那组是反驳互不影响。新开的组什么都没标，从 0 开始。
+   - 第一组就是原来的 ev，老数据不用搬；后面的组记在每笔的 evg 上：{ 组id: "pro" | "con" | "key" }
+   - 组的列表存在 trade_marks 的保留键 __groups 上：[{ id, name }]，第一项 id 固定是 ""。没开过组就没有这个键
+   - 看哪一组是界面状态（pbEvGroupSel）。成绩、提示、便利贴、全部交易里的关联按钮都读正在看的那一组 */
+const PB_EVG_KEY = "__groups";
+function pbEvGroups(p) {
+  const raw = pbMarksOf(p)[PB_EVG_KEY];
+  const list = Array.isArray(raw) ? raw.filter((g) => g && typeof g === "object" && typeof g.id === "string") : [];
+  const first = list.find((g) => g.id === "");
+  const seen = new Set();
+  const rest = list.filter((g) => g.id && !seen.has(g.id) && seen.add(g.id));
+  return [{ id: "", name: first ? String(first.name || "") : "" }].concat(rest.map((g) => ({ id: g.id, name: String(g.name || "") })));
+}
+function pbEvGroupId(p) {
+  const id = p && pbEvGroupSel[p.id];
+  return id && pbEvGroups(p).some((g) => g.id === id) ? id : "";
+}
+function pbEvGroupName(p, gid) {
+  const gs = pbEvGroups(p);
+  const i = Math.max(0, gs.findIndex((g) => g.id === gid));
+  return gs[i].name || T("pb.evg.nth", { n: i + 1 });
+}
+function pbNewEvGroupId() { return "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+/* 换一份组列表，返回新的整张标记表。删掉的组，每笔身上那一组的标记也一起清掉 */
+function pbMarksWithGroups(p, groups) {
+  const keep = new Set(groups.map((g) => g.id));
+  const out = {};
+  const marks = pbMarksOf(p);
+  pbMarkTradeIds(marks).forEach((tid) => {
+    const m = { ...marks[tid] };
+    if (m.evg && typeof m.evg === "object") {
+      const evg = {};
+      Object.keys(m.evg).forEach((g) => { if (keep.has(g) && m.evg[g]) evg[g] = m.evg[g]; });
+      if (Object.keys(evg).length) m.evg = evg; else delete m.evg;
+    }
+    if (Object.keys(m).some((k) => m[k])) out[tid] = m;
+  });
+  // 只剩第一组、也没改过名：不留这个键，跟没开过组一样
+  if (groups.length > 1 || (groups[0] && groups[0].name)) out[PB_EVG_KEY] = groups.map((g) => ({ id: g.id, name: g.name || "" }));
+  return out;
 }
 /* 点一下关联按钮之后的状态：待验证 无 → 支持 → 反驳 → 无；错题 无 ⇄ 关联 */
 function pbEvNext(kind, cur) {

@@ -361,6 +361,28 @@ test("改标记返回新表、不动原来的；两样都清空了整个条目�
   assert.deepStrictEqual(call("() => pbMarksWith(pbFind('vm'), 'd', { fav: true }).d"), { fav: true });
 });
 
+test("关联交易分组：新组从 0 开始、各组独立；第一组就是原来的 ev；删组连带清掉那组的标记", () => {
+  const { call } = setup(MPAGES, MTRADES);
+  const r = call(`() => {
+    const p = pbFind('vm');
+    p.trade_marks = pbMarksWithGroups(p, pbEvGroups(p).concat([{ id: 'g2', name: '回踩50%' }]));
+    const fresh = pbMarkedTrades((pbEvGroupSel.vm = 'g2', p), pbNoteTrades(p), 'ev').length;
+    p.trade_marks = pbMarksWith(p, 'a', pbEvPatch(p, 'a', 'con'));
+    const inG2 = pbEvOf(p, 'a'), inG1 = pbEvOf(p, 'a', '');
+    const names = pbEvGroups(p).map((g) => pbEvGroupName(p, g.id));
+    p.trade_marks = pbMarksWithGroups(p, pbEvGroups(p).filter((g) => g.id !== 'g2'));
+    return { fresh, inG2, inG1, names, afterDel: p.trade_marks.a, sel: pbEvGroupId(p), hasKey: '__groups' in p.trade_marks };
+  }`);
+  assert.strictEqual(r.fresh, 0);
+  assert.strictEqual(r.inG2, "con");
+  assert.strictEqual(r.inG1, "pro");
+  assert.deepStrictEqual(r.names, ["第 1 组", "回踩50%"]);
+  assert.deepStrictEqual(r.afterDel, { fav: true, ev: "pro" });
+  assert.strictEqual(r.sel, "");          // 选中的组删了，退回第一组
+  assert.strictEqual(r.hasKey, false);    // 只剩第一组又没改名：不留保留键
+  assert.deepStrictEqual(call("() => pbMarkOf(pbFind('vm'), '__groups')"), {});
+});
+
 test("可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出", () => {
   const body = "## 涉及的交易\n\n" + Array.from({ length: 12 }, (_, i) => `- [[trade:t${i}]]`).join("\n");
   const tr = Array.from({ length: 12 }, (_, i) => ({ id: "t" + i }));

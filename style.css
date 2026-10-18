@@ -1115,6 +1115,17 @@ button.pageRef{line-height:1.5;}
 .pbTileBadge .pbEvBadge{box-shadow:0 1px 4px rgba(0,0,0,.35);}
 .pbEvSummary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
 .pbEvSummary .pbEvBadge{font-size:11.5px;padding:1px 9px;}
+/* 关联交易的分组：一排小标签，正在看的那组高亮 */
+.pbEvgTabs{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 12px;}
+.pbEvgTab{display:inline-flex;align-items:center;border:1px solid var(--borderLight);border-radius:var(--r11);background:transparent;}
+.pbEvgTab.on{border-color:var(--accent);background:var(--accentSoft);}
+.pbEvgPick{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;font-size:12px;color:var(--muted);background:none;border:0;cursor:pointer;font-family:inherit;}
+.pbEvgTab.on .pbEvgPick{color:var(--accent);font-weight:600;}
+.pbEvgPick:hover{color:var(--text);}
+.pbEvgCount{font-size:11px;color:var(--mutedDark);}
+.pbEvgEdit{display:inline-flex;align-items:center;padding:3px 8px 3px 0;background:none;border:0;cursor:pointer;color:var(--accent);opacity:.7;}
+.pbEvgEdit:hover{opacity:1;}
+.pbEvgEdit svg{width:11px;height:11px;}
 .pbFavStats{margin-bottom:12px;}
 .pbEvBtn{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;align-self:center;padding:2px 9px;border-radius:11px;font-size:11.5px;
   border:1px dashed var(--borderLight);background:transparent;color:var(--mutedDark);cursor:pointer;font-family:inherit;white-space:nowrap;}
