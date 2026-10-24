@@ -95,6 +95,24 @@ let pbExecFilter = "";              // 页面「全部交易」只看某一类 t
 /* 归类模式：{ ids, i, scope: 'unsorted' | 'all', panel: '' | 'mistake' | 'verify', notice }。ids 是开始时拍下来的队列——
    边归类边从「未归类」里消失的话，下标会跟着挪，按一下「下一笔」会跳过一笔 */
 let pbTriage = null;
+/* ---------- PROP 账户 ----------
+   目录（公司 / 计划）全站共用、管理员维护；账号和流水每人一份。模型见 src/11d-prop-data.js */
+let propFirms = [];
+let propPlans = [];
+let propCatalogInfo = null;           // 最近一次导入 { imported_at, summary }
+let propAccounts = [];
+let propEntries = [];
+let propError = null;
+let propYear = new Date().getFullYear();
+let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
+let propFirmFilter = "";              // 总览 / 我的账号：只看某家公司（按 firm_name）
+let propGroupFilter = "";             // 只看某个分组
+let propStatusFilter = "active";      // 我的账号：active / ended / all
+let propCatalogFirm = "";             // 公司计划：只看某家（firm id），"" = 全部
+let propCatalogSize = "";             // 公司计划：只看某个规模
+let propShowLegacy = false;           // 公司计划：要不要列出已下架的计划
+let propCompare = [];                 // 勾了要对比的计划 id，最多 4 个
+let propModal = null;                 // { type: 'account' | 'entry' | 'status' | 'detail' | 'import' | 'compare', ... }
 /* localStorage 里读出来的枚举一律过一遍白名单：
    「超大图」(huge) 这一档被看图模式取代删掉了，老用户本地还存着 "huge"，
    不校验的话四个尺寸按钮会全都不高亮、还查不出为什么 */
@@ -106,6 +124,7 @@ function pickStored(key, allowed, fallback) {
 }
 let gridCardSize = pickStored("journal_card_size", ["compact", "standard", "large"], "large");
 let gridViewMode = pickStored("journal_view_mode", ["card", "table", "focus"], "card");
+let propView = pickStored("journal_prop_view", ["overview", "accounts", "catalog"], "overview");
 /* ---------- 看图模式（focus）的状态 ----------
    高度/字段位置是"我习惯这么看"，存 localStorage；
    遮挡和已揭晓是"这一次想怎么练"，只放内存，刷新回到不遮挡——

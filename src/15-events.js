@@ -1720,6 +1720,7 @@ document.addEventListener("keydown", (e) => {
   if (exportCenterOpen) { if (!exportBusy) { exportCenterOpen = false; render(); } return; }
   if (pbNameModal) { pbNameModal = null; renderSecondaryModals(true); return; }
   if (dataScopeModalOpen) { dataScopeModalOpen = false; renderSecondaryModals(true); return; }
+  if (propModal) { if (!propModal.busy) propCloseModal(); return; }
   if (pagePickerOpen) { closePagePicker(); return; }
   // 复盘编辑器这几层要排在交易弹窗前面：插入菜单 → 交易选择器，
   // 都关掉了才轮到编辑器本身（编辑器自己排在 editingTrade 后面，见下面）

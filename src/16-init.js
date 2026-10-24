@@ -45,7 +45,7 @@ function openTradeForEdit(id) {
    恢复之前不写：不然加载数据时那几次 render 会先把「主页」写进去，把要恢复的盖掉
    ============================================================ */
 const NAV_KEY = "journal_nav";
-const NAV_TABS = ["grid", "analytics", "calendar", "reviews", "playbook", "changelog", "settings", "admin"];
+const NAV_TABS = ["grid", "analytics", "calendar", "reviews", "playbook", "prop", "changelog", "settings", "admin"];
 let navRestored = false;
 function saveNav() {
   if (!navRestored || !session || viewingUserId || authLoading) return;

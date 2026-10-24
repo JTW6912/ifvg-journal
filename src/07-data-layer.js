@@ -93,6 +93,8 @@ async function loadAll() {
     try { await loadReviews(); } catch (e) { console.error(e); }
     // 模型库跨回测/实盘只有一份，所以只在这里拉，切模式（reloadModeData）不用重拉
     try { await loadPlaybook(); } catch (e) { console.error(e); }
+    // Prop 账户：同样跨回测/实盘，表没建时自己报 dbOutdated，不影响别的部分
+    try { await loadPropData(); } catch (e) { console.error(e); }
 
     // 分析页筛选：本地存过就用存的，没存过给默认（只看 Taken）。跟记录页那份各存各的，互不影响
     seedAnalysisFilters();

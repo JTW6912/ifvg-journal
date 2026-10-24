@@ -492,7 +492,7 @@ function dataScopePillHtml() {
 function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
-  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : null)))))));
+  const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : (propModal ? "prop" : null))))))));
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
@@ -507,6 +507,7 @@ function renderSecondaryModals(force) {
   }
   else if (want === "daydetail") root.innerHTML = dayDetailModalHtml();
   else if (want === "datascope") root.innerHTML = dataScopeModalHtml();
+  else if (want === "prop") root.innerHTML = propModalHtml();
   else root.innerHTML = "";
 }
 // render() 每次都整体重建 app 的 innerHTML，滚动容器的节点也跟着被换掉，
@@ -590,6 +591,8 @@ function render() {
   TABS.splice(3, 0, { id: "reviews", label: T("tab.reviews"), icon: ICONS.book });
   // 模型库跨回测/实盘只有一份，两种模式下都在；回测模式下只是交易不参与归类（页面上有说明）
   TABS.splice(4, 0, { id: "playbook", label: T("tab.playbook"), icon: ICONS.layers });
+  // Prop 账户：跟回测 / 实盘无关，两种模式下都在
+  TABS.splice(5, 0, { id: "prop", label: T("tab.prop"), icon: ICONS.wallet });
   if (isAdmin) TABS.push({ id: "admin", label: T("tab.admin"), icon: ICONS.shield });
   applyFocusHeight();
   let body = "";
@@ -599,6 +602,7 @@ function render() {
     else if (tab === "calendar") body = renderCalendar();
     else if (tab === "reviews") body = renderReviews();
     else if (tab === "playbook") body = renderPlaybook();
+    else if (tab === "prop") body = renderProp();
     else if (tab === "changelog") body = renderChangelog();
     else if (tab === "settings") body = renderSettings();
     else if (tab === "admin") body = isAdmin ? renderAdminPanel() : `<div class="notice">${ICONS.alert}<span>${T("common.noPermission")}</span></div>`;
@@ -659,7 +663,7 @@ function render() {
   const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${dataScopePillHtml()}${currentLayout() === "modern" ? navSparkHtml() : ""}
     <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
   // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
-  const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", changelog: "nav.groupSystem" };
+  const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", prop: "nav.groupProp", changelog: "nav.groupSystem" };
   const navHtml = navBrandHtml + TABS.map((tb) => (NAV_GROUPS[tb.id] ? `<div class="navGroup">${esc(T(NAV_GROUPS[tb.id]))}</div>` : "") + `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}" title="${esc(tb.label)}">${tb.icon} <span class="tabLabel">${esc(tb.label)}</span></button>`).join("") + navFootHtml;
   const noticeHtml = (loadError ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(loadError)}</span></div>` : "")
     + (dbOutdated && loadError !== T("error.dbOutdated") ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(T("error.dbOutdated"))}</span></div>` : "");

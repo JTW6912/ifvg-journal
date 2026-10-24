@@ -662,3 +662,10 @@
   [data-layout="modern"] .navBrand{padding:4px 0;}
   [data-layout="modern"] .navBrandChev{display:none;}
 }
+
+/* ---------- Prop 账户 ---------- */
+:where([data-layout="modern"]) .propCard{border-color:var(--border);box-shadow:var(--shadowCard);border-radius:16px;}
+[data-layout="modern"] .propAcc:hover{box-shadow:var(--shadowHover);}
+[data-layout="modern"] .propStep{border-radius:14px;}
+[data-layout="modern"] .propAccNums{border-radius:12px;}
+[data-layout="modern"] .propCompareBar{border-radius:16px;}
