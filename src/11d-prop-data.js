@@ -6,17 +6,21 @@
    {
      "firms": [
        { "id": "lucid", "name": "Lucid Trading", "website": "https://...", "logo": "https://.../lucid.png",
+         "source": "https://... 资料来源页", "review": "一句话评价", "platforms": ["Tradovate"],
          "notes": "写给人看的说明",
          "faq": [{ "topic": "出金方式", "answer": "...", "status": "confirmed" | "unclear", "source": "https://..." }] }
      ],
      "plans": [
        { "id": "lucid-flex-50k", "firm": "lucid", "series": "LucidFlex", "size": 50000, "status": "current" | "legacy",
-         "price":  { "list": 99, "billing": "one_time" | "monthly", "activation": 0, "reset": 75 },
+         "type": "evaluation" | "instant",          // instant = 免考，直接是资金账号，eval 不填
+         "price":  { "list": 99, "billing": "one_time" | "monthly", "activation": 0, "reset": 75,
+                     "original": 199, "promoUntil": "10/31", "note": "价格说明" },   // list 是现在实际要付的价，original 是没打折的原价
          "eval":   { "target": 3000, "drawdown": 2000, "drawdownType": "eod" | "intraday" | "static",
-                     "dll": "none", "consistency": 40, "minDays": null, "timeLimit": "none" },
-         "funded": { "drawdown": 2000, "drawdownType": "eod", "dll": "none", "consistency": "none" },
+                     "dll": "none", "consistency": 40, "minDays": null, "timeLimit": "none", "maxContracts": "4 mini" },
+         "funded": { "drawdown": 2000, "drawdownType": "eod", "dll": "none", "consistency": "none",
+                     "maxContracts": "4 mini", "staticAfter": "何时变静态回撤" },
          "payout": { "split": 90, "min": 500, "cap": 2000, "qualifyingDays": 5, "dayProfit": 150,
-                     "buffer": "none", "frequency": "每 5 个合格盈利日" },
+                     "buffer": "none", "frequency": "每 5 个合格盈利日", "live": "转 Live 的说明" },
          "options": [{ "name": "50% 一致性", "price": null, "note": "" }],
          "notes": "写给人看的说明", "sources": ["https://..."], "checkedAt": "2026-10-24" }
      ]
@@ -64,7 +68,7 @@ function propValidateCatalog(raw) {
 
   const planIds = new Set();
   const RULE_KEYS = {
-    price: ["list", "activation", "reset"],
+    price: ["list", "activation", "reset", "original"],
     eval: ["target", "drawdown", "dll", "consistency", "minDays", "timeLimit"],
     funded: ["drawdown", "dll", "consistency"],
     payout: ["split", "min", "cap", "qualifyingDays", "dayProfit", "buffer"],
@@ -79,6 +83,7 @@ function propValidateCatalog(raw) {
     if (!firmIds.has(p.firm)) errors.push(where + ": " + T("prop.import.errFirm", { firm: p.firm }));
     if (p.size !== undefined && p.size !== null && !(Number.isInteger(p.size) && p.size > 0)) errors.push(where + ".size: " + T("prop.import.errSize"));
     if (p.status !== undefined && !["current", "legacy"].includes(p.status)) errors.push(where + ".status: current / legacy");
+    if (p.type !== undefined && !["evaluation", "instant"].includes(p.type)) errors.push(where + ".type: evaluation / instant");
     Object.keys(RULE_KEYS).forEach((sec) => {
       const s = p[sec];
       if (s === undefined || s === null) return;
@@ -95,6 +100,7 @@ function propValidateCatalog(raw) {
     if (p.options !== undefined && !Array.isArray(p.options)) errors.push(where + ".options: " + T("prop.import.errArray"));
     if (p.sources !== undefined && !Array.isArray(p.sources)) errors.push(where + ".sources: " + T("prop.import.errArray"));
     if (!p.price || p.price.list === undefined || p.price.list === null) warnings.push(T("prop.import.warnNoPrice", { id: id || where }));
+    if (p.eval !== undefined && p.type === "instant") warnings.push(T("prop.import.warnInstantEval", { id: id || where }));
     return { ...p, id, series: String(p.series || "").trim(), status: p.status || "current" };
   }).filter(Boolean);
   return { errors, warnings, catalog: errors.length ? null : { firms, plans } };

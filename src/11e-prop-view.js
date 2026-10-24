@@ -32,13 +32,16 @@ function propDdType(t) { return PROP_DD_TYPES.includes(t) ? T("prop.dd." + t) : 
 function propBillingLabel(b) { return b === "monthly" ? T("prop.billing.monthly") : b === "one_time" ? T("prop.billing.one_time") : ""; }
 /* 卡片上的几项重点 */
 function propKeyRules(p) {
-  const ev = p.eval || {}, po = p.payout || {};
+  const po = p.payout || {};
+  // 免考号没有考核阶段：目标写「免考」，回撤看资金阶段的
+  const instant = p.type === "instant";
+  const ev = instant ? { target: "none", ...(p.funded || {}) } : (p.eval || {});
   const dd = propRule(ev.drawdown, "$") + (propDdType(ev.drawdownType) ? `<small>${esc(propDdType(ev.drawdownType))}</small>` : "");
   const range = (po.min === undefined && po.cap === undefined) ? propRule(null)
     : `${propRule(po.min, "$")} – ${propRule(po.cap, "$")}`;
   const qual = propRule(po.qualifyingDays, "d") + (typeof po.dayProfit === "number" ? `<small>${esc(T("prop.rule.dayProfitShort", { v: propUsd(po.dayProfit) }))}</small>` : "");
   return [
-    [T("prop.rule.target"), propRule(ev.target, "$")],
+    [T("prop.rule.target"), instant ? `<span class="propNone">${esc(T("prop.plan.instant"))}</span>` : propRule(ev.target, "$")],
     [T("prop.rule.drawdown"), dd],
     [T("prop.rule.dll"), propRule(ev.dll, "$")],
     [T("prop.rule.consistency"), propRule(ev.consistency, "%")],
@@ -50,15 +53,28 @@ function propKeyRules(p) {
 /* 展开后的其余规则；全是「不知道」的行不列 */
 function propMoreRules(p) {
   const ev = p.eval || {}, fu = p.funded || {}, po = p.payout || {}, pr = p.price || {};
+  const instant = p.type === "instant";
   const rows = [
     [T("prop.rule.activation"), pr.activation, "$"], [T("prop.rule.reset"), pr.reset, "$"],
-    [T("prop.rule.minDays"), ev.minDays, "d"], [T("prop.rule.timeLimit"), ev.timeLimit, "d"],
-    [T("prop.rule.fundedDrawdown"), fu.drawdown, "$", propDdType(fu.drawdownType)],
-    [T("prop.rule.fundedDll"), fu.dll, "$"], [T("prop.rule.fundedConsistency"), fu.consistency, "%"],
-    [T("prop.rule.buffer"), po.buffer, "$"], [T("prop.rule.frequency"), po.frequency, ""],
+    [T("prop.rule.minDays"), instant ? null : ev.minDays, "d"], [T("prop.rule.timeLimit"), instant ? null : ev.timeLimit, "d"],
+    [T("prop.rule.evalContracts"), instant ? null : ev.maxContracts, ""],
+    [T("prop.rule.fundedDrawdown"), instant ? null : fu.drawdown, "$", propDdType(fu.drawdownType)],
+    [T("prop.rule.fundedDll"), instant ? null : fu.dll, "$"], [T("prop.rule.fundedConsistency"), fu.consistency, "%"],
+    [T("prop.rule.fundedContracts"), fu.maxContracts, ""],
+    [T("prop.rule.buffer"), po.buffer, "$"],
   ];
   return rows.filter((r) => r[1] !== null && r[1] !== undefined && r[1] !== "")
     .map(([k, v, unit, extra]) => [k, propRule(v, unit) + (extra ? `<small>${esc(extra)}</small>` : "")]);
+}
+/* 长句子的规则（出金条件、何时变静态、转 Live、价格说明）：一条一段，不挤进两列的格子里 */
+function propLongRules(p) {
+  const fu = p.funded || {}, po = p.payout || {}, pr = p.price || {};
+  return [[T("prop.rule.frequency"), po.frequency], [T("prop.rule.staticAfter"), fu.staticAfter], [T("prop.rule.live"), po.live], [T("prop.rule.priceNote"), pr.note]]
+    .filter(([, v]) => typeof v === "string" && v.trim());
+}
+function propLongRulesHtml(p) {
+  const rows = propLongRules(p);
+  return rows.length ? `<div class="propLong">${rows.map(([k, v]) => `<div><b>${esc(k)}</b>${esc(v)}</div>`).join("")}</div>` : "";
 }
 function propRulesDl(rows) {
   return `<dl class="propRules">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
@@ -68,7 +84,9 @@ function propPriceHtml(p) {
   const bill = propBillingLabel(pr.billing);
   const act = typeof pr.activation === "number" ? (pr.activation > 0 ? T("prop.plan.activation", { v: propUsd(pr.activation) }) : T("prop.plan.noActivation"))
     : pr.activation === "none" ? T("prop.plan.noActivation") : "";
-  return `<div class="propPrice"><b>${propRule(pr.list, "$")}</b>${bill ? `<span>${esc(bill)}</span>` : ""}${act ? `<span class="propPriceAct">${esc(act)}</span>` : ""}</div>`;
+  const orig = typeof pr.original === "number" && typeof pr.list === "number" && pr.original > pr.list ? `<s>${propUsd(pr.original)}</s>` : "";
+  return `<div class="propPrice"><b>${propRule(pr.list, "$")}</b>${orig}${bill ? `<span>${esc(bill)}</span>` : ""}${act ? `<span class="propPriceAct">${esc(act)}</span>` : ""}
+    ${pr.promoUntil ? `<span class="propPromo">${esc(T("prop.plan.promoUntil", { d: pr.promoUntil }))}</span>` : ""}</div>`;
 }
 
 /* ============================================================
@@ -263,7 +281,9 @@ function renderPropFirm(f, plans) {
   const faq = Array.isArray(f.faq) ? f.faq : [];
   let html = `<div class="calendarPanel propPanel propFirm">
     <div class="propFirmHead">${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)}</b>
-      <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}</span></div></div>
+      <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}${f.source ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(T("prop.cat.sourcePage"))}</a>` : ""}</span></div>
+      ${f.review ? `<span class="propReview">${esc(f.review)}</span>` : ""}</div>
+    ${Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
     ${f.notes ? `<div class="propNotes">${esc(f.notes)}</div>` : ""}`;
   if (!plans.length) html += `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div>`;
   series.forEach((sr) => {
@@ -282,13 +302,15 @@ function propPlanCard(p) {
   const more = propMoreRules(p);
   const opts = Array.isArray(p.options) ? p.options : [];
   const sources = Array.isArray(p.sources) ? p.sources : [];
-  const hasMore = more.length || opts.length || p.notes || sources.length;
+  const hasMore = more.length || propLongRules(p).length || opts.length || p.notes || sources.length;
   return `<div class="propCard propPlan ${picked ? "picked" : ""}">
-    <div class="propPlanHead"><div class="propPlanSize">${esc(propSizeLabel(p.size) || p.series)}</div>${p.status === "legacy" ? `<span class="propSt propSt-closed">${esc(T("prop.cat.legacy"))}</span>` : ""}</div>
+    <div class="propPlanHead"><div class="propPlanSize">${esc(propSizeLabel(p.size) || p.series)}</div><div class="propPlanTags">
+      ${p.type === "instant" ? `<span class="propSt propSt-funded">${esc(T("prop.plan.instant"))}</span>` : ""}
+      ${p.status === "legacy" ? `<span class="propSt propSt-closed">${esc(T("prop.cat.legacy"))}</span>` : ""}</div></div>
     ${propPriceHtml(p)}
     ${propRulesDl(propKeyRules(p))}
     ${hasMore ? `<details class="propMore"><summary>${esc(T("prop.cat.more"))}</summary>
-      ${more.length ? propRulesDl(more) : ""}
+      ${more.length ? propRulesDl(more) : ""}${propLongRulesHtml(p)}
       ${opts.length ? `<div class="propOpts"><div class="propMiniLabel">${esc(T("prop.cat.options"))}</div>${opts.map((o) => `<div>${esc(o.name || "")}${typeof o.price === "number" ? " · " + propUsd(o.price) : ""}${o.note ? ` <span class="propMuted">${esc(o.note)}</span>` : ""}</div>`).join("")}</div>` : ""}
       ${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}
       ${sources.length ? `<div class="propSources">${sources.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(T("prop.cat.source"))} ${i + 1}</a>`).join("")}</div>` : ""}
@@ -363,6 +385,7 @@ function propPickPlan(d, planId) {
   d.billing = pr.billing === "monthly" ? "monthly" : "one_time";
   d.amount = typeof pr.list === "number" ? pr.list : "";
   d.monthly_fee = d.billing === "monthly" && typeof pr.list === "number" ? pr.list : "";
+  d.status = plan.type === "instant" ? "funded" : "eval";
 }
 function propAccountForm(m) {
   const d = m.draft;
@@ -512,7 +535,7 @@ function propDetail(m) {
   }
   if (acc.plan_snapshot) {
     const p = acc.plan_snapshot;
-    body += `<details class="propMore propSnapshot"><summary>${esc(T("prop.acc.snapshot", { d: p.checkedAt || acc.bought_on }))}</summary>${propPriceHtml(p)}${propRulesDl([...propKeyRules(p), ...propMoreRules(p)])}${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}</details>`;
+    body += `<details class="propMore propSnapshot"><summary>${esc(T("prop.acc.snapshot", { d: p.checkedAt || acc.bought_on }))}</summary>${propPriceHtml(p)}${propRulesDl([...propKeyRules(p), ...propMoreRules(p)])}${propLongRulesHtml(p)}${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}</details>`;
   }
   if (acc.note) body += `<div class="propNotes">${esc(acc.note)}</div>`;
   if (!ro) body += propEditBlock(m, acc);
@@ -570,7 +593,13 @@ async function propSaveEdit() {
 /* ---------- 对比 ---------- */
 function propCompareView() {
   const plans = propCompare.map(propFindPlan).filter(Boolean);
-  const g = (p, path) => path.split(".").reduce((o, k) => (o && typeof o === "object" ? o[k] : undefined), p);
+  const g0 = (p, path) => path.split(".").reduce((o, k) => (o && typeof o === "object" ? o[k] : undefined), p);
+  // 免考号：目标是「免考」，考核回撤 / 类型取资金阶段的，跟卡片上一致
+  const g = (p, path) => {
+    if (p.type !== "instant" || !path.startsWith("eval.")) return g0(p, path);
+    if (path === "eval.target") return "none";
+    return ["eval.drawdown", "eval.drawdownType", "eval.dll"].includes(path) ? g0(p, "funded." + path.slice(5)) : undefined;
+  };
   const ratio = (p) => {
     const t = g(p, "eval.target"), dd = g(p, "eval.drawdown");
     return typeof t === "number" && typeof dd === "number" && dd > 0 ? (t / dd).toFixed(2) : "—";
@@ -585,6 +614,8 @@ function propCompareView() {
     [T("prop.form.size"), (p) => esc(propSizeLabel(p.size))],
     [T("prop.cmp.price"), (p) => propRule(g(p, "price.list"), "$")],
     [T("prop.form.billing"), (p) => esc(propBillingLabel(g(p, "price.billing")) || "—")],
+    [T("prop.cmp.type"), (p) => esc(T(p.type === "instant" ? "prop.plan.instant" : "prop.plan.evaluation"))],
+    [T("prop.cmp.original"), (p) => propRule(g(p, "price.original"), "$")],
     [T("prop.rule.activation"), (p) => propRule(g(p, "price.activation"), "$")],
     [T("prop.rule.reset"), (p) => propRule(g(p, "price.reset"), "$")],
     [T("prop.rule.target"), (p) => propRule(g(p, "eval.target"), "$")],
