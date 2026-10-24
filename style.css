@@ -1801,6 +1801,53 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
 .propStickyCol{position:sticky;left:0;z-index:1;background:var(--surface);}
 .propFirmNav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .propFirmNav .chipGroup{margin-bottom:0;}
+/* 记录购买：左预览、右表单 */
+.propAddGrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start;}
+.propAddPreview{position:sticky;top:0;}
+.propAddForm{display:flex;flex-direction:column;gap:12px;}
+.propAddStep{display:flex;flex-direction:column;}
+.propAddStepHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.propAddStepHead b{font-size:14px;}
+.propAddStepHead span{font-family:var(--fontMono);font-size:11px;color:var(--mutedDark);background:var(--surface2);border-radius:var(--r8);padding:3px 7px;}
+.propLabelRow{display:flex;justify-content:space-between;gap:8px;}
+.propLabelRow span{font-size:10.5px;color:var(--mutedDark);font-weight:400;}
+.propOptBtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;}
+.propOptBtn{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 8px;border-radius:var(--r10);border:1px solid var(--border);background:var(--surface2);
+  color:var(--text);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .12s,background .12s;}
+.propOptBtn small{font-size:10.5px;font-weight:400;color:var(--mutedDark);font-family:var(--fontMono);}
+.propOptBtn:hover:not(:disabled){border-color:var(--accent);}
+.propOptBtn.on{border-color:var(--accent);background:var(--accentSoft);color:var(--accent);}
+.propOptBtn.on::after{content:"✓";font-size:10px;line-height:1;}
+.propOptBtn:disabled{opacity:.4;cursor:not-allowed;}
+.propPreview{display:flex;flex-direction:column;gap:14px;padding:18px;}
+.propPvHead{display:flex;align-items:center;gap:12px;}
+.propPvQty{margin-left:auto;font-family:var(--fontMono);font-weight:700;color:var(--accent);background:var(--accentSoft);padding:3px 9px;border-radius:var(--r12);}
+.propPvMain{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;}
+.propPvMain .propMiniLabel{margin:0 0 2px;}
+.propPvSize{font-size:42px;font-weight:800;line-height:1.05;font-family:var(--fontDisplay);}
+.propPvPrice{display:flex;flex-direction:column;gap:3px;}
+.propPvPrice>div:first-child{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;}
+.propPvPrice b{font-size:26px;font-family:var(--fontMono);color:var(--accent);line-height:1.1;}
+.propPvPrice span{font-size:12px;color:var(--muted);}
+.propPvTotal{font-size:12px;color:var(--text);font-family:var(--fontMono);}
+.propPvConfig{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;background:var(--surface2);border-radius:var(--r10);padding:9px 12px;font-size:12.5px;}
+.propPvConfig span{color:var(--mutedDark);font-size:11.5px;}
+.propPvGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 12px;padding-top:12px;border-top:1px solid var(--border);}
+.propPvCell{display:flex;flex-direction:column;gap:2px;min-width:0;padding:4px 6px;margin:-4px -6px;border-radius:var(--r8);}
+.propPvCell span{font-size:11px;color:var(--mutedDark);display:flex;gap:6px;align-items:center;}
+.propPvCell b{font-size:16px;font-family:var(--fontMono);}
+.propPvCell small{font-size:10.5px;color:var(--muted);}
+.propPvCell.edited{background:var(--accentSoft);}
+.propEdited{font-style:normal;font-size:10px;color:var(--accent);background:var(--accentSoft);padding:0 6px;border-radius:var(--r12);font-weight:500;}
+.propPvFunded{font-size:12px;color:var(--muted);line-height:1.6;}
+.propPvFunded b{font-family:var(--fontMono);color:var(--text);font-weight:500;}
+.propPvFoot{display:flex;justify-content:space-between;gap:10px;font-size:11px;color:var(--mutedDark);padding-top:10px;border-top:1px solid var(--border);}
+.propAddRules{margin-top:4px;padding-top:12px;border-top:1px solid var(--border);}
+.propAddRules summary{cursor:pointer;font-size:13px;font-weight:600;user-select:none;}
+.propAddRules[open] summary{margin-bottom:8px;}
+.propRuleGrid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+.propRuleEdited .input{border-color:var(--accent);}
+.propRuleEdited .fieldLabel{color:var(--accent);}
 .propCompareBar{position:sticky;bottom:16px;z-index:5;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;
   background:var(--surface);border:1px solid var(--accent);border-radius:var(--r12);padding:10px 14px;box-shadow:var(--shadowPop);}
 .propCompareBar span{flex:1;font-size:13px;}
@@ -1818,6 +1865,10 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
   .propStep{flex:1 1 40%;}
   .propStepArrow{display:none;}
   .propAccGrid,.propPlanGrid{grid-template-columns:1fr;}
+  .propAddGrid{grid-template-columns:1fr;}
+  .propAddPreview{position:static;}
+  .propPvGrid{grid-template-columns:repeat(2,1fr);}
+  .propPvSize{font-size:34px;}
   /* 手机上排行横着滑，别把对比表挤到很下面 */
   .propBoard{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:78%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;}
   .propBoardCard{scroll-snap-align:start;}

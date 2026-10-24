@@ -93,3 +93,42 @@ test("目录对比：字段顺序不同不算改动", () => {
     [{ id: "a", price: { billing: "monthly", list: 1 } }, { id: "b", size: 2 }, { id: "d" }]);
   assert.deepStrictEqual(d, { added: ["d"], changed: ["b"], removed: ["c"] });
 });
+
+test("添加账号：同系列同规模里按可选项挑计划，must 那一维必须对上", () => {
+  const { call } = setup();
+  const P = (id, size, c, list) => ({ id, size, choices: Object.entries(c).map(([axis, value]) => ({ axis, value })), price: { list } });
+  const plans = [
+    P("f40y", 50000, { 一致性: "40%", 日损: "有日损" }, 69), P("f40n", 50000, { 一致性: "40%", 日损: "无日损" }, 115),
+    P("f50n", 50000, { 一致性: "50%", 日损: "无日损" }, 130), P("s40y", 25000, { 一致性: "40%", 日损: "有日损" }, 39),
+  ];
+  const best = (size, want, must) => call("(ps, s, w, m) => (propBestPlan(ps, s, w, m) || {}).id || null", plans, size, want, must);
+  assert.strictEqual(best(50000, { 一致性: "40%", 日损: "无日损" }), "f40n");
+  // 50% 只有无日损：点「50%」时日损跟着换过去，而不是找不到
+  assert.strictEqual(best(50000, { 一致性: "50%", 日损: "有日损" }, "一致性"), "f50n");
+  // 25K 没有 50% 的组合
+  assert.strictEqual(best(25000, { 一致性: "50%", 日损: "有日损" }, "一致性"), null);
+  // 换额度时组合尽量保持
+  assert.strictEqual(best(25000, { 一致性: "40%", 日损: "有日损" }), "s40y");
+  const axes = call("(ps) => propFamilyAxes(ps)", plans);
+  assert.deepStrictEqual(axes, [{ axis: "一致性", values: ["40%", "50%"] }, { axis: "日损", values: ["有日损", "无日损"] }]);
+});
+
+test("添加账号：规则输入框三种取值，改过的规则能认出来、套进快照不动原计划", () => {
+  const { call } = setup();
+  assert.strictEqual(call("(t) => propParseRule(t)", "1,200"), 1200);
+  assert.strictEqual(call("(t) => propParseRule(t)", "$40%"), 40);
+  assert.strictEqual(call("(t) => propParseRule(t)", "无"), "none");
+  assert.strictEqual(call("(t) => propParseRule(t)", "None"), "none");
+  assert.strictEqual(call("(t) => propParseRule(t)", "  "), null);
+  assert.strictEqual(call("(t) => propParseRule(t)", "abc"), null);
+  const plan = { eval: { target: 3000, dll: "none", consistency: 40 }, funded: {}, payout: { split: 90 } };
+  const texts = call("(p) => propRuleTexts(p)", plan);
+  assert.strictEqual(texts.dll, "无");
+  assert.deepStrictEqual(call("(p, t) => propEditedRules(p, t)", plan, texts), []);
+  const edited = { ...texts, dll: "1200", split: "80" };
+  assert.deepStrictEqual(call("(p, t) => propEditedRules(p, t)", plan, edited), ["dll", "split"]);
+  const out = call("(p, t) => ({ snap: propApplyRuleEdits(p, t), orig: p })", plan, edited);
+  assert.strictEqual(out.snap.eval.dll, 1200);
+  assert.strictEqual(out.snap.payout.split, 80);
+  assert.strictEqual(out.snap.eval.target, 3000);
+});

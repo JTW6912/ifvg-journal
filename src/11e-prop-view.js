@@ -463,14 +463,14 @@ function propModalHtml() {
   const m = propModal;
   if (!m) return "";
   let title = "", body = "", foot = "", wide = false;
-  if (m.type === "account") ({ title, body, foot } = propAccountForm(m));
+  if (m.type === "account") { ({ title, body, foot } = propAccountForm(m)); wide = 1080; }
   else if (m.type === "entry") ({ title, body, foot } = propEntryForm(m));
   else if (m.type === "status") ({ title, body, foot } = propStatusForm(m));
   else if (m.type === "detail") { ({ title, body, foot } = propDetail(m)); wide = true; }
   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
   else if (m.type === "compare") { ({ title, body, foot } = propCompareView()); wide = true; }
   return `<div class="overlay" data-action="prop-dismiss-overlay">
-    <div class="modal propModal" style="max-width:${wide ? 860 : 480}px;">
+    <div class="modal propModal" style="max-width:${typeof wide === "number" ? wide : wide ? 860 : 480}px;">
       <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal">${ICONS.x}</button></div>
       <div class="modalBody">${m.error ? `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(m.error)}</span></div>` : ""}${body}</div>
       ${foot ? `<div class="modalFoot">${foot}</div>` : ""}
@@ -494,79 +494,263 @@ function propFootButtons(saveAction, saveLabel, back) {
     <button class="btn btn-primary" data-action="${saveAction}" ${propModal.busy ? "disabled" : ""}>${esc(propModal.busy ? T("common.saving") : saveLabel || T("common.save"))}</button>`;
 }
 
-/* ---------- 记录购买 ---------- */
-function propPlanOptionLabel(p) {
-  const price = p.price && typeof p.price.list === "number" ? " · " + propUsd(p.price.list) + (p.price.billing === "monthly" ? T("prop.billing.perMonth") : "") : "";
-  return [p.series, propSizeLabel(p.size)].filter(Boolean).join(" · ") + price + (p.status === "legacy" ? " · " + T("prop.cat.legacy") : "");
-}
-function propNewAccountDraft(planId) {
-  const plan = planId ? propFindPlan(planId) : null;
-  const firmId = plan ? plan.firm : (propFirms[0] ? propFirms[0].id : "__custom");
-  const d = { firmSel: firmId, planSel: "__custom", firm_name: "", plan_name: "", size: "", nickname: "", group_name: "",
-    bought_on: todayStr(), amount: "", billing: "one_time", monthly_fee: "", renewing: true, status: "eval", note: "" };
-  propPickPlan(d, plan ? plan.id : (propPlans.find((p) => p.firm === firmId && p.status !== "legacy") || {}).id);
-  return d;
-}
-/* 选中一个目录里的计划：价格、收费方式、规模跟着带过来（用户还可以改实付金额） */
-function propPickPlan(d, planId) {
-  const plan = planId ? propFindPlan(planId) : null;
-  d.planSel = plan ? plan.id : "__custom";
+/* ---------- 记录购买 ----------
+   左边一张实时预览卡片，右边一步步选：公司 → 系列 → 额度 → 可选项（日损 / 一致性 / 激活费 …）→ 价格 → 规则 → 账号。
+   选中的组合就是目录里的一个计划，价格和规则从它带出来；用户可以改实付价、改任何一条规则，
+   也可以完全手动填（目录里没有的公司 / 计划）。一次可以建几个一样的号（复制交易常见）。
+   draft 字段：firmSel / family（"__custom" = 手动）/ size / want（各维度选的值）/ planId，
+   amount（每个号实付）/ billing / monthly_fee / renewing / activation（none | now | later）/ activation_fee，
+   rules（规则输入框的文字，见 PROP_RULE_FIELDS）/ ddType，quantity / nickname / group_name / bought_on / status / note */
+const PROP_MAX_QTY = 20;
+function propDraftPlan(d) { return d.planId ? propFindPlan(d.planId) : null; }
+function propDraftCustom(d) { return d.firmSel === "__custom" || d.family === "__custom"; }
+/* 选中一个计划：价格、收费方式、激活费、规则都按它重新带一遍（之前手动改的会被覆盖） */
+function propLoadPlan(d, plan) {
+  d.planId = plan ? plan.id : null;
   if (!plan) return;
   const pr = plan.price || {};
+  d.size = plan.size || null;
+  d.want = propChoiceMap(plan);
   d.billing = pr.billing === "monthly" ? "monthly" : "one_time";
   d.amount = typeof pr.list === "number" ? pr.list : "";
   d.monthly_fee = d.billing === "monthly" && typeof pr.list === "number" ? pr.list : "";
+  d.activation = typeof pr.activation === "number" && pr.activation > 0 ? "later" : "none";
+  d.activation_fee = typeof pr.activation === "number" && pr.activation > 0 ? pr.activation : "";
+  d.rules = propRuleTexts(plan);
+  d.ddType = (plan.type === "instant" ? (plan.funded || {}).drawdownType : (plan.eval || {}).drawdownType) || "";
   d.status = plan.type === "instant" ? "funded" : "eval";
+}
+/* 换公司 / 换系列：额度尽量保持（没有这个额度就挑 50K，再没有就第一个），组合用目录里排第一的 */
+function propPickFamily(d, family) {
+  d.family = family;
+  if (family === "__custom") {
+    // 手动填：上一个计划带来的价格、激活费、规则都清掉，免得看着像目录数据
+    Object.assign(d, { planId: null, want: {}, rules: propRuleTexts(null), ddType: "", amount: "", billing: "one_time", monthly_fee: "",
+      activation: "none", activation_fee: "", status: d.type === "instant" ? "funded" : "eval" });
+    return;
+  }
+  const plans = propFamilyPlans(d.firmSel, family);
+  const sizes = propFamilySizes(plans);
+  const size = sizes.includes(d.size) ? d.size : sizes.includes(50000) ? 50000 : sizes[0];
+  propLoadPlan(d, propBestPlan(plans, size, d.want || {}) || plans[0] || null);
+}
+function propPickFirm(d, firmId) {
+  d.firmSel = firmId;
+  const fams = firmId === "__custom" ? [] : propFamilies(firmId);
+  propPickFamily(d, fams.length ? fams[0] : "__custom");
+}
+function propNewAccountDraft(planId) {
+  const plan = planId ? propFindPlan(planId) : null;
+  const d = { firmSel: "", family: "", size: null, want: {}, planId: null, firm_name: "", plan_name: "", type: "evaluation",
+    amount: "", billing: "one_time", monthly_fee: "", renewing: true, activation: "none", activation_fee: "",
+    rules: propRuleTexts(null), ddType: "", quantity: 1, nickname: "", group_name: "", bought_on: todayStr(), status: "eval", note: "" };
+  if (plan) { d.firmSel = plan.firm; d.family = propFamilyOf(plan); propLoadPlan(d, plan); }
+  else propPickFirm(d, propFirms[0] ? propFirms[0].id : "__custom");
+  return d;
+}
+
+/* 这份草稿最后会存成的计划快照（预览卡片也用它画） */
+function propDraftSnapshot(d) {
+  const plan = propDraftPlan(d);
+  const custom = propDraftCustom(d);
+  const firm = d.firmSel === "__custom" ? null : propFindFirm(d.firmSel);
+  const base = plan && !custom ? plan : {
+    id: null, firm: firm ? firm.id : null, series: String(d.plan_name || "").trim(), family: String(d.plan_name || "").trim(),
+    size: Number(d.size) || null, type: d.type === "instant" ? "instant" : "evaluation", price: {}, eval: {}, funded: {}, payout: {}, choices: [],
+  };
+  const snap = propApplyRuleEdits(base, d.rules || {});
+  const ddSec = snap.type === "instant" ? "funded" : "eval";
+  snap[ddSec] = { ...(snap[ddSec] || {}), drawdownType: PROP_DD_TYPES.includes(d.ddType) ? d.ddType : null };
+  const fee = d.activation === "none" ? 0 : (d.activation_fee === "" ? null : propMoney(d.activation_fee));
+  snap.price = { ...(snap.price || {}), billing: d.billing, activation: fee, activationUpfront: d.activation === "now",
+    paid: d.amount === "" ? null : propMoney(d.amount) };
+  snap.edited = custom ? [] : propEditedRules(plan, d.rules || {});
+  return snap;
+}
+function propDraftPlanName(d, snap) {
+  if (propDraftCustom(d)) return String(d.plan_name || "").trim();
+  const vals = (snap.choices || []).map((c) => c.value);
+  return vals.length ? [propFamilyOf(snap), ...vals].join(" · ") : snap.series || propFamilyOf(snap);
+}
+function propDraftFirmName(d) {
+  const firm = d.firmSel === "__custom" ? null : propFindFirm(d.firmSel);
+  return firm ? firm.name : String(d.firm_name || "").trim();
+}
+
+/* ---------- 预览卡片 ---------- */
+function propAccountPreview(d) {
+  const snap = propDraftSnapshot(d);
+  const firm = d.firmSel === "__custom" ? { name: d.firm_name || T("prop.form.customFirm") } : propFindFirm(d.firmSel) || { name: "" };
+  const instant = snap.type === "instant";
+  const ev = instant ? (snap.funded || {}) : (snap.eval || {});
+  const po = snap.payout || {}, pr = snap.price || {};
+  const ed = new Set(snap.edited);
+  const edTag = (keys) => (keys.some((k) => ed.has(k)) ? `<em class="propEdited">${esc(T("prop.add.edited"))}</em>` : "");
+  const cell = (label, value, sub, keys) => `<div class="propPvCell ${keys && keys.some((k) => ed.has(k)) ? "edited" : ""}"><span>${esc(label)}${edTag(keys || [])}</span><b>${value}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div>`;
+  const qty = Math.max(1, Math.min(PROP_MAX_QTY, Math.round(Number(d.quantity) || 1)));
+  const paid = pr.paid;
+  const list = propDraftCustom(d) ? null : ((propDraftPlan(d) || {}).price || {}).list;
+  const config = [...(snap.choices || []).map((c) => c.value),
+    d.activation === "none" ? T("prop.add.actNone") : d.activation === "now" ? T("prop.add.actNowShort") : T("prop.add.actLaterShort")];
+  const actLine = d.activation === "none" ? T("prop.plan.noActivation")
+    : T(d.activation === "now" ? "prop.add.actNowLine" : "prop.add.actLaterLine", { v: typeof pr.activation === "number" ? propUsd(pr.activation) : T("prop.rule.unknown") });
+  return `<div class="propCard propPreview">
+    <div class="propPvHead">${propFirmLogo(firm)}<div class="propFirmName"><b>${esc(firm.name || "—")}</b><span>${esc(propDraftPlanName(d, snap) || T("prop.add.noPlan"))}</span></div>
+      ${qty > 1 ? `<span class="propPvQty">× ${qty}</span>` : ""}</div>
+    <div class="propPvMain">
+      <div><div class="propMiniLabel">${esc(T(instant ? "prop.add.fundedSize" : "prop.add.evalSize"))}</div>
+        <div class="propPvSize">${esc(propSizeLabel(snap.size) || "—")}</div>
+        ${snap.size ? `<div class="propMuted">$${Number(snap.size).toLocaleString("en-US")} USD</div>` : ""}</div>
+      <div class="propPvPrice"><div><b>${paid === null || paid === undefined ? esc(T("prop.add.noPrice")) : propUsd(paid)}</b>
+        <span>${esc(propBillingLabel(d.billing))}</span></div>
+        ${typeof list === "number" && paid !== list && paid !== null ? `<div class="propMuted">${esc(T("prop.add.catalogPrice", { v: propUsd(list) }))}</div>` : ""}
+        <div class="propMuted">${esc(actLine)}</div>
+        ${qty > 1 && typeof paid === "number" ? `<div class="propPvTotal">${esc(T("prop.add.total", { n: qty, v: propUsd(paid * qty) }))}</div>` : ""}</div>
+    </div>
+    ${config.length ? `<div class="propPvConfig"><span>${esc(T("prop.add.config"))}</span><b>${esc(config.join(" · "))}</b></div>` : ""}
+    <div class="propPvGrid">
+      ${instant ? cell(T("prop.rule.target"), `<span class="propNone">${esc(T("prop.plan.instant"))}</span>`) : cell(T("prop.rule.target"), propRule(ev.target, "$"), "", ["target"])}
+      ${cell(T("prop.rule.drawdown"), propRule(ev.drawdown, "$"), propDdType(ev.drawdownType), instant ? ["fundedDrawdown"] : ["drawdown"])}
+      ${cell(T("prop.rule.dll"), propRule(ev.dll, "$"), "", instant ? ["fundedDll"] : ["dll"])}
+      ${instant ? cell(T("prop.rule.fundedConsistency"), propRule((snap.funded || {}).consistency, "%"), "", ["fundedConsistency"]) : cell(T("prop.rule.consistency"), propRule(ev.consistency, "%"), "", ["consistency"])}
+      ${cell(T("prop.rule.split"), propRule(po.split, "%"), "", ["split"])}
+      ${cell(T("prop.cmp.payoutCap"), propRule(po.cap, "$"), typeof po.min === "number" ? T("prop.add.payoutMin", { v: propUsd(po.min) }) : "", ["cap"])}
+    </div>
+    ${!instant ? `<div class="propPvFunded">${esc(T("prop.add.fundedLine"))}
+      ${esc(T("prop.rule.drawdown"))} <b>${propRule((snap.funded || {}).drawdown, "$")}</b> ·
+      ${esc(T("prop.rule.dll"))} <b>${propRule((snap.funded || {}).dll, "$")}</b> ·
+      ${esc(T("prop.add.consistency"))} <b>${propRule((snap.funded || {}).consistency, "%")}</b></div>` : ""}
+    ${propLongRules(snap).length ? `<details class="propMore"><summary>${esc(T("prop.add.fullRules"))}</summary>${propLongRulesHtml(snap)}${snap.notes ? `<div class="propNotes">${esc(snap.notes)}</div>` : ""}</details>` : ""}
+    <div class="propPvFoot"><span>${esc(T(snap.edited.length ? "prop.add.editedFoot" : "prop.add.liveFoot", { n: snap.edited.length }))}</span>
+      ${(snap.sources || []).length ? `<a href="${esc(snap.sources[snap.sources.length - 1])}" target="_blank" rel="noopener">${esc(T("prop.cat.source"))}</a>` : ""}</div>
+  </div>`;
+}
+
+/* ---------- 右边的表单 ---------- */
+function propOptBtns(action, items) {
+  return `<div class="propOptBtns">${items.map((it) => `<button type="button" class="propOptBtn ${it.on ? "on" : ""}" data-action="${action}" ${it.attrs || ""} ${it.disabled ? "disabled" : ""}>
+    <span>${esc(it.label)}</span>${it.sub ? `<small>${esc(it.sub)}</small>` : ""}</button>`).join("")}</div>`;
 }
 function propAccountForm(m) {
   const d = m.draft;
+  const custom = propDraftCustom(d);
+  const plan = propDraftPlan(d);
   const firmOpts = [...propFirms.map((f) => [f.id, f.name]), ["__custom", T("prop.form.customFirm")]];
-  const plans = propPlans.filter((p) => p.firm === d.firmSel);
-  let body = propField(T("prop.form.firm"), propSelect("firmSel", d.firmSel, firmOpts, true));
-  if (d.firmSel === "__custom") body += propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `placeholder="Lucid / Topstep …" maxlength="60"`));
-  else body += propField(T("prop.form.plan"), propSelect("planSel", d.planSel, [...plans.map((p) => [p.id, propPlanOptionLabel(p)]), ["__custom", T("prop.form.customPlan")]], true));
-  if (d.firmSel === "__custom" || d.planSel === "__custom") {
-    body += `<div class="propRow">${propField(T("prop.form.planName"), propInput("plan_name", d.plan_name, `placeholder="Flex / Combine …" maxlength="60"`))}
-      ${propField(T("prop.form.size"), propInput("size", d.size, `type="number" min="0" step="1000" placeholder="50000"`))}</div>`;
+  let pick = `<div class="propRow">${propField(T("prop.form.firm"), propSelect("firmSel", d.firmSel, firmOpts, true))}`;
+  if (d.firmSel === "__custom") pick += propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `placeholder="Lucid / Topstep …" maxlength="60" data-prop-rerender`));
+  else pick += propField(T("prop.add.family"), propSelect("family", d.family, [...propFamilies(d.firmSel).map((f) => [f, f]), ["__custom", T("prop.form.customPlan")]], true));
+  pick += `</div>`;
+  if (custom) {
+    pick += `<div class="propRow">${propField(T("prop.form.planName"), propInput("plan_name", d.plan_name, `placeholder="Flex / Combine …" maxlength="60" data-prop-rerender`))}
+      ${propField(T("prop.form.size"), propInput("size", d.size || "", `type="number" min="0" step="1000" placeholder="50000" data-prop-rerender`))}</div>
+      ${propField(T("prop.cmp.type"), propSelect("type", d.type, [["evaluation", T("prop.plan.evaluation")], ["instant", T("prop.plan.instant")]], true))}`;
+  } else {
+    const plans = propFamilyPlans(d.firmSel, d.family);
+    const cur = plan && typeof (plan.price || {}).list === "number" ? plan.price.list : null;
+    const priceOf = (p) => (p && typeof (p.price || {}).list === "number" ? p.price.list : null);
+    // 可选项按钮上标差价（相对现在选中的），额度按钮上直接标价格（不同额度差太多，差价没意义）
+    const delta = (p) => {
+      const v = priceOf(p);
+      if (v === null || cur === null || p.id === d.planId) return "";
+      return v === cur ? T("prop.add.samePrice") : (v > cur ? "+" : "−") + propUsd(Math.abs(v - cur));
+    };
+    const sizes = propFamilySizes(plans);
+    pick += `<div class="field"><div class="fieldLabel propLabelRow">${esc(T("prop.add.size"))}<span>${esc(T("prop.add.sizeHint"))}</span></div>
+      ${propOptBtns("prop-add-size", sizes.map((s) => {
+        const p = propBestPlan(plans, s, d.want || {});
+        return { label: propSizeLabel(s) || T("prop.add.noSize"), on: s === (d.size || null), attrs: `data-val="${esc(s === null ? "" : s)}"`, sub: priceOf(p) === null ? "" : propUsd(priceOf(p)) };
+      }))}</div>`;
+    propFamilyAxes(plans).forEach(({ axis, values }) => {
+      pick += `<div class="field"><div class="fieldLabel">${esc(axis)}</div>${propOptBtns("prop-add-choice", values.map((v) => {
+        const p = propBestPlan(plans, d.size || null, { ...(d.want || {}), [axis]: v }, axis);
+        return { label: v, on: (d.want || {})[axis] === v, disabled: !p, attrs: `data-axis="${esc(axis)}" data-val="${esc(v)}"`,
+          sub: !p ? T("prop.add.noCombo") : (d.want || {})[axis] === v ? "" : delta(p) };
+      }))}</div>`;
+    });
+    if (!propFamilyAxes(plans).length) pick += `<div class="propHint">${esc(T("prop.add.noOptions"))}</div>`;
   }
-  body += `<div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60" placeholder="${esc(T("prop.form.optional"))}"`))}
-    ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" placeholder="${esc(T("prop.form.optional"))}"`), T("prop.form.groupHint"))}</div>
-    <datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>`;
-  body += `<div class="propRow">${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date"`))}
-    ${propField(T("prop.form.paid"), propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="0"`), T("prop.form.paidHint"))}</div>`;
-  body += `<div class="propRow">${propField(T("prop.form.billing"), propSelect("billing", d.billing, [["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]], true))}
-    ${propField(T("prop.form.startStatus"), propSelect("status", d.status, [["eval", T("prop.status.eval")], ["passed", T("prop.status.passed")], ["funded", T("prop.status.funded")]]))}</div>`;
-  if (d.billing === "monthly") {
-    body += `<div class="propRow">${propField(T("prop.form.monthlyFee"), propInput("monthly_fee", d.monthly_fee, `type="number" min="0" step="0.01"`))}
-      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"))}<div class="propHint">${esc(T("prop.form.renewingHint"))}</div></div></div>`;
-  }
-  body += propField(T("prop.form.note"), `<textarea class="input" data-prop-field="note" rows="2" maxlength="500">${esc(d.note)}</textarea>`);
-  return { title: esc(T("prop.acc.new")), body, foot: propFootButtons("prop-save-account") };
+
+  const price = `<div class="propRow">${propField(T("prop.add.paidEach"), propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="${esc(T("prop.add.pricePending"))}" data-prop-rerender`), T("prop.form.paidHint"))}
+      ${propField(T("prop.form.billing"), propSelect("billing", d.billing, [["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]], true))}</div>
+    ${d.billing === "monthly" ? `<div class="propRow">${propField(T("prop.form.monthlyFee"), propInput("monthly_fee", d.monthly_fee, `type="number" min="0" step="0.01"`))}
+      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"))}<div class="propHint">${esc(T("prop.form.renewingHint"))}</div></div></div>` : ""}
+    <div class="propRow">${propField(T("prop.add.activation"), propSelect("activation", d.activation, [["none", T("prop.add.actNone")], ["later", T("prop.add.actLater")], ["now", T("prop.add.actNow")]], true))}
+      ${d.activation === "none" ? "<div></div>" : propField(T("prop.add.activationFee"), propInput("activation_fee", d.activation_fee, `type="number" min="0" step="0.01" data-prop-rerender`))}</div>
+    <div class="propHint" style="margin-top:-6px;margin-bottom:10px;">${esc(T(d.activation === "now" ? "prop.add.actNowHint" : d.activation === "later" ? "prop.add.actLaterHint" : "prop.add.actNoneHint"))}</div>`;
+
+  const instant = custom ? d.type === "instant" : plan && plan.type === "instant";
+  const edited = new Set(custom ? [] : propEditedRules(plan, d.rules || {}));
+  const ruleInput = (k, label) => `<div class="${edited.has(k) ? "propRuleEdited" : ""}">${propField(label + (edited.has(k) ? " · " + T("prop.add.edited") : ""),
+    propInput("r:" + k, (d.rules || {})[k], `placeholder="${esc(T("prop.rule.unknown"))}" data-prop-rerender`))}</div>`;
+  const ruleRows = [
+    ...(instant ? [] : [["target", T("prop.rule.target")], ["drawdown", T("prop.rule.drawdown")], ["dll", T("prop.rule.dll")], ["consistency", T("prop.rule.consistency")]]),
+    ["fundedDrawdown", T("prop.rule.fundedDrawdown")], ["fundedDll", T("prop.rule.fundedDll")], ["fundedConsistency", T("prop.rule.fundedConsistency")],
+    ["split", T("prop.rule.split")], ["cap", T("prop.cmp.payoutCap")],
+  ];
+  const rules = `<details class="propAddRules" ${custom || edited.size || m.rulesOpen ? "open" : ""} data-prop-details="rulesOpen">
+    <summary>${esc(T("prop.add.rules"))}${edited.size ? ` <span class="propEdited">${esc(T("prop.add.editedN", { n: edited.size }))}</span>` : ""}</summary>
+    <div class="propHint" style="margin-bottom:10px;">${esc(T("prop.add.rulesHint"))}</div>
+    <div class="propRow">${propField(T("prop.cmp.ddType"), propSelect("ddType", d.ddType, [["", T("prop.rule.unknown")], ...PROP_DD_TYPES.map((t) => [t, T("prop.dd." + t)])], true))}<div></div></div>
+    <div class="propRuleGrid">${ruleRows.map(([k, label]) => ruleInput(k, label)).join("")}</div>
+    ${edited.size ? `<button class="btn btn-sm" data-action="prop-add-reset-rules">${esc(T("prop.add.resetRules"))}</button>` : ""}
+  </details>`;
+
+  const account = `<div class="propRow">${propField(T("prop.add.quantity"), propInput("quantity", d.quantity, `type="number" min="1" max="${PROP_MAX_QTY}" step="1" data-prop-rerender`), T("prop.add.quantityHint"))}
+      ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date"`))}</div>
+    <div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60" placeholder="${esc(T("prop.form.optional"))}"`), Number(d.quantity) > 1 ? T("prop.add.nicknameMany") : "")}
+      ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" placeholder="${esc(T("prop.form.optional"))}"`), T("prop.form.groupHint"))}</div>
+    <datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
+    ${propField(T("prop.form.startStatus"), propSelect("status", d.status, [["eval", T("prop.status.eval")], ["passed", T("prop.status.passed")], ["funded", T("prop.status.funded")]]))}
+    ${propField(T("prop.form.note"), `<textarea class="input" data-prop-field="note" rows="2" maxlength="500">${esc(d.note)}</textarea>`)}`;
+
+  const step = (n, title, html) => `<div class="propCard propAddStep"><div class="propAddStepHead"><b>${esc(title)}</b><span>${n}</span></div>${html}</div>`;
+  const body = `<div class="propAddGrid">
+    <div class="propAddPreview">${propAccountPreview(d)}</div>
+    <div class="propAddForm">${step("01", T("prop.add.step1"), pick)}${step("02", T("prop.add.step2"), price + rules)}${step("03", T("prop.add.step3"), account)}</div>
+  </div>`;
+  const qty = Math.max(1, Math.min(PROP_MAX_QTY, Math.round(Number(d.quantity) || 1)));
+  return { title: esc(T("prop.acc.new")), body,
+    foot: propFootButtons("prop-save-account", qty > 1 ? T("prop.add.saveN", { n: qty }) : T("common.save")) };
 }
+
 async function propSaveNewAccount() {
   const d = propModal.draft;
   const firm = d.firmSel === "__custom" ? null : propFindFirm(d.firmSel);
-  const plan = firm && d.planSel !== "__custom" ? propFindPlan(d.planSel) : null;
-  const firmName = firm ? firm.name : String(d.firm_name || "").trim();
+  const firmName = propDraftFirmName(d);
   if (!firmName) { propModal.error = T("prop.form.needFirm"); propRenderModal(); return; }
   if (!d.bought_on) { propModal.error = T("prop.form.needDate"); propRenderModal(); return; }
+  const snap = propDraftSnapshot(d);
+  const plan = propDraftCustom(d) ? null : propDraftPlan(d);
+  const planName = propDraftPlanName(d, snap);
+  const qty = Math.max(1, Math.min(PROP_MAX_QTY, Math.round(Number(d.quantity) || 1)));
   const monthly = d.billing === "monthly";
-  const acc = {
+  const base = String(d.nickname || "").trim();
+  const fallback = [firmName, propSizeLabel(snap.size)].filter(Boolean).join(" ");
+  const accounts = Array.from({ length: qty }, (_, i) => ({
     id: propNewId("pa"), firm_id: firm ? firm.id : null, firm_name: firmName,
-    plan_id: plan ? plan.id : null, plan_name: plan ? plan.series : String(d.plan_name || "").trim(),
-    size: plan ? plan.size : (Number(d.size) || null), nickname: String(d.nickname || "").trim(), group_name: String(d.group_name || "").trim(),
+    plan_id: plan ? plan.id : null, plan_name: planName, size: snap.size || null,
+    // 一次建好几个：昵称后面编号，没填昵称就用「公司 规模 #n」
+    nickname: qty > 1 ? `${base || fallback} #${i + 1}` : base, group_name: String(d.group_name || "").trim(),
     status: d.status, events: [{ to: d.status, day: d.bought_on }], bought_on: d.bought_on, billing: d.billing,
     monthly_fee: monthly ? propMoney(d.monthly_fee) : null, renewing: monthly && !!d.renewing && d.status === "eval", renewed_through: null,
-    plan_snapshot: plan ? JSON.parse(JSON.stringify(plan)) : null, note: String(d.note || "").trim(),
-  };
+    plan_snapshot: snap, note: String(d.note || "").trim(),
+  }));
   propModal.busy = true; propRenderModal();
-  let ok = await propSaveAccount(acc);
-  if (ok && propMoney(d.amount) > 0) ok = await propSaveEntries([{ account_id: acc.id, kind: "purchase", amount: d.amount, day: d.bought_on }]);
+  let ok = true;
+  for (const acc of accounts) { if (!(ok = await propSaveAccount(acc))) break; }
+  const entries = [];
+  if (ok) accounts.forEach((acc) => {
+    if (propMoney(d.amount) > 0) entries.push({ account_id: acc.id, kind: "purchase", amount: d.amount, day: d.bought_on });
+    // 激活费「现在一起付」：跟购买同一天记；「通过后再付」等改状态时再记（那时会带出这个金额）
+    if (d.activation === "now" && propMoney(d.activation_fee) > 0) entries.push({ account_id: acc.id, kind: "activation", amount: d.activation_fee, day: d.bought_on });
+  });
+  if (ok && entries.length) ok = await propSaveEntries(entries);
   // 买的时候已经过了几个月（补记以前的账号）：这期间的月费一次补上，用户不对再删
   if (ok) await propApplyRenewals();
   if (!ok) { propModal.busy = false; propModal.error = propError; propRenderModal(); return; }
   propError = null;
-  propModal = { type: "detail", id: acc.id };
+  if (qty === 1) propModal = { type: "detail", id: accounts[0].id };
+  else { propModal = null; propView = "accounts"; }
   propRenderModal(); render();
 }
 
@@ -854,6 +1038,15 @@ document.addEventListener("click", async (e) => {
   else if (a === "prop-new-account") { propModal = { type: "account", draft: propNewAccountDraft(null) }; propRenderModal(); }
   else if (a === "prop-buy-plan") { propModal = { type: "account", draft: propNewAccountDraft(id) }; propRenderModal(); }
   else if (a === "prop-save-account") { await propSaveNewAccount(); }
+  else if (a === "prop-add-size" || a === "prop-add-choice") {
+    const d = m.draft, plans = propFamilyPlans(d.firmSel, d.family);
+    const size = a === "prop-add-size" ? (el.dataset.val === "" ? null : Number(el.dataset.val)) : (d.size || null);
+    const want = a === "prop-add-choice" ? { ...(d.want || {}), [el.dataset.axis]: el.dataset.val } : (d.want || {});
+    const p = propBestPlan(plans, size, want, a === "prop-add-choice" ? el.dataset.axis : null);
+    if (p) propLoadPlan(d, p);
+    propRenderModal();
+  }
+  else if (a === "prop-add-reset-rules") { const p = propDraftPlan(m.draft); m.draft.rules = propRuleTexts(p); propRenderModal(); }
   else if (a === "prop-open-detail") { propModal = { type: "detail", id }; propRenderModal(); }
   else if (a === "prop-open-entry") {
     propModal = { type: "entry", accountId: id, back: m && m.type === "detail" ? { type: "detail", id } : null,
@@ -880,7 +1073,9 @@ document.addEventListener("click", async (e) => {
     if (!acc) return;
     const step = el.dataset.step, snap = acc.plan_snapshot && acc.plan_snapshot.price ? acc.plan_snapshot.price : {};
     const feeKey = step === "activate" ? "activation" : step === "reset" ? "reset" : null;
-    const fee = feeKey && typeof snap[feeKey] === "number" ? snap[feeKey] : "";
+    // 添加账号时选了「激活费现在一起付」的，激活那一步已经记过了，不再带出来
+    const paidUpfront = feeKey === "activation" && snap.activationUpfront;
+    const fee = feeKey && !paidUpfront && typeof snap[feeKey] === "number" ? snap[feeKey] : "";
     propModal = { type: "status", accountId: id, step, to: el.dataset.to, back: { type: "detail", id }, draft: { day: todayStr(), fee } };
     propRenderModal();
   }
@@ -919,10 +1114,20 @@ document.addEventListener("click", async (e) => {
     downloadFile("prop-catalog-" + todayStr() + ".json", JSON.stringify(propCatalogExport(), null, 2), "application/json");
   }
 });
+/* 表单字段写回 draft；「r:xxx」是添加账号里的规则输入框，写进 draft.rules */
+function propSetDraftField(d, f, v) {
+  if (f.startsWith("r:")) d.rules = { ...(d.rules || {}), [f.slice(2)]: v };
+  else d[f] = v;
+}
+// 「改规则」那块折叠的开关记下来，弹窗重画后保持原样（toggle 事件不冒泡，用捕获）
+document.addEventListener("toggle", (e) => {
+  const k = e.target && e.target.dataset && e.target.dataset.propDetails;
+  if (k && propModal) propModal[k] = e.target.open;
+}, true);
 document.addEventListener("input", (e) => {
   const f = e.target.dataset && e.target.dataset.propField;
   if (!f || !propModal || !propModal.draft) return;
-  propModal.draft[f] = e.target.type === "checkbox" ? e.target.checked : e.target.value;
+  propSetDraftField(propModal.draft, f, e.target.type === "checkbox" ? e.target.checked : e.target.value);
   if (propModal.type === "import" && f === "text") propModal.check = null;
 });
 document.addEventListener("change", (e) => {
@@ -939,9 +1144,9 @@ document.addEventListener("change", (e) => {
   }
   if (t.dataset.propRerender === undefined || !propModal.draft) return;
   const f = t.dataset.propField, d = propModal.draft;
-  d[f] = t.type === "checkbox" ? t.checked : t.value;
-  if (propModal.type === "account" && f === "firmSel") propPickPlan(d, (propPlans.find((p) => p.firm === d.firmSel && p.status !== "legacy") || {}).id);
-  if (propModal.type === "account" && f === "planSel") propPickPlan(d, d.planSel === "__custom" ? null : d.planSel);
+  propSetDraftField(d, f, t.type === "checkbox" ? t.checked : t.value);
+  if (propModal.type === "account" && f === "firmSel") propPickFirm(d, d.firmSel);
+  if (propModal.type === "account" && f === "family") propPickFamily(d, d.family);
   if (f === "billing" && d.billing === "monthly" && (d.monthly_fee === "" || d.monthly_fee === null) && d.amount !== undefined) d.monthly_fee = d.amount;
   propRenderModal();
 });

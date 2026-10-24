@@ -12,6 +12,8 @@
      ],
      "plans": [
        { "id": "lucid-flex-50k", "firm": "lucid", "series": "LucidFlex", "size": 50000, "status": "current" | "legacy",
+         "family": "Flex",                                   // 系列；同系列同规模的几个计划 = 几种可选组合（不写就用 series）
+         "choices": [{ "axis": "日损", "value": "有日损" }],   // 这个计划在各个可选维度上的取值，添加账号时让用户点选
          "type": "evaluation" | "instant",          // instant = 免考，直接是资金账号，eval 不填
          "price":  { "list": 99, "billing": "one_time" | "monthly", "activation": 0, "reset": 75,
                      "original": 199, "promoUntil": "10/31", "note": "价格说明" },   // list 是现在实际要付的价，original 是没打折的原价
@@ -128,6 +130,85 @@ function propFirmFromRow(r) { return { ...(r.data || {}), id: r.id, name: r.name
 function propCatalogExport() { return { firms: propFirms, plans: propPlans }; }
 function propFindPlan(id) { return propPlans.find((p) => p.id === id) || null; }
 function propFindFirm(id) { return propFirms.find((f) => f.id === id) || null; }
+
+/* ---------- 添加账号：系列 + 可选项 ----------
+   目录里 family = 系列，choices = 这个计划在各个可选维度上的取值，[{ axis: "日损", value: "有日损" }]。
+   同一系列、同一规模下的几个计划就是几种可选组合（比如 Lucid Flex 的 一致性 × 日损）。
+   没写 family 的旧目录退回用 series 当系列，也就没有可选项 */
+function propFamilyOf(p) { return p.family || p.series || ""; }
+function propChoiceMap(p) {
+  const m = {};
+  (Array.isArray(p.choices) ? p.choices : []).forEach((c) => { if (c && c.axis) m[c.axis] = c.value; });
+  return m;
+}
+function propLivePlans(firmId) { return propPlans.filter((p) => p.firm === firmId && p.status !== "legacy"); }
+function propFamilies(firmId) {
+  const out = [];
+  propLivePlans(firmId).forEach((p) => { const f = propFamilyOf(p); if (!out.includes(f)) out.push(f); });
+  return out;
+}
+function propFamilyPlans(firmId, family) { return propLivePlans(firmId).filter((p) => propFamilyOf(p) === family); }
+/* 这个系列有哪些维度、每个维度有哪些值（按目录里出现的先后） */
+function propFamilyAxes(plans) {
+  const axes = [];
+  plans.forEach((p) => (Array.isArray(p.choices) ? p.choices : []).forEach((c) => {
+    let a = axes.find((x) => x.axis === c.axis);
+    if (!a) axes.push((a = { axis: c.axis, values: [] }));
+    if (!a.values.includes(c.value)) a.values.push(c.value);
+  }));
+  return axes;
+}
+function propFamilySizes(plans) { return [...new Set(plans.map((p) => p.size || null))].sort((a, b) => (a === null) - (b === null) || a - b); }
+/* 某规模下最贴近想要的组合的计划：must 这一维必须一样，其余维度命中越多越好；一样多取目录里靠前的 */
+function propBestPlan(plans, size, want, must) {
+  let best = null, score = -1;
+  plans.forEach((p) => {
+    if ((p.size || null) !== (size || null)) return;
+    const c = propChoiceMap(p);
+    if (must && c[must] !== want[must]) return;
+    const s = Object.keys(want || {}).filter((k) => c[k] === want[k]).length;
+    if (s > score) { best = p; score = s; }
+  });
+  return best;
+}
+
+/* ---------- 添加账号：用户自己改的规则 ----------
+   输入框里：数字 = 数值，「无」/ none = 没有这项，空着 = 不知道（跟目录的三种取值一一对应） */
+const PROP_RULE_FIELDS = [
+  ["target", "eval", "target"], ["drawdown", "eval", "drawdown"], ["dll", "eval", "dll"], ["consistency", "eval", "consistency"],
+  ["fundedDrawdown", "funded", "drawdown"], ["fundedDll", "funded", "dll"], ["fundedConsistency", "funded", "consistency"],
+  ["split", "payout", "split"], ["cap", "payout", "cap"],
+];
+function propParseRule(text) {
+  const s = String(text === null || text === undefined ? "" : text).trim().replace(/[$,%\s]/g, "");
+  if (!s) return null;
+  if (/^(无|没有|none|no|n\/a)$/i.test(s)) return "none";
+  const n = Number(s);
+  return isFinite(n) ? n : null;
+}
+function propRuleText(v) { return typeof v === "number" ? String(v) : v === "none" ? T("prop.rule.none") : ""; }
+function propRuleTexts(plan) {
+  const out = {};
+  PROP_RULE_FIELDS.forEach(([k, sec, key]) => { out[k] = propRuleText(plan && plan[sec] ? plan[sec][key] : null); });
+  return out;
+}
+/* 哪些规则跟目录里的不一样了（界面上标「已改」，快照里也记一笔） */
+function propEditedRules(plan, texts) {
+  return PROP_RULE_FIELDS.filter(([k, sec, key]) => {
+    const was = plan && plan[sec] && plan[sec][key] !== undefined ? plan[sec][key] : null;
+    return JSON.stringify(propParseRule(texts[k])) !== JSON.stringify(was);
+  }).map(([k]) => k);
+}
+/* 计划 + 用户改的规则 → 新的一份（不动原计划） */
+function propApplyRuleEdits(plan, texts) {
+  const out = JSON.parse(JSON.stringify(plan || {}));
+  PROP_RULE_FIELDS.forEach(([k, sec, key]) => {
+    if (texts[k] === undefined) return;
+    out[sec] = out[sec] || {};
+    out[sec][key] = propParseRule(texts[k]);
+  });
+  return out;
+}
 
 /* ---------- 口径 ---------- */
 function propEntriesOf(accountId, entries) { return (entries || propEntries).filter((e) => e.account_id === accountId); }
