@@ -141,8 +141,9 @@ begin
     raise exception 'payload needs firms[] and plans[]';
   end if;
 
-  delete from prop_plans;
-  delete from prop_firms;
+  -- where true：Supabase 给 API 请求挂了 pg-safeupdate，不带 where 的 delete 会被拒
+  delete from prop_plans where true;
+  delete from prop_firms where true;
 
   for f in select * from jsonb_array_elements(payload->'firms') loop
     insert into prop_firms (id, name, website, logo, sort_order, data, updated_at)
