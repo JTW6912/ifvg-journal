@@ -251,38 +251,169 @@ function propAccountCard(a) {
   </div>`;
 }
 
-/* ---------- 公司计划 ---------- */
+/* ---------- 公司计划 ----------
+   没选公司时：上面是排行（目录里公司的先后顺序 = 排名），下面是跨公司的价格对比表（默认 50K）；
+   点排行里的公司或表里的一行，进那家公司的页面看全部计划卡片 */
 function renderPropCatalog() {
   const admin = currentProfile && currentProfile.role === "admin" && !viewingUserId;
   const info = propCatalogInfo ? T("prop.cat.updated", { d: localDateStr(propCatalogInfo.imported_at), f: propFirms.length, p: propPlans.length }) : "";
   let html = `<div class="propCatHead"><div class="propMuted">${esc(info || T("prop.cat.hint"))}</div>
     ${admin ? `<div class="propCatAdmin"><button class="btn" data-action="prop-open-import">${esc(T("prop.import.open"))}</button>${propFirms.length ? `<button class="btn" data-action="prop-export-catalog">${esc(T("prop.import.export"))}</button>` : ""}</div>` : ""}</div>`;
   if (!propFirms.length) return html + `<div class="emptyState propEmptyState">${ICONS.layers}<div>${esc(T(admin ? "prop.empty.catalogAdmin" : "prop.empty.catalog"))}</div></div>`;
-  const visible = propPlans.filter((p) => propShowLegacy || p.status !== "legacy");
-  const sizes = [...new Set(visible.filter((p) => !propCatalogFirm || p.firm === propCatalogFirm).map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
-  html += `<div class="propFilters"><div class="chipGroup">${[["", T("prop.filter.allFirms")], ...propFirms.map((f) => [f.id, f.name])].map(([v, label]) =>
-    `<button class="chip ${propCatalogFirm === v ? "active" : ""}" data-action="prop-cat-firm" data-val="${esc(v)}">${esc(label)}</button>`).join("")}</div>
+  const firm = propCatalogFirm && propFindFirm(propCatalogFirm);
+  if (!firm) return html + renderPropBoard() + renderPropPriceTable();
+
+  const visible = propPlans.filter((p) => p.firm === firm.id && (propShowLegacy || p.status !== "legacy"));
+  const sizes = [...new Set(visible.map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
+  html += `<div class="propFilters propFirmNav"><button class="btn btn-sm" data-action="prop-cat-firm" data-val="">‹ ${esc(T("prop.cat.back"))}</button>
     <div class="chipGroup">${[["", T("prop.filter.allSizes")], ...sizes.map((s) => [String(s), propSizeLabel(s)])].map(([v, label]) =>
-    `<button class="chip ${propCatalogSize === v ? "active" : ""}" data-action="prop-cat-size" data-val="${esc(v)}">${esc(label)}</button>`).join("")}
-    ${propPlans.some((p) => p.status === "legacy") ? `<button class="chip ${propShowLegacy ? "active" : ""}" data-action="prop-toggle-legacy">${esc(T("prop.cat.showLegacy"))}</button>` : ""}</div></div>`;
-  propFirms.filter((f) => !propCatalogFirm || f.id === propCatalogFirm).forEach((f) => {
-    const plans = visible.filter((p) => p.firm === f.id && (!propCatalogSize || String(p.size) === propCatalogSize));
-    html += renderPropFirm(f, plans);
-  });
-  return html;
+    `<button class="chip ${propCatalogFirmSize === v ? "active" : ""}" data-action="prop-cat-firm-size" data-val="${esc(v)}">${esc(label)}</button>`).join("")}
+    ${propPlans.some((p) => p.firm === firm.id && p.status === "legacy") ? `<button class="chip ${propShowLegacy ? "active" : ""}" data-action="prop-toggle-legacy">${esc(T("prop.cat.showLegacy"))}</button>` : ""}</div></div>`;
+  return html + renderPropFirm(firm, visible.filter((p) => !propCatalogFirmSize || String(p.size) === propCatalogFirmSize));
 }
-function propFirmLogo(f) {
+/* logo 位：目录里给了 logo 就显示图，没有就显示名字的前两个字母，位置大小不变 */
+function propFirmLogo(f, small) {
   const initials = esc((f.name || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase() || "?");
-  return f.logo ? `<span class="propLogo"><img src="${esc(f.logo)}" alt="" loading="lazy"></span>` : `<span class="propLogo">${initials}</span>`;
+  const cls = "propLogo" + (small ? " propLogoSm" : "");
+  return f.logo ? `<span class="${cls}"><img src="${esc(f.logo)}" alt="" loading="lazy"></span>` : `<span class="${cls}">${initials}</span>`;
 }
+function propTierTag(f) {
+  return ["good", "fair", "meh", "avoid"].includes(f.tier) ? `<span class="propTier propTier-${f.tier}">${esc(T("prop.tier." + f.tier))}</span>` : "";
+}
+function propRankOf(f) { return typeof f.rank === "number" ? f.rank : propFirms.indexOf(f) + 1; }
+
+/* 对比表和排行用的数：免考号没有考核阶段，回撤 / 日损取资金阶段的，目标记「免考」 */
+function propCmpVals(p) {
+  const pr = p.price || {}, po = p.payout || {}, fu = p.funded || {};
+  const instant = p.type === "instant";
+  const ev = instant ? { drawdown: fu.drawdown, drawdownType: fu.drawdownType, dll: fu.dll } : (p.eval || {});
+  const price = typeof pr.list === "number" ? pr.list : null;
+  const dd = typeof ev.drawdown === "number" && ev.drawdown > 0 ? ev.drawdown : null;
+  return { instant, price, original: typeof pr.original === "number" && price !== null && pr.original > price ? pr.original : null,
+    monthly: pr.billing === "monthly", activation: pr.activation, target: instant ? "none" : ev.target, dd: ev.drawdown, ddType: ev.drawdownType,
+    dll: ev.dll, consistency: instant ? null : ev.consistency, fundedConsistency: fu.consistency, split: po.split, cap: po.cap,
+    // 每千回撤成本：首付 + 激活费，摊到每 $1000 回撤上；月费的只算第一个月
+    per1k: price !== null && dd ? ((price + (typeof pr.activation === "number" ? pr.activation : 0)) / dd) * 1000 : null };
+}
+function propCatalogRows() {
+  return propPlans.filter((p) => (propShowLegacy || p.status !== "legacy")
+    && (!propCatalogSize || String(p.size) === propCatalogSize)
+    && (!propCatalogType || p.type === propCatalogType || (propCatalogType === "evaluation" && p.type !== "instant"))
+    && (!propCatalogBilling || (p.price || {}).billing === propCatalogBilling));
+}
+
+/* ---------- 排行 ---------- */
+function renderPropBoard() {
+  const BOARD_TOP = 6;
+  const firms = propFirms.slice().sort((a, b) => propRankOf(a) - propRankOf(b));
+  const shown = propBoardAll ? firms : firms.slice(0, BOARD_TOP);
+  const card = (f) => {
+    const plans = propPlans.filter((p) => p.firm === f.id && p.status !== "legacy");
+    const atSize = propCatalogSize ? plans.filter((p) => String(p.size) === propCatalogSize) : [];
+    // 这家没有选中的规模时，拿最便宜的考试号（不拿 $500 这种迷你免考号，免得看着便宜得离谱）
+    const fallback = plans.some((p) => p.type !== "instant") ? plans.filter((p) => p.type !== "instant") : plans;
+    const pool = (atSize.length ? atSize : fallback).filter((p) => propCmpVals(p).price !== null);
+    const cheapest = pool.sort((a, b) => propCmpVals(a).price - propCmpVals(b).price)[0];
+    const promo = f.promo && (f.promo.discount || f.promo.text);
+    return `<button class="propCard propBoardCard ${f.tier === "avoid" ? "dim" : ""}" data-action="prop-cat-firm" data-val="${esc(f.id)}">
+      <div class="propBoardHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}
+        <div class="propBoardName"><b>${esc(f.name)}</b>${propTierTag(f)}</div></div>
+      ${promo ? `<div class="propBoardPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>`
+        : f.review && f.review !== T("prop.tier." + f.tier) ? `<div class="propBoardReview">${esc(f.review)}</div>` : ""}
+      <div class="propBoardFoot">${cheapest ? `<span>${esc(T("prop.cat.from", { s: propSizeLabel(cheapest.size) || cheapest.series }))}</span><b>${propUsd(propCmpVals(cheapest).price)}</b>${propCmpVals(cheapest).monthly ? `<small>${esc(T("prop.cat.perMonth"))}</small>` : ""}` : `<span>${esc(T("prop.cat.noPrice"))}</span>`}
+        <em>${esc(T("prop.cat.planCount", { n: plans.length }))}</em></div>
+    </button>`;
+  };
+  return `<div class="calendarPanel propPanel">
+    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.boardTitle"))}</div><span class="propMuted">${esc(T("prop.cat.boardHint"))}</span></div>
+    <div class="propBoard">${shown.map(card).join("")}</div>
+    ${firms.length > BOARD_TOP ? `<button class="btn btn-sm propBoardMore" data-action="prop-board-all">${esc(T(propBoardAll ? "prop.cat.boardLess" : "prop.cat.boardAll", { n: firms.length }))}</button>` : ""}
+  </div>`;
+}
+
+/* ---------- 价格对比表 ---------- */
+function renderPropPriceTable() {
+  const chips = (action, cur, opts) => `<div class="chipGroup">${opts.map(([v, label]) =>
+    `<button class="chip ${cur === v ? "active" : ""}" data-action="${action}" data-val="${esc(v)}">${esc(label)}</button>`).join("")}</div>`;
+  const sizes = [...new Set(propPlans.filter((p) => propShowLegacy || p.status !== "legacy").map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
+  const rank = new Map(propFirms.map((f) => [f.id, propRankOf(f)]));
+  const rows = propCatalogRows().map((p) => ({ p, v: propCmpVals(p), r: rank.get(p.firm) || 999 }));
+  const num = (x) => (typeof x === "number" ? x : Infinity);
+  if (propCatalogSort === "price") rows.sort((a, b) => num(a.v.price) - num(b.v.price) || a.r - b.r);
+  else if (propCatalogSort === "per1k") rows.sort((a, b) => num(a.v.per1k) - num(b.v.per1k) || a.r - b.r);
+  else rows.sort((a, b) => a.r - b.r || num(a.p.size) - num(b.p.size) || num(a.v.price) - num(b.v.price));
+  // 按排名看时一家公司是一组：先列最便宜的几个，其余折起来，免得一家（比如 Lucid 有十种组合）占满整屏
+  const GROUP_TOP = 3;
+  const grouped = propCatalogSort === "rank";
+  const groupCount = new Map();
+  rows.forEach((x) => groupCount.set(x.p.firm, (groupCount.get(x.p.firm) || 0) + 1));
+
+  let html = `<div class="calendarPanel propPanel">
+    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.tableTitle"))}</div><span class="propMuted">${esc(T("prop.cat.tableCount", { n: rows.length }))}</span></div>
+    <div class="propFilters propTableFilters">
+      ${chips("prop-cat-size", propCatalogSize, [["", T("prop.filter.allSizes")], ...sizes.map((s) => [String(s), propSizeLabel(s)])])}
+      <div class="propFilterLine">
+        ${chips("prop-cat-type", propCatalogType, [["", T("prop.filter.all")], ["evaluation", T("prop.plan.evaluation")], ["instant", T("prop.plan.instant")]])}
+        ${chips("prop-cat-billing", propCatalogBilling, [["", T("prop.filter.all")], ["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]])}
+        ${propPlans.some((p) => p.status === "legacy") ? `<div class="chipGroup"><button class="chip ${propShowLegacy ? "active" : ""}" data-action="prop-toggle-legacy">${esc(T("prop.cat.showLegacy"))}</button></div>` : ""}
+      </div>
+      <div class="propFilterLine"><span class="propMuted">${esc(T("prop.cat.sortBy"))}</span>
+        ${chips("prop-cat-sort", propCatalogSort, [["rank", T("prop.cat.sort.rank")], ["price", T("prop.cat.sort.price")], ["per1k", T("prop.cat.sort.per1k")]])}</div>
+    </div>`;
+  if (!rows.length) return html + `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div></div>`;
+  const pct = (v) => propRule(v, "%");
+  html += `<div class="tableScroll propPriceScroll"><table class="adminTable propTable propPriceTable"><thead><tr>
+    <th class="propStickyCol">${esc(T("prop.col.firm"))}</th><th>${esc(T("prop.cmp.series"))}</th><th class="num">${esc(T("prop.form.size"))}</th>
+    <th class="num">${esc(T("prop.cmp.price"))}</th><th class="num">${esc(T("prop.rule.activation"))}</th><th class="num">${esc(T("prop.rule.target"))}</th>
+    <th class="num">${esc(T("prop.rule.drawdown"))}</th><th class="num">${esc(T("prop.rule.dll"))}</th><th class="num">${esc(T("prop.cat.colEvalCons"))}</th>
+    <th class="num">${esc(T("prop.cat.colFundedCons"))}</th><th class="num">${esc(T("prop.rule.split"))}</th><th class="num">${esc(T("prop.cmp.payoutCap"))}</th>
+    <th class="num" title="${esc(T("prop.cat.per1kHint"))}">${esc(T("prop.cmp.per1k"))}</th><th></th></tr></thead><tbody>`;
+  const COLS = 14;
+  let prevFirm = null, inGroup = 0;
+  rows.forEach(({ p, v }, i) => {
+    const f = propFindFirm(p.firm) || { name: p.firm };
+    const first = p.firm !== prevFirm;
+    inGroup = first ? 1 : inGroup + 1;
+    prevFirm = p.firm;
+    const open = propExpandedFirms.includes(p.firm);
+    const total = groupCount.get(p.firm);
+    if (grouped && !open && inGroup > GROUP_TOP) {
+      // 这组折起来的部分：只在组的最后一行位置补一个「展开」
+      const last = !rows[i + 1] || rows[i + 1].p.firm !== p.firm;
+      if (last) html += `<tr class="propGroupMore"><td class="propStickyCol"></td><td colspan="${COLS - 1}"><button class="tinyBtn" data-action="prop-cat-expand" data-id="${esc(p.firm)}">${esc(T("prop.cat.expandFirm", { name: f.name, n: total - GROUP_TOP }))}</button></td></tr>`;
+      return;
+    }
+    const picked = propCompare.includes(p.id);
+    const showFirm = !grouped || first;
+    html += `<tr class="propPriceRow ${f.tier === "avoid" ? "dim" : ""} ${picked ? "picked" : ""} ${grouped && first && i ? "groupStart" : ""}" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">
+      <td class="propStickyCol">${showFirm ? `<div class="propFirmCell"><span class="propRankSm">${propRankOf(f)}</span>${propFirmLogo(f, true)}<span class="propFirmCellName">${esc(f.name)}</span></div>` : ""}</td>
+      <td><div class="propSeriesCell">${esc(p.series || "—")}${v.instant ? ` <span class="propSt propSt-funded">${esc(T("prop.plan.instant"))}</span>` : ""}${p.status === "legacy" ? ` <span class="propSt propSt-closed">${esc(T("prop.cat.legacy"))}</span>` : ""}</div></td>
+      <td class="num">${esc(propSizeLabel(p.size) || "—")}</td>
+      <td class="num propPriceCell">${v.original ? `<s>${propUsd(v.original)}</s>` : ""}<b>${propRule(v.price, "$")}</b>${v.monthly ? `<small>${esc(T("prop.cat.perMonth"))}</small>` : ""}</td>
+      <td class="num">${v.activation === 0 || v.activation === "none" ? `<span class="propNone">${esc(T("prop.cat.free"))}</span>` : propRule(v.activation, "$")}</td>
+      <td class="num">${v.instant ? `<span class="propNone">${esc(T("prop.plan.instant"))}</span>` : propRule(v.target, "$")}</td>
+      <td class="num">${propRule(v.dd, "$")}${propDdType(v.ddType) ? `<small>${esc(propDdType(v.ddType))}</small>` : ""}</td>
+      <td class="num">${propRule(v.dll, "$")}</td><td class="num">${v.instant ? `<span class="propNone">—</span>` : pct(v.consistency)}</td>
+      <td class="num">${pct(v.fundedConsistency)}</td><td class="num">${pct(v.split)}</td><td class="num">${propRule(v.cap, "$")}</td>
+      <td class="num">${v.per1k === null ? "—" : propUsd(Math.round(v.per1k))}</td>
+      <td class="propRowActs"><button class="btn btn-sm ${picked ? "active" : ""}" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${esc(T(picked ? "prop.compare.picked1" : "prop.compare.add"))}</button></td>
+    </tr>`;
+    const lastOfOpenGroup = grouped && open && total > GROUP_TOP && (!rows[i + 1] || rows[i + 1].p.firm !== p.firm);
+    if (lastOfOpenGroup) html += `<tr class="propGroupMore"><td class="propStickyCol"></td><td colspan="${COLS - 1}"><button class="tinyBtn" data-action="prop-cat-expand" data-id="${esc(p.firm)}">${esc(T("prop.cat.collapseFirm"))}</button></td></tr>`;
+  });
+  return html + `</tbody></table></div><div class="propHint">${esc(T("prop.cat.tableFoot"))}</div></div>`;
+}
+
 function renderPropFirm(f, plans) {
   const series = [];
   plans.forEach((p) => { if (!series.includes(p.series)) series.push(p.series); });
   const faq = Array.isArray(f.faq) ? f.faq : [];
+  const promo = f.promo && (f.promo.discount || f.promo.text);
   let html = `<div class="calendarPanel propPanel propFirm">
-    <div class="propFirmHead">${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)}</b>
+    <div class="propFirmHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)} ${propTierTag(f)}</b>
       <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}${f.source ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(T("prop.cat.sourcePage"))}</a>` : ""}</span></div>
       ${f.review ? `<span class="propReview">${esc(f.review)}</span>` : ""}</div>
+    ${promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>` : ""}
     ${Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
     ${f.notes ? `<div class="propNotes">${esc(f.notes)}</div>` : ""}`;
   if (!plans.length) html += `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div>`;
@@ -692,8 +823,21 @@ document.addEventListener("click", async (e) => {
   else if (a === "prop-status-filter") { propStatusFilter = el.dataset.val; render(); }
   else if (a === "prop-year") { propYear += Number(el.dataset.d); render(); }
   else if (a === "prop-month") { propMonth = Number(el.dataset.m); render(); }
-  else if (a === "prop-cat-firm") { propCatalogFirm = el.dataset.val; propCatalogSize = ""; render(); }
+  else if (a === "prop-cat-firm") {
+    // 从对比表的某一行进来的，公司页先只显示那个规模
+    propCatalogFirm = el.dataset.val; propCatalogFirmSize = el.dataset.size || "";
+    render(); window.scrollTo({ top: 0 });
+  }
+  else if (a === "prop-cat-firm-size") { propCatalogFirmSize = el.dataset.val; render(); }
   else if (a === "prop-cat-size") { propCatalogSize = el.dataset.val; render(); }
+  else if (a === "prop-cat-type") { propCatalogType = el.dataset.val; render(); }
+  else if (a === "prop-cat-billing") { propCatalogBilling = el.dataset.val; render(); }
+  else if (a === "prop-cat-sort") { propCatalogSort = el.dataset.val; render(); }
+  else if (a === "prop-board-all") { propBoardAll = !propBoardAll; render(); }
+  else if (a === "prop-cat-expand") {
+    propExpandedFirms = propExpandedFirms.includes(id) ? propExpandedFirms.filter((x) => x !== id) : [...propExpandedFirms, id];
+    render();
+  }
   else if (a === "prop-toggle-legacy") { propShowLegacy = !propShowLegacy; render(); }
   else if (a === "prop-toggle-compare") {
     if (propCompare.includes(id)) propCompare = propCompare.filter((x) => x !== id);

@@ -1715,7 +1715,7 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
 .propLogo img{width:100%;height:100%;object-fit:contain;}
 .propFirmName{display:flex;flex-direction:column;gap:2px;}
 .propFirmName b{font-size:16px;}
-.propFirmName span{font-size:12px;color:var(--mutedDark);}
+.propFirmName>span{font-size:12px;color:var(--mutedDark);}
 .propFirmName a,.propFaq a,.propSources a{color:var(--accent);}
 .propSeries{margin-top:14px;}
 .propSeriesName{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:8px;}
@@ -1755,6 +1755,52 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
 .propFaqItem{font-size:12.5px;line-height:1.55;padding:8px 0;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:3px;}
 .propFaqItem:last-child{border-bottom:none;}
 .propFaqTopic{font-weight:600;}
+/* 排行 */
+.propBoard{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+.propBoardCard{display:flex;flex-direction:column;gap:10px;text-align:left;font:inherit;color:var(--text);cursor:pointer;background:var(--surface2);transition:border-color .12s,transform .12s;}
+.propBoardCard:hover{border-color:var(--accent);transform:translateY(-1px);}
+.propBoardCard.dim,.propPriceRow.dim{opacity:.6;}
+.propBoardHead{display:flex;align-items:center;gap:10px;min-width:0;}
+.propBoardName{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;}
+.propBoardName b{font-size:14.5px;line-height:1.25;}
+.propRank{min-width:24px;height:24px;padding:0 4px;border-radius:var(--r12);display:inline-flex;align-items:center;justify-content:center;font-family:var(--fontMono);font-size:12px;font-weight:700;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);flex-shrink:0;}
+.propRank.top{background:var(--accent);border-color:var(--accent);color:var(--onAccent);}
+.propRankSm{font-family:var(--fontMono);font-size:11px;color:var(--mutedDark);min-width:16px;text-align:right;}
+.propTier{display:inline-block;padding:1px 7px;border-radius:var(--r12);font-size:10.5px;font-weight:500;white-space:nowrap;vertical-align:middle;}
+.propTier-good{background:var(--posSoft);color:var(--pos);}
+.propTier-fair{background:var(--infoSoft);color:var(--info);}
+.propTier-meh{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.propTier-avoid{background:var(--negSoft);color:var(--neg);}
+.propBoardPromo{display:flex;flex-direction:column;gap:2px;font-size:12px;line-height:1.45;color:var(--muted);}
+.propBoardPromo b{color:var(--accent);font-size:12.5px;}
+.propFirmPromo{flex-direction:row;flex-wrap:wrap;gap:4px 10px;align-items:baseline;margin-bottom:8px;padding:8px 10px;border-radius:var(--r10);background:var(--accentSoft);}
+.propBoardReview{font-size:12px;line-height:1.45;color:var(--muted);}
+.propBoardFoot{display:flex;align-items:baseline;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid var(--border);font-size:11.5px;color:var(--mutedDark);}
+.propBoardFoot b{font-family:var(--fontMono);font-size:16px;color:var(--text);}
+.propBoardFoot em{margin-left:auto;font-style:normal;}
+.propBoardMore{margin-top:12px;}
+.propLogoSm{width:24px;height:24px;font-size:10px;border-radius:var(--r6);}
+/* 价格对比表 */
+.propTableFilters{display:flex;flex-direction:column;gap:8px;}
+.propTableFilters .chipGroup{margin-bottom:0;}
+.propFilterLine{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;}
+.propPriceTable td,.propPriceTable th{white-space:nowrap;}
+.propPriceTable td.num small{display:block;font-family:var(--fontUI);font-size:10.5px;color:var(--mutedDark);}
+.propPriceRow{cursor:pointer;}
+.propPriceRow:hover td{background:var(--surface2);}
+.propPriceRow.picked td{background:var(--accentSoft);}
+.propPriceCell b{color:var(--accent);font-size:14px;}
+.propPriceCell s{display:block;font-size:11px;color:var(--mutedDark);}
+.propFirmCell{display:flex;align-items:center;gap:7px;}
+.propFirmCellName{font-weight:600;}
+.propSeriesCell{min-width:170px;max-width:240px;white-space:normal;line-height:1.4;}
+.propPriceTable tr.groupStart td{border-top:2px solid var(--border);}
+.propGroupMore td{padding:4px 10px 8px;border-bottom:none;}
+.propGroupMore .tinyBtn{color:var(--accent);font-size:12px;}
+.propStickyCol{position:sticky;left:0;z-index:1;background:var(--surface);}
+.propFirmNav{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.propFirmNav .chipGroup{margin-bottom:0;}
 .propCompareBar{position:sticky;bottom:16px;z-index:5;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px;
   background:var(--surface);border:1px solid var(--accent);border-radius:var(--r12);padding:10px 14px;box-shadow:var(--shadowPop);}
 .propCompareBar span{flex:1;font-size:13px;}
@@ -1772,4 +1818,8 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
   .propStep{flex:1 1 40%;}
   .propStepArrow{display:none;}
   .propAccGrid,.propPlanGrid{grid-template-columns:1fr;}
+  /* 手机上排行横着滑，别把对比表挤到很下面 */
+  .propBoard{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:78%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;}
+  .propBoardCard{scroll-snap-align:start;}
+  .propPanelHead{flex-wrap:wrap;}
 }

@@ -108,8 +108,14 @@ let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
 let propFirmFilter = "";              // 总览 / 我的账号：只看某家公司（按 firm_name）
 let propGroupFilter = "";             // 只看某个分组
 let propStatusFilter = "active";      // 我的账号：active / ended / all
-let propCatalogFirm = "";             // 公司计划：只看某家（firm id），"" = 全部
-let propCatalogSize = "";             // 公司计划：只看某个规模
+let propCatalogFirm = "";             // 公司计划：正在看的公司（firm id），"" = 排行 + 对比表
+let propCatalogSize = "50000";        // 对比表：只看某个规模，默认 50K（跨规模比价格没意义）
+let propCatalogFirmSize = "";         // 公司页：只看某个规模
+let propCatalogType = "";             // 对比表：evaluation / instant / "" 全部
+let propCatalogBilling = "";          // 对比表：one_time / monthly / "" 全部
+let propCatalogSort = "rank";         // 对比表：rank / price / per1k
+let propBoardAll = false;             // 排行：展开全部公司
+let propExpandedFirms = [];           // 对比表按排名分组时，哪些公司展开了全部计划
 let propShowLegacy = false;           // 公司计划：要不要列出已下架的计划
 let propCompare = [];                 // 勾了要对比的计划 id，最多 4 个
 let propModal = null;                 // { type: 'account' | 'entry' | 'status' | 'detail' | 'import' | 'compare', ... }
