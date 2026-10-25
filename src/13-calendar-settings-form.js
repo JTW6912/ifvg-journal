@@ -232,7 +232,6 @@ function renderAdminPanel() {
                 <td style="white-space:nowrap;">
                   <button class="tinyBtn" data-action="toggle-user-active" data-id="${esc(u.id)}" data-next="${!u.active}" style="color:${u.active ? "var(--neg)" : "var(--pos)"};margin-right:10px;">${esc(u.active ? T("admin.disable") : T("admin.enable"))}</button>
                   <button class="tinyBtn" data-action="toggle-user-role" data-id="${esc(u.id)}" data-next="${u.role === "admin" ? "user" : "admin"}" style="color:var(--accent);margin-right:10px;">${esc(u.role === "admin" ? T("admin.removeAdmin") : T("admin.makeAdmin"))}</button>
-                  ${u.id !== session.user.id ? `<button class="tinyBtn" data-action="view-user-data" data-id="${esc(u.id)}" data-email="${esc(u.email)}" style="color:var(--accent);">${ICONS.expand} ${T("admin.viewData")}</button>` : ""}
                 </td>
               </tr>`).join("")}
             </tbody></table></div>
