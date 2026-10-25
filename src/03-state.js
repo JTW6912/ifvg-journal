@@ -105,6 +105,7 @@ let propEntries = [];
 let propError = null;
 let propYear = new Date().getFullYear();
 let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
+let propYearTouched = false;          // 用户自己翻过年份：之后不再自动跳到有数据的年份
 let propFirmFilter = "";              // 总览 / 我的账号：只看某家公司（按 firm_name）
 let propGroupFilter = "";             // 只看某个分组
 let propStatusFilter = "active";      // 我的账号：active / ended / all
@@ -117,6 +118,9 @@ let propCardPick = {};                // 卡片墙：每张卡（公司|系列|�
 let propBoardAll = false;             // 排行：展开全部公司
 let propExpandedFirms = [];           // 对比表按排名分组时，哪些公司展开了全部计划
 let propShowLegacy = false;           // 公司计划：要不要列出已下架的计划
+let propBatch = false;                // 我的账号：多选模式
+let propSelected = [];                // 多选模式下勾了的账号 id
+let propCardMenu = null;              // 哪张账号卡片的「⋯」菜单开着
 let propCompare = [];                 // 勾了要对比的计划 id，最多 4 个
 let propModal = null;                 // { type: 'account' | 'entry' | 'status' | 'detail' | 'import' | 'compare', ... }
 /* localStorage 里读出来的枚举一律过一遍白名单：

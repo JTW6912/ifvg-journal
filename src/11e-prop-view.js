@@ -13,6 +13,14 @@ function propUsd(n, signed) {
   if (n < -0.004) return "−" + s;
   return (signed && n > 0.004 ? "+" : "") + s;
 }
+/* 格子窄的地方用：$1.1K / −$540，完整金额放 title 里 */
+function propUsdShort(n, signed) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  const v = Math.abs(n);
+  if (v < 1000) return propUsd(Math.round(n), signed);
+  const k = v >= 100000 ? Math.round(v / 1000) : Math.round(v / 100) / 10;
+  return (n < -0.004 ? "−" : signed && n > 0.004 ? "+" : "") + "$" + k + "K";
+}
 function propPct(n) { return n === null || n === undefined || isNaN(n) ? "—" : (n > 0.04 ? "+" : "") + n.toFixed(1) + "%"; }
 function propTone(n) { return n > 0.004 ? "pos" : n < -0.004 ? "neg" : ""; }
 function propStatusPill(s) { return `<span class="propSt propSt-${esc(s)}">${esc(T("prop.status." + s))}</span>`; }
@@ -165,6 +173,11 @@ function renderPropFunnel(accounts, entries) {
   </div>`;
 }
 function renderPropMonths(accounts, entries) {
+  // 今年还没有数据（比如只补录了去年的号）：自动跳到最近一个有数据的年份；用户自己翻过年份就不再跳
+  if (!propYearTouched && entries.length && !propMonthly(entries, propYear).some((m) => m.n)) {
+    const latest = entries.map((e) => Number(String(e.day || "").slice(0, 4))).filter((y) => y > 2000).sort((a, b) => b - a)[0];
+    if (latest) { propYear = latest; propMonth = Number((entries.filter((e) => String(e.day).startsWith(latest + "-")).map((e) => e.day).sort().pop() || "").slice(5, 7)) || 1; }
+  }
   const months = propMonthly(entries, propYear);
   const year = months.reduce((a, m) => ({ net: a.net + m.net, n: a.n + m.n }), { net: 0, n: 0 });
   let html = `<div class="calendarPanel propPanel">
@@ -174,9 +187,9 @@ function renderPropMonths(accounts, entries) {
   months.forEach((m, i) => {
     html += `<button class="monthBarCell ${m.n ? propTone(m.net) || "neutral" : ""} ${propMonth === i + 1 ? "current" : ""}" data-action="prop-month" data-m="${i + 1}">
       <div class="monthBarLabel">${esc(new Date(2000, i, 1).toLocaleString(localeTag(), { month: "short" }))}</div>
-      ${m.n ? `<div class="monthBarValue">${propUsd(m.net, true)}</div>` : ""}</button>`;
+      ${m.n ? `<div class="monthBarValue" title="${esc(propUsd(m.net, true))}">${propUsdShort(m.net, true)}</div>` : ""}</button>`;
   });
-  html += `<div class="monthBarCell ${year.n ? propTone(year.net) || "neutral" : ""}" style="cursor:default;"><div class="monthBarLabel">${esc(T("prop.month.year"))}</div>${year.n ? `<div class="monthBarValue">${propUsd(year.net, true)}</div>` : ""}</div></div>`;
+  html += `<div class="monthBarCell ${year.n ? propTone(year.net) || "neutral" : ""}" style="cursor:default;"><div class="monthBarLabel">${esc(T("prop.month.year"))}</div>${year.n ? `<div class="monthBarValue" title="${esc(propUsd(year.net, true))}">${propUsdShort(year.net, true)}</div>` : ""}</div></div>`;
   html += renderPropMonthDetail(accounts, entries);
   return html + `</div>`;
 }
@@ -224,11 +237,19 @@ function renderPropAccounts() {
   const { accounts } = propScoped();
   const counts = { active: accounts.filter(propIsActive).length, ended: accounts.filter((a) => !propIsActive(a)).length, all: accounts.length };
   const list = accounts.filter((a) => propStatusFilter === "all" || (propStatusFilter === "active") === propIsActive(a));
-  let html = `<div class="propFilters"><div class="chipGroup">${["active", "ended", "all"].map((k) =>
-    `<button class="chip ${propStatusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}</div></div>`;
+  let html = `<div class="propFilters propAccFilters"><div class="chipGroup">${["active", "ended", "all"].map((k) =>
+    `<button class="chip ${propStatusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}</div>
+    ${propReadOnly() ? "" : `<button class="btn btn-sm ${propBatch ? "active" : ""}" data-action="prop-batch-toggle">${ICONS.check} ${esc(T(propBatch ? "prop.batch.exit" : "prop.batch.enter"))}</button>`}</div>`;
   html += propFilterChips();
   if (!list.length) return html + `<div class="emptyState">${esc(T("prop.empty.filtered"))}</div>`;
-  return html + `<div class="propAccGrid">${list.map(propAccountCard).join("")}</div>`;
+  html += `<div class="propAccGrid">${list.map(propAccountCard).join("")}</div>`;
+  if (propBatch) {
+    const n = propSelected.length, all = list.every((a) => propSelected.includes(a.id));
+    html += `<div class="propCompareBar propBatchBar"><span>${esc(T("prop.batch.picked", { n }))}</span>
+      <button class="btn btn-sm" data-action="prop-batch-all" data-val="${all ? "none" : "all"}" data-ids="${esc(list.map((a) => a.id).join(","))}">${esc(T(all ? "prop.batch.none" : "prop.batch.all"))}</button>
+      ${["status", "payout", "group", "delete"].map((k) => `<button class="btn btn-sm ${k === "delete" ? "btn-danger" : k === "payout" ? "btn-primary" : ""}" data-action="prop-batch-open" data-val="${k}" ${n ? "" : "disabled"}>${esc(T("prop.batch." + k))}</button>`).join("")}</div>`;
+  }
+  return html;
 }
 function propAccountCard(a) {
   const s = propSum(propEntriesOf(a.id));
@@ -236,13 +257,20 @@ function propAccountCard(a) {
   // 还在跑、也还没出过金的账号不给 ROI：那不是亏光了，是还没结果
   const roi = propIsActive(a) && !s.received ? `<span class="propMuted">${esc(T("prop.acc.inProgress"))}</span>` : `<span class="${propTone(s.roi || 0)}">${propPct(s.roi)}</span>`;
   const last = (a.events || []).slice(-1)[0];
-  return `<div class="propCard propAcc" data-action="prop-open-detail" data-id="${esc(a.id)}">
-    <div class="propAccHead"><div class="propAccTitle">${esc(propAccountTitle(a))}</div>${propStatusPill(a.status)}</div>
+  const picked = propBatch && propSelected.includes(a.id);
+  // 右上角「⋯」：打开 / 记一笔 / 删除，不用先进详情
+  const menu = propReadOnly() || propBatch ? "" : `<div class="propCardMenuWrap"><button class="propCardMenuBtn" data-action="prop-card-menu" data-id="${esc(a.id)}" aria-label="${esc(T("prop.acc.menu"))}">⋯</button>
+    ${propCardMenu === a.id ? `<div class="propMenu">
+      <button data-action="prop-open-detail" data-id="${esc(a.id)}">${ICONS.pencil} ${esc(T("prop.acc.openEdit"))}</button>
+      <button data-action="prop-open-entry" data-id="${esc(a.id)}" data-kind="${a.status === "funded" ? "payout" : "other"}">${ICONS.plus} ${esc(T(a.status === "funded" ? "prop.acc.addPayout" : "prop.acc.addEntry"))}</button>
+      <button class="neg" data-action="prop-delete-quick" data-id="${esc(a.id)}">${ICONS.trash} ${esc(T("prop.acc.delete"))}</button></div>` : ""}</div>`;
+  return `<div class="propCard propAcc ${picked ? "selected" : ""} ${propBatch ? "batch" : ""}" data-action="${propBatch ? "prop-batch-pick" : "prop-open-detail"}" data-id="${esc(a.id)}">
+    <div class="propAccHead">${propBatch ? `<span class="propPickBox">${picked ? ICONS.check : ""}</span>` : ""}<div class="propAccTitle">${esc(propAccountTitle(a))}</div>${propStatusPill(a.status)}${menu}</div>
     ${sub ? `<div class="propAccSub">${esc(sub)}</div>` : ""}
     <div class="propAccNums">
-      <div><span>${esc(T("prop.stat.spent"))}</span><b>${propUsd(s.spent)}</b></div>
-      <div><span>${esc(T("prop.stat.received"))}</span><b>${propUsd(s.received)}</b></div>
-      <div><span>${esc(T("prop.stat.net"))}</span><b class="${propTone(s.net)}">${propUsd(s.net, true)}</b></div>
+      <div><span>${esc(T("prop.stat.spent"))}</span><b title="${esc(propUsd(s.spent))}">${propUsdShort(s.spent)}</b></div>
+      <div><span>${esc(T("prop.stat.received"))}</span><b title="${esc(propUsd(s.received))}">${propUsdShort(s.received)}</b></div>
+      <div><span>${esc(T("prop.stat.net"))}</span><b class="${propTone(s.net)}" title="${esc(propUsd(s.net, true))}">${propUsdShort(s.net, true)}</b></div>
       <div><span>ROI</span><b>${roi}</b></div>
     </div>
     <div class="propAccFoot"><span>${esc(T("prop.acc.boughtOn", { d: a.bought_on }))}${last && last.day !== a.bought_on ? " · " + esc(T("prop.status." + last.to)) + " " + esc(last.day) : ""}</span>
@@ -562,11 +590,15 @@ function propModalHtml() {
   if (m.type === "account") { ({ title, body, foot } = propAccountForm(m)); wide = 1080; }
   else if (m.type === "entry") ({ title, body, foot } = propEntryForm(m));
   else if (m.type === "status") ({ title, body, foot } = propStatusForm(m));
-  else if (m.type === "detail") { ({ title, body, foot } = propDetail(m)); wide = true; }
+  else if (m.type === "detail") { ({ title, body, foot } = propDetail(m)); wide = "drawer"; }
+  else if (m.type === "batch") ({ title, body, foot } = propBatchForm(m));
   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
   else if (m.type === "compare") { ({ title, body, foot } = propCompareView()); wide = true; }
-  return `<div class="overlay" data-action="prop-dismiss-overlay">
-    <div class="modal propModal" style="max-width:${typeof wide === "number" ? wide : wide ? 860 : 480}px;">
+  const drawer = wide === "drawer";
+  // 抽屉只在第一次打开时滑进来，里面改东西重画时不再动
+  if (drawer) setTimeout(() => { if (propModal === m) m.shown = true; }, 0);
+  return `<div class="overlay ${drawer ? "propDrawerOverlay" : ""}" data-action="prop-dismiss-overlay">
+    <div class="modal propModal ${drawer ? "propDrawer" + (m.shown ? "" : " anim") : ""}" style="max-width:${drawer ? 640 : typeof wide === "number" ? wide : wide ? 860 : 480}px;">
       <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal">${ICONS.x}</button></div>
       <div class="modalBody">${m.error ? `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(m.error)}</span></div>` : ""}${body}</div>
       ${foot ? `<div class="modalFoot">${foot}</div>` : ""}
@@ -769,7 +801,8 @@ function propAccountForm(m) {
   const price = `<div class="propRow">${propField(T("prop.add.paidEach"), propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="${esc(T("prop.add.pricePending"))}" data-prop-rerender`), T("prop.form.paidHint"))}
       ${propField(T("prop.form.billing"), propSelect("billing", d.billing, [["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]], true))}</div>
     ${d.billing === "monthly" ? `<div class="propRow">${propField(T("prop.form.monthlyFee"), propInput("monthly_fee", d.monthly_fee, `type="number" min="0" step="0.01"`))}
-      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"))}<div class="propHint">${esc(T("prop.form.renewingHint"))}</div></div></div>` : ""}
+      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"), true)}<div class="propHint">${esc(T("prop.form.renewingHint"))}</div></div></div>` : ""}
+    ${propBackfillField(d)}
     <div class="propRow">${propField(T("prop.add.activation"), propSelect("activation", d.activation, [["none", T("prop.add.actNone")], ["later", T("prop.add.actLater")], ["now", T("prop.add.actNow")]], true))}
       ${d.activation === "none" ? "<div></div>" : propField(T("prop.add.activationFee"), propInput("activation_fee", d.activation_fee, `type="number" min="0" step="0.01" data-prop-rerender`))}</div>
     <div class="propHint" style="margin-top:-6px;margin-bottom:10px;">${esc(T(d.activation === "now" ? "prop.add.actNowHint" : d.activation === "later" ? "prop.add.actLaterHint" : "prop.add.actNoneHint"))}</div>`;
@@ -792,7 +825,7 @@ function propAccountForm(m) {
   </details>`;
 
   const account = `<div class="propRow">${propField(T("prop.add.quantity"), propInput("quantity", d.quantity, `type="number" min="1" max="${PROP_MAX_QTY}" step="1" data-prop-rerender`), T("prop.add.quantityHint"))}
-      ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date"`))}</div>
+      ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" data-prop-rerender`))}</div>
     <div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60" placeholder="${esc(T("prop.form.optional"))}"`), Number(d.quantity) > 1 ? T("prop.add.nicknameMany") : "")}
       ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" placeholder="${esc(T("prop.form.optional"))}"`), T("prop.form.groupHint"))}</div>
     <datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
@@ -809,6 +842,23 @@ function propAccountForm(m) {
     foot: propFootButtons("prop-save-account", qty > 1 ? T("prop.add.saveN", { n: qty }) : T("common.save")) };
 }
 
+/* 补录以前买的月付号：购买日到今天之间该扣的月费要不要一次补记。默认不补（补录老号时一下冒出一串月费很吓人），用户自己选 */
+function propDraftDueRenewals(d) {
+  if (d.billing !== "monthly" || !d.renewing || !d.bought_on) return [];
+  return propDueRenewals({ billing: "monthly", renewing: true, monthly_fee: propMoney(d.monthly_fee) || 1, bought_on: d.bought_on, renewed_through: null }, todayStr());
+}
+function propBackfillField(d) {
+  const due = propDraftDueRenewals(d);
+  if (!due.length) return "";
+  const fee = propMoney(d.monthly_fee);
+  return `<div class="propBackfill">
+    <div><b>${esc(T("prop.add.backfillTitle", { n: due.length, from: due[0].slice(0, 7), to: due[due.length - 1].slice(0, 7) }))}</b>
+      <div class="propHint">${esc(T("prop.add.backfillHint"))}</div></div>
+    ${propOptBtns("prop-add-backfill", [
+      { label: T("prop.add.backfillNone"), on: d.backfill !== "all", attrs: `data-val="none"` },
+      { label: T("prop.add.backfillAll", { n: due.length }), sub: fee ? propUsd(fee * due.length) : "", on: d.backfill === "all", attrs: `data-val="all"` },
+    ])}</div>`;
+}
 async function propSaveNewAccount() {
   const d = propModal.draft;
   const firm = d.firmSel === "__custom" ? null : propFindFirm(d.firmSel);
@@ -828,7 +878,9 @@ async function propSaveNewAccount() {
     // 一次建好几个：昵称后面编号，没填昵称就用「公司 规模 #n」
     nickname: qty > 1 ? `${base || fallback} #${i + 1}` : base, group_name: String(d.group_name || "").trim(),
     status: d.status, events: [{ to: d.status, day: d.bought_on }], bought_on: d.bought_on, billing: d.billing,
-    monthly_fee: monthly ? propMoney(d.monthly_fee) : null, renewing: monthly && !!d.renewing && d.status === "eval", renewed_through: null,
+    monthly_fee: monthly ? propMoney(d.monthly_fee) : null, renewing: monthly && !!d.renewing && d.status === "eval",
+    // 不补记：水位直接挪到最近一次该扣的日子，以后的照常自动记
+    renewed_through: d.backfill === "all" ? null : (propDraftDueRenewals(d).pop() || null),
     plan_snapshot: snap, note: String(d.note || "").trim(),
   }));
   propModal.busy = true; propRenderModal();
@@ -907,15 +959,30 @@ async function propSaveStatus() {
   propRenderModal(); render();
 }
 
-/* ---------- 账号详情 ---------- */
+/* ---------- 账号详情（右侧抽屉） ----------
+   看到的都能直接改：账号信息是常开的表单（改完点保存），时间线上每一步的日期点了就能改，流水每行有编辑 / 删除。
+   删除账号放在顶部，删了以后底部有「撤销」 */
+function propDetailDraft(acc) {
+  return { nickname: acc.nickname || "", group_name: acc.group_name || "", firm_name: acc.firm_name || "", plan_name: acc.plan_name || "", size: acc.size || "",
+    bought_on: acc.bought_on, billing: acc.billing, monthly_fee: acc.monthly_fee === null || acc.monthly_fee === undefined ? "" : propMoney(acc.monthly_fee),
+    renewing: !!acc.renewing, status: acc.status, note: acc.note || "" };
+}
+function propDetailDirty(acc, d) {
+  const now = propDetailDraft(acc);
+  return Object.keys(now).some((k) => String(now[k]) !== String(d[k]));
+}
 function propDetail(m) {
   const acc = propAccounts.find((a) => a.id === m.id);
   if (!acc) return { title: "", body: `<div class="propMuted">${esc(T("prop.acc.gone"))}</div>`, foot: "" };
   const ro = propReadOnly();
+  if (!m.draft) m.draft = propDetailDraft(acc);
   const list = propEntriesOf(acc.id).slice().sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0));
   const s = propSum(list);
   const title = `${esc(propAccountTitle(acc))} ${propStatusPill(acc.status)}`;
-  let body = `<div class="propAccSub" style="margin-bottom:12px;">${esc([acc.firm_name, acc.plan_name, propSizeLabel(acc.size)].filter(Boolean).join(" · "))}${acc.group_name ? " · # " + esc(acc.group_name) : ""}</div>`;
+  let body = `<div class="propDrawerSub"><span>${esc([acc.firm_name, acc.plan_name, propSizeLabel(acc.size)].filter(Boolean).join(" · "))}${acc.group_name ? " · # " + esc(acc.group_name) : ""}</span>
+    ${ro ? "" : m.confirmDelete
+      ? `<span class="propDelConfirm">${esc(T("prop.acc.deleteConfirm"))}<button class="btn btn-sm btn-danger" data-action="prop-delete-account" data-id="${esc(acc.id)}">${esc(T("prop.acc.deleteYes"))}</button><button class="btn btn-sm" data-action="prop-cancel-delete">${esc(T("common.cancel"))}</button></span>`
+      : `<button class="btn btn-sm propDelBtn" data-action="prop-ask-delete-account">${ICONS.trash} ${esc(T("prop.acc.delete"))}</button>`}</div>`;
   body += `<div class="propAccNums propDetailNums">
     <div><span>${esc(T("prop.stat.spent"))}</span><b>${propUsd(s.spent)}</b></div>
     <div><span>${esc(T("prop.stat.received"))}</span><b>${propUsd(s.received)}</b></div>
@@ -930,6 +997,13 @@ function propDetail(m) {
   }
   if (acc.renewing) body += `<div class="propHint" style="margin-bottom:10px;">${esc(T("prop.acc.renewingLine", { v: propUsd(propMoney(acc.monthly_fee)), d: propNextRenewal(acc) }))}</div>`;
 
+  // 时间线：日期直接改（第一步就是购买日，改它等于改购买日期，购买那笔账一起挪）
+  const events = acc.events || [];
+  if (events.length) {
+    body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}</div><div class="propTimeline propTimelineEdit">${events.map((ev, i) =>
+      `<div>${ro ? `<span>${esc(ev.day)}</span>` : `<input type="date" class="input propEvDate" value="${esc(ev.day)}" data-prop-event="${i}" data-id="${esc(acc.id)}" title="${esc(T("prop.acc.eventDateHint"))}">`}${propStatusPill(ev.to)}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
+  }
+
   body += `<div class="propMiniLabel">${esc(T("prop.acc.entries"))}</div>`;
   if (!list.length) body += `<div class="propMuted" style="margin-bottom:14px;">${esc(T("prop.acc.noEntries"))}</div>`;
   else {
@@ -940,44 +1014,45 @@ function propDetail(m) {
         ${m.confirmEntry === e.id ? `<button class="tinyBtn propAct neg" data-action="prop-delete-entry" data-id="${esc(e.id)}">${esc(T("common.confirmDelete"))}</button>` : `<button class="tinyBtn propAct" data-action="prop-ask-delete-entry" data-id="${esc(e.id)}">${ICONS.trash}</button>`}</td>`}</tr>`).join("")}
     </tbody></table></div>`;
   }
-  const events = acc.events || [];
-  if (events.length) {
-    body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}</div><div class="propTimeline">${events.map((ev) => `<div><span>${esc(ev.day)}</span>${propStatusPill(ev.to)}</div>`).join("")}</div>`;
-  }
+  if (!ro) body += propInfoForm(m, acc);
+  else if (acc.note) body += `<div class="propNotes">${esc(acc.note)}</div>`;
   if (acc.plan_snapshot) {
     const p = acc.plan_snapshot;
     body += `<details class="propMore propSnapshot"><summary>${esc(T("prop.acc.snapshot", { d: p.checkedAt || acc.bought_on }))}</summary>${propPriceHtml(p)}${propRulesDl([...propKeyRules(p), ...propMoreRules(p)])}${propLongRulesHtml(p)}${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}</details>`;
   }
-  if (acc.note) body += `<div class="propNotes">${esc(acc.note)}</div>`;
-  if (!ro) body += propEditBlock(m, acc);
   return { title, body, foot: "" };
 }
-/* 详情底部：改账号信息（昵称、分组、月费、续费、备注、手动改状态）、删除 */
-function propEditBlock(m, acc) {
-  if (!m.edit) {
-    return `<div class="propEditToggle"><button class="btn btn-sm" data-action="prop-edit-account">${ICONS.pencil} ${esc(T("prop.acc.edit"))}</button></div>`;
-  }
+/* 账号信息：常开的表单，有改动才亮「保存」 */
+function propInfoForm(m, acc) {
   const d = m.draft;
-  let html = `<div class="propEditBox"><div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60"`))}
-    ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList"`))}</div>
+  const dirty = propDetailDirty(acc, d);
+  let html = `<div class="propInfoBox"><div class="propMiniLabel">${esc(T("prop.acc.info"))}</div>
+    <div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60" data-prop-rerender`))}
+    ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" data-prop-rerender`))}</div>
     <datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
-    <div class="propRow">${propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `maxlength="60"`))}
-    ${propField(T("prop.form.planName"), propInput("plan_name", d.plan_name, `maxlength="60"`))}</div>
-    <div class="propRow">${propField(T("prop.form.size"), propInput("size", d.size, `type="number" min="0" step="1000"`))}
-    ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date"`))}</div>
+    <div class="propRow">${propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `maxlength="60" data-prop-rerender`))}
+    ${propField(T("prop.form.planName"), propInput("plan_name", d.plan_name, `maxlength="60" data-prop-rerender`))}</div>
+    <div class="propRow">${propField(T("prop.form.size"), propInput("size", d.size, `type="number" min="0" step="1000" data-prop-rerender`))}
+    ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" data-prop-rerender`), T("prop.acc.boughtOnHint"))}</div>
     <div class="propRow">${propField(T("prop.form.billing"), propSelect("billing", d.billing, [["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]], true))}
-    ${propField(T("prop.form.statusFix"), propSelect("status", d.status, PROP_STATUSES.map((s) => [s, T("prop.status." + s)])), T("prop.form.statusFixHint"))}</div>`;
+    ${propField(T("prop.form.statusFix"), propSelect("status", d.status, PROP_STATUSES.map((s) => [s, T("prop.status." + s)]), true), T("prop.form.statusFixHint"))}</div>`;
   if (d.billing === "monthly") {
-    html += `<div class="propRow">${propField(T("prop.form.monthlyFee"), propInput("monthly_fee", d.monthly_fee, `type="number" min="0" step="0.01"`))}
-      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"))}<div class="propHint">${esc(T("prop.form.renewingEditHint"))}</div></div></div>`;
+    html += `<div class="propRow">${propField(T("prop.form.monthlyFee"), propInput("monthly_fee", d.monthly_fee, `type="number" min="0" step="0.01" data-prop-rerender`))}
+      <div class="field propCheckField">${propCheck("renewing", d.renewing, T("prop.form.renewing"), true)}<div class="propHint">${esc(T("prop.form.renewingEditHint"))}</div></div></div>`;
   }
-  html += propField(T("prop.form.note"), `<textarea class="input" data-prop-field="note" rows="2" maxlength="500">${esc(d.note)}</textarea>`);
-  html += `<div class="propEditFoot">
-    ${m.confirmDelete ? `<button class="btn btn-danger" data-action="prop-delete-account">${esc(T("prop.acc.deleteConfirm"))}</button>` : `<button class="btn" data-action="prop-ask-delete-account">${ICONS.trash} ${esc(T("prop.acc.delete"))}</button>`}
-    <span style="flex:1"></span>
-    <button class="btn" data-action="prop-cancel-edit">${esc(T("common.cancel"))}</button>
-    <button class="btn btn-primary" data-action="prop-save-edit" ${m.busy ? "disabled" : ""}>${esc(T(m.busy ? "common.saving" : "common.save"))}</button></div></div>`;
+  html += propField(T("prop.form.note"), `<textarea class="input" data-prop-field="note" data-prop-rerender rows="2" maxlength="500">${esc(d.note)}</textarea>`);
+  html += `<div class="propEditFoot"><span class="propMuted">${esc(T(dirty ? "prop.acc.unsaved" : "prop.acc.saved"))}</span><span style="flex:1"></span>
+    ${dirty ? `<button class="btn btn-sm" data-action="prop-cancel-edit">${esc(T("prop.acc.revert"))}</button>` : ""}
+    <button class="btn btn-primary btn-sm" data-action="prop-save-edit" ${dirty && !m.busy ? "" : "disabled"}>${esc(T(m.busy ? "common.saving" : "common.save"))}</button></div></div>`;
   return html;
+}
+/* 改购买日期：时间线第一步、购买当天记的那几笔（购买 / 一起付的激活费）跟着挪 */
+function propMoveBoughtOn(acc, next, day) {
+  const old = acc.bought_on;
+  if (!day || day === old) return [];
+  next.bought_on = day;
+  next.events = (next.events || acc.events || []).map((ev, i) => (i === 0 && ev.day === old ? { ...ev, day } : ev));
+  return propEntriesOf(acc.id).filter((e) => e.day === old && (e.kind === "purchase" || e.kind === "activation")).map((e) => ({ ...e, day }));
 }
 async function propSaveEdit() {
   const m = propModal, d = m.draft;
@@ -988,16 +1063,105 @@ async function propSaveEdit() {
   const renewing = monthly && !!d.renewing;
   const next = { ...acc, nickname: String(d.nickname || "").trim(), group_name: String(d.group_name || "").trim(),
     firm_name: String(d.firm_name).trim(), plan_name: String(d.plan_name || "").trim(), size: Number(d.size) || null,
-    bought_on: d.bought_on || acc.bought_on, billing: d.billing, monthly_fee: monthly ? propMoney(d.monthly_fee) : null,
-    renewing, note: String(d.note || "").trim() };
+    billing: d.billing, monthly_fee: monthly ? propMoney(d.monthly_fee) : null, renewing, note: String(d.note || "").trim() };
   // 刚打开续费：从今天起算，不补记关着的那段
   if (renewing && !acc.renewing) next.renewed_through = todayStr();
   if (d.status !== acc.status) { next.status = d.status; next.events = [...(acc.events || []), { to: d.status, day: todayStr() }]; }
+  const moved = propMoveBoughtOn(acc, next, d.bought_on);
   m.busy = true; propRenderModal();
-  const ok = await propSaveAccount(next);
+  let ok = await propSaveAccount(next);
+  if (ok && moved.length) ok = await propSaveEntries(moved);
   m.busy = false;
   if (!ok) { m.error = propError; propRenderModal(); return; }
-  propError = null; m.error = null; m.edit = false; m.draft = null;
+  propError = null; m.error = null; m.draft = null;
+  propRenderModal(); render();
+}
+/* 时间线上改某一步的日期，直接存 */
+async function propSaveEventDay(accId, i, day) {
+  const acc = propAccounts.find((a) => a.id === accId);
+  if (!acc || !day || !(acc.events || [])[i]) return;
+  const next = { ...acc, events: acc.events.map((ev, k) => (k === i ? { ...ev, day } : ev)) };
+  const moved = i === 0 ? propMoveBoughtOn(acc, next, day) : [];
+  let ok = await propSaveAccount(next);
+  if (ok && moved.length) ok = await propSaveEntries(moved);
+  if (propModal && propModal.type === "detail") { propModal.draft = null; if (!ok) propModal.error = propError; }
+  propRenderModal(); render();
+}
+
+/* ---------- 删除（可撤销） ----------
+   删的时候把账号和它的流水留一份在内存里，底部提示条 10 秒内点「撤销」就原样写回去（id 不变） */
+let propToastUndo = null, propToastTimer = null;
+function propToast(msg, undo) {
+  let el = document.getElementById("propToast");
+  if (!el) { el = document.createElement("div"); el.id = "propToast"; document.body.appendChild(el); }
+  el.className = "propToast show";
+  el.innerHTML = `<span>${esc(msg)}</span>${undo ? `<button class="btn btn-sm" data-action="prop-toast-undo">${esc(T("prop.undo"))}</button>` : ""}`;
+  propToastUndo = undo || null;
+  clearTimeout(propToastTimer);
+  propToastTimer = setTimeout(() => { el.className = "propToast"; propToastUndo = null; }, 10000);
+}
+function propHideToast() { const el = document.getElementById("propToast"); if (el) el.className = "propToast"; propToastUndo = null; }
+async function propDeleteAccounts(ids) {
+  const kept = ids.map((id) => ({ acc: propAccounts.find((a) => a.id === id), entries: propEntriesOf(id).map((e) => ({ ...e })) })).filter((x) => x.acc);
+  let done = 0;
+  for (const k of kept) { if (await propDeleteAccount(k.acc.id)) done++; else break; }
+  render();
+  if (!done) return false;
+  propToast(T("prop.acc.deleted", { n: done }), async () => {
+    for (const k of kept.slice(0, done)) {
+      if (await propSaveAccount(k.acc)) await propSaveEntries(k.entries);
+    }
+    propToast(T("prop.acc.restored", { n: done }));
+    render();
+  });
+  return true;
+}
+
+/* ---------- 批量操作 ----------
+   「我的账号」里打开多选，勾几个号一起：改状态、各记一笔出金、改分组、删除（复制交易一组号常常一起过 / 一起爆） */
+function propBatchForm(m) {
+  const d = m.draft, accs = propSelected.map((id) => propAccounts.find((a) => a.id === id)).filter(Boolean);
+  let body = `<div class="propMuted" style="margin-bottom:12px;">${esc(T("prop.batch.picked", { n: accs.length }))}：${esc(accs.slice(0, 6).map(propAccountTitle).join("、"))}${accs.length > 6 ? " …" : ""}</div>`;
+  if (m.mode === "status") {
+    body += `<div class="propRow">${propField(T("prop.batch.to"), propSelect("to", d.to, PROP_STATUSES.map((s) => [s, T("prop.status." + s)])))}
+      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}</div><div class="propHint">${esc(T("prop.batch.statusHint"))}</div>`;
+  } else if (m.mode === "payout") {
+    body += `<div class="propRow">${propField(T("prop.batch.each"), propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="0"`))}
+      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}</div>
+      <div class="propRow"><div class="field propCheckField">${propCheck("pending", d.pending, T("prop.entry.pendingLabel"))}</div><div></div></div>
+      ${propField(T("prop.form.note"), propInput("note", d.note, `maxlength="200"`))}`;
+  } else if (m.mode === "group") {
+    body += propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" placeholder="${esc(T("prop.batch.groupClear"))}"`)) +
+      `<datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>`;
+  } else if (m.mode === "delete") {
+    body += `<div class="notice error">${ICONS.alert}<span>${esc(T("prop.batch.deleteWarn", { n: accs.length }))}</span></div>`;
+  }
+  return { title: esc(T("prop.batch." + m.mode)), body, foot: propFootButtons("prop-batch-save", m.mode === "delete" ? T("prop.acc.deleteYes") : null) };
+}
+async function propBatchSave() {
+  const m = propModal, d = m.draft;
+  const accs = propSelected.map((id) => propAccounts.find((a) => a.id === id)).filter(Boolean);
+  if (!accs.length) return;
+  if (m.mode === "delete") {
+    m.busy = true; propRenderModal();
+    const ok = await propDeleteAccounts(accs.map((a) => a.id));
+    if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
+    propSelected = []; propModal = null; propRenderModal(); render(); return;
+  }
+  if ((m.mode === "status" || m.mode === "payout") && !d.day) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
+  if (m.mode === "payout" && !(propMoney(d.amount) > 0)) { m.error = T("prop.entry.needAmount"); propRenderModal(); return; }
+  m.busy = true; propRenderModal();
+  let ok = true;
+  if (m.mode === "status") {
+    for (const a of accs) { if (a.status !== d.to && !(ok = await propChangeStatus(a, d.to, d.day))) break; }
+  } else if (m.mode === "payout") {
+    ok = await propSaveEntries(accs.map((a) => ({ account_id: a.id, kind: "payout", amount: d.amount, day: d.day, pending: !!d.pending, note: d.note || "" })));
+  } else if (m.mode === "group") {
+    for (const a of accs) { if (!(ok = await propSaveAccount({ ...a, group_name: String(d.group_name || "").trim() }))) break; }
+  }
+  if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
+  propError = null; propModal = null;
+  propToast(T("prop.batch.done", { n: accs.length }));
   propRenderModal(); render();
 }
 
@@ -1105,7 +1269,7 @@ document.addEventListener("click", async (e) => {
   else if (a === "prop-firm-filter") { propFirmFilter = el.dataset.val; render(); }
   else if (a === "prop-group-filter") { propGroupFilter = el.dataset.val; render(); }
   else if (a === "prop-status-filter") { propStatusFilter = el.dataset.val; render(); }
-  else if (a === "prop-year") { propYear += Number(el.dataset.d); render(); }
+  else if (a === "prop-year") { propYear += Number(el.dataset.d); propYearTouched = true; render(); }
   else if (a === "prop-month") { propMonth = Number(el.dataset.m); render(); }
   else if (a === "prop-cat-firm") {
     // 从对比表的某一行进来的，公司页先只显示那个规模
@@ -1151,6 +1315,7 @@ document.addEventListener("click", async (e) => {
     if (p) propLoadPlan(d, p);
     propRenderModal();
   }
+  else if (a === "prop-add-backfill") { m.draft.backfill = el.dataset.val; propRenderModal(); }
   else if (a === "prop-add-reset-rules") { const p = propDraftPlan(m.draft); m.draft.rules = propRuleTexts(p); propRenderModal(); }
   else if (a === "prop-open-detail") { propModal = { type: "detail", id }; propRenderModal(); }
   else if (a === "prop-open-entry") {
@@ -1185,23 +1350,28 @@ document.addEventListener("click", async (e) => {
     propRenderModal();
   }
   else if (a === "prop-save-status") { await propSaveStatus(); }
-  else if (a === "prop-edit-account") {
-    const acc = propAccounts.find((x) => x.id === m.id);
-    if (!acc) return;
-    m.edit = true; m.confirmDelete = false;
-    m.draft = { nickname: acc.nickname, group_name: acc.group_name, firm_name: acc.firm_name, plan_name: acc.plan_name, size: acc.size || "",
-      bought_on: acc.bought_on, billing: acc.billing, monthly_fee: acc.monthly_fee === null ? "" : propMoney(acc.monthly_fee), renewing: !!acc.renewing, status: acc.status, note: acc.note || "" };
-    propRenderModal();
-  }
-  else if (a === "prop-cancel-edit") { m.edit = false; m.draft = null; m.error = null; propRenderModal(); }
+  else if (a === "prop-cancel-edit") { m.draft = null; m.error = null; propRenderModal(); }
   else if (a === "prop-save-edit") { await propSaveEdit(); }
   else if (a === "prop-ask-delete-account") { m.confirmDelete = true; propRenderModal(); }
+  else if (a === "prop-cancel-delete") { m.confirmDelete = false; propRenderModal(); }
   else if (a === "prop-delete-account") {
     m.busy = true; propRenderModal();
-    const ok = await propDeleteAccount(m.id);
+    const ok = await propDeleteAccounts([m.id]);
     if (ok) propModal = null; else { m.busy = false; m.error = propError; }
     propRenderModal(); render();
   }
+  else if (a === "prop-delete-quick") { propCardMenu = null; await propDeleteAccounts([id]); }
+  else if (a === "prop-card-menu") { propCardMenu = propCardMenu === id ? null : id; render(); }
+  else if (a === "prop-toast-undo") { const undo = propToastUndo; propHideToast(); if (undo) await undo(); }
+  /* ---------- 批量 ---------- */
+  else if (a === "prop-batch-toggle") { propBatch = !propBatch; propSelected = []; propCardMenu = null; render(); }
+  else if (a === "prop-batch-pick") { propSelected = propSelected.includes(id) ? propSelected.filter((x) => x !== id) : [...propSelected, id]; render(); }
+  else if (a === "prop-batch-all") { propSelected = el.dataset.val === "all" ? el.dataset.ids.split(",").filter(Boolean) : []; render(); }
+  else if (a === "prop-batch-open") {
+    propModal = { type: "batch", mode: el.dataset.val, draft: { to: "passed", day: todayStr(), amount: "", pending: false, note: "", group_name: "" } };
+    propRenderModal();
+  }
+  else if (a === "prop-batch-save") { await propBatchSave(); }
   /* ---------- 目录导入（管理员） ---------- */
   else if (a === "prop-open-import") { propModal = { type: "import", draft: { text: "" }, check: null }; propRenderModal(); }
   else if (a === "prop-check-import") { propCheckImport(); propRenderModal(); }
@@ -1219,6 +1389,10 @@ document.addEventListener("click", async (e) => {
     downloadFile("prop-catalog-" + todayStr() + ".json", JSON.stringify(propCatalogExport(), null, 2), "application/json");
   }
 });
+// 账号卡片的「⋯」菜单：点到菜单以外的地方就收起
+document.addEventListener("click", (e) => {
+  if (propCardMenu && !e.target.closest(".propMenu, [data-action='prop-card-menu']")) { propCardMenu = null; render(); }
+}, true);
 /* 表单字段写回 draft；「r:xxx」是添加账号里的规则输入框，写进 draft.rules */
 function propSetDraftField(d, f, v) {
   if (f.startsWith("r:")) d.rules = { ...(d.rules || {}), [f.slice(2)]: v };
@@ -1238,6 +1412,7 @@ document.addEventListener("input", (e) => {
 document.addEventListener("change", (e) => {
   const t = e.target;
   if (t.dataset && t.dataset.propCatSize !== undefined) { propCatalogSize = t.value; render(); return; }
+  if (t.dataset && t.dataset.propEvent !== undefined) { propSaveEventDay(t.dataset.id, Number(t.dataset.propEvent), t.value); return; }
   if (!propModal || !t.dataset) return;
   if (t.dataset.propFile !== undefined && t.files && t.files[0]) {
     const file = t.files[0];

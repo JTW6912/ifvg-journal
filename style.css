@@ -1889,6 +1889,52 @@ select.propPcMore.on{border-color:var(--accent);color:var(--accent);}
 .propPcFoot{margin-top:10px;text-align:center;font-size:11px;color:var(--mutedDark);}
 .propCmpDiff th,.propCmpDiff td{background:var(--accentSoft);}
 .propCmpDiff th{color:var(--accent);}
+/* 账号详情：右侧抽屉 */
+.propDrawerOverlay{justify-content:flex-end;align-items:stretch;padding:0;}
+.propDrawer{height:100vh;max-height:100vh;border-radius:18px 0 0 18px;border-right:none;}
+.propDrawer.anim{animation:propDrawerIn .22s ease-out;}
+@keyframes propDrawerIn{from{transform:translateX(40px);opacity:0;}to{transform:none;opacity:1;}}
+.propDrawerSub{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--muted);}
+.propDelBtn{color:var(--muted);}
+.propDelBtn:hover{color:var(--neg);border-color:var(--neg);}
+.propDelConfirm{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--neg);}
+.propTimelineEdit{align-items:center;gap:8px;}
+.propTimelineEdit>div{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r10);padding:4px 6px 4px 4px;}
+.propEvDate{width:auto;padding:3px 6px;font-size:12px;font-family:var(--fontMono);border-color:transparent;background:transparent;cursor:pointer;}
+.propEvDate:hover,.propEvDate:focus{border-color:var(--accent);}
+.propEvArrow{color:var(--mutedDark);}
+.propDrawer .propTable th,.propDrawer .propTable td{white-space:nowrap;}
+.propInfoBox{margin:4px 0 14px;padding:14px;border:1px solid var(--border);border-radius:var(--r12);background:var(--surface2);}
+.propInfoBox .propMiniLabel{margin-top:0;}
+/* 账号卡片：「⋯」菜单、多选 */
+.propAccFilters{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.propAccFilters .chipGroup{margin-bottom:0;}
+.propAccFilters .btn.active{border-color:var(--accent);color:var(--accent);background:var(--accentSoft);}
+.propCardMenuWrap{position:relative;margin-left:2px;}
+.propCardMenuBtn{width:26px;height:24px;border-radius:var(--r8);border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;}
+.propCardMenuBtn:hover{border-color:var(--border);background:var(--surface2);color:var(--text);}
+.propMenu{position:absolute;right:0;top:28px;z-index:20;min-width:170px;padding:5px;border-radius:var(--r10);border:1px solid var(--borderLight);
+  background:var(--surface);box-shadow:var(--shadowPop);display:flex;flex-direction:column;}
+.propMenu button{display:flex;align-items:center;gap:8px;padding:8px 10px;border:none;background:none;border-radius:var(--r8);color:var(--text);font:inherit;font-size:13px;cursor:pointer;text-align:left;}
+.propMenu button:hover{background:var(--surface2);}
+.propMenu button.neg{color:var(--neg);}
+.propMenu .icon{width:14px;height:14px;}
+.propAcc.batch:hover{transform:none;}
+.propAcc.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--surface));}
+.propPickBox{width:18px;height:18px;flex-shrink:0;border-radius:5px;border:1.5px solid var(--borderLight);display:inline-flex;align-items:center;justify-content:center;color:var(--onAccent);}
+.propAcc.selected .propPickBox{background:var(--accent);border-color:var(--accent);}
+.propPickBox .icon{width:12px;height:12px;}
+.propAccHead{align-items:center;}
+.propBatchBar{justify-content:flex-start;}
+/* 底部提示条（删除后可撤销） */
+.propToast{position:fixed;left:50%;bottom:22px;z-index:300;display:flex;align-items:center;gap:12px;padding:10px 12px 10px 16px;border-radius:12px;
+  background:var(--text);color:var(--surface);font-size:13px;box-shadow:var(--shadowPop);transform:translate(-50%,30px);opacity:0;pointer-events:none;transition:all .2s;}
+.propToast.show{transform:translate(-50%,0);opacity:1;pointer-events:auto;}
+.propToast .btn{background:transparent;color:var(--surface);border-color:color-mix(in srgb,var(--surface) 40%,transparent);}
+/* 补录老账号：要不要补记月费 */
+.propBackfill{display:flex;flex-direction:column;gap:8px;margin:-2px 0 12px;padding:10px 12px;border-radius:var(--r10);background:var(--accentSoft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);}
+.propBackfill b{font-size:12.5px;}
+.propBackfill .propOptBtns{grid-template-columns:1fr 1fr;}
 /* 记录购买：左预览、右表单 */
 .propAddGrid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start;}
 .propAddPreview{position:sticky;top:0;}
