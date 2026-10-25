@@ -419,7 +419,7 @@ function propBalanceForm(m) {
   const d = m.draft;
   let body = `<div class="propMuted" style="margin-bottom:12px;">${esc(acc ? propAccountTitle(acc) : "")}</div>
     <div class="propRow">${propField(T("prop.bal.now") + " (USD)", propInput("balance", d.balance, `type="number" step="0.01" placeholder="${esc(acc && acc.size ? String(acc.size) : "")}"`), T("prop.bal.hint"))}
-    ${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}</div>`;
+    ${propField(T("prop.col.day"), propInput("day", d.day, `type="date" min="1990-01-01" max="2099-12-31"`))}</div>`;
   if (acc && acc.balance !== null && acc.balance !== undefined) body += `<div class="propHint">${esc(T("prop.bal.peak", { v: propUsd(Math.max(Number(acc.balance_peak) || 0, Number(acc.balance) || 0)) }))}</div>`;
   return { title: esc(T("prop.bal.add")), body, foot: propFootButtons("prop-save-balance", null, !!m.back) };
 }
@@ -1020,7 +1020,7 @@ function propAccountForm(m) {
   </details>`;
 
   const account = `<div class="propRow">${propField(T("prop.add.quantity"), propInput("quantity", d.quantity, `type="number" min="1" max="${PROP_MAX_QTY}" step="1" data-prop-rerender`), T("prop.add.quantityHint"))}
-      ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" data-prop-rerender`))}</div>
+      ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" min="1990-01-01" max="2099-12-31" data-prop-rerender`))}</div>
     <div class="propRow">${propField(T("prop.form.nickname"), propInput("nickname", d.nickname, `maxlength="60" placeholder="${esc(T("prop.form.optional"))}"`), Number(d.quantity) > 1 ? T("prop.add.nicknameMany") : "")}
       ${propField(T("prop.form.group"), propInput("group_name", d.group_name, `maxlength="40" list="propGroupList" placeholder="${esc(T("prop.form.optional"))}"`), T("prop.form.groupHint"))}</div>
     <datalist id="propGroupList">${propGroups().map((g) => `<option value="${esc(g)}">`).join("")}</datalist>
@@ -1059,7 +1059,7 @@ async function propSaveNewAccount() {
   const firm = d.firmSel === "__custom" ? null : propFindFirm(d.firmSel);
   const firmName = propDraftFirmName(d);
   if (!firmName) { propModal.error = T("prop.form.needFirm"); propRenderModal(); return; }
-  if (!d.bought_on) { propModal.error = T("prop.form.needDate"); propRenderModal(); return; }
+  if (!propDateOk(d.bought_on)) { propModal.error = T("prop.form.needDate"); propRenderModal(); return; }
   const snap = propDraftSnapshot(d);
   const plan = propDraftCustom(d) ? null : propDraftPlan(d);
   const planName = propDraftPlanName(d, snap);
@@ -1104,7 +1104,7 @@ function propEntryForm(m) {
   let body = `<div class="propMuted" style="margin-bottom:12px;">${esc(acc ? propAccountTitle(acc) : "")}</div>`;
   body += `<div class="propRow">${propField(T("prop.col.kind"), propSelect("kind", d.kind, PROP_ENTRY_KINDS.map((k) => [k, T("prop.kind." + k)]), true))}
     ${propField(T("prop.col.amount") + " (USD)", propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="0"`), d.kind === "payout" ? T("prop.entry.payoutHint") : "")}</div>`;
-  body += `<div class="propRow">${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}
+  body += `<div class="propRow">${propField(T("prop.col.day"), propInput("day", d.day, `type="date" min="1990-01-01" max="2099-12-31"`))}
     ${d.kind === "payout" ? `<div class="field propCheckField">${propCheck("pending", d.pending, T("prop.entry.pendingLabel"))}<div class="propHint">${esc(T("prop.entry.pendingHint"))}</div></div>` : "<div></div>"}</div>`;
   body += propField(T("prop.form.note"), propInput("note", d.note, `maxlength="200"`));
   return { title: esc(T(d.id ? "prop.entry.edit" : "prop.entry.new")), body, foot: propFootButtons("prop-save-entry", null, !!m.back) };
@@ -1112,7 +1112,7 @@ function propEntryForm(m) {
 async function propSaveEntry() {
   const m = propModal, d = m.draft;
   if (!(propMoney(d.amount) > 0)) { m.error = T("prop.entry.needAmount"); propRenderModal(); return; }
-  if (!d.day) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
+  if (!propDateOk(d.day)) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
   m.busy = true; propRenderModal();
   const ok = await propSaveEntries([{ id: d.id, account_id: m.accountId, kind: d.kind, amount: d.amount, day: d.day, pending: d.pending, note: d.note }]);
   if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
@@ -1136,7 +1136,7 @@ function propStatusForm(m) {
   const acc = propAccounts.find((a) => a.id === m.accountId);
   const feeKind = PROP_FEE_FOR[m.step];
   let body = `<div class="propMuted" style="margin-bottom:12px;">${esc(acc ? propAccountTitle(acc) : "")} · ${acc ? propStatusPill(acc.status) : ""} → ${propStatusPill(m.to)}</div>`;
-  body += `<div class="propRow">${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}
+  body += `<div class="propRow">${propField(T("prop.col.day"), propInput("day", d.day, `type="date" min="1990-01-01" max="2099-12-31"`))}
     ${feeKind ? propField(T("prop.kind." + feeKind) + " (USD)", propInput("fee", d.fee, `type="number" min="0" step="0.01" placeholder="0"`), T("prop.step.feeHint")) : "<div></div>"}</div>`;
   if (acc && acc.status === "eval" && m.to !== "eval" && acc.renewing) body += `<div class="propHint">${esc(T("prop.step.stopRenew"))}</div>`;
   return { title: esc(T("prop.step." + m.step)), body, foot: propFootButtons("prop-save-status", T("prop.step.confirm"), !!m.back) };
@@ -1145,7 +1145,7 @@ async function propSaveStatus() {
   const m = propModal, d = m.draft;
   const acc = propAccounts.find((a) => a.id === m.accountId);
   if (!acc) return;
-  if (!d.day) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
+  if (!propDateOk(d.day)) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
   m.busy = true; propRenderModal();
   const ok = await propChangeStatus(acc, m.to, d.day, d.fee, PROP_FEE_FOR[m.step] || null);
   if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
@@ -1198,7 +1198,7 @@ function propDetail(m) {
   const events = acc.events || [];
   if (events.length) {
     body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}</div><div class="propTimeline propTimelineEdit">${events.map((ev, i) =>
-      `<div>${ro ? `<span>${esc(ev.day)}</span>` : `<input type="date" class="input propEvDate" value="${esc(ev.day)}" data-prop-event="${i}" data-id="${esc(acc.id)}" title="${esc(T("prop.acc.eventDateHint"))}">`}${propStatusPill(ev.to)}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
+      `<div>${ro ? `<span>${esc(ev.day)}</span>` : `<input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="${esc(ev.day)}" data-prop-event="${i}" data-id="${esc(acc.id)}" title="${esc(T("prop.acc.eventDateHint"))}">`}${propStatusPill(ev.to)}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
   }
 
   body += `<div class="propMiniLabel">${esc(T("prop.acc.entries"))}</div>`;
@@ -1230,7 +1230,7 @@ function propInfoForm(m, acc) {
     <div class="propRow">${propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `maxlength="60" data-prop-rerender`))}
     ${propField(T("prop.form.planName"), propInput("plan_name", d.plan_name, `maxlength="60" data-prop-rerender`))}</div>
     <div class="propRow">${propField(T("prop.form.size"), propInput("size", d.size, `type="number" min="0" step="1000" data-prop-rerender`))}
-    ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" data-prop-rerender`), T("prop.acc.boughtOnHint"))}</div>
+    ${propField(T("prop.form.boughtOn"), propInput("bought_on", d.bought_on, `type="date" min="1990-01-01" max="2099-12-31" data-prop-rerender`), T("prop.acc.boughtOnHint"))}</div>
     <div class="propRow">${propField(T("prop.form.billing"), propSelect("billing", d.billing, [["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]], true))}
     ${propField(T("prop.form.statusFix"), propSelect("status", d.status, PROP_STATUSES.map((s) => [s, T("prop.status." + s)]), true), T("prop.form.statusFixHint"))}</div>`;
   if (d.billing === "monthly") {
@@ -1256,6 +1256,7 @@ async function propSaveEdit() {
   const acc = propAccounts.find((a) => a.id === m.id);
   if (!acc) return;
   if (!String(d.firm_name || "").trim()) { m.error = T("prop.form.needFirm"); propRenderModal(); return; }
+  if (!propDateOk(d.bought_on)) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
   const monthly = d.billing === "monthly";
   const renewing = monthly && !!d.renewing;
   const next = { ...acc, nickname: String(d.nickname || "").trim(), group_name: String(d.group_name || "").trim(),
@@ -1276,7 +1277,7 @@ async function propSaveEdit() {
 /* 时间线上改某一步的日期，直接存 */
 async function propSaveEventDay(accId, i, day) {
   const acc = propAccounts.find((a) => a.id === accId);
-  if (!acc || !day || !(acc.events || [])[i]) return;
+  if (!acc || !propDateOk(day) || !(acc.events || [])[i]) return;
   const next = { ...acc, events: acc.events.map((ev, k) => (k === i ? { ...ev, day } : ev)) };
   const moved = i === 0 ? propMoveBoughtOn(acc, next, day) : [];
   let ok = await propSaveAccount(next);
@@ -1321,10 +1322,10 @@ function propBatchForm(m) {
   let body = `<div class="propMuted" style="margin-bottom:12px;">${esc(T("prop.batch.picked", { n: accs.length }))}：${esc(accs.slice(0, 6).map(propAccountTitle).join("、"))}${accs.length > 6 ? " …" : ""}</div>`;
   if (m.mode === "status") {
     body += `<div class="propRow">${propField(T("prop.batch.to"), propSelect("to", d.to, PROP_STATUSES.map((s) => [s, T("prop.status." + s)])))}
-      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}</div><div class="propHint">${esc(T("prop.batch.statusHint"))}</div>`;
+      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date" min="1990-01-01" max="2099-12-31"`))}</div><div class="propHint">${esc(T("prop.batch.statusHint"))}</div>`;
   } else if (m.mode === "payout") {
     body += `<div class="propRow">${propField(T("prop.batch.each"), propInput("amount", d.amount, `type="number" min="0" step="0.01" placeholder="0"`))}
-      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date"`))}</div>
+      ${propField(T("prop.col.day"), propInput("day", d.day, `type="date" min="1990-01-01" max="2099-12-31"`))}</div>
       <div class="propRow"><div class="field propCheckField">${propCheck("pending", d.pending, T("prop.entry.pendingLabel"))}</div><div></div></div>
       ${propField(T("prop.form.note"), propInput("note", d.note, `maxlength="200"`))}`;
   } else if (m.mode === "group") {
@@ -1345,7 +1346,7 @@ async function propBatchSave() {
     if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
     propSelected = []; propModal = null; propRenderModal(); render(); return;
   }
-  if ((m.mode === "status" || m.mode === "payout") && !d.day) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
+  if ((m.mode === "status" || m.mode === "payout") && !propDateOk(d.day)) { m.error = T("prop.form.needDate"); propRenderModal(); return; }
   if (m.mode === "payout" && !(propMoney(d.amount) > 0)) { m.error = T("prop.entry.needAmount"); propRenderModal(); return; }
   m.busy = true; propRenderModal();
   let ok = true;
@@ -1616,8 +1617,32 @@ document.addEventListener("input", (e) => {
   propSetDraftField(propModal.draft, f, e.target.type === "checkbox" ? e.target.checked : e.target.value);
   if (propModal.type === "import" && f === "text") propModal.check = null;
 });
+/* 日期框：一边打字一边就会触发 change（年份打了第一位就是合法的 0002 年），这时重画会把光标踢出去、
+   时间线还会把 0002 年存进去。所以日期框打字期间不处理，等离开输入框（或按回车）再统一处理一次；年份早于 1990 的不认 */
+function propDateOk(v) { return /^\d{4}-\d{2}-\d{2}$/.test(v) && Number(v.slice(0, 4)) >= 1990; }
+const propIsWatchedDate = (t) => t && t.type === "date" && t.dataset && (t.dataset.propEvent !== undefined || t.dataset.propRerender !== undefined);
+document.addEventListener("focusout", (e) => {
+  const t = e.target;
+  if (!propIsWatchedDate(t)) return;
+  delete t.dataset.propKeying;
+  if (t.dataset.propPending) { delete t.dataset.propPending; propHandleChange(t); }
+});
+document.addEventListener("keydown", (e) => {
+  const t = e.target;
+  if (!propIsWatchedDate(t)) return;
+  if (e.key === "Enter") { e.preventDefault(); delete t.dataset.propKeying; if (t.dataset.propPending) { delete t.dataset.propPending; propHandleChange(t); } return; }
+  t.dataset.propKeying = "1";   // 用键盘在打：之后的 change 先攒着，离开输入框再处理
+});
 document.addEventListener("change", (e) => {
   const t = e.target;
+  if (propIsWatchedDate(t) && t.dataset.propKeying) {
+    t.dataset.propPending = "1";
+    return;
+  }
+  propHandleChange(t);
+});
+function propHandleChange(t) {
+  if (t.type === "date" && t.value && !propDateOk(t.value)) return;
   if (t.dataset && t.dataset.propCatSize !== undefined) { propCatalogSize = t.value; render(); return; }
   if (t.dataset && t.dataset.propEvent !== undefined) { propSaveEventDay(t.dataset.id, Number(t.dataset.propEvent), t.value); return; }
   if (!propModal || !t.dataset) return;
@@ -1637,4 +1662,4 @@ document.addEventListener("change", (e) => {
   if (propModal.type === "account" && f === "family") propPickFamily(d, d.family);
   if (f === "billing" && d.billing === "monthly" && (d.monthly_fee === "" || d.monthly_fee === null) && d.amount !== undefined) d.monthly_fee = d.amount;
   propRenderModal();
-});
+}
