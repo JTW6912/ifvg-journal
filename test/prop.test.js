@@ -132,3 +132,25 @@ test("添加账号：规则输入框三种取值，改过的规则能认出来�
   assert.strictEqual(out.snap.payout.split, 80);
   assert.strictEqual(out.snap.eval.target, 3000);
 });
+
+test("余额：考核进度、静态 / 追踪回撤的爆仓线", () => {
+  const { call } = setup();
+  const snap = (ddType) => ({ size: 50000, type: "evaluation", eval: { target: 3000, drawdown: 2000, drawdownType: ddType }, funded: { drawdown: 2000, drawdownType: ddType } });
+  const v = call("(a) => propBalanceView(a)", { status: "eval", size: 50000, balance: 51500, balance_peak: 51800, plan_snapshot: snap("eod") });
+  assert.strictEqual(v.profit, 1500);
+  assert.strictEqual(v.progress, 0.5);
+  assert.strictEqual(v.left, 1500);
+  // 追踪：最高 51800 − 2000 = 49800，还没到起始余额
+  assert.strictEqual(v.floor, 49800);
+  assert.strictEqual(v.room, 1700);
+  // 追踪涨过起始 + 回撤后锁在起始余额
+  assert.strictEqual(call("(a) => propBalanceView(a).floor", { status: "eval", size: 50000, balance: 52500, balance_peak: 53000, plan_snapshot: snap("eod") }), 50000);
+  // 静态：永远是起始 − 回撤
+  assert.strictEqual(call("(a) => propBalanceView(a).floor", { status: "eval", size: 50000, balance: 52500, balance_peak: 53000, plan_snapshot: snap("static") }), 48000);
+  // 资金账号没有目标；快爆了标危险
+  const f = call("(a) => propBalanceView(a)", { status: "funded", size: 50000, balance: 48400, balance_peak: 50000, plan_snapshot: snap("eod") });
+  assert.strictEqual(f.target, null);
+  assert.strictEqual(f.room, 400);
+  assert.strictEqual(f.danger, true);
+  assert.strictEqual(call("(a) => propBalanceView(a)", { status: "eval", size: 50000, balance: null }), null);
+});

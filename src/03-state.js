@@ -120,7 +120,8 @@ let propExpandedFirms = [];           // 对比表按排名分组时，哪些公
 let propShowLegacy = false;           // 公司计划：要不要列出已下架的计划
 let propBatch = false;                // 我的账号：多选模式
 let propSelected = [];                // 多选模式下勾了的账号 id
-let propCardMenu = null;              // 哪张账号卡片的「⋯」菜单开着
+let propCardMenu = null;
+let propStacksOpen = [];              // 我的账号：展开成单张的那几摞（同一批买的号）              // 哪张账号卡片的「⋯」菜单开着
 let propCompare = [];                 // 勾了要对比的计划 id，最多 4 个
 let propModal = null;                 // { type: 'account' | 'entry' | 'status' | 'detail' | 'import' | 'compare', ... }
 /* localStorage 里读出来的枚举一律过一遍白名单：

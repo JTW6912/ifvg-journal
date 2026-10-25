@@ -288,6 +288,29 @@ function propNextRenewal(acc) {
 }
 
 /* 账号显示名：自己起的昵称优先，没有就拼「公司 · 计划 · 规模」 */
+/* ---------- 余额 → 离目标 / 离爆仓线 ----------
+   余额是用户自己记的。目标只在考核中算（资金账号没有「目标」）。
+   爆仓线：静态回撤 = 起始 − 回撤；追踪（EOD / 日内）= 最高余额 − 回撤，涨到起始余额就锁住不再上移。
+   各家锁定点不完全一样（有的锁在起始 +$100），所以界面上标「估算」 */
+function propBalanceView(acc) {
+  const bal = Number(acc.balance);
+  if (acc.balance === null || acc.balance === undefined || acc.balance === "" || !isFinite(bal)) return null;
+  const snap = acc.plan_snapshot || {};
+  const size = Number(acc.size) || Number(snap.size) || null;
+  if (!size) return { balance: bal, profit: null };
+  const evalPhase = acc.status === "eval" && snap.type !== "instant";
+  const phase = (evalPhase ? snap.eval : snap.funded) || {};
+  const dd = typeof phase.drawdown === "number" ? phase.drawdown : typeof (snap.eval || {}).drawdown === "number" ? snap.eval.drawdown : null;
+  const target = evalPhase && typeof (snap.eval || {}).target === "number" ? snap.eval.target : null;
+  const profit = propMoney(bal - size);
+  const peak = Math.max(Number(acc.balance_peak) || bal, bal, size);
+  let floor = null;
+  if (dd !== null) floor = phase.drawdownType === "static" ? size - dd : Math.min(peak - dd, size);
+  const room = floor === null ? null : propMoney(bal - floor);
+  return { balance: bal, profit, target, progress: target ? Math.max(0, Math.min(1, profit / target)) : null,
+    left: target ? propMoney(Math.max(0, target - profit)) : null, floor, room, dd,
+    danger: room !== null && dd ? room <= dd * 0.3 : false };
+}
 function propSizeLabel(size) { return size ? (size % 1000 === 0 ? size / 1000 + "K" : String(size)) : ""; }
 function propAccountTitle(acc) {
   if (acc.nickname) return acc.nickname;
@@ -346,6 +369,9 @@ function propAccountRow(a) {
     bought_on: a.bought_on || todayStr(), billing: a.billing === "monthly" ? "monthly" : "one_time",
     monthly_fee: a.monthly_fee === null || a.monthly_fee === undefined || a.monthly_fee === "" ? null : propMoney(a.monthly_fee),
     renewing: !!a.renewing, renewed_through: a.renewed_through || null,
+    balance: a.balance === null || a.balance === undefined || a.balance === "" ? null : propMoney(a.balance),
+    balance_peak: a.balance_peak === null || a.balance_peak === undefined || a.balance_peak === "" ? null : propMoney(a.balance_peak),
+    balance_on: a.balance_on || null,
     plan_snapshot: a.plan_snapshot || null, note: a.note || "",
     updated_at: new Date().toISOString(),
   };
