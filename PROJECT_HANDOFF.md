@@ -1,12 +1,14 @@
 # IFVG Trade Journal — 项目交接文档
 
-给新开的对话/Claude Code 用的完整背景。这份文档取代之前的 DATABASE.md 和 CODE_CONVENTIONS.md（内容更全、更新），先读这一份。
+给新开的对话/Claude Code/Codex 用的完整背景。这份文档取代之前的 DATABASE.md 和 CODE_CONVENTIONS.md（内容更全、更新），先读这一份。协作约定（分支、部署、隐私规则）见 `AGENTS.md`。
+
+最后更新：2026-10-25（补上截图备份表、Prop 账户、管理员不再能看用户数据）。
 
 ---
 
 ## 一、项目是什么
 
-多用户交易日记网页应用。每个用户可以自定义记录字段、区分回测/实盘、查看统计分析、按月历查看交易分布。管理员有独立后台，能管理用户、只读查看任意用户的数据。
+多用户交易日记网页应用。每个用户可以自定义记录字段、区分回测/实盘、查看统计分析、按月历查看交易分布，另有 Prop 账户专区（`prop-test` 分支，测试站）。管理员有独立后台，能管理用户、发更新日志、维护 Prop 公司目录，**但看不到任何用户的交易数据**（2026-10-25 起，见「八、安全模型」）。
 
 ## 二、技术栈
 
@@ -15,10 +17,14 @@
   - 浏览器报错只给 `app.js` 的行号；文件里每个 src 文件前都有一行 `/* >>> src/xx.js */` 路标，往上找最近的一个就知道在哪个文件
   - `npm test` 跑 `test/*.test.js`（node 自带 test runner，零依赖）。`test/load.js` 把 `i18n.js` + 全部 src（除了 `16-init.js`）拼成一个脚本丢进 vm——必须是一个脚本，函数声明要提升到整个文件。目前覆盖：统计引擎、筛选树、markdown 渲染、分页加载、保存/删除的本地更新
 - **后端**：Supabase（Postgres 数据库 + Auth 认证），没有自己写的服务器，前端直接调 Supabase JS client
-- **部署**：Vercel（免费版），已接 Git —— `git push origin master` 之后自动部署
-- **备份/运维**：GitHub Actions 定时任务（跑在一个独立的私有仓库里，跟主项目代码仓库分开）
+- **部署**：Vercel（免费版），已接 Git —— `git push origin master` 之后自动部署；推 `prop-test` 更新测试站（Vercel preview）
+- **备份/运维**：GitHub Actions 定时任务——数据库 `pg_dump` 跑在一个独立的私有仓库里；截图备份跑在本仓库（`.github/workflows/image-backup.yml`，见「七」）
 
 ## 三、数据库结构（当前真实状态）
+
+以 `supabase/migrations/*.sql` 为准（可重复执行，截至 2026-10-25 全部已在线上库跑过）。下面是说明版。
+
+**RLS 总原则**：每个用户私有的表（trades / journal_schema / journal_reviews / journal_playbook / prop_accounts / prop_entries）**只有 owner 能读写**，管理员也读不到（`20261025010000_admin_no_user_data.sql` 删掉了所有 admin 读策略）。下面各表里提到的「admin 只读」都已不存在。新加个人数据表一律只给 owner 策略。
 
 ### profiles（用户资料）
 ```
@@ -47,7 +53,7 @@ data        jsonb —— 这笔交易所有字段的值，key 是字段 id
 created_at  timestamptz
 updated_at  timestamptz
 ```
-- RLS：自己读写自己的（`auth.uid() = user_id`）；另有一条 admin 只读所有人的（`select using (is_admin())`，只读不能写）
+- RLS：只有自己读写自己的（`auth.uid() = user_id`）。原来那条 admin 只读所有人的策略 2026-10-25 已删除
 
 ### journal_schema（每个用户的字段配置）
 ```
@@ -97,7 +103,7 @@ analysis_prefs  jsonb —— 分析页的所有个人配置，默认 '{}'
 - `type`：text / textarea / number / date / time / select / multiselect / url
 - `role`：""（无特殊含义）/ date / model / taken / result / r_multiple / max_rr / human_error / screenshot
 - **前端所有功能（统计/日历/分析/卡片默认显示）都靠 `role` 识别字段用途，不认字段名叫什么**——改字段名字完全不影响功能
-- RLS：跟 trades 一样，自己读写 + admin 只读
+- RLS：跟 trades 一样，只有自己读写（admin 只读已删除）
 
 ### changelog（更新日志，全局共享，不分用户）
 ```
@@ -106,6 +112,7 @@ entry       text
 created_at  timestamptz
 ```
 - RLS：登录用户都能读；只有 admin 能 INSERT/DELETE
+- 每次上线一条：先中文、空一行、再英文；列表项用 `· ` 开头；`created_at` = commit 时间（UTC）
 
 ### journal_reviews（复盘帖子）
 ```
@@ -127,7 +134,7 @@ updated_at        timestamptz
 - **前端不再对缺表 / 缺列做降级**（以前有 `upsertReviewRowsHealing()`「摘列重存」那一整套，已经删了）。库比代码旧时，`isSchemaOutdatedError()`（42P01 / 42703 / PGRST204 / PGRST205）→ `noteDbError()` 置 `dbOutdated`，页面顶部常驻一条「去跑 `supabase/migrations`」。理由：降级写进去的数据是残缺的，比直接报错更难收拾；也省掉了「缺列被误判成缺表」那个坑
 - **分组归属放在行上（`group_id`），分组定义放在配置里（`journal_schema.review_prefs`）**。归属是数据，定义是个人配置；这么分之后不会出现「配置里记着某篇在 A 组、那行却已经被删了」这种对不上的情况。`reviewEffectiveGroupId()` 在归属的分组已经不存在时一律退回未分组，卡片不会凭空消失
 - `linked_trade_ids` 只是索引，**正文才是唯一真相**。改正文一定要重新抽一遍（`extractTradeRefs()`），别让两边对不上
-- RLS：跟 trades 一样，自己读写自己的 + 一条 admin 只读（`select using (is_admin())`）
+- RLS：跟 trades 一样，只有自己读写自己的（admin 只读已删除）
 - **关联到哪一天/哪一周由 `reviewPeriodKind()` 唯一判定**：`day_date` 有值就是日复盘，否则看 `week_start`，都没有就是自由帖。**day_date 优先**——万一两列都有值（正常切换会清另一个，但脏数据难说）也有个确定的落点，不会两处显示不一致
 - 建表和后加的列（mode / group_id / sort_order / day_date）都在 `supabase/migrations/20260901000000_journal_features.sql`，可重复执行；`folded_headings` 在 `20261001000000_review_folds.sql`
 
@@ -146,7 +153,7 @@ trade_marks       jsonb, 默认 {} —— 笔记 / 标签页面上每笔交易�
 branch_of         text, 可空 —— 笔记的分支：= 所属问题（同种类、自己不是分支的笔记）的 id；null = 顶层。最多两层
 created_at / updated_at
 ```
-- 建表在 `supabase/migrations/20261003000000_playbook.sql`，`status` 在 `20261004000000_playbook_verify.sql`。RLS 跟复盘一样：自己读写 + admin 只读
+- 建表在 `supabase/migrations/20261003000000_playbook.sql`，`status` 在 `20261004000000_playbook_verify.sql`。RLS 跟复盘一样：只有自己读写（admin 只读已删除）
 - `branch_of` 在 `20261010000000_playbook_branches.sql`（2026-10-10 已在线上跑过）。`pbRowPayload()` 只在这一行本来就带着 `branch_of` 键时写它（库里读出来是 null 也算带着），新建页面不带
 - **位置（parent_id / sort_order / branch_of）以 `pbPages` 那份为准**：拖拽、挪分支、改归属都走 `pbSaveStructure()`（只 update 这几列，不带正文、不碰 updated_at，失败整批回滚，编辑器开着那页的 parent_id 也同步改）。`persistReview()` 存模型库页面时这三列从 `pbFind(id)` 取、不信编辑器手里那份——所以**别再直接改 `editingReview.parent_id` 然后 flush**，那样会被库里的旧值盖回去（升级成策略那里两边一起改了）
 - `pbRowPayload()` **只在待验证上写 `status`**：系统 / 策略 / 错题的保存不依赖这一列，迁移没跑之前那几样照常能存
@@ -154,12 +161,82 @@ created_at / updated_at
 - **交易属于哪一页存在交易自己身上**：`trades.data.__pb`（页面 id；`"__none"` = 确认过不属于任何模型）、`trades.data.__pb_star`（关注）、`trades.data.__pb_tags`（打了哪些标签，标签 id 数组）、`trades.data.__pb_note`（归类记录，纯文本）。不是用户字段，不在 schema 里；指向已删除页面的 `__pb` 一律按「未归类」读（`pbTradePageId()`）
 - 为什么不跟 journal_reviews 共表：复盘按 mode 分两套、有分组和拖拽，模型库是跨模式的一份，混在一起复盘那边每一处查询都要多排除一次
 
+### image_backups（截图备份对照表，全站一张）
+```
+source_url    text, 主键 —— 网页上 <img> 实际加载的地址（imgSrc() 换过之后的，TradingView 已是 s3 直链）
+backup_url    text —— R2 图床上的备份地址
+backup_key    text
+kind          text —— 'fxreplay' / 'tradingview'
+orig_bytes / backup_bytes  integer
+status        text, 'ok' / 'failed'，默认 'ok'
+error         text
+attempts      integer，默认 0
+encoding      text —— 备份是怎么编码的，现在是无损 WebP；跟脚本里 ENCODING 不一样的行会被重新备份
+created_at / updated_at  timestamptz
+```
+- 建表 `20261015000000_image_backups.sql`，`encoding` 在 `20261016000000_image_backups_lossless.sql`
+- **RLS 打开但没有任何 policy**：只有 service role（备份脚本）能直接读写。整张表有所有用户的截图链接，不能让登录用户列出来
+- 前端只能走 RPC `lookup_image_backups(urls text[])`（security definer，登录用户可调，一次最多 200 个）：拿「自己已经知道的原链接」换备份链接，没法枚举别人的图
+- 备份流程见「七、备份与防暂停」
+
+### Prop 账户（5 张表，`20261024000000_prop.sql` + `20261025000000_prop_balance.sql`）
+
+**公共目录**（登录用户都能读，只有 admin 能写）：
+```
+prop_firms
+  id text 主键, name text, website text, logo text（如 /img/prop/<slug>.webp）,
+  sort_order integer —— 顺序就是「推荐排行」的排名,
+  data jsonb —— 其余字段（rank / tier good|fair|meh|avoid / promo {discount,text} / faq / notes / review / platforms…）,
+  updated_at
+
+prop_plans
+  id text 主键, firm_id text → prop_firms(id) on delete cascade,
+  series text, size integer, status 'current' / 'legacy', sort_order integer,
+  data jsonb —— price / eval / funded / payout / options / family / choices / type / notes / sources / checkedAt,
+  updated_at
+
+prop_catalog_imports —— 每次整份导入留一条：imported_at, imported_by, summary jsonb, payload jsonb（导入原文，出错时能拿回来）
+```
+- 计划规则整块放 `data`：规则字段多、各家不一样、会随时调，拆成列每改一次格式都要跑迁移
+- **目录 JSON 格式写在 `src/11d-prop-data.js` 顶部**。规则值只有三种：数字 = 具体值；`"none"` = 没有这项要求；`null` / 不写 = 还不知道。「没有」和「不知道」必须分开
+- RPC `prop_import_catalog(payload, summary)`：admin 专用，一个事务里删旧插新整份替换（`delete ... where true` 是因为 Supabase 的 pg-safeupdate 拒绝不带 where 的 delete）
+- admin 也能在网页上直接改（`src/11f-prop-admin.js`，直接 upsert prop_firms / prop_plans）。**再整份导入会覆盖手改过的内容**
+
+**每个用户自己的账本**（只有 owner 能读写）：
+```
+prop_accounts
+  id text 主键, user_id uuid,
+  firm_id / plan_id text —— 不做外键（目录里没有的公司也能记），另存 firm_name / plan_name 用来显示,
+  size integer, nickname text, group_name text（同一批买的账号）,
+  status text —— eval / passed / funded / failed / blown / closed,
+  events jsonb —— 状态时间线 [{ to, day }],
+  bought_on date, billing 'one_time' / 'monthly', monthly_fee numeric,
+  renewing boolean, renewed_through date —— 月费自动记到哪天了（删掉自动记的那笔不会被补回来）,
+  plan_snapshot jsonb —— 购买时那份计划规则的拷贝，目录以后改了不影响已买的账号,
+  balance / balance_peak numeric(14,2), balance_on date —— 手动记的余额 / 最高余额 / 哪天的（算离目标多远、离爆仓线多远）,
+  note text, created_at, updated_at
+
+prop_entries
+  id text 主键, user_id uuid, account_id → prop_accounts(id) on delete cascade,
+  kind text —— purchase / monthly / reset / activation / payout / refund / other,
+  amount numeric(12,2) ≥ 0 —— 一律美元正数，方向看 kind,
+  day date, pending boolean（只对出金有意义：已申请未到账）, note text, created_at, updated_at
+```
+- 记账口径：投入 = 购买 + 月费 + 重置 + 激活 + 其他 − 退款；回报 = 已到账的出金（pending 不算）；ROI = (回报 − 投入) ÷ 投入
+- 不建模出金手续费和汇率；不跟日记里的交易关联
+
+### 已下线功能留下的表
+- `goal_days` / `activity_daily` / `points_ledger` / `journal_schema.goal_prefs`：目标 / 积分系统（2026-10-24 作者决定整体放弃），迁移只在 `goals-test` 分支，master 和 prop-test 的代码都不碰。删除前先问作者（回滚脚本 `supabase/rollback/20261017000000_goals_down.sql` 在 goals-test 分支）
+
 ### 数据库函数
 - `is_admin()` — security definer，判断当前用户是不是 admin，给其他表的 RLS 策略调用，避免直接查 profiles 造成递归
 - `update_own_profile(new_display_name, new_gender)` — 普通用户改自己名字/性别专用，改不了权限
 - `touch_last_seen()` — 更新自己的 last_seen_at
 - `handle_new_user()` — 触发器，新用户自动建 profiles 行
-- 复盘那张表不需要新函数，RLS 直接复用 `is_admin()`
+- `update_own_ui_prefs(jsonb)` — 存自己的外观设置
+- `admin_trade_counts()` — 管理后台每个用户的交易笔数（只回数字，不回内容）
+- `lookup_image_backups(urls)` — 原截图链接换备份链接（见 image_backups）
+- `prop_import_catalog(payload, summary)` — admin 整份替换 Prop 目录
 
 ## 四、前端架构
 
@@ -189,7 +266,7 @@ created_at / updated_at
 - 唯一安全场景：这个元素本身没有 data-action、也没有带 data-action 的子元素，纯粹不想让点击冒泡触发父级动作（比如一个新标签页链接，防止同时触发外层卡片的编辑弹窗）
 
 ### 刷新后回到原处 + 本地草稿（16-init.js）
-- **sessionStorage `journal_nav`** = { tab, doc（编辑器开着哪一页）, trade（表单开着哪一笔 / 是不是新建） }。`render()` / `renderModal()` / `renderReviewEditor()` 开头都调 `saveNav()`；数据加载完 `restoreNav()` 切回页签、重开编辑器 / 表单。**恢复之前不写**（`navRestored`），不然加载数据时那几次 render 会先把「主页」写进去。每个浏览器标签页各一份，关掉标签页就没了；在看别人的日志（viewingUserId）时不记不恢复
+- **sessionStorage `journal_nav`** = { tab, doc（编辑器开着哪一页）, trade（表单开着哪一笔 / 是不是新建） }。`render()` / `renderModal()` / `renderReviewEditor()` 开头都调 `saveNav()`；数据加载完 `restoreNav()` 切回页签、重开编辑器 / 表单。**恢复之前不写**（`navRestored`），不然加载数据时那几次 render 会先把「主页」写进去。每个浏览器标签页各一份，关掉标签页就没了；`viewingUserId` 时不记不恢复（「查看别人数据」入口已删，这条路径现在走不到）
 - **三份本地草稿（localStorage）**：`journal_trade_draft` 新建交易（点关闭也留着，下次点「新建交易」接着写）；`journal_trade_edit_draft` 改老交易（{ id, data }，点关闭 = 不要了一起清，保存成功也清；`openTradeForEdit()` 打开时跟库里一样就当没有）；`journal_review_draft` 复盘 / 模型库页面（带 `_draftAt`，`openReviewEditor()` 里比库里 `updated_at` 新、内容又不一样才接上，接上后照常自动保存；还没落库的新帖靠 `restoreNewReviewDraft()`）
 - 打开表单统一走 `startNewTrade()` / `openTradeForEdit(id)`，别再在事件里手写一份
 
@@ -313,9 +390,9 @@ JS
     - 老数据在 `migrateLegacyNumberCondition()` 里就地迁移：数字字段上遗留的 textValue 变成「精确等于」（那正是当初填 `2` 想表达的意思，也比原来的包含匹配更准）。**`tradeMatchesFilter` 里另有兜底**：万一没迁移成功（比如 schema 还没加载），仍按老的包含匹配走，绝不会 `return true` 静默变成「匹配全部」——那种放宽会让数字凭空变好看且毫无提示
   - **⚠️ 回滚代价**：组合存在数据库里。一旦存了带分组的组合，如果代码回滚到没有这段的版本，旧代码会把分组节点当成一条 `fieldId` 为空的条件 → `resolveField` 返回 null → `tradeMatchesFilter` 直接 `return true` → **那个组合悄悄变成「匹配全部交易」，数字突然变好看且毫无提示**。回滚点打在 tag `pre-filter-tree`
 - **⚠️ `tradeMatchesFilter()` 找不到字段时 `return true`**：意味着删掉字段后，引用它的组合会静默降级成「匹配全部交易」，数字突然变好看却没有任何提示。所以 `comboIssues()` 会在渲染前把失效字段/失效选项挑出来标红并禁掉统计。新增任何「保存下来的条件」类功能都要考虑这个陷阱
-- **管理后台**（仅 admin 可见）：API 连接配置、用户管理（禁用/启用、设权限、查看上次在线时间+交易总数）、**只读查看任意用户的数据**（不影响自己的登录状态和本地设置，退出后自动恢复原状）
+- **管理后台**（仅 admin 可见）：API 连接配置、用户管理（禁用/启用、设权限、查看上次在线时间+交易总数）。原来的「查看数据」（只读查看任意用户的数据）2026-10-25 已删除，数据库层面也收回了权限；`viewingUserId` 相关的只读代码还在但已经走不到，**不要再加回来**
 - **复盘页**：用户自己发帖，markdown 正文，可以把帖子关联到某一天/某一周，也可以在正文里关联到具体某笔交易。回测/实盘各一套。下面几条是这块最容易改坏的地方：
-  - **编辑器是 Notion 式所见即所得（Tiptap 3 / ProseMirror），2026-09 从「textarea + 右侧预览」改过来的**。打 `# ` 变标题、`- [ ] ` 变待办、选中文字浮出格式栏、打 `/`（中文输入法下行首的 `、` 也算）调出插入菜单。没有「只读 / 编辑」两种模式了：自己的帖子打开就能写，只读只留给管理员查看别人数据（`reviewCanEdit()` 为 false 时直接用 `renderMarkdown()` 出静态页，不创建编辑器）
+  - **编辑器是 Notion 式所见即所得（Tiptap 3 / ProseMirror），2026-09 从「textarea + 右侧预览」改过来的**。打 `# ` 变标题、`- [ ] ` 变待办、选中文字浮出格式栏、打 `/`（中文输入法下行首的 `、` 也算）调出插入菜单。没有「只读 / 编辑」两种模式了：自己的帖子打开就能写，只读原本留给管理员查看别人数据（`reviewCanEdit()` 为 false 时直接用 `renderMarkdown()` 出静态页，不创建编辑器；那个入口已删，这条分支现在走不到）
   - **⚠️⚠️ 库里存的仍然是 markdown，`journal_reviews.body` 没有迁移**。打开时 `mdToEditorHtml()`（= `renderMarkdown(src, true)`）→ Tiptap 解析；编辑后停手 300ms 才 `docToMarkdown(editor.getJSON())` 一次（`markReviewBodyChanged()` → `syncReviewBody()`），再接 1.2 秒的写库。**所以编辑器开着时 `editingReview.body` 最多落后 300ms——任何要读它的地方（保存、关闭、`beforeunload`）先调 `syncReviewBody()`**。两个方向共用 `renderMarkdown` / `mdInline` 那一套规则，所以卡片摘要、搜索、`extractTradeRefs()`、管理员只读视图都不用改。**改渲染器或序列化器之后一定要跑往返测试**：markdown → 编辑器 → markdown 两轮结果要一致，而且 `renderMarkdown(原文) === renderMarkdown(往返后)`。在浏览器控制台里 `await loadTiptap()` 之后 `new L.Editor({ element, extensions: reviewExtensions(L), content: mdToEditorHtml(md) })` 就能测，不用登录
   - 往返里会被**规范化**的东西（内容不丢，只是写法变了）：`*`/`+` 列表符号统一成 `-`、有序列表重新从 1 编号、段落中间单独一行的图片被拎成独立块、连续空行合并。第一次编辑老帖子时 body 会因此变一下，这是预期的
   - **反斜杠转义**是这次新加的语法（`MD_ESCAPABLE_RE`）：编辑器里打出字面的 `*` `[` `#` 之类，存回去必须写成 `\*` `\[`，否则下次打开就变成语法了。`mdEscapeText()` 只转义真会被误读的字符，`mdEscapeLineStart()` 负责段落行首长得像块语法的情况（`1. ` `- ` `# ` `> ` `---`）。别为了「markdown 看着干净」把这两个函数删掉
@@ -331,7 +408,7 @@ JS
   - 自动保存靠 `reviewEditRev` 判断「保存途中有没有又改过」：对不上就保持 dirty、补回本地草稿，排着的那次保存照常写。以前是直接标成已保存，排着的保存一看不是 dirty 就跳过，最后几下只留在 localStorage 里
   - **目录和折叠章节在 `src/12b-review-outline.js`**。目录直接读正文 DOM 里顶层的 h1–h6（编辑态、只读态、加载中三种情况共用），宽屏（≥1240px）钉在右边、收没收记在 `journal_review_outline`，窄屏是顶栏按钮的下拉面板。折叠是 ProseMirror 插件 + node decoration（所以 `vendor/tiptap.js` 多导出了 `Decoration` / `DecorationSet`），**纯显示，不进文档、不进撤销栈、不写进 markdown**；光标落进折叠区就自动展开。折了哪几节存在 `folded_headings`（`writeReviewFolds()`，停手 800ms 单独 update；新帖等第一次保存成功后补写），打开时插件 `init` 按标题文字对回位置。**别直接改编辑器 DOM 的 class**（ProseMirror 的 MutationObserver 会当成内容变了重新解析），目录跳转后的闪烁是另画一层 `.outlineFlash`
   - 双击图片看大图（`handleDoubleClickOn` → `renderSecondaryModals(true)`）；单击是选中它（方便删）。Ctrl/⌘ + 点击链接在新标签页打开
-  - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。而管理员能只读查看任意用户的数据，所以一段带 `<img onerror>` 的复盘正文会在**管理员的会话**里执行。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去。编辑器那边是第二道白名单：Tiptap 只认 schema 里定义过的节点，链接 `isAllowedUri`、图片的 parseHTML 都只放行 http(s)
+  - **⚠️⚠️ markdown 渲染器是整个项目唯一一处把用户输入变成 HTML 的地方**，别处全部走 `esc()`。导出的网页报告、交易预览等地方都会渲染它，以前管理员还能看别人的复盘——一段带 `<img onerror>` 的正文就会在别人的会话里执行（这个入口已删，但规矩不变）。`renderMarkdown()` 的铁律是**先 `esc()` 整段、再在已转义的文本上加白名单标签**，链接/图片的 URL 只放行 `^https?://`（挡 `javascript:` 和 `data:`）。任何时候都不要为了支持某个语法把原始 HTML 放回去。编辑器那边是第二道白名单：Tiptap 只认 schema 里定义过的节点，链接 `isAllowedUri`、图片的 parseHTML 都只放行 http(s)
   - `mdInline()` 里生成出来的 HTML（交易胶囊、图片、链接标签、行内代码、转义字符）一律先存进私有区字符包着的占位符（`hold()`），最后递归还原。留在明面上的话，URL 或模型名里的 `*` `_` 会被后面的加粗/斜体规则插进 `<em>`，把属性改坏
   - 交易引用**不需要带 mode**：复盘按模式分开了，回测复盘里引用的必然是回测交易，而 `trades` 本来就只装当前模式那批，所以永远能对上。别因为「跨模式查不到」这个担心去给引用加 mode
   - **点交易胶囊弹的是只读预览（`tradePreviewHtml`），不是编辑弹窗**。跟 focus 视图那条规矩一致：读的时候不该一点就出来一堆输入框。预览挂在 `#secondaryModalRoot`，在 `want` 链里排在 lightbox 后面——这样在预览里点图看原图、关掉原图还能退回预览。要改走底部明确的「编辑这笔交易」
@@ -393,23 +470,40 @@ JS
   - **「选中」状态也要跟着翻**（`markLightboxSource()`，已经踩过一次）：复盘编辑器里是 ProseMirror 的节点选区（金色描边，`selectReviewImage()`）；其它地方是键盘焦点——点开大图的放大按钮一直留着焦点，按过方向键/Esc 后浏览器会给它画焦点框，只挪滚动位置的话，关掉灯箱时看着像回到了最开始那张。能拿焦点的挪过去，拿不了的把旧焦点放掉
   - 方向键用**捕获阶段**的 keydown 拦：复盘编辑器里双击图片打开灯箱时焦点还在编辑器里，不先拦下来方向键会去挪编辑器的光标
 - **深色/浅色主题**、图片懒加载
+- **截图失效自动换备份**：所有截图 `<img>` 都带 `onerror="window.__imgFallback(this)"`，原图加载失败时用 RPC `lookup_image_backups` 查 R2 上的备份并换上（`src/13-calendar-settings-form.js`）。新加显示截图的地方也要带 `data-fallback-url` + `__imgFallback`
+- **Prop 账户页签**（仅 `prop-test` 分支，测试站；是否上 master 由作者决定）：
+  - 代码：`src/11d-prop-data.js`（目录格式、校验、记账口径、Supabase 读写）、`src/11e-prop-view.js`（页面和弹窗，自己的事件监听）、`src/11f-prop-admin.js`（管理员就地编辑目录）、i18n `prop.*`、style.css「Prop 账户」区块、`test/prop.test.js`；假数据在 `dev/mock-supabase.js`
+  - 页面：公司排行榜（推荐排行 = admin 定的顺序）、价格卡片墙（每个 公司×系列×规模 一张，卡上 chip 切版本，默认最便宜；可切成表格）、公司详情、我的账号、月度（柱状图 + 回本进度 + 按天分组的流水）
+  - 添加账号：左预览右步骤的两栏弹窗，按计划的 `family` + `choices` 点选组合；规则可按账号改；激活可选 无 / 立即 / 以后；数量 N → 一次建 #1..#N
+  - 账号详情 = 右侧抽屉，信息随时可改；时间线日期可改，改购买日期会连带后移；删除走卡片 ⋯ 菜单 + 10 秒撤销；批量选择；卡片按状态上色、同批账号叠成一摞；记余额后显示离目标进度和剩余回撤空间
+  - 月费：续费中自动记账，离开考核阶段自动停（`renewed_through` 是水位线）。通过率统计每一次 failed（含 reset）
+  - 目录数据：来自 propfirmvip.com（只做个人参考，付费版不能转载）+ 部分公司官网数据（官网优先）。抓取 / 转换流水线在 gitignore 的 `dev/propfirm/`（不在仓库里，要找作者要）。线上目前 18 家 / 228 个计划。Logo 放 `img/prop/<slug>.webp|svg`（160px 方形）
 
 ## 六、部署流程
 
 - Vercel 免费版，**已经接上 Git 自动部署**：`git push origin master` 之后 Vercel 自己会拉最新代码构建
 - 不需要去 Vercel 后台点任何东西，也不要用 "Redeploy"（那个只重跑旧 commit）
 - 构建时 `build.js` 会读环境变量 `SUPABASE_URL` / `SUPABASE_ANON_KEY` 生成 `config.js`（这个文件不进 git）
+- 新迁移**必须先在线上库跑**再推代码（前端不做缺表降级，没跑会显示 dbOutdated 横幅、保存失败）
+- 偶尔 Vercel 没接到某次 push：`gh api repos/JTW6912/ifvg-journal/commits/<sha>/status` 里没有 Vercel 就推个空提交 `git commit --allow-empty -m "Trigger deploy"`
+- 分支：`master` = 正式站；`prop-test` = Prop 账户测试站；`goals-test` = 已放弃的积分系统，别在上面开发
 
 ## 七、备份与防暂停
 
 - Supabase 免费版：**7 天无数据库活动会自动暂停**（暂停不丢数据，但连续暂停 90 天会释放项目基础设施，需要靠备份手动重建）；免费版本身**不提供任何自动备份**
 - 解决方案：**独立的私有 GitHub 仓库**，`.github/workflows/daily-backup.yml` 每天自动跑 `pg_dump`，覆盖式存成 `latest-backup.sql`，靠 Git 的 commit 历史保留每天的快照。这个任务本身也顺带解决了"防暂停"的问题（不需要再单独跑 keepalive 任务）
 - 连接 Supabase 用 **Session pooler** 格式的连接串（不是 Direct connection），因为多数网络是 IPv4，Direct connection 默认走 IPv6 容易连不上
+- **截图备份**（2026-10-15 起）：本仓库的 `.github/workflows/image-backup.yml` 每天 19:00 UTC 跑 `scripts/image-backup.mjs`，把所有用户的 FX Replay / TradingView 截图转成**无损 WebP** 存到作者的 Cloudflare R2 图床（其他图床的图跳过），对照关系写进 `image_backups`
+  - **只备份，永远不改用户存的原链接**；原图挂了前端自动换备份（`__imgFallback`）
+  - 图床上传接口按 md5 命名、幂等；不要调用删除接口或改图床
+  - 需要的 secret（SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / IMG_API_TOKEN）只在 GitHub secrets 里。**仓库是公开的**，脚本日志只打印数量，绝不打印 URL
+  - 公开仓库的定时任务 60 天没有仓库活动会被 GitHub 自动停用
 
 ## 八、安全模型
 
 - 网页里硬编码的 Supabase URL + anon/publishable key **本来就设计成可以公开**，任何人查看网页源代码都能看到，这不是漏洞
 - **真正的安全防线是每张表的 RLS 规则**，不是"藏 key"。新增表/新功能时，RLS 有没有配对才是要仔细检查的地方
+- **管理员看不到用户数据**（2026-10-25 作者决定，隐私考虑——网站给别的交易者用）：`20261025010000_admin_no_user_data.sql` 删掉了 trades / journal_schema / journal_reviews / journal_playbook / prop_accounts / prop_entries / goal_days / points_ledger 上的所有 admin 读策略，管理后台的「查看数据」按钮也删了。admin 只保留：profiles（用户管理）、activity_daily（每天使用次数）、changelog、Prop 目录写权限。**不要再加 admin 读个人数据的策略或「以某用户身份查看」的功能**
 - **绝对不能**把 `service_role`/secret key 放进任何前端代码——那个 key 能绕过所有 RLS，等于数据库最高权限
 - 如果这份代码要开源：`index.html` 顶部的真实 key 要换回占位符（`PASTE_YOUR_SUPABASE_URL_HERE` 这种），让每个部署者填自己的凭证，避免大家共用同一个数据库
 
@@ -424,8 +518,7 @@ JS
 
 - **拖拽排序功能（筛选卡片、字段选项池、组合卡片、拆解字段列表）从没在真实浏览器里跑过完整测试**，只做过静态代码检查 + node 里的逻辑测试，可能有边界情况没覆盖到。**组合的「列表视图」尤其没试过拖**——属性和类名都对得上（拖拽处理器只认 `.comboCard[draggable="true"]` 和 `data-combo-id`），但 HTML5 拖放没法脚本模拟，值得手动验一次
 - **README.md / README.zh-CN.md 有约 8 处过时**：还在写「统计口径两个开关」「R 捕获率」「口径和模型筛选是本设备的本地设置」。功能已经换成「分析范围」筛选面板 + 最大回撤，文档还没跟上
-- **管理员"只读查看他人数据"退出后状态还原**的完整链路也没有真机测试过
+- `viewingUserId` 那套只读代码（原「查看别人数据」）入口已删但代码还在，以后可以清掉
 - 源码已经按章节拆进 `src/*.js`（拼接式，同一个全局作用域，不是 ES module）。**137 个顶层 `let` 全局状态还在**——真要模块化，得先把状态收进一个对象，那是单独一轮任务，别和别的混在一起。目前只有纯函数有测试，DOM / 事件层没有
-- **复盘功能没有在真实数据库上跑过**：`supabase/migrations/20260901000000_journal_features.sql` 还没在 Supabase 上执行过，所以「建表 → 写入 → 读回 → RLS 拦不拦得住别人」这条完整链路是未验证的。前端逻辑（编辑器、markdown 渲染、插入菜单、交易选择器、只读态、ESC 分层、后台 render 不冲掉正文）已经在浏览器里逐条验过，用的是内存假数据
 - **复盘的 markdown 渲染器是自己写的子集**，支持标题/粗斜体/删除线/行内码/代码块/列表/待办/引用/分割线/链接/图片/表格/反斜杠转义。刻意没引 marked + DOMPurify（编辑器用的 Tiptap 在 vendor/ 里，但渲染和存储格式仍然是这份自己写的 markdown）。**代价是它只认这些语法**，写别的（脚注、嵌套引用、HTML 标签）会原样显示。安全性上按"先转义再排版"设计并过了一轮攻击串测试，但它终究是自己写的，以后加语法时要重新审一遍
 - `max_rr` 这个角色还留在角色下拉里，但**已经没有任何功能挂在它上面**了（它原来只驱动"R捕获率"，那项统计已经被"最大回撤"取代）。保留是为了不让老数据里 `role: "max_rr"` 的字段变成下拉框里认不出的空值
