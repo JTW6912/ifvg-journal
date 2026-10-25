@@ -112,14 +112,12 @@ alter table prop_entries enable row level security;
 drop policy if exists "own prop accounts" on prop_accounts;
 create policy "own prop accounts" on prop_accounts
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-drop policy if exists "admin read prop accounts" on prop_accounts;
-create policy "admin read prop accounts" on prop_accounts for select using (is_admin());
+drop policy if exists "admin read prop accounts" on prop_accounts;   -- 管理员不看别人的账号（见 20261025010000）
 
 drop policy if exists "own prop entries" on prop_entries;
 create policy "own prop entries" on prop_entries
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists "admin read prop entries" on prop_entries;
-create policy "admin read prop entries" on prop_entries for select using (is_admin());
 
 -- 整份替换目录。payload = { firms: [...], plans: [...] }，字段见 src/11d-prop-data.js 顶部。
 -- 前端已经校验过一遍，这里只做最基本的防护；任何一行出错整个事务回滚，目录保持原样。

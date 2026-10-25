@@ -444,10 +444,11 @@ function renderPropCatalog() {
   const admin = currentProfile && currentProfile.role === "admin" && !viewingUserId;
   const info = propCatalogInfo ? T("prop.cat.updated", { d: localDateStr(propCatalogInfo.imported_at), f: propFirms.length, p: propPlans.length }) : "";
   let html = `<div class="propCatHead"><div class="propMuted">${esc(info || T("prop.cat.hint"))}</div>
-    ${admin ? `<div class="propCatAdmin"><button class="btn" data-action="prop-open-import">${esc(T("prop.import.open"))}</button>${propFirms.length ? `<button class="btn" data-action="prop-export-catalog">${esc(T("prop.import.export"))}</button>` : ""}</div>` : ""}</div>`;
+    ${admin ? `<div class="propCatAdmin"><button class="btn ${propEditMode ? "btn-primary" : ""}" data-action="prop-adm-toggle">${ICONS.pencil} ${esc(T(propEditMode ? "prop.adm.done" : "prop.adm.enter"))}</button><button class="btn" data-action="prop-open-import">${esc(T("prop.import.open"))}</button>${propFirms.length ? `<button class="btn" data-action="prop-export-catalog">${esc(T("prop.import.export"))}</button>` : ""}</div>` : ""}</div>`;
   if (!propFirms.length) return html + `<div class="emptyState propEmptyState">${ICONS.layers}<div>${esc(T(admin ? "prop.empty.catalogAdmin" : "prop.empty.catalog"))}</div></div>`;
   const firm = propCatalogFirm && propFindFirm(propCatalogFirm);
-  if (!firm) return html + renderPropBoard() + renderPropCompare();
+  if (propEditing()) html += `<div class="notice propAdmNotice">${ICONS.pencil}<span>${esc(T("prop.adm.modeHint"))}</span></div>`;
+  if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + renderPropCompare();
 
   const visible = propPlans.filter((p) => p.firm === firm.id && (propShowLegacy || p.status !== "legacy"));
   const sizes = [...new Set(visible.map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
@@ -495,6 +496,7 @@ const PROP_PREFS = {
 function propCatalogRows() {
   return propPlans.filter((p) => {
     if (!propShowLegacy && p.status === "legacy") return false;
+    if (!propEditing() && (propFindFirm(p.firm) || {}).hidden) return false;
     if (propCatalogSize && String(p.size) !== propCatalogSize) return false;
     const v = propCmpVals(p);
     return propCatalogPrefs.every((k) => !PROP_PREFS[k] || PROP_PREFS[k](p, v));
@@ -623,6 +625,7 @@ function propPlanCard2(g, bests, onFirmPage) {
       ${onFirmPage ? "" : `<button class="tinyBtn propPcFirmLink" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">${esc(T("prop.pc.firmPage", { name: f.name }))} ›</button>`}
     </details>
     <div class="propPcActs">
+      ${propEditing() && g.key !== "__adm" ? `<button class="btn propPcCmp propAdmEditBtn" data-action="prop-adm-plan" data-id="${esc(p.id)}" title="${esc(T("prop.adm.editPlanShort"))}">${ICONS.pencil}<span>${esc(T("prop.adm.edit"))}</span></button>` : ""}
       ${propReadOnly() ? "" : `<button class="btn propPcCta" data-action="prop-buy-plan" data-id="${esc(p.id)}">${esc(T("prop.cat.buy"))}</button>`}
       <button class="btn propPcCmp ${picked ? "active" : ""}" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${picked ? ICONS.check : ICONS.plus}<span>${esc(T("prop.compare.add"))}</span></button>
     </div>
@@ -633,7 +636,7 @@ function propPlanCard2(g, bests, onFirmPage) {
 /* ---------- 排行 ---------- */
 function renderPropBoard() {
   const BOARD_TOP = 6;
-  const firms = propFirms.slice().sort((a, b) => propRankOf(a) - propRankOf(b));
+  const firms = propFirms.filter((f) => !f.hidden).sort((a, b) => propRankOf(a) - propRankOf(b));
   const shown = propBoardAll ? firms : firms.slice(0, BOARD_TOP);
   const card = (f) => {
     const plans = propPlans.filter((p) => p.firm === f.id && p.status !== "legacy");
@@ -718,6 +721,9 @@ function renderPropFirm(f, plans) {
     <div class="propFirmHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)} ${propTierTag(f)}</b>
       <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}${f.source ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(T("prop.cat.sourcePage"))}</a>` : ""}</span></div>
       ${f.review ? `<span class="propReview">${esc(f.review)}</span>` : ""}</div>
+    ${propEditing() ? `<div class="propAdmFirmActs"><button class="btn btn-sm" data-action="prop-adm-firm" data-id="${esc(f.id)}">${ICONS.pencil} ${esc(T("prop.adm.editFirm"))}</button>
+      <button class="btn btn-sm" data-action="prop-adm-batch" data-firm="${esc(f.id)}">${esc(T("prop.adm.batchShort"))}</button>
+      <button class="btn btn-sm" data-action="prop-adm-new-plan" data-firm="${esc(f.id)}" data-family="">${ICONS.plus} ${esc(T("prop.adm.newPlan2"))}</button></div>` : ""}
     ${promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>` : ""}
     ${Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
     ${f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
@@ -727,7 +733,8 @@ function renderPropFirm(f, plans) {
   plans.forEach((p) => { const fam = propFamilyOf(p); if (!families.includes(fam)) families.push(fam); });
   families.forEach((fam) => {
     const groups = propCardGroups(plans.filter((p) => propFamilyOf(p) === fam));
-    html += `<div class="propSeries"><div class="propSeriesName">${esc(fam || T("prop.cat.noSeries"))}</div>
+    html += `<div class="propSeries"><div class="propSeriesName">${esc(fam || T("prop.cat.noSeries"))}
+        ${propEditing() ? `<button class="btn btn-sm" data-action="prop-adm-new-plan" data-firm="${esc(f.id)}" data-family="${esc(fam)}">${ICONS.plus} ${esc(T("prop.adm.newSize"))}</button>` : ""}</div>
       <div class="propPcGrid">${groups.map((g) => propPlanCard2(g, [], true)).join("")}</div></div>`;
   });
   if (faq.length) {
@@ -752,6 +759,9 @@ function propModalHtml() {
   else if (m.type === "detail") { ({ title, body, foot } = propDetail(m)); wide = "drawer"; }
   else if (m.type === "batch") ({ title, body, foot } = propBatchForm(m));
   else if (m.type === "balance") ({ title, body, foot } = propBalanceForm(m));
+  else if (m.type === "admFirm") ({ title, body, foot } = propAdmFirmForm(m));
+  else if (m.type === "admPlan") { ({ title, body, foot } = propAdmPlanForm(m)); wide = 1180; }
+  else if (m.type === "admBatch") { ({ title, body, foot } = propAdmBatchForm(m)); wide = true; }
   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
   else if (m.type === "compare") { ({ title, body, foot } = propCompareView()); wide = true; }
   const drawer = wide === "drawer";
@@ -923,7 +933,7 @@ function propAccountForm(m) {
   const d = m.draft;
   const custom = propDraftCustom(d);
   const plan = propDraftPlan(d);
-  const firmOpts = [...propFirms.map((f) => [f.id, f.name]), ["__custom", T("prop.form.customFirm")]];
+  const firmOpts = [...propFirms.filter((f) => !f.hidden || f.id === d.firmSel).map((f) => [f.id, f.name]), ["__custom", T("prop.form.customFirm")]];
   let pick = `<div class="propRow">${propField(T("prop.form.firm"), propSelect("firmSel", d.firmSel, firmOpts, true))}`;
   if (d.firmSel === "__custom") pick += propField(T("prop.form.firmName"), propInput("firm_name", d.firm_name, `placeholder="Lucid / Topstep …" maxlength="60" data-prop-rerender`));
   else pick += propField(T("prop.add.family"), propSelect("family", d.family, [...propFamilies(d.firmSel).map((f) => [f, f]), ["__custom", T("prop.form.customPlan")]], true));

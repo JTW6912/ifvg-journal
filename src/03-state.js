@@ -121,6 +121,7 @@ let propShowLegacy = false;           // 公司计划：要不要列出已下架
 let propBatch = false;                // 我的账号：多选模式
 let propSelected = [];                // 多选模式下勾了的账号 id
 let propCardMenu = null;
+let propEditMode = false;             // 管理员：公司计划页的「编辑目录」开关
 let propStacksOpen = [];              // 我的账号：展开成单张的那几摞（同一批买的号）              // 哪张账号卡片的「⋯」菜单开着
 let propCompare = [];                 // 勾了要对比的计划 id，最多 4 个
 let propModal = null;                 // { type: 'account' | 'entry' | 'status' | 'detail' | 'import' | 'compare', ... }

@@ -2131,3 +2131,20 @@ button.propLedRow,.propLedRow>summary{display:grid;grid-template-columns:auto mi
   .propBoardCard{scroll-snap-align:start;}
   .propPanelHead{flex-wrap:wrap;}
 }
+/* 管理员：编辑目录 */
+.propAdmNotice{margin-bottom:14px;}
+.propAdmFirms{display:flex;flex-direction:column;gap:6px;}
+.propAdmFirm{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--r12);background:var(--surface2);}
+.propAdmFirm.hidden{opacity:.55;}
+.propAdmFirmName{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0;}
+.propAdmFirmName b{font-size:14px;}
+.propAdmFirmName small{flex-basis:100%;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.propAdmBtns{display:flex;align-items:center;gap:6px;}
+.propAdmBtns .tinyBtn{font-size:15px;padding:2px 8px;}
+.propAdmBtns .tinyBtn:disabled{opacity:.3;}
+.propAdmFirmActs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
+.propSeriesName{display:flex;align-items:center;gap:10px;}
+.propAdmPreview{pointer-events:none;}
+.propAdmChanged{color:var(--accent);font-weight:700;}
+.propPc .btn.propAdmEditBtn{border-color:var(--accent);color:var(--accent);}
+@media(max-width:640px){.propAdmFirm{grid-template-columns:auto auto minmax(0,1fr);}.propAdmFirm>.propMuted{display:none;}.propAdmBtns{grid-column:1/-1;flex-wrap:wrap;}}
