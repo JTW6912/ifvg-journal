@@ -59,6 +59,7 @@ function renderPropBoardAdmin() {
       <div class="propAdmBtns">
         <button class="tinyBtn" data-action="prop-adm-move" data-id="${esc(f.id)}" data-d="-1" ${i === 0 ? "disabled" : ""} title="${esc(T("prop.adm.up"))}">↑</button>
         <button class="tinyBtn" data-action="prop-adm-move" data-id="${esc(f.id)}" data-d="1" ${i === firms.length - 1 ? "disabled" : ""} title="${esc(T("prop.adm.down"))}">↓</button>
+        <button class="btn btn-sm ${f.hidden ? "btn-primary" : ""}" data-action="prop-adm-hide" data-id="${esc(f.id)}" title="${esc(T("prop.adm.hideHint"))}">${esc(T(f.hidden ? "prop.adm.show" : "prop.adm.hideShort"))}</button>
         <button class="btn btn-sm" data-action="prop-adm-firm" data-id="${esc(f.id)}">${ICONS.pencil} ${esc(T("prop.adm.edit"))}</button>
         <button class="btn btn-sm" data-action="prop-cat-firm" data-val="${esc(f.id)}">${esc(T("prop.adm.plans"))} ›</button>
       </div></div>`).join("")}</div>
@@ -240,6 +241,16 @@ document.addEventListener("click", async (e) => {
   const a = el.dataset.action, id = el.dataset.id, m = propModal;
   if (a === "prop-adm-toggle") { propEditMode = !propEditMode; render(); }
   else if (a === "prop-adm-move") { await propAdmMove(id, Number(el.dataset.d)); }
+  else if (a === "prop-adm-hide") {
+    // 一键隐藏 / 显示：这家公司的排行、所有规模所有计划一起对普通用户隐藏
+    const f = propFindFirm(id);
+    if (!f) return;
+    const next = { ...f, hidden: !f.hidden };
+    propFirms = propFirms.map((x) => (x.id === id ? next : x));
+    render();
+    if (await propAdmSaveFirms([next])) propToast(T(next.hidden ? "prop.adm.hiddenDone" : "prop.adm.shownDone", { name: f.name, n: propPlans.filter((p) => p.firm === id).length }));
+    else { propFirms = propFirms.map((x) => (x.id === id ? f : x)); render(); }
+  }
   else if (a === "prop-adm-firm") {
     const f = id ? propFindFirm(id) : null;
     propModal = { type: "admFirm", id, isNew: !f, draft: propAdmFirmDraft(f) }; propRenderModal();

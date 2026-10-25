@@ -2148,3 +2148,7 @@ button.propLedRow,.propLedRow>summary{display:grid;grid-template-columns:auto mi
 .propAdmChanged{color:var(--accent);font-weight:700;}
 .propPc .btn.propAdmEditBtn{border-color:var(--accent);color:var(--accent);}
 @media(max-width:640px){.propAdmFirm{grid-template-columns:auto auto minmax(0,1fr);}.propAdmFirm>.propMuted{display:none;}.propAdmBtns{grid-column:1/-1;flex-wrap:wrap;}}
+.propPcTop .propPcAdmEdit{margin-left:auto;margin-right:6px;width:32px;height:32px;border-radius:10px;border:1px solid var(--accent);background:var(--accentSoft);color:var(--accent);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:1;}
+.propPcTop .propPcAdmEdit:hover{background:var(--accent);color:var(--onAccent);}
+.propPcTop .propPcAdmEdit .icon{width:15px;height:15px;}

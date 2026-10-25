@@ -446,7 +446,8 @@ function renderPropCatalog() {
   let html = `<div class="propCatHead"><div class="propMuted">${esc(info || T("prop.cat.hint"))}</div>
     ${admin ? `<div class="propCatAdmin"><button class="btn ${propEditMode ? "btn-primary" : ""}" data-action="prop-adm-toggle">${ICONS.pencil} ${esc(T(propEditMode ? "prop.adm.done" : "prop.adm.enter"))}</button><button class="btn" data-action="prop-open-import">${esc(T("prop.import.open"))}</button>${propFirms.length ? `<button class="btn" data-action="prop-export-catalog">${esc(T("prop.import.export"))}</button>` : ""}</div>` : ""}</div>`;
   if (!propFirms.length) return html + `<div class="emptyState propEmptyState">${ICONS.layers}<div>${esc(T(admin ? "prop.empty.catalogAdmin" : "prop.empty.catalog"))}</div></div>`;
-  const firm = propCatalogFirm && propFindFirm(propCatalogFirm);
+  let firm = propCatalogFirm && propFindFirm(propCatalogFirm);
+  if (firm && firm.hidden && !propEditing()) firm = null;
   if (propEditing()) html += `<div class="notice propAdmNotice">${ICONS.pencil}<span>${esc(T("prop.adm.modeHint"))}</span></div>`;
   if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + renderPropCompare();
 
@@ -603,6 +604,7 @@ function propPlanCard2(g, bests, onFirmPage) {
     <div class="propPcArc" aria-hidden="true"></div>
     <div class="propPcTop">
       <div class="propPcPrice">${v.original ? `<s>${propUsd(v.original)}</s>` : ""}<b>${v.price === null ? esc(T("prop.cat.noPrice")) : propUsd(v.price)}</b><span>${v.monthly ? esc(T("prop.cat.perMonth")) : "USD"}</span></div>
+      ${propIsAdmin() && g.key !== "__adm" ? `<button class="propPcAdmEdit" data-action="prop-adm-plan" data-id="${esc(p.id)}" title="${esc(T("prop.adm.editPlanShort"))}">${ICONS.pencil}</button>` : ""}
       <button class="propPcFirm" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}" title="${esc(f.name)}">${propFirmLogo(f)}</button>
     </div>
     <div class="propPcBests">${bests.map((b) => `<span class="propPcBest propPcBest-${b}">${esc(T("prop.pc.best." + b))}</span>`).join("")}</div>
@@ -625,7 +627,6 @@ function propPlanCard2(g, bests, onFirmPage) {
       ${onFirmPage ? "" : `<button class="tinyBtn propPcFirmLink" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">${esc(T("prop.pc.firmPage", { name: f.name }))} ›</button>`}
     </details>
     <div class="propPcActs">
-      ${propEditing() && g.key !== "__adm" ? `<button class="btn propPcCmp propAdmEditBtn" data-action="prop-adm-plan" data-id="${esc(p.id)}" title="${esc(T("prop.adm.editPlanShort"))}">${ICONS.pencil}<span>${esc(T("prop.adm.edit"))}</span></button>` : ""}
       ${propReadOnly() ? "" : `<button class="btn propPcCta" data-action="prop-buy-plan" data-id="${esc(p.id)}">${esc(T("prop.cat.buy"))}</button>`}
       <button class="btn propPcCmp ${picked ? "active" : ""}" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${picked ? ICONS.check : ICONS.plus}<span>${esc(T("prop.compare.add"))}</span></button>
     </div>
@@ -843,7 +844,11 @@ function propNewAccountDraft(planId) {
     amount: "", billing: "one_time", monthly_fee: "", renewing: true, activation: "none", activation_fee: "",
     rules: propRuleTexts(null), ddType: "", quantity: 1, nickname: "", group_name: "", bought_on: todayStr(), status: "eval", note: "" };
   if (plan) { d.firmSel = plan.firm; d.family = propFamilyOf(plan); propLoadPlan(d, plan); }
-  else propPickFirm(d, propFirms[0] ? propFirms[0].id : "__custom");
+  else {
+    // 默认选排名最前、没被隐藏的那家
+    const first = propFirms.filter((f) => !f.hidden).sort((a, b) => propRankOf(a) - propRankOf(b))[0];
+    propPickFirm(d, first ? first.id : "__custom");
+  }
   return d;
 }
 
