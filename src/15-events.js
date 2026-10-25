@@ -1034,24 +1034,6 @@ document.addEventListener("click", async (e) => {
   }
   else if (action === "toggle-user-active") { await setUserActive(el.dataset.id, el.dataset.next === "true"); }
   else if (action === "toggle-user-role") { await setUserRole(el.dataset.id, el.dataset.next); }
-  else if (action === "view-user-data") {
-    flushAnalysisPrefs(); // 切进只读模式后就写不了库了，先把没保存的分析设置落盘
-    ownStateSnapshot = {
-      activeFilters: JSON.parse(JSON.stringify(activeFilters)),
-      gridPage, sortBy, sortDir, recordMode, tab,
-    };
-    viewingUserId = el.dataset.id;
-    pbTriage = null; pbNameModal = null;
-    viewingUserEmail = el.dataset.email;
-    activeFilters = [];
-    // 别人的数据用默认口径看，也别把人家的条件写进自己的 localStorage（saveAnalysisFilters 里也挡了一道）
-    analysisFilters = []; analysisFiltersSeeded = false; analysisComboId = null; analysisComboDirty = false;
-    activeComboId = null; activeFromAnalysis = false; comboEditingId = null; comboConfirmDeleteId = null; breakdownPickerOpen = false; comboGroupModal = null; comboGroupConfirmDeleteId = null;
-    gridPage = 1;
-    tab = "grid";
-    await loadAll();
-    render();
-  }
   else if (action === "exit-view-mode") {
     viewingUserId = null;
     pbTriage = null;

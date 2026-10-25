@@ -673,7 +673,6 @@ const I18N = {
     "admin.enable": "启用",
     "admin.makeAdmin": "设为管理员",
     "admin.removeAdmin": "取消管理员",
-    "admin.viewData": "查看数据",
     "admin.disableHint": "「禁用」会立刻阻止该账号登录使用，但不会删除 Supabase 里的账号本体（前端安全限制，无法真正删号）。",
 
     /* ---------- 个人设置 / 改密码 ---------- */
@@ -1913,7 +1912,6 @@ const I18N = {
     "admin.enable": "Enable",
     "admin.makeAdmin": "Make admin",
     "admin.removeAdmin": "Remove admin",
-    "admin.viewData": "View data",
     "admin.disableHint": "\"Disable\" immediately blocks that account from signing in, but it does not delete the account in Supabase — the frontend can't actually delete accounts.",
 
     /* ---------- Profile / password ---------- */
