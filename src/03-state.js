@@ -111,9 +111,9 @@ let propStatusFilter = "active";      // 我的账号：active / ended / all
 let propCatalogFirm = "";             // 公司计划：正在看的公司（firm id），"" = 排行 + 对比表
 let propCatalogSize = "50000";        // 对比表：只看某个规模，默认 50K（跨规模比价格没意义）
 let propCatalogFirmSize = "";         // 公司页：只看某个规模
-let propCatalogType = "";             // 对比表：evaluation / instant / "" 全部
-let propCatalogBilling = "";          // 对比表：one_time / monthly / "" 全部
-let propCatalogSort = "rank";         // 对比表：rank / price / per1k
+let propCatalogPrefs = [];            // 价格对比「我在意」：noDll / eod / noCons / oneTime / daily / instant，全部满足才留下
+let propCatalogSort = "rank";         // 价格对比：rank / price / per1k / ratio（目标 ÷ 回撤）
+let propCardPick = {};                // 卡片墙：每张卡（公司|系列|规模）当前切到哪个版本的计划 id
 let propBoardAll = false;             // 排行：展开全部公司
 let propExpandedFirms = [];           // 对比表按排名分组时，哪些公司展开了全部计划
 let propShowLegacy = false;           // 公司计划：要不要列出已下架的计划
@@ -131,6 +131,7 @@ function pickStored(key, allowed, fallback) {
 let gridCardSize = pickStored("journal_card_size", ["compact", "standard", "large"], "large");
 let gridViewMode = pickStored("journal_view_mode", ["card", "table", "focus"], "card");
 let propView = pickStored("journal_prop_view", ["overview", "accounts", "catalog"], "overview");
+let propCatalogLayout = pickStored("journal_prop_layout", ["cards", "table"], "cards");   // 价格对比：卡片墙 / 表格
 /* ---------- 看图模式（focus）的状态 ----------
    高度/字段位置是"我习惯这么看"，存 localStorage；
    遮挡和已揭晓是"这一次想怎么练"，只放内存，刷新回到不遮挡——

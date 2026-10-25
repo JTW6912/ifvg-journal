@@ -261,7 +261,7 @@ function renderPropCatalog() {
     ${admin ? `<div class="propCatAdmin"><button class="btn" data-action="prop-open-import">${esc(T("prop.import.open"))}</button>${propFirms.length ? `<button class="btn" data-action="prop-export-catalog">${esc(T("prop.import.export"))}</button>` : ""}</div>` : ""}</div>`;
   if (!propFirms.length) return html + `<div class="emptyState propEmptyState">${ICONS.layers}<div>${esc(T(admin ? "prop.empty.catalogAdmin" : "prop.empty.catalog"))}</div></div>`;
   const firm = propCatalogFirm && propFindFirm(propCatalogFirm);
-  if (!firm) return html + renderPropBoard() + renderPropPriceTable();
+  if (!firm) return html + renderPropBoard() + renderPropCompare();
 
   const visible = propPlans.filter((p) => p.firm === firm.id && (propShowLegacy || p.status !== "legacy"));
   const sizes = [...new Set(visible.map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
@@ -295,11 +295,152 @@ function propCmpVals(p) {
     // 每千回撤成本：首付 + 激活费，摊到每 $1000 回撤上；月费的只算第一个月
     per1k: price !== null && dd ? ((price + (typeof pr.activation === "number" ? pr.activation : 0)) / dd) * 1000 : null };
 }
+/* 价格对比的筛选：规模、「我在意」偏好（可多选，全部满足才留下）、含已下架 */
+const PROP_MAIN_SIZES = [25000, 50000, 100000, 150000];
+const PROP_PREFS = {
+  noDll: (p, v) => v.dll === "none",
+  eod: (p, v) => v.ddType === "eod",
+  noCons: (p, v) => !v.instant && v.consistency === "none",
+  oneTime: (p) => (p.price || {}).billing === "one_time",
+  daily: (p) => !!(p.payout || {}).daily,
+  instant: (p) => p.type === "instant",
+};
 function propCatalogRows() {
-  return propPlans.filter((p) => (propShowLegacy || p.status !== "legacy")
-    && (!propCatalogSize || String(p.size) === propCatalogSize)
-    && (!propCatalogType || p.type === propCatalogType || (propCatalogType === "evaluation" && p.type !== "instant"))
-    && (!propCatalogBilling || (p.price || {}).billing === propCatalogBilling));
+  return propPlans.filter((p) => {
+    if (!propShowLegacy && p.status === "legacy") return false;
+    if (propCatalogSize && String(p.size) !== propCatalogSize) return false;
+    const v = propCmpVals(p);
+    return propCatalogPrefs.every((k) => !PROP_PREFS[k] || PROP_PREFS[k](p, v));
+  });
+}
+/* 考试难度：目标 ÷ 回撤。≤1.5 好过，≤2 一般，再高就难 */
+function propRatio(v) { return !v.instant && typeof v.target === "number" && typeof v.dd === "number" && v.dd > 0 ? v.target / v.dd : null; }
+function propSortRows(list, get) {
+  const rank = new Map(propFirms.map((f) => [f.id, propRankOf(f)]));
+  const num = (x) => (typeof x === "number" ? x : Infinity);
+  const key = { price: (v) => v.price, per1k: (v) => v.per1k, ratio: (v) => propRatio(v) }[propCatalogSort];
+  return list.sort((a, b) => {
+    const pa = get(a), pb = get(b), ra = rank.get(pa.firm) || 999, rb = rank.get(pb.firm) || 999;
+    if (key) return num(key(propCmpVals(pa))) - num(key(propCmpVals(pb))) || ra - rb;
+    return ra - rb || propPlans.indexOf(pa) - propPlans.indexOf(pb);
+  });
+}
+
+/* ---------- 价格对比：上面一条筛选，下面卡片墙（默认）或表格 ---------- */
+function renderPropCompare() {
+  const chip = (action, on, val, label) => `<button class="chip ${on ? "active" : ""}" data-action="${action}" data-val="${esc(val)}">${esc(label)}</button>`;
+  const sizes = [...new Set(propPlans.filter((p) => propShowLegacy || p.status !== "legacy").map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
+  const more = sizes.filter((s) => !PROP_MAIN_SIZES.includes(s));
+  const rows = propCatalogRows();
+  const cards = propCatalogLayout !== "table";
+  const groups = cards ? propCardGroups(rows) : null;
+  let html = `<div class="calendarPanel propPanel propCmpPanel">
+    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.tableTitle"))}</div>
+      <div class="propCmpHeadRight"><span class="propMuted">${esc(T(cards ? "prop.pc.count" : "prop.cat.tableCount", { n: cards ? groups.length : rows.length }))}</span>
+      <div class="modeToggle propLayoutToggle">${[["cards", "prop.pc.viewCards"], ["table", "prop.pc.viewTable"]].map(([v, k]) =>
+        `<button class="modeBtn ${(cards ? "cards" : "table") === v ? "active" : ""}" data-action="prop-cat-layout" data-val="${v}">${esc(T(k))}</button>`).join("")}</div></div></div>
+    <div class="propPcFilters">
+      <div class="propPcSizes">${chip("prop-cat-size", !propCatalogSize, "", T("prop.filter.allSizes"))}
+        ${PROP_MAIN_SIZES.filter((s) => sizes.includes(s)).map((s) => `<button class="propPcSizeBtn ${propCatalogSize === String(s) ? "on" : ""}" data-action="prop-cat-size" data-val="${s}">${esc(propSizeLabel(s))}</button>`).join("")}
+        ${more.length ? `<select class="input propPcMore ${more.map(String).includes(propCatalogSize) ? "on" : ""}" data-prop-cat-size>
+          <option value="">${esc(T("prop.pc.moreSizes"))}</option>${more.map((s) => `<option value="${s}" ${propCatalogSize === String(s) ? "selected" : ""}>${esc(propSizeLabel(s))}</option>`).join("")}</select>` : ""}</div>
+      <div class="propFilterLine"><span class="propMuted">${esc(T("prop.pc.care"))}</span><div class="chipGroup">
+        ${Object.keys(PROP_PREFS).map((k) => chip("prop-cat-pref", propCatalogPrefs.includes(k), k, T("prop.pc.pref." + k))).join("")}
+        ${propPlans.some((p) => p.status === "legacy") ? chip("prop-toggle-legacy", propShowLegacy, "", T("prop.cat.showLegacy")) : ""}</div></div>
+      <div class="propFilterLine"><span class="propMuted">${esc(T("prop.cat.sortBy"))}</span><div class="chipGroup">
+        ${[["rank", "prop.cat.sort.rank"], ["price", "prop.cat.sort.price"], ["per1k", "prop.cat.sort.per1k"], ["ratio", "prop.pc.sortRatio"]].map(([v, k]) => chip("prop-cat-sort", propCatalogSort === v, v, T(k))).join("")}</div></div>
+    </div>`;
+  if (!rows.length) return html + `<div class="propMuted propPcEmpty">${esc(T("prop.empty.filtered"))}</div></div>`;
+  html += cards ? propCardWall(groups) : renderPropPriceTable(rows);
+  return html + `<div class="propHint">${esc(T("prop.cat.tableFoot"))}</div></div>`;
+}
+
+/* ---------- 卡片墙 ----------
+   一张卡 = 一家公司的一个系列在一个规模；同系列的几个版本（一致性 / 日损 / 激活费…）合在一张卡上，用卡片里的开关切 */
+function propCardKey(p) { return p.firm + "|" + propFamilyOf(p) + "|" + (p.size || ""); }
+function propCardGroups(rows) {
+  const map = new Map();
+  rows.forEach((p) => { const k = propCardKey(p); if (!map.has(k)) map.set(k, []); map.get(k).push(p); });
+  // 没切过的卡默认显示最便宜的那个版本
+  const cheapest = (plans) => plans.reduce((b, q) => ((propCmpVals(q).price ?? Infinity) < (propCmpVals(b).price ?? Infinity) ? q : b), plans[0]);
+  const groups = [...map].map(([key, plans]) => ({ key, plans, pick: plans.find((q) => q.id === propCardPick[key]) || cheapest(plans) }));
+  return propSortRows(groups, (g) => g.pick);
+}
+/* 在当前这批卡片里比出来的标签：最便宜 / 回撤最宽 / 最好过 / 最划算（每样只给一张卡） */
+function propCardBests(groups) {
+  const best = {};
+  const pick = (name, get, max) => {
+    let win = null, val = null;
+    groups.forEach((g) => {
+      const x = get(propCmpVals(g.pick));
+      if (typeof x !== "number") return;
+      if (val === null || (max ? x > val : x < val)) { val = x; win = g.key; }
+    });
+    if (win && groups.length > 1) (best[win] = best[win] || []).push(name);
+  };
+  pick("cheapest", (v) => v.price);
+  pick("widest", (v) => (typeof v.dd === "number" ? v.dd : null), true);
+  pick("easiest", (v) => propRatio(v));
+  pick("value", (v) => v.per1k);
+  return best;
+}
+function propCardWall(groups) {
+  const bests = propCardBests(groups);
+  return `<div class="propPcGrid">${groups.map((g) => propPlanCard2(g, bests[g.key] || [])).join("")}</div>`;
+}
+function propSizeTier(size) { return !size ? 0 : size <= 25000 ? 0 : size <= 50000 ? 1 : size <= 100000 ? 2 : 3; }
+function propPlanCard2(g, bests) {
+  const p = g.pick, v = propCmpVals(p), po = p.payout || {}, pr = p.price || {};
+  const f = propFindFirm(p.firm) || { name: p.firm };
+  const picked = propCompare.includes(p.id);
+  const ratio = propRatio(v);
+  const diff = ratio === null ? null : ratio <= 1.5 ? "easy" : ratio <= 2 ? "mid" : "hard";
+  const days = typeof po.qualifyingDays === "number"
+    ? `${esc(T("prop.rule.days", { n: po.qualifyingDays }))}${typeof po.dayProfit === "number" ? `<small>${esc(T("prop.pc.dayMin", { v: propUsd(po.dayProfit) }))}</small>` : ""}`
+    : po.daily ? `<span class="propPcGood">${esc(T("prop.pc.daily"))}</span>` : propRule(null);
+  const cons = v.instant ? propRule(v.fundedConsistency, "%") : propRule(v.consistency, "%");
+  const row = (label, value, sub) => `<div class="propPcRow"><span>${esc(label)}</span><b>${value}${sub ? `<small>${esc(sub)}</small>` : ""}</b></div>`;
+  // 卡片上的属性标签：最多 3 个
+  const attrs = [v.instant && "instant", pr.billing === "one_time" && "oneTime", v.dll === "none" && "noDll", !v.instant && v.consistency === "none" && "noCons", po.daily && "daily"].filter(Boolean).slice(0, 3);
+  const want = propChoiceMap(p);
+  const chips = propFamilyAxes(g.plans).map(({ axis, values }) => `<div class="propPcOpt"><span>${esc(axis)}</span><div>${values.map((val) => {
+    const q = propBestPlan(g.plans, p.size || null, { ...want, [axis]: val }, axis);
+    return `<button class="${want[axis] === val ? "on" : ""}" data-action="prop-card-pick" data-key="${esc(g.key)}" data-id="${esc(q ? q.id : "")}" ${q ? "" : "disabled"}>${esc(val)}</button>`;
+  }).join("")}</div></div>`).join("");
+  const act = typeof v.activation === "number" && v.activation > 0 ? T("prop.plan.activation", { v: propUsd(v.activation) }) : T("prop.plan.noActivation");
+  const foot = [propBillingLabel(pr.billing), act].filter(Boolean).join(" · ");
+  const sizeText = p.size ? "$" + Number(p.size).toLocaleString("en-US") : p.series;
+  return `<article class="propPc propPcTier${propSizeTier(p.size)} ${f.tier === "avoid" ? "dim" : ""} ${picked ? "picked" : ""}">
+    <div class="propPcArc" aria-hidden="true"></div>
+    <div class="propPcTop">
+      <div class="propPcPrice">${v.original ? `<s>${propUsd(v.original)}</s>` : ""}<b>${v.price === null ? esc(T("prop.cat.noPrice")) : propUsd(v.price)}</b><span>${v.monthly ? esc(T("prop.cat.perMonth")) : "USD"}</span></div>
+      <button class="propPcFirm" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}" title="${esc(f.name)}">${propFirmLogo(f)}</button>
+    </div>
+    <div class="propPcBests">${bests.map((b) => `<span class="propPcBest propPcBest-${b}">${esc(T("prop.pc.best." + b))}</span>`).join("")}</div>
+    <div class="propPcSize">${esc(sizeText)}</div>
+    <div class="propPcSub"><span>#${propRankOf(f)}</span>${esc(f.name)} · ${esc(propFamilyOf(p))}${p.status === "legacy" ? ` · ${esc(T("prop.cat.legacy"))}` : ""}</div>
+    ${attrs.length ? `<div class="propPcAttrs">${attrs.map((a) => `<span>${esc(T("prop.pc.pref." + a))}</span>`).join("")}</div>` : ""}
+    <div class="propPcRows">
+      ${row(T("prop.rule.drawdown"), propRule(v.dd, "$"), propDdType(v.ddType))}
+      ${row(T("prop.rule.target"), v.instant ? `<span class="propNone">${esc(T("prop.plan.instant"))}</span>` : propRule(v.target, "$"))}
+      ${row(T(v.instant ? "prop.rule.fundedConsistency" : "prop.rule.consistency"), cons)}
+      ${row(T("prop.rule.dll"), propRule(v.dll, "$"))}
+      ${row(T("prop.pc.payoutDays"), days)}
+      ${row(T("prop.rule.split"), propRule(v.split, "%"))}
+    </div>
+    ${diff ? `<div class="propPcDiff propPcDiff-${diff}" title="${esc(T("prop.pc.diffHint"))}"><span>${esc(T("prop.pc.diff." + diff))}</span><i style="--w:${Math.min(100, Math.round((ratio / 3) * 100))}%"></i><em>${esc(T("prop.pc.ratio", { r: ratio.toFixed(1) }))}</em></div>` : ""}
+    ${chips ? `<div class="propPcOpts">${chips}</div>` : ""}
+    <details class="propPcMore"><summary>${esc(T("prop.pc.details"))}</summary>
+      ${propRulesDl([...propKeyRules(p).filter((r) => r[0] === T("prop.rule.payoutRange")), ...propMoreRules(p)])}${propLongRulesHtml(p)}
+      ${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}
+      <button class="tinyBtn propPcFirmLink" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">${esc(T("prop.pc.firmPage", { name: f.name }))} ›</button>
+    </details>
+    <div class="propPcActs">
+      ${propReadOnly() ? "" : `<button class="btn propPcCta" data-action="prop-buy-plan" data-id="${esc(p.id)}">${esc(T("prop.cat.buy"))}</button>`}
+      <button class="btn propPcCmp ${picked ? "active" : ""}" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${picked ? ICONS.check : ICONS.plus}<span>${esc(T("prop.compare.add"))}</span></button>
+    </div>
+    <div class="propPcFoot">${esc(foot)}</div>
+  </article>`;
 }
 
 /* ---------- 排行 ---------- */
@@ -331,36 +472,15 @@ function renderPropBoard() {
   </div>`;
 }
 
-/* ---------- 价格对比表 ---------- */
-function renderPropPriceTable() {
-  const chips = (action, cur, opts) => `<div class="chipGroup">${opts.map(([v, label]) =>
-    `<button class="chip ${cur === v ? "active" : ""}" data-action="${action}" data-val="${esc(v)}">${esc(label)}</button>`).join("")}</div>`;
-  const sizes = [...new Set(propPlans.filter((p) => propShowLegacy || p.status !== "legacy").map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
-  const rank = new Map(propFirms.map((f) => [f.id, propRankOf(f)]));
-  const rows = propCatalogRows().map((p) => ({ p, v: propCmpVals(p), r: rank.get(p.firm) || 999 }));
-  const num = (x) => (typeof x === "number" ? x : Infinity);
-  if (propCatalogSort === "price") rows.sort((a, b) => num(a.v.price) - num(b.v.price) || a.r - b.r);
-  else if (propCatalogSort === "per1k") rows.sort((a, b) => num(a.v.per1k) - num(b.v.per1k) || a.r - b.r);
-  else rows.sort((a, b) => a.r - b.r || num(a.p.size) - num(b.p.size) || num(a.v.price) - num(b.v.price));
+/* ---------- 价格对比表（「表格」视图）：一行一个计划 ---------- */
+function renderPropPriceTable(list) {
+  const rows = propSortRows(list.map((p) => ({ p, v: propCmpVals(p) })), (x) => x.p);
   // 按排名看时一家公司是一组：先列最便宜的几个，其余折起来，免得一家（比如 Lucid 有十种组合）占满整屏
   const GROUP_TOP = 3;
   const grouped = propCatalogSort === "rank";
   const groupCount = new Map();
   rows.forEach((x) => groupCount.set(x.p.firm, (groupCount.get(x.p.firm) || 0) + 1));
-
-  let html = `<div class="calendarPanel propPanel">
-    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.tableTitle"))}</div><span class="propMuted">${esc(T("prop.cat.tableCount", { n: rows.length }))}</span></div>
-    <div class="propFilters propTableFilters">
-      ${chips("prop-cat-size", propCatalogSize, [["", T("prop.filter.allSizes")], ...sizes.map((s) => [String(s), propSizeLabel(s)])])}
-      <div class="propFilterLine">
-        ${chips("prop-cat-type", propCatalogType, [["", T("prop.filter.all")], ["evaluation", T("prop.plan.evaluation")], ["instant", T("prop.plan.instant")]])}
-        ${chips("prop-cat-billing", propCatalogBilling, [["", T("prop.filter.all")], ["one_time", T("prop.billing.one_time")], ["monthly", T("prop.billing.monthly")]])}
-        ${propPlans.some((p) => p.status === "legacy") ? `<div class="chipGroup"><button class="chip ${propShowLegacy ? "active" : ""}" data-action="prop-toggle-legacy">${esc(T("prop.cat.showLegacy"))}</button></div>` : ""}
-      </div>
-      <div class="propFilterLine"><span class="propMuted">${esc(T("prop.cat.sortBy"))}</span>
-        ${chips("prop-cat-sort", propCatalogSort, [["rank", T("prop.cat.sort.rank")], ["price", T("prop.cat.sort.price")], ["per1k", T("prop.cat.sort.per1k")]])}</div>
-    </div>`;
-  if (!rows.length) return html + `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div></div>`;
+  let html = "";
   const pct = (v) => propRule(v, "%");
   html += `<div class="tableScroll propPriceScroll"><table class="adminTable propTable propPriceTable"><thead><tr>
     <th class="propStickyCol">${esc(T("prop.col.firm"))}</th><th>${esc(T("prop.cmp.series"))}</th><th class="num">${esc(T("prop.form.size"))}</th>
@@ -401,7 +521,7 @@ function renderPropPriceTable() {
     const lastOfOpenGroup = grouped && open && total > GROUP_TOP && (!rows[i + 1] || rows[i + 1].p.firm !== p.firm);
     if (lastOfOpenGroup) html += `<tr class="propGroupMore"><td class="propStickyCol"></td><td colspan="${COLS - 1}"><button class="tinyBtn" data-action="prop-cat-expand" data-id="${esc(p.firm)}">${esc(T("prop.cat.collapseFirm"))}</button></td></tr>`;
   });
-  return html + `</tbody></table></div><div class="propHint">${esc(T("prop.cat.tableFoot"))}</div></div>`;
+  return html + `</tbody></table></div>`;
 }
 
 function renderPropFirm(f, plans) {
@@ -955,7 +1075,11 @@ function propCompareView() {
     [T("prop.cmp.checked"), (p) => esc(p.checkedAt || "—")],
   ];
   const body = !plans.length ? `<div class="propMuted">${esc(T("prop.compare.none"))}</div>`
-    : `<div class="tableScroll"><table class="adminTable propTable propCmp"><tbody>${rows.map(([label, fn]) => `<tr><th>${esc(label)}</th>${plans.map((p) => `<td>${fn(p)}</td>`).join("")}</tr>`).join("")}
+    : `<div class="tableScroll"><table class="adminTable propTable propCmp"><tbody>${rows.map(([label, fn]) => {
+        // 几个计划这一项不一样的行高亮，一眼看出差在哪
+        const cells = plans.map(fn);
+        return `<tr class="${plans.length > 1 && new Set(cells).size > 1 ? "propCmpDiff" : ""}"><th>${esc(label)}</th>${cells.map((c) => `<td>${c}</td>`).join("")}</tr>`;
+      }).join("")}
       <tr><th></th>${plans.map((p) => `<td><button class="tinyBtn propAct" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${esc(T("prop.compare.remove"))}</button></td>`).join("")}</tr></tbody></table></div>`;
   return { title: esc(T("prop.compare.title")), body, foot: "" };
 }
@@ -1014,8 +1138,13 @@ document.addEventListener("click", async (e) => {
   }
   else if (a === "prop-cat-firm-size") { propCatalogFirmSize = el.dataset.val; render(); }
   else if (a === "prop-cat-size") { propCatalogSize = el.dataset.val; render(); }
-  else if (a === "prop-cat-type") { propCatalogType = el.dataset.val; render(); }
-  else if (a === "prop-cat-billing") { propCatalogBilling = el.dataset.val; render(); }
+  else if (a === "prop-cat-pref") {
+    const k = el.dataset.val;
+    propCatalogPrefs = propCatalogPrefs.includes(k) ? propCatalogPrefs.filter((x) => x !== k) : [...propCatalogPrefs, k];
+    render();
+  }
+  else if (a === "prop-cat-layout") { propCatalogLayout = el.dataset.val; try { localStorage.setItem("journal_prop_layout", propCatalogLayout); } catch (err) {} render(); }
+  else if (a === "prop-card-pick") { if (id) { propCardPick = { ...propCardPick, [el.dataset.key]: id }; render(); } }
   else if (a === "prop-cat-sort") { propCatalogSort = el.dataset.val; render(); }
   else if (a === "prop-board-all") { propBoardAll = !propBoardAll; render(); }
   else if (a === "prop-cat-expand") {
@@ -1132,6 +1261,7 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("change", (e) => {
   const t = e.target;
+  if (t.dataset && t.dataset.propCatSize !== undefined) { propCatalogSize = t.value; render(); return; }
   if (!propModal || !t.dataset) return;
   if (t.dataset.propFile !== undefined && t.files && t.files[0]) {
     const file = t.files[0];
