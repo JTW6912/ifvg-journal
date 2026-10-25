@@ -748,7 +748,27 @@ function renderPropFirm(f, plans) {
 /* ============================================================
    弹窗
    ============================================================ */
-function propRenderModal() { renderSecondaryModals(true); }
+/* 弹窗重画会整块替换 innerHTML：改金额 / 日期 / 数量这类会触发重画的字段时，滚动位置和光标都会丢（弹回顶部）。
+   重画前记下滚动位置和正在输入的字段，同一个弹窗重画完再放回去 */
+function propRenderModal() {
+  const body = document.querySelector(".propModal .modalBody");
+  const keep = body && propModal ? { type: propModal.type, id: propModal.id || propModal.accountId || "", top: body.scrollTop } : null;
+  const act = document.activeElement;
+  const field = act && act.dataset ? act.dataset.propField || act.dataset.propEvent : null;
+  let sel = null;
+  try { sel = act && typeof act.selectionStart === "number" ? [act.selectionStart, act.selectionEnd] : null; } catch (err) {}
+  renderSecondaryModals(true);
+  if (!keep || !propModal || propModal.type !== keep.type || (propModal.id || propModal.accountId || "") !== keep.id) return;
+  const nb = document.querySelector(".propModal .modalBody");
+  if (nb) nb.scrollTop = keep.top;
+  if (field) {
+    const el = document.querySelector(`.propModal [data-prop-field="${CSS.escape(field)}"]`);
+    if (el) {
+      el.focus({ preventScroll: true });
+      try { if (sel) el.setSelectionRange(sel[0], sel[1]); } catch (err) {}
+    }
+  }
+}
 function propCloseModal() { propModal = null; propRenderModal(); render(); }
 function propModalHtml() {
   const m = propModal;
