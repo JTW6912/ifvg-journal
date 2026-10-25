@@ -389,7 +389,7 @@ function propCardWall(groups) {
   return `<div class="propPcGrid">${groups.map((g) => propPlanCard2(g, bests[g.key] || [])).join("")}</div>`;
 }
 function propSizeTier(size) { return !size ? 0 : size <= 25000 ? 0 : size <= 50000 ? 1 : size <= 100000 ? 2 : 3; }
-function propPlanCard2(g, bests) {
+function propPlanCard2(g, bests, onFirmPage) {
   const p = g.pick, v = propCmpVals(p), po = p.payout || {}, pr = p.price || {};
   const f = propFindFirm(p.firm) || { name: p.firm };
   const picked = propCompare.includes(p.id);
@@ -433,7 +433,7 @@ function propPlanCard2(g, bests) {
     <details class="propPcMore"><summary>${esc(T("prop.pc.details"))}</summary>
       ${propRulesDl([...propKeyRules(p).filter((r) => r[0] === T("prop.rule.payoutRange")), ...propMoreRules(p)])}${propLongRulesHtml(p)}
       ${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}
-      <button class="tinyBtn propPcFirmLink" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">${esc(T("prop.pc.firmPage", { name: f.name }))} ›</button>
+      ${onFirmPage ? "" : `<button class="tinyBtn propPcFirmLink" data-action="prop-cat-firm" data-val="${esc(p.firm)}" data-size="${esc(p.size || "")}">${esc(T("prop.pc.firmPage", { name: f.name }))} ›</button>`}
     </details>
     <div class="propPcActs">
       ${propReadOnly() ? "" : `<button class="btn propPcCta" data-action="prop-buy-plan" data-id="${esc(p.id)}">${esc(T("prop.cat.buy"))}</button>`}
@@ -525,8 +525,6 @@ function renderPropPriceTable(list) {
 }
 
 function renderPropFirm(f, plans) {
-  const series = [];
-  plans.forEach((p) => { if (!series.includes(p.series)) series.push(p.series); });
   const faq = Array.isArray(f.faq) ? f.faq : [];
   const promo = f.promo && (f.promo.discount || f.promo.text);
   let html = `<div class="calendarPanel propPanel propFirm">
@@ -535,11 +533,15 @@ function renderPropFirm(f, plans) {
       ${f.review ? `<span class="propReview">${esc(f.review)}</span>` : ""}</div>
     ${promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>` : ""}
     ${Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
-    ${f.notes ? `<div class="propNotes">${esc(f.notes)}</div>` : ""}`;
+    ${f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
   if (!plans.length) html += `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div>`;
-  series.forEach((sr) => {
-    html += `<div class="propSeries"><div class="propSeriesName">${esc(sr || T("prop.cat.noSeries"))}</div>
-      <div class="propPlanGrid">${plans.filter((p) => p.series === sr).map(propPlanCard).join("")}</div></div>`;
+  // 一个系列一段，段里是跟价格对比一样的卡片（同系列同规模的版本合成一张，用开关切）
+  const families = [];
+  plans.forEach((p) => { const fam = propFamilyOf(p); if (!families.includes(fam)) families.push(fam); });
+  families.forEach((fam) => {
+    const groups = propCardGroups(plans.filter((p) => propFamilyOf(p) === fam));
+    html += `<div class="propSeries"><div class="propSeriesName">${esc(fam || T("prop.cat.noSeries"))}</div>
+      <div class="propPcGrid">${groups.map((g) => propPlanCard2(g, [], true)).join("")}</div></div>`;
   });
   if (faq.length) {
     html += `<details class="propFaq"><summary>${esc(T("prop.cat.faq", { n: faq.length }))}</summary>${faq.map((q) => `<div class="propFaqItem">
@@ -548,32 +550,6 @@ function renderPropFirm(f, plans) {
   }
   return html + `</div>`;
 }
-function propPlanCard(p) {
-  const picked = propCompare.includes(p.id);
-  const more = propMoreRules(p);
-  const opts = Array.isArray(p.options) ? p.options : [];
-  const sources = Array.isArray(p.sources) ? p.sources : [];
-  const hasMore = more.length || propLongRules(p).length || opts.length || p.notes || sources.length;
-  return `<div class="propCard propPlan ${picked ? "picked" : ""}">
-    <div class="propPlanHead"><div class="propPlanSize">${esc(propSizeLabel(p.size) || p.series)}</div><div class="propPlanTags">
-      ${p.type === "instant" ? `<span class="propSt propSt-funded">${esc(T("prop.plan.instant"))}</span>` : ""}
-      ${p.status === "legacy" ? `<span class="propSt propSt-closed">${esc(T("prop.cat.legacy"))}</span>` : ""}</div></div>
-    ${propPriceHtml(p)}
-    ${propRulesDl(propKeyRules(p))}
-    ${hasMore ? `<details class="propMore"><summary>${esc(T("prop.cat.more"))}</summary>
-      ${more.length ? propRulesDl(more) : ""}${propLongRulesHtml(p)}
-      ${opts.length ? `<div class="propOpts"><div class="propMiniLabel">${esc(T("prop.cat.options"))}</div>${opts.map((o) => `<div>${esc(o.name || "")}${typeof o.price === "number" ? " · " + propUsd(o.price) : ""}${o.note ? ` <span class="propMuted">${esc(o.note)}</span>` : ""}</div>`).join("")}</div>` : ""}
-      ${p.notes ? `<div class="propNotes">${esc(p.notes)}</div>` : ""}
-      ${sources.length ? `<div class="propSources">${sources.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(T("prop.cat.source"))} ${i + 1}</a>`).join("")}</div>` : ""}
-    </details>` : ""}
-    <div class="propPlanFoot">
-      ${p.checkedAt ? `<span class="propMuted">${esc(T("prop.cat.checked", { d: p.checkedAt }))}</span>` : ""}
-      <div><button class="btn btn-sm ${picked ? "active" : ""}" data-action="prop-toggle-compare" data-id="${esc(p.id)}">${esc(T(picked ? "prop.compare.picked1" : "prop.compare.add"))}</button>
-      ${propReadOnly() ? "" : `<button class="btn btn-sm btn-primary" data-action="prop-buy-plan" data-id="${esc(p.id)}">${esc(T("prop.cat.buy"))}</button>`}</div>
-    </div>
-  </div>`;
-}
-
 /* ============================================================
    弹窗
    ============================================================ */

@@ -1718,7 +1718,8 @@ select.select.pbRowMove{padding:0 24px 0 8px;line-height:24px;}
 .propFirmName>span{font-size:12px;color:var(--mutedDark);}
 .propFirmName a,.propFaq a,.propSources a{color:var(--accent);}
 .propSeries{margin-top:14px;}
-.propSeriesName{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:8px;}
+.propSeriesName{font-size:14px;font-weight:700;color:var(--text);margin:6px 0 12px;}
+.propFirmNotes{margin:6px 0 4px;}
 .propPlanGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
 .propPlan{display:flex;flex-direction:column;gap:10px;background:var(--surface2);}
 .propPlan.picked{border-color:var(--accent);}
