@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-overview-range-panel",
+  "assertions": [
+    {"id":"A1","statement":"Modern overview presents the approved three-zone financial panel without redundant month or centralized help blocks.","verify_via":"sensory","status":"failing","evidence_ref":null},
+    {"id":"A2","statement":"Confirmed date ranges update all financial fields together; cancelling drafts preserves the applied state and current account stages.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A3","statement":"Six field-local help controls support hover, focus, touch and dismissal without clipping.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A4","statement":"Classic output is preserved and modern themes, locales and viewport sizes remain readable.","verify_via":"sensory","status":"failing","evidence_ref":null},
+    {"id":"A5","statement":"Summary interactions perform no new remote operations and clean up stale context-specific UI.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A6","statement":"Keyboard date selection, focus restoration and tooltip descriptions remain valid after rendering.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A7","statement":"Synthetic boundary cases retain propSum accounting semantics and cent precision without mutating inputs.","verify_via":"unit","status":"failing","evidence_ref":null},
+    {"id":"A8","statement":"Sparse date-ordered cumulative points start at zero and end at net return, with honest empty or invalid-date states.","verify_via":"unit","status":"failing","evidence_ref":null},
+    {"id":"A9","statement":"Domain and UI responsibilities remain separate, localized and scoped to modern Prop; bundle and syntax checks pass.","verify_via":"static","status":"failing","evidence_ref":null}
+  ]
+}
