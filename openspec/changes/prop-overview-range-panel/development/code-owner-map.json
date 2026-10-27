@@ -1,0 +1,15 @@
+{
+  "schema_version":1,
+  "owners":[
+    {"path":"src/11d-prop-data.js","owner":"001-prop-overview","responsibility":"pure financial/date derivation only"},
+    {"path":"src/11g-prop-overview.js","owner":"001-prop-overview","responsibility":"scoped summary and overlay UI"},
+    {"path":"src/11e-prop-view.js","owner":"001-prop-overview","responsibility":"modern summary composition only"},
+    {"path":"src/03-state.js","owner":"001-prop-overview","responsibility":"new local UI state"},
+    {"path":"src/14-main-render.js","owner":"001-prop-overview","responsibility":"explicit overlay cleanup seam"},
+    {"path":"src/15-events.js","owner":"001-prop-overview","responsibility":"only necessary Escape/lifecycle integration"},
+    {"path":"theme-modern.css","owner":"001-prop-overview","responsibility":"modern-scoped styles"},
+    {"path":"i18n.js","owner":"001-prop-overview","responsibility":"paired localized keys"},
+    {"path":"test/prop-overview.test.js","owner":"001-prop-overview","responsibility":"synthetic regression tests"},
+    {"path":"dev/prop-overview-check","owner":"001-prop-overview","responsibility":"isolated real-source UI harness"}
+  ]
+}

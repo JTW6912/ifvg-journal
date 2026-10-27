@@ -1,0 +1,5476 @@
+[
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:45649/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "#propOverviewRangeTrigger"
+    ],
+    "error": null,
+    "result": {
+      "clicked": "#propOverviewRangeTrigger",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e208": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e209": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e210": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e211": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e212": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e213": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e214": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e215": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e216": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e217": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e218": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e219": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e220": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e221": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e222": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e223": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e224": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e225": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e226": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e227": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e228": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e229": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e230": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e231": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e232": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e233": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e234": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e235": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e236": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e237": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e238": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e239": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e240": {
+          "name": "+$1K 10月",
+          "role": "button"
+        },
+        "e241": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e242": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e243": {
+          "name": "DE Demo account 01 ↑ 出金 +$500",
+          "role": "button"
+        },
+        "e244": {
+          "name": "DE Demo account 08 ↑ 出金 · 待到账 +$777",
+          "role": "button"
+        },
+        "e245": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e246": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e247": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e248": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e249": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e250": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e251": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e252": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e253": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.31",
+          "role": "button"
+        },
+        "e254": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e255": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e256": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e257": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e258": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e259": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e260": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e261": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e262": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e263": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e264": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e265": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e266": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e267": {
+          "name": "$1,500",
+          "role": "cell"
+        },
+        "e268": {
+          "name": "+$1,500",
+          "role": "cell"
+        },
+        "e269": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e270": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e271": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e272": {
+          "name": "50%",
+          "role": "cell"
+        },
+        "e273": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e274": {
+          "name": "$500",
+          "role": "cell"
+        },
+        "e275": {
+          "name": "−$500",
+          "role": "cell"
+        },
+        "e276": {
+          "name": "-50.0%",
+          "role": "cell"
+        },
+        "e277": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e278": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e279": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e280": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e281": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e282": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e283": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e284": {
+          "name": "通过考核 → 资金账号 · 50% · 4/8",
+          "role": "button"
+        },
+        "e285": {
+          "name": "资金账号 · 6 个账号",
+          "role": "button"
+        },
+        "e286": {
+          "name": "资金账号 → 出金到账 · 50% · 3/6",
+          "role": "button"
+        },
+        "e287": {
+          "name": "出金到账 · 4 个账号",
+          "role": "button"
+        },
+        "e288": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e289": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e290": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e291": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e292": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e293": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e294": {
+          "name": "ROI",
+          "role": "columnheader"
+        },
+        "e396": {
+          "name": "自定义",
+          "role": "button"
+        },
+        "e397": {
+          "name": "全部时间",
+          "role": "button"
+        },
+        "e398": {
+          "name": "最近7天",
+          "role": "button"
+        },
+        "e399": {
+          "name": "最近30天",
+          "role": "button"
+        },
+        "e400": {
+          "name": "本月",
+          "role": "button"
+        },
+        "e401": {
+          "name": "上月",
+          "role": "button"
+        },
+        "e402": {
+          "name": "上一个月",
+          "role": "button"
+        },
+        "e403": {
+          "name": "下一个月",
+          "role": "button"
+        },
+        "e404": {
+          "name": "2026年10月",
+          "role": "heading"
+        },
+        "e405": {
+          "name": "2026年11月",
+          "role": "heading"
+        },
+        "e406": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e407": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e408": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e409": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e410": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e411": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e412": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e413": {
+          "name": "2026年9月27日",
+          "role": "gridcell"
+        },
+        "e414": {
+          "name": "2026年9月28日",
+          "role": "gridcell"
+        },
+        "e415": {
+          "name": "2026年9月29日",
+          "role": "gridcell"
+        },
+        "e416": {
+          "name": "2026年9月30日",
+          "role": "gridcell"
+        },
+        "e417": {
+          "name": "2026年10月1日",
+          "role": "gridcell"
+        },
+        "e418": {
+          "name": "2026年10月2日",
+          "role": "gridcell"
+        },
+        "e419": {
+          "name": "2026年10月3日",
+          "role": "gridcell"
+        },
+        "e420": {
+          "name": "2026年10月4日",
+          "role": "gridcell"
+        },
+        "e421": {
+          "name": "2026年10月5日",
+          "role": "gridcell"
+        },
+        "e422": {
+          "name": "2026年10月6日",
+          "role": "gridcell"
+        },
+        "e423": {
+          "name": "2026年10月7日",
+          "role": "gridcell"
+        },
+        "e424": {
+          "name": "2026年10月8日",
+          "role": "gridcell"
+        },
+        "e425": {
+          "name": "2026年10月9日",
+          "role": "gridcell"
+        },
+        "e426": {
+          "name": "2026年10月10日",
+          "role": "gridcell"
+        },
+        "e427": {
+          "name": "2026年10月11日",
+          "role": "gridcell"
+        },
+        "e428": {
+          "name": "2026年10月12日",
+          "role": "gridcell"
+        },
+        "e429": {
+          "name": "2026年10月13日",
+          "role": "gridcell"
+        },
+        "e430": {
+          "name": "2026年10月14日",
+          "role": "gridcell"
+        },
+        "e431": {
+          "name": "2026年10月15日",
+          "role": "gridcell"
+        },
+        "e432": {
+          "name": "2026年10月16日",
+          "role": "gridcell"
+        },
+        "e433": {
+          "name": "2026年10月17日",
+          "role": "gridcell"
+        },
+        "e434": {
+          "name": "2026年10月18日",
+          "role": "gridcell"
+        },
+        "e435": {
+          "name": "2026年10月19日",
+          "role": "gridcell"
+        },
+        "e436": {
+          "name": "2026年10月20日",
+          "role": "gridcell"
+        },
+        "e437": {
+          "name": "2026年10月21日",
+          "role": "gridcell"
+        },
+        "e438": {
+          "name": "2026年10月22日",
+          "role": "gridcell"
+        },
+        "e439": {
+          "name": "2026年10月23日",
+          "role": "gridcell"
+        },
+        "e440": {
+          "name": "2026年10月24日",
+          "role": "gridcell"
+        },
+        "e441": {
+          "name": "2026年10月25日",
+          "role": "gridcell"
+        },
+        "e442": {
+          "name": "2026年10月26日",
+          "role": "gridcell"
+        },
+        "e443": {
+          "name": "2026年10月27日",
+          "role": "gridcell"
+        },
+        "e444": {
+          "name": "2026年10月28日",
+          "role": "gridcell"
+        },
+        "e445": {
+          "name": "2026年10月29日",
+          "role": "gridcell"
+        },
+        "e446": {
+          "name": "2026年10月30日",
+          "role": "gridcell"
+        },
+        "e447": {
+          "name": "2026年10月31日",
+          "role": "gridcell"
+        },
+        "e448": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e449": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e450": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e451": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e452": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e453": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e454": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e455": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e456": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e457": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e458": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e459": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e460": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e461": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e462": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e463": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e464": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e465": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e466": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e467": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e468": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e469": {
+          "name": "2026年11月8日",
+          "role": "gridcell"
+        },
+        "e470": {
+          "name": "2026年11月9日",
+          "role": "gridcell"
+        },
+        "e471": {
+          "name": "2026年11月10日",
+          "role": "gridcell"
+        },
+        "e472": {
+          "name": "2026年11月11日",
+          "role": "gridcell"
+        },
+        "e473": {
+          "name": "2026年11月12日",
+          "role": "gridcell"
+        },
+        "e474": {
+          "name": "2026年11月13日",
+          "role": "gridcell"
+        },
+        "e475": {
+          "name": "2026年11月14日",
+          "role": "gridcell"
+        },
+        "e476": {
+          "name": "2026年11月15日",
+          "role": "gridcell"
+        },
+        "e477": {
+          "name": "2026年11月16日",
+          "role": "gridcell"
+        },
+        "e478": {
+          "name": "2026年11月17日",
+          "role": "gridcell"
+        },
+        "e479": {
+          "name": "2026年11月18日",
+          "role": "gridcell"
+        },
+        "e480": {
+          "name": "2026年11月19日",
+          "role": "gridcell"
+        },
+        "e481": {
+          "name": "2026年11月20日",
+          "role": "gridcell"
+        },
+        "e482": {
+          "name": "2026年11月21日",
+          "role": "gridcell"
+        },
+        "e483": {
+          "name": "2026年11月22日",
+          "role": "gridcell"
+        },
+        "e484": {
+          "name": "2026年11月23日",
+          "role": "gridcell"
+        },
+        "e485": {
+          "name": "2026年11月24日",
+          "role": "gridcell"
+        },
+        "e486": {
+          "name": "2026年11月25日",
+          "role": "gridcell"
+        },
+        "e487": {
+          "name": "2026年11月26日",
+          "role": "gridcell"
+        },
+        "e488": {
+          "name": "2026年11月27日",
+          "role": "gridcell"
+        },
+        "e489": {
+          "name": "2026年11月28日",
+          "role": "gridcell"
+        },
+        "e490": {
+          "name": "2026年11月29日",
+          "role": "gridcell"
+        },
+        "e491": {
+          "name": "2026年11月30日",
+          "role": "gridcell"
+        },
+        "e492": {
+          "name": "2026年12月1日",
+          "role": "gridcell"
+        },
+        "e493": {
+          "name": "2026年12月2日",
+          "role": "gridcell"
+        },
+        "e494": {
+          "name": "2026年12月3日",
+          "role": "gridcell"
+        },
+        "e495": {
+          "name": "2026年12月4日",
+          "role": "gridcell"
+        },
+        "e496": {
+          "name": "2026年12月5日",
+          "role": "gridcell"
+        },
+        "e497": {
+          "name": "2026年12月6日",
+          "role": "gridcell"
+        },
+        "e498": {
+          "name": "2026年12月7日",
+          "role": "gridcell"
+        },
+        "e499": {
+          "name": "2026年12月8日",
+          "role": "gridcell"
+        },
+        "e500": {
+          "name": "2026年12月9日",
+          "role": "gridcell"
+        },
+        "e501": {
+          "name": "2026年12月10日",
+          "role": "gridcell"
+        },
+        "e502": {
+          "name": "2026年12月11日",
+          "role": "gridcell"
+        },
+        "e503": {
+          "name": "2026年12月12日",
+          "role": "gridcell"
+        },
+        "e504": {
+          "name": "2026年9月27日",
+          "role": "button"
+        },
+        "e505": {
+          "name": "2026年9月28日",
+          "role": "button"
+        },
+        "e506": {
+          "name": "2026年9月29日",
+          "role": "button"
+        },
+        "e507": {
+          "name": "2026年9月30日",
+          "role": "button"
+        },
+        "e508": {
+          "name": "2026年10月1日",
+          "role": "button"
+        },
+        "e509": {
+          "name": "2026年10月2日",
+          "role": "button"
+        },
+        "e510": {
+          "name": "2026年10月3日",
+          "role": "button"
+        },
+        "e511": {
+          "name": "2026年10月4日",
+          "role": "button"
+        },
+        "e512": {
+          "name": "2026年10月5日",
+          "role": "button"
+        },
+        "e513": {
+          "name": "2026年10月6日",
+          "role": "button"
+        },
+        "e514": {
+          "name": "2026年10月7日",
+          "role": "button"
+        },
+        "e515": {
+          "name": "2026年10月8日",
+          "role": "button"
+        },
+        "e516": {
+          "name": "2026年10月9日",
+          "role": "button"
+        },
+        "e517": {
+          "name": "2026年10月10日",
+          "role": "button"
+        },
+        "e518": {
+          "name": "2026年10月11日",
+          "role": "button"
+        },
+        "e519": {
+          "name": "2026年10月12日",
+          "role": "button"
+        },
+        "e520": {
+          "name": "2026年10月13日",
+          "role": "button"
+        },
+        "e521": {
+          "name": "2026年10月14日",
+          "role": "button"
+        },
+        "e522": {
+          "name": "2026年10月15日",
+          "role": "button"
+        },
+        "e523": {
+          "name": "2026年10月16日",
+          "role": "button"
+        },
+        "e524": {
+          "name": "2026年10月17日",
+          "role": "button"
+        },
+        "e525": {
+          "name": "2026年10月18日",
+          "role": "button"
+        },
+        "e526": {
+          "name": "2026年10月19日",
+          "role": "button"
+        },
+        "e527": {
+          "name": "2026年10月20日",
+          "role": "button"
+        },
+        "e528": {
+          "name": "2026年10月21日",
+          "role": "button"
+        },
+        "e529": {
+          "name": "2026年10月22日",
+          "role": "button"
+        },
+        "e530": {
+          "name": "2026年10月23日",
+          "role": "button"
+        },
+        "e531": {
+          "name": "2026年10月24日",
+          "role": "button"
+        },
+        "e532": {
+          "name": "2026年10月25日",
+          "role": "button"
+        },
+        "e533": {
+          "name": "2026年10月26日",
+          "role": "button"
+        },
+        "e534": {
+          "name": "2026年10月27日",
+          "role": "button"
+        },
+        "e535": {
+          "name": "2026年10月28日",
+          "role": "button"
+        },
+        "e536": {
+          "name": "2026年10月29日",
+          "role": "button"
+        },
+        "e537": {
+          "name": "2026年10月30日",
+          "role": "button"
+        },
+        "e538": {
+          "name": "2026年10月31日",
+          "role": "button"
+        },
+        "e539": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e540": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e541": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e542": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e543": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e544": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e545": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e546": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e547": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e548": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e549": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e550": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e551": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e552": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e553": {
+          "name": "2026年11月8日",
+          "role": "button"
+        },
+        "e554": {
+          "name": "2026年11月9日",
+          "role": "button"
+        },
+        "e555": {
+          "name": "2026年11月10日",
+          "role": "button"
+        },
+        "e556": {
+          "name": "2026年11月11日",
+          "role": "button"
+        },
+        "e557": {
+          "name": "2026年11月12日",
+          "role": "button"
+        },
+        "e558": {
+          "name": "2026年11月13日",
+          "role": "button"
+        },
+        "e559": {
+          "name": "2026年11月14日",
+          "role": "button"
+        },
+        "e560": {
+          "name": "2026年11月15日",
+          "role": "button"
+        },
+        "e561": {
+          "name": "2026年11月16日",
+          "role": "button"
+        },
+        "e562": {
+          "name": "2026年11月17日",
+          "role": "button"
+        },
+        "e563": {
+          "name": "2026年11月18日",
+          "role": "button"
+        },
+        "e564": {
+          "name": "2026年11月19日",
+          "role": "button"
+        },
+        "e565": {
+          "name": "2026年11月20日",
+          "role": "button"
+        },
+        "e566": {
+          "name": "2026年11月21日",
+          "role": "button"
+        },
+        "e567": {
+          "name": "2026年11月22日",
+          "role": "button"
+        },
+        "e568": {
+          "name": "2026年11月23日",
+          "role": "button"
+        },
+        "e569": {
+          "name": "2026年11月24日",
+          "role": "button"
+        },
+        "e570": {
+          "name": "2026年11月25日",
+          "role": "button"
+        },
+        "e571": {
+          "name": "2026年11月26日",
+          "role": "button"
+        },
+        "e572": {
+          "name": "2026年11月27日",
+          "role": "button"
+        },
+        "e573": {
+          "name": "2026年11月28日",
+          "role": "button"
+        },
+        "e574": {
+          "name": "2026年11月29日",
+          "role": "button"
+        },
+        "e575": {
+          "name": "2026年11月30日",
+          "role": "button"
+        },
+        "e576": {
+          "name": "2026年12月1日",
+          "role": "button"
+        },
+        "e577": {
+          "name": "2026年12月2日",
+          "role": "button"
+        },
+        "e578": {
+          "name": "2026年12月3日",
+          "role": "button"
+        },
+        "e579": {
+          "name": "2026年12月4日",
+          "role": "button"
+        },
+        "e580": {
+          "name": "2026年12月5日",
+          "role": "button"
+        },
+        "e581": {
+          "name": "2026年12月6日",
+          "role": "button"
+        },
+        "e582": {
+          "name": "2026年12月7日",
+          "role": "button"
+        },
+        "e583": {
+          "name": "2026年12月8日",
+          "role": "button"
+        },
+        "e584": {
+          "name": "2026年12月9日",
+          "role": "button"
+        },
+        "e585": {
+          "name": "2026年12月10日",
+          "role": "button"
+        },
+        "e586": {
+          "name": "2026年12月11日",
+          "role": "button"
+        },
+        "e587": {
+          "name": "2026年12月12日",
+          "role": "button"
+        }
+      },
+      "removedRefs": [
+        "@e388",
+        "@e389",
+        "@e390",
+        "@e391",
+        "@e392",
+        "@e393",
+        "@e394",
+        "@e395"
+      ],
+      "snapshot": "- button \"回测\" [ref=e245]\n- button \"实盘\" [ref=e246]\n- button \"切换主题\" [ref=e247]\n- button \"导出\" [ref=e248]\n- button \"新建交易\" [ref=e249]\n- button \"账号\" [ref=e251]\n- button \"IFVG Journal Demo\" [ref=e208]\n- button \"记录\" [ref=e209]\n- button \"分析\" [ref=e210]\n- button \"月度\" [ref=e211]\n- button \"复盘\" [ref=e212]\n- button \"模型库\" [ref=e213]\n- button \"Prop 账户\" [ref=e214]\n- button \"更新日志\" [ref=e215]\n- button \"设置\" [ref=e216]\n- button \"总览\" [ref=e217]\n- button \"我的账号\" [ref=e218]\n- button \"公司计划\" [ref=e219]\n- button \"记录购买\" [ref=e220]\n- button \"全部公司\" [ref=e221]\n- button \"Demo Firm A\" [ref=e222]\n- button \"Demo Firm B\" [ref=e223]\n- button \"全部分组\" [ref=e224]\n- button \"Group A\" [ref=e225]\n- button \"Group B\" [ref=e226]\n- region \"资金概览\" [ref=e227]\n  - heading \"资金概览\" [level=2, ref=e252]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.31\" [expanded=true, ref=e253]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e254]\n    - button \"查看区间净收益说明\" [ref=e277]\n  - button \"查看区间走势说明\" [ref=e255]\n  - button \"查看ROI说明\" [ref=e256]\n  - heading \"投入与到账\" [level=3, ref=e257]\n  - button \"查看区间投入说明\" [ref=e278]\n  - button \"查看出金到账说明\" [ref=e279]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e258]\n    - button \"查看当前账号状态说明\" [ref=e280]\n  - button \"我的账号 · 考核中\" [ref=e259]\n  - button \"我的账号 · 待激活\" [ref=e260]\n  - button \"我的账号 · 资金账号\" [ref=e261]\n- region \"账号漏斗\" [ref=e228]\n  - heading \"账号漏斗\" [level=2, ref=e262]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e250] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e281]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e282]\n    - button \"通过考核 · 8 个账号\" [ref=e283]\n    - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e284]\n    - button \"资金账号 · 6 个账号\" [ref=e285]\n    - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e286]\n    - button \"出金到账 · 4 个账号\" [ref=e287]\n- button \"上一年\" [disabled, ref=e229]\n- button \"下一年\" [disabled, ref=e230]\n- button \"1月\" [disabled, ref=e231]\n- button \"2月\" [disabled, ref=e232]\n- button \"3月\" [disabled, ref=e233]\n- button \"4月\" [disabled, ref=e234]\n- button \"5月\" [disabled, ref=e235]\n- button \"6月\" [disabled, ref=e236]\n- button \"7月\" [disabled, ref=e237]\n- button \"8月\" [disabled, ref=e238]\n- button \"9月\" [disabled, ref=e239]\n- button \"+$1K 10月\" [ref=e240]\n- button \"11月\" [disabled, ref=e241]\n- button \"12月\" [disabled, ref=e242]\n- button \"DE Demo account 01 ↑ 出金 +$500\" [ref=e243]\n- button \"DE Demo account 08 ↑ 出金 · 待到账 +$777\" [ref=e244]\n- columnheader \"公司\" [ref=e288]\n- columnheader \"当前账号数\" [ref=e289]\n- columnheader \"通过率\" [ref=e290]\n- columnheader \"区间投入\" [ref=e291]\n- columnheader \"出金到账\" [ref=e292]\n- columnheader \"净收益\" [ref=e293]\n- columnheader \"ROI\" [ref=e294]\n- cell \"Demo Firm B\" [ref=e263]\n- cell \"8\" [ref=e264]\n- cell \"100%\" [ref=e265]\n- cell \"$0\" [ref=e266]\n- cell \"$1,500\" [ref=e267]\n- cell \"+$1,500\" [ref=e268]\n- cell \"—\" [ref=e269]\n- cell \"Demo Firm A\" [ref=e270]\n- cell \"10\" [ref=e271]\n- cell \"50%\" [ref=e272]\n- cell \"$1,000\" [ref=e273]\n- cell \"$500\" [ref=e274]\n- cell \"−$500\" [ref=e275]\n- cell \"-50.0%\" [ref=e276]\n- button \"自定义\" [ref=e396]\n- button \"全部时间\" [ref=e397]\n- button \"最近7天\" [ref=e398]\n- button \"最近30天\" [ref=e399]\n- button \"本月\" [ref=e400]\n- button \"上月\" [ref=e401]\n- button \"上一个月\" [ref=e402]\n- button \"下一个月\" [ref=e403]\n- heading \"2026年10月\" [level=4, ref=e404]\n- columnheader \"日\" [ref=e406]\n- columnheader \"一\" [ref=e407]\n- columnheader \"二\" [ref=e408]\n- columnheader \"三\" [ref=e409]\n- columnheader \"四\" [ref=e410]\n- columnheader \"五\" [ref=e411]\n- columnheader \"六\" [ref=e412]\n- gridcell \"2026年9月27日\" [ref=e413]\n  - button \"2026年9月27日\" [disabled, ref=e504]\n- gridcell \"2026年9月28日\" [ref=e414]\n  - button \"2026年9月28日\" [disabled, ref=e505]\n- gridcell \"2026年9月29日\" [ref=e415]\n  - button \"2026年9月29日\" [disabled, ref=e506]\n- gridcell \"2026年9月30日\" [ref=e416]\n  - button \"2026年9月30日\" [disabled, ref=e507]\n- gridcell \"2026年10月1日\" [selected, ref=e417]\n  - button \"2026年10月1日\" [ref=e508]\n- gridcell \"2026年10月2日\" [selected, ref=e418]\n  - button \"2026年10月2日\" [ref=e509]\n- gridcell \"2026年10月3日\" [selected, ref=e419]\n  - button \"2026年10月3日\" [ref=e510]\n- gridcell \"2026年10月4日\" [selected, ref=e420]\n  - button \"2026年10月4日\" [ref=e511]\n- gridcell \"2026年10月5日\" [selected, ref=e421]\n  - button \"2026年10月5日\" [ref=e512]\n- gridcell \"2026年10月6日\" [selected, ref=e422]\n  - button \"2026年10月6日\" [ref=e513]\n- gridcell \"2026年10月7日\" [selected, ref=e423]\n  - button \"2026年10月7日\" [ref=e514]\n- gridcell \"2026年10月8日\" [selected, ref=e424]\n  - button \"2026年10月8日\" [ref=e515]\n- gridcell \"2026年10月9日\" [selected, ref=e425]\n  - button \"2026年10月9日\" [ref=e516]\n- gridcell \"2026年10月10日\" [selected, ref=e426]\n  - button \"2026年10月10日\" [ref=e517]\n- gridcell \"2026年10月11日\" [selected, ref=e427]\n  - button \"2026年10月11日\" [ref=e518]\n- gridcell \"2026年10月12日\" [selected, ref=e428]\n  - button \"2026年10月12日\" [ref=e519]\n- gridcell \"2026年10月13日\" [selected, ref=e429]\n  - button \"2026年10月13日\" [ref=e520]\n- gridcell \"2026年10月14日\" [selected, ref=e430]\n  - button \"2026年10月14日\" [ref=e521]\n- gridcell \"2026年10月15日\" [selected, ref=e431]\n  - button \"2026年10月15日\" [ref=e522]\n- gridcell \"2026年10月16日\" [selected, ref=e432]\n  - button \"2026年10月16日\" [ref=e523]\n- gridcell \"2026年10月17日\" [selected, ref=e433]\n  - button \"2026年10月17日\" [ref=e524]\n- gridcell \"2026年10月18日\" [selected, ref=e434]\n  - button \"2026年10月18日\" [ref=e525]\n- gridcell \"2026年10月19日\" [selected, ref=e435]\n  - button \"2026年10月19日\" [ref=e526]\n- gridcell \"2026年10月20日\" [selected, ref=e436]\n  - button \"2026年10月20日\" [ref=e527]\n- gridcell \"2026年10月21日\" [selected, ref=e437]\n  - button \"2026年10月21日\" [ref=e528]\n- gridcell \"2026年10月22日\" [selected, ref=e438]\n  - button \"2026年10月22日\" [ref=e529]\n- gridcell \"2026年10月23日\" [selected, ref=e439]\n  - button \"2026年10月23日\" [ref=e530]\n- gridcell \"2026年10月24日\" [selected, ref=e440]\n  - button \"2026年10月24日\" [ref=e531]\n- gridcell \"2026年10月25日\" [selected, ref=e441]\n  - button \"2026年10月25日\" [ref=e532]\n- gridcell \"2026年10月26日\" [selected, ref=e442]\n  - button \"2026年10月26日\" [ref=e533]\n- gridcell \"2026年10月27日\" [selected, ref=e443]\n  - button \"2026年10月27日\" [ref=e534]\n- gridcell \"2026年10月28日\" [selected, ref=e444]\n  - button \"2026年10月28日\" [ref=e535]\n- gridcell \"2026年10月29日\" [selected, ref=e445]\n  - button \"2026年10月29日\" [ref=e536]\n- gridcell \"2026年10月30日\" [selected, ref=e446]\n  - button \"2026年10月30日\" [ref=e537]\n- gridcell \"2026年10月31日\" [selected, ref=e447]\n  - button \"2026年10月31日\" [ref=e538]\n- gridcell \"2026年11月1日\" [ref=e448]\n  - button \"2026年11月1日\" [disabled, ref=e539]\n- gridcell \"2026年11月2日\" [ref=e449]\n  - button \"2026年11月2日\" [disabled, ref=e540]\n- gridcell \"2026年11月3日\" [ref=e450]\n  - button \"2026年11月3日\" [disabled, ref=e541]\n- gridcell \"2026年11月4日\" [ref=e451]\n  - button \"2026年11月4日\" [disabled, ref=e542]\n- gridcell \"2026年11月5日\" [ref=e452]\n  - button \"2026年11月5日\" [disabled, ref=e543]\n- gridcell \"2026年11月6日\" [ref=e453]\n  - button \"2026年11月6日\" [disabled, ref=e544]\n- gridcell \"2026年11月7日\" [ref=e454]\n  - button \"2026年11月7日\" [disabled, ref=e545]\n- heading \"2026年11月\" [level=4, ref=e405]\n- columnheader \"日\" [ref=e455]\n- columnheader \"一\" [ref=e456]\n- columnheader \"二\" [ref=e457]\n- columnheader \"三\" [ref=e458]\n- columnheader \"四\" [ref=e459]\n- columnheader \"五\" [ref=e460]\n- columnheader \"六\" [ref=e461]\n- gridcell \"2026年11月1日\" [ref=e462]\n  - button \"2026年11月1日\" [ref=e546]\n- gridcell \"2026年11月2日\" [ref=e463]\n  - button \"2026年11月2日\" [ref=e547]\n- gridcell \"2026年11月3日\" [ref=e464]\n  - button \"2026年11月3日\" [ref=e548]\n- gridcell \"2026年11月4日\" [ref=e465]\n  - button \"2026年11月4日\" [ref=e549]\n- gridcell \"2026年11月5日\" [ref=e466]\n  - button \"2026年11月5日\" [ref=e550]\n- gridcell \"2026年11月6日\" [ref=e467]\n  - button \"2026年11月6日\" [ref=e551]\n- gridcell \"2026年11月7日\" [ref=e468]\n  - button \"2026年11月7日\" [ref=e552]\n- gridcell \"2026年11月8日\" [ref=e469]\n  - button \"2026年11月8日\" [ref=e553]\n- gridcell \"2026年11月9日\" [ref=e470]\n  - button \"2026年11月9日\" [ref=e554]\n- gridcell \"2026年11月10日\" [ref=e471]\n  - button \"2026年11月10日\" [ref=e555]\n- gridcell \"2026年11月11日\" [ref=e472]\n  - button \"2026年11月11日\" [ref=e556]\n- gridcell \"2026年11月12日\" [ref=e473]\n  - button \"2026年11月12日\" [ref=e557]\n- gridcell \"2026年11月13日\" [ref=e474]\n  - button \"2026年11月13日\" [ref=e558]\n- gridcell \"2026年11月14日\" [ref=e475]\n  - button \"2026年11月14日\" [ref=e559]\n- gridcell \"2026年11月15日\" [ref=e476]\n  - button \"2026年11月15日\" [ref=e560]\n- gridcell \"2026年11月16日\" [ref=e477]\n  - button \"2026年11月16日\" [ref=e561]\n- gridcell \"2026年11月17日\" [ref=e478]\n  - button \"2026年11月17日\" [ref=e562]\n- gridcell \"2026年11月18日\" [ref=e479]\n  - button \"2026年11月18日\" [ref=e563]\n- gridcell \"2026年11月19日\" [ref=e480]\n  - button \"2026年11月19日\" [ref=e564]\n- gridcell \"2026年11月20日\" [ref=e481]\n  - button \"2026年11月20日\" [ref=e565]\n- gridcell \"2026年11月21日\" [ref=e482]\n  - button \"2026年11月21日\" [ref=e566]\n- gridcell \"2026年11月22日\" [ref=e483]\n  - button \"2026年11月22日\" [ref=e567]\n- gridcell \"2026年11月23日\" [ref=e484]\n  - button \"2026年11月23日\" [ref=e568]\n- gridcell \"2026年11月24日\" [ref=e485]\n  - button \"2026年11月24日\" [ref=e569]\n- gridcell \"2026年11月25日\" [ref=e486]\n  - button \"2026年11月25日\" [ref=e570]\n- gridcell \"2026年11月26日\" [ref=e487]\n  - button \"2026年11月26日\" [ref=e571]\n- gridcell \"2026年11月27日\" [ref=e488]\n  - button \"2026年11月27日\" [ref=e572]\n- gridcell \"2026年11月28日\" [ref=e489]\n  - button \"2026年11月28日\" [ref=e573]\n- gridcell \"2026年11月29日\" [ref=e490]\n  - button \"2026年11月29日\" [ref=e574]\n- gridcell \"2026年11月30日\" [ref=e491]\n  - button \"2026年11月30日\" [ref=e575]\n- gridcell \"2026年12月1日\" [ref=e492]\n  - button \"2026年12月1日\" [disabled, ref=e576]\n- gridcell \"2026年12月2日\" [ref=e493]\n  - button \"2026年12月2日\" [disabled, ref=e577]\n- gridcell \"2026年12月3日\" [ref=e494]\n  - button \"2026年12月3日\" [disabled, ref=e578]\n- gridcell \"2026年12月4日\" [ref=e495]\n  - button \"2026年12月4日\" [disabled, ref=e579]\n- gridcell \"2026年12月5日\" [ref=e496]\n  - button \"2026年12月5日\" [disabled, ref=e580]\n- gridcell \"2026年12月6日\" [ref=e497]\n  - button \"2026年12月6日\" [disabled, ref=e581]\n- gridcell \"2026年12月7日\" [ref=e498]\n  - button \"2026年12月7日\" [disabled, ref=e582]\n- gridcell \"2026年12月8日\" [ref=e499]\n  - button \"2026年12月8日\" [disabled, ref=e583]\n- gridcell \"2026年12月9日\" [ref=e500]\n  - button \"2026年12月9日\" [disabled, ref=e584]\n- gridcell \"2026年12月10日\" [ref=e501]\n  - button \"2026年12月10日\" [disabled, ref=e585]\n- gridcell \"2026年12月11日\" [ref=e502]\n  - button \"2026年12月11日\" [disabled, ref=e586]\n- gridcell \"2026年12月12日\" [ref=e503]\n  - button \"2026年12月12日\" [disabled, ref=e587]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "[data-day='2026-10-13']:not(:disabled)"
+    ],
+    "error": null,
+    "result": {
+      "clicked": "[data-day='2026-10-13']:not(:disabled)",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e208": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e209": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e210": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e211": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e212": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e213": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e214": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e215": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e216": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e217": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e218": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e219": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e220": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e221": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e222": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e223": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e224": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e225": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e226": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e227": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e228": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e229": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e230": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e231": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e232": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e233": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e234": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e235": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e236": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e237": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e238": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e239": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e240": {
+          "name": "+$1K 10月",
+          "role": "button"
+        },
+        "e241": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e242": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e243": {
+          "name": "DE Demo account 01 ↑ 出金 +$500",
+          "role": "button"
+        },
+        "e244": {
+          "name": "DE Demo account 08 ↑ 出金 · 待到账 +$777",
+          "role": "button"
+        },
+        "e245": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e246": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e247": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e248": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e249": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e250": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e251": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e252": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e253": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.31",
+          "role": "button"
+        },
+        "e254": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e255": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e256": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e257": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e258": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e259": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e260": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e261": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e262": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e263": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e264": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e265": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e266": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e267": {
+          "name": "$1,500",
+          "role": "cell"
+        },
+        "e268": {
+          "name": "+$1,500",
+          "role": "cell"
+        },
+        "e269": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e270": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e271": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e272": {
+          "name": "50%",
+          "role": "cell"
+        },
+        "e273": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e274": {
+          "name": "$500",
+          "role": "cell"
+        },
+        "e275": {
+          "name": "−$500",
+          "role": "cell"
+        },
+        "e276": {
+          "name": "-50.0%",
+          "role": "cell"
+        },
+        "e277": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e278": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e279": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e280": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e281": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e282": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e283": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e284": {
+          "name": "通过考核 → 资金账号 · 50% · 4/8",
+          "role": "button"
+        },
+        "e285": {
+          "name": "资金账号 · 6 个账号",
+          "role": "button"
+        },
+        "e286": {
+          "name": "资金账号 → 出金到账 · 50% · 3/6",
+          "role": "button"
+        },
+        "e287": {
+          "name": "出金到账 · 4 个账号",
+          "role": "button"
+        },
+        "e288": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e289": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e290": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e291": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e292": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e293": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e294": {
+          "name": "ROI",
+          "role": "columnheader"
+        },
+        "e396": {
+          "name": "自定义",
+          "role": "button"
+        },
+        "e397": {
+          "name": "全部时间",
+          "role": "button"
+        },
+        "e398": {
+          "name": "最近7天",
+          "role": "button"
+        },
+        "e399": {
+          "name": "最近30天",
+          "role": "button"
+        },
+        "e400": {
+          "name": "本月",
+          "role": "button"
+        },
+        "e401": {
+          "name": "上月",
+          "role": "button"
+        },
+        "e402": {
+          "name": "上一个月",
+          "role": "button"
+        },
+        "e403": {
+          "name": "下一个月",
+          "role": "button"
+        },
+        "e404": {
+          "name": "2026年10月",
+          "role": "heading"
+        },
+        "e405": {
+          "name": "2026年11月",
+          "role": "heading"
+        },
+        "e406": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e407": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e408": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e409": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e410": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e411": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e412": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e413": {
+          "name": "2026年9月27日",
+          "role": "gridcell"
+        },
+        "e414": {
+          "name": "2026年9月28日",
+          "role": "gridcell"
+        },
+        "e415": {
+          "name": "2026年9月29日",
+          "role": "gridcell"
+        },
+        "e416": {
+          "name": "2026年9月30日",
+          "role": "gridcell"
+        },
+        "e417": {
+          "name": "2026年10月1日",
+          "role": "gridcell"
+        },
+        "e418": {
+          "name": "2026年10月2日",
+          "role": "gridcell"
+        },
+        "e419": {
+          "name": "2026年10月3日",
+          "role": "gridcell"
+        },
+        "e420": {
+          "name": "2026年10月4日",
+          "role": "gridcell"
+        },
+        "e421": {
+          "name": "2026年10月5日",
+          "role": "gridcell"
+        },
+        "e422": {
+          "name": "2026年10月6日",
+          "role": "gridcell"
+        },
+        "e423": {
+          "name": "2026年10月7日",
+          "role": "gridcell"
+        },
+        "e424": {
+          "name": "2026年10月8日",
+          "role": "gridcell"
+        },
+        "e425": {
+          "name": "2026年10月9日",
+          "role": "gridcell"
+        },
+        "e426": {
+          "name": "2026年10月10日",
+          "role": "gridcell"
+        },
+        "e427": {
+          "name": "2026年10月11日",
+          "role": "gridcell"
+        },
+        "e428": {
+          "name": "2026年10月12日",
+          "role": "gridcell"
+        },
+        "e429": {
+          "name": "2026年10月13日",
+          "role": "gridcell"
+        },
+        "e430": {
+          "name": "2026年10月14日",
+          "role": "gridcell"
+        },
+        "e431": {
+          "name": "2026年10月15日",
+          "role": "gridcell"
+        },
+        "e432": {
+          "name": "2026年10月16日",
+          "role": "gridcell"
+        },
+        "e433": {
+          "name": "2026年10月17日",
+          "role": "gridcell"
+        },
+        "e434": {
+          "name": "2026年10月18日",
+          "role": "gridcell"
+        },
+        "e435": {
+          "name": "2026年10月19日",
+          "role": "gridcell"
+        },
+        "e436": {
+          "name": "2026年10月20日",
+          "role": "gridcell"
+        },
+        "e437": {
+          "name": "2026年10月21日",
+          "role": "gridcell"
+        },
+        "e438": {
+          "name": "2026年10月22日",
+          "role": "gridcell"
+        },
+        "e439": {
+          "name": "2026年10月23日",
+          "role": "gridcell"
+        },
+        "e440": {
+          "name": "2026年10月24日",
+          "role": "gridcell"
+        },
+        "e441": {
+          "name": "2026年10月25日",
+          "role": "gridcell"
+        },
+        "e442": {
+          "name": "2026年10月26日",
+          "role": "gridcell"
+        },
+        "e443": {
+          "name": "2026年10月27日",
+          "role": "gridcell"
+        },
+        "e444": {
+          "name": "2026年10月28日",
+          "role": "gridcell"
+        },
+        "e445": {
+          "name": "2026年10月29日",
+          "role": "gridcell"
+        },
+        "e446": {
+          "name": "2026年10月30日",
+          "role": "gridcell"
+        },
+        "e447": {
+          "name": "2026年10月31日",
+          "role": "gridcell"
+        },
+        "e448": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e449": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e450": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e451": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e452": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e453": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e454": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e455": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e456": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e457": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e458": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e459": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e460": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e461": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e462": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e463": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e464": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e465": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e466": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e467": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e468": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e469": {
+          "name": "2026年11月8日",
+          "role": "gridcell"
+        },
+        "e470": {
+          "name": "2026年11月9日",
+          "role": "gridcell"
+        },
+        "e471": {
+          "name": "2026年11月10日",
+          "role": "gridcell"
+        },
+        "e472": {
+          "name": "2026年11月11日",
+          "role": "gridcell"
+        },
+        "e473": {
+          "name": "2026年11月12日",
+          "role": "gridcell"
+        },
+        "e474": {
+          "name": "2026年11月13日",
+          "role": "gridcell"
+        },
+        "e475": {
+          "name": "2026年11月14日",
+          "role": "gridcell"
+        },
+        "e476": {
+          "name": "2026年11月15日",
+          "role": "gridcell"
+        },
+        "e477": {
+          "name": "2026年11月16日",
+          "role": "gridcell"
+        },
+        "e478": {
+          "name": "2026年11月17日",
+          "role": "gridcell"
+        },
+        "e479": {
+          "name": "2026年11月18日",
+          "role": "gridcell"
+        },
+        "e480": {
+          "name": "2026年11月19日",
+          "role": "gridcell"
+        },
+        "e481": {
+          "name": "2026年11月20日",
+          "role": "gridcell"
+        },
+        "e482": {
+          "name": "2026年11月21日",
+          "role": "gridcell"
+        },
+        "e483": {
+          "name": "2026年11月22日",
+          "role": "gridcell"
+        },
+        "e484": {
+          "name": "2026年11月23日",
+          "role": "gridcell"
+        },
+        "e485": {
+          "name": "2026年11月24日",
+          "role": "gridcell"
+        },
+        "e486": {
+          "name": "2026年11月25日",
+          "role": "gridcell"
+        },
+        "e487": {
+          "name": "2026年11月26日",
+          "role": "gridcell"
+        },
+        "e488": {
+          "name": "2026年11月27日",
+          "role": "gridcell"
+        },
+        "e489": {
+          "name": "2026年11月28日",
+          "role": "gridcell"
+        },
+        "e490": {
+          "name": "2026年11月29日",
+          "role": "gridcell"
+        },
+        "e491": {
+          "name": "2026年11月30日",
+          "role": "gridcell"
+        },
+        "e492": {
+          "name": "2026年12月1日",
+          "role": "gridcell"
+        },
+        "e493": {
+          "name": "2026年12月2日",
+          "role": "gridcell"
+        },
+        "e494": {
+          "name": "2026年12月3日",
+          "role": "gridcell"
+        },
+        "e495": {
+          "name": "2026年12月4日",
+          "role": "gridcell"
+        },
+        "e496": {
+          "name": "2026年12月5日",
+          "role": "gridcell"
+        },
+        "e497": {
+          "name": "2026年12月6日",
+          "role": "gridcell"
+        },
+        "e498": {
+          "name": "2026年12月7日",
+          "role": "gridcell"
+        },
+        "e499": {
+          "name": "2026年12月8日",
+          "role": "gridcell"
+        },
+        "e500": {
+          "name": "2026年12月9日",
+          "role": "gridcell"
+        },
+        "e501": {
+          "name": "2026年12月10日",
+          "role": "gridcell"
+        },
+        "e502": {
+          "name": "2026年12月11日",
+          "role": "gridcell"
+        },
+        "e503": {
+          "name": "2026年12月12日",
+          "role": "gridcell"
+        },
+        "e504": {
+          "name": "2026年9月27日",
+          "role": "button"
+        },
+        "e505": {
+          "name": "2026年9月28日",
+          "role": "button"
+        },
+        "e506": {
+          "name": "2026年9月29日",
+          "role": "button"
+        },
+        "e507": {
+          "name": "2026年9月30日",
+          "role": "button"
+        },
+        "e508": {
+          "name": "2026年10月1日",
+          "role": "button"
+        },
+        "e509": {
+          "name": "2026年10月2日",
+          "role": "button"
+        },
+        "e510": {
+          "name": "2026年10月3日",
+          "role": "button"
+        },
+        "e511": {
+          "name": "2026年10月4日",
+          "role": "button"
+        },
+        "e512": {
+          "name": "2026年10月5日",
+          "role": "button"
+        },
+        "e513": {
+          "name": "2026年10月6日",
+          "role": "button"
+        },
+        "e514": {
+          "name": "2026年10月7日",
+          "role": "button"
+        },
+        "e515": {
+          "name": "2026年10月8日",
+          "role": "button"
+        },
+        "e516": {
+          "name": "2026年10月9日",
+          "role": "button"
+        },
+        "e517": {
+          "name": "2026年10月10日",
+          "role": "button"
+        },
+        "e518": {
+          "name": "2026年10月11日",
+          "role": "button"
+        },
+        "e519": {
+          "name": "2026年10月12日",
+          "role": "button"
+        },
+        "e520": {
+          "name": "2026年10月13日",
+          "role": "button"
+        },
+        "e521": {
+          "name": "2026年10月14日",
+          "role": "button"
+        },
+        "e522": {
+          "name": "2026年10月15日",
+          "role": "button"
+        },
+        "e523": {
+          "name": "2026年10月16日",
+          "role": "button"
+        },
+        "e524": {
+          "name": "2026年10月17日",
+          "role": "button"
+        },
+        "e525": {
+          "name": "2026年10月18日",
+          "role": "button"
+        },
+        "e526": {
+          "name": "2026年10月19日",
+          "role": "button"
+        },
+        "e527": {
+          "name": "2026年10月20日",
+          "role": "button"
+        },
+        "e528": {
+          "name": "2026年10月21日",
+          "role": "button"
+        },
+        "e529": {
+          "name": "2026年10月22日",
+          "role": "button"
+        },
+        "e530": {
+          "name": "2026年10月23日",
+          "role": "button"
+        },
+        "e531": {
+          "name": "2026年10月24日",
+          "role": "button"
+        },
+        "e532": {
+          "name": "2026年10月25日",
+          "role": "button"
+        },
+        "e533": {
+          "name": "2026年10月26日",
+          "role": "button"
+        },
+        "e534": {
+          "name": "2026年10月27日",
+          "role": "button"
+        },
+        "e535": {
+          "name": "2026年10月28日",
+          "role": "button"
+        },
+        "e536": {
+          "name": "2026年10月29日",
+          "role": "button"
+        },
+        "e537": {
+          "name": "2026年10月30日",
+          "role": "button"
+        },
+        "e538": {
+          "name": "2026年10月31日",
+          "role": "button"
+        },
+        "e539": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e540": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e541": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e542": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e543": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e544": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e545": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e546": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e547": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e548": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e549": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e550": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e551": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e552": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e553": {
+          "name": "2026年11月8日",
+          "role": "button"
+        },
+        "e554": {
+          "name": "2026年11月9日",
+          "role": "button"
+        },
+        "e555": {
+          "name": "2026年11月10日",
+          "role": "button"
+        },
+        "e556": {
+          "name": "2026年11月11日",
+          "role": "button"
+        },
+        "e557": {
+          "name": "2026年11月12日",
+          "role": "button"
+        },
+        "e558": {
+          "name": "2026年11月13日",
+          "role": "button"
+        },
+        "e559": {
+          "name": "2026年11月14日",
+          "role": "button"
+        },
+        "e560": {
+          "name": "2026年11月15日",
+          "role": "button"
+        },
+        "e561": {
+          "name": "2026年11月16日",
+          "role": "button"
+        },
+        "e562": {
+          "name": "2026年11月17日",
+          "role": "button"
+        },
+        "e563": {
+          "name": "2026年11月18日",
+          "role": "button"
+        },
+        "e564": {
+          "name": "2026年11月19日",
+          "role": "button"
+        },
+        "e565": {
+          "name": "2026年11月20日",
+          "role": "button"
+        },
+        "e566": {
+          "name": "2026年11月21日",
+          "role": "button"
+        },
+        "e567": {
+          "name": "2026年11月22日",
+          "role": "button"
+        },
+        "e568": {
+          "name": "2026年11月23日",
+          "role": "button"
+        },
+        "e569": {
+          "name": "2026年11月24日",
+          "role": "button"
+        },
+        "e570": {
+          "name": "2026年11月25日",
+          "role": "button"
+        },
+        "e571": {
+          "name": "2026年11月26日",
+          "role": "button"
+        },
+        "e572": {
+          "name": "2026年11月27日",
+          "role": "button"
+        },
+        "e573": {
+          "name": "2026年11月28日",
+          "role": "button"
+        },
+        "e574": {
+          "name": "2026年11月29日",
+          "role": "button"
+        },
+        "e575": {
+          "name": "2026年11月30日",
+          "role": "button"
+        },
+        "e576": {
+          "name": "2026年12月1日",
+          "role": "button"
+        },
+        "e577": {
+          "name": "2026年12月2日",
+          "role": "button"
+        },
+        "e578": {
+          "name": "2026年12月3日",
+          "role": "button"
+        },
+        "e579": {
+          "name": "2026年12月4日",
+          "role": "button"
+        },
+        "e580": {
+          "name": "2026年12月5日",
+          "role": "button"
+        },
+        "e581": {
+          "name": "2026年12月6日",
+          "role": "button"
+        },
+        "e582": {
+          "name": "2026年12月7日",
+          "role": "button"
+        },
+        "e583": {
+          "name": "2026年12月8日",
+          "role": "button"
+        },
+        "e584": {
+          "name": "2026年12月9日",
+          "role": "button"
+        },
+        "e585": {
+          "name": "2026年12月10日",
+          "role": "button"
+        },
+        "e586": {
+          "name": "2026年12月11日",
+          "role": "button"
+        },
+        "e587": {
+          "name": "2026年12月12日",
+          "role": "button"
+        }
+      },
+      "removedRefs": [],
+      "snapshot": "- button \"回测\" [ref=e245]\n- button \"实盘\" [ref=e246]\n- button \"切换主题\" [ref=e247]\n- button \"导出\" [ref=e248]\n- button \"新建交易\" [ref=e249]\n- button \"账号\" [ref=e251]\n- button \"IFVG Journal Demo\" [ref=e208]\n- button \"记录\" [ref=e209]\n- button \"分析\" [ref=e210]\n- button \"月度\" [ref=e211]\n- button \"复盘\" [ref=e212]\n- button \"模型库\" [ref=e213]\n- button \"Prop 账户\" [ref=e214]\n- button \"更新日志\" [ref=e215]\n- button \"设置\" [ref=e216]\n- button \"总览\" [ref=e217]\n- button \"我的账号\" [ref=e218]\n- button \"公司计划\" [ref=e219]\n- button \"记录购买\" [ref=e220]\n- button \"全部公司\" [ref=e221]\n- button \"Demo Firm A\" [ref=e222]\n- button \"Demo Firm B\" [ref=e223]\n- button \"全部分组\" [ref=e224]\n- button \"Group A\" [ref=e225]\n- button \"Group B\" [ref=e226]\n- region \"资金概览\" [ref=e227]\n  - heading \"资金概览\" [level=2, ref=e252]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.31\" [expanded=true, ref=e253]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e254]\n    - button \"查看区间净收益说明\" [ref=e277]\n  - button \"查看区间走势说明\" [ref=e255]\n  - button \"查看ROI说明\" [ref=e256]\n  - heading \"投入与到账\" [level=3, ref=e257]\n  - button \"查看区间投入说明\" [ref=e278]\n  - button \"查看出金到账说明\" [ref=e279]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e258]\n    - button \"查看当前账号状态说明\" [ref=e280]\n  - button \"我的账号 · 考核中\" [ref=e259]\n  - button \"我的账号 · 待激活\" [ref=e260]\n  - button \"我的账号 · 资金账号\" [ref=e261]\n- region \"账号漏斗\" [ref=e228]\n  - heading \"账号漏斗\" [level=2, ref=e262]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e250] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e281]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e282]\n    - button \"通过考核 · 8 个账号\" [ref=e283]\n    - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e284]\n    - button \"资金账号 · 6 个账号\" [ref=e285]\n    - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e286]\n    - button \"出金到账 · 4 个账号\" [ref=e287]\n- button \"上一年\" [disabled, ref=e229]\n- button \"下一年\" [disabled, ref=e230]\n- button \"1月\" [disabled, ref=e231]\n- button \"2月\" [disabled, ref=e232]\n- button \"3月\" [disabled, ref=e233]\n- button \"4月\" [disabled, ref=e234]\n- button \"5月\" [disabled, ref=e235]\n- button \"6月\" [disabled, ref=e236]\n- button \"7月\" [disabled, ref=e237]\n- button \"8月\" [disabled, ref=e238]\n- button \"9月\" [disabled, ref=e239]\n- button \"+$1K 10月\" [ref=e240]\n- button \"11月\" [disabled, ref=e241]\n- button \"12月\" [disabled, ref=e242]\n- button \"DE Demo account 01 ↑ 出金 +$500\" [ref=e243]\n- button \"DE Demo account 08 ↑ 出金 · 待到账 +$777\" [ref=e244]\n- columnheader \"公司\" [ref=e288]\n- columnheader \"当前账号数\" [ref=e289]\n- columnheader \"通过率\" [ref=e290]\n- columnheader \"区间投入\" [ref=e291]\n- columnheader \"出金到账\" [ref=e292]\n- columnheader \"净收益\" [ref=e293]\n- columnheader \"ROI\" [ref=e294]\n- cell \"Demo Firm B\" [ref=e263]\n- cell \"8\" [ref=e264]\n- cell \"100%\" [ref=e265]\n- cell \"$0\" [ref=e266]\n- cell \"$1,500\" [ref=e267]\n- cell \"+$1,500\" [ref=e268]\n- cell \"—\" [ref=e269]\n- cell \"Demo Firm A\" [ref=e270]\n- cell \"10\" [ref=e271]\n- cell \"50%\" [ref=e272]\n- cell \"$1,000\" [ref=e273]\n- cell \"$500\" [ref=e274]\n- cell \"−$500\" [ref=e275]\n- cell \"-50.0%\" [ref=e276]\n- button \"自定义\" [ref=e396]\n- button \"全部时间\" [ref=e397]\n- button \"最近7天\" [ref=e398]\n- button \"最近30天\" [ref=e399]\n- button \"本月\" [ref=e400]\n- button \"上月\" [ref=e401]\n- button \"上一个月\" [ref=e402]\n- button \"下一个月\" [ref=e403]\n- heading \"2026年10月\" [level=4, ref=e404]\n- columnheader \"日\" [ref=e406]\n- columnheader \"一\" [ref=e407]\n- columnheader \"二\" [ref=e408]\n- columnheader \"三\" [ref=e409]\n- columnheader \"四\" [ref=e410]\n- columnheader \"五\" [ref=e411]\n- columnheader \"六\" [ref=e412]\n- gridcell \"2026年9月27日\" [ref=e413]\n  - button \"2026年9月27日\" [disabled, ref=e504]\n- gridcell \"2026年9月28日\" [ref=e414]\n  - button \"2026年9月28日\" [disabled, ref=e505]\n- gridcell \"2026年9月29日\" [ref=e415]\n  - button \"2026年9月29日\" [disabled, ref=e506]\n- gridcell \"2026年9月30日\" [ref=e416]\n  - button \"2026年9月30日\" [disabled, ref=e507]\n- gridcell \"2026年10月1日\" [ref=e417]\n  - button \"2026年10月1日\" [ref=e508]\n- gridcell \"2026年10月2日\" [ref=e418]\n  - button \"2026年10月2日\" [ref=e509]\n- gridcell \"2026年10月3日\" [ref=e419]\n  - button \"2026年10月3日\" [ref=e510]\n- gridcell \"2026年10月4日\" [ref=e420]\n  - button \"2026年10月4日\" [ref=e511]\n- gridcell \"2026年10月5日\" [ref=e421]\n  - button \"2026年10月5日\" [ref=e512]\n- gridcell \"2026年10月6日\" [ref=e422]\n  - button \"2026年10月6日\" [ref=e513]\n- gridcell \"2026年10月7日\" [ref=e423]\n  - button \"2026年10月7日\" [ref=e514]\n- gridcell \"2026年10月8日\" [ref=e424]\n  - button \"2026年10月8日\" [ref=e515]\n- gridcell \"2026年10月9日\" [ref=e425]\n  - button \"2026年10月9日\" [ref=e516]\n- gridcell \"2026年10月10日\" [ref=e426]\n  - button \"2026年10月10日\" [ref=e517]\n- gridcell \"2026年10月11日\" [ref=e427]\n  - button \"2026年10月11日\" [ref=e518]\n- gridcell \"2026年10月12日\" [ref=e428]\n  - button \"2026年10月12日\" [ref=e519]\n- gridcell \"2026年10月13日\" [selected, ref=e429]\n  - button \"2026年10月13日\" [ref=e520]\n- gridcell \"2026年10月14日\" [ref=e430]\n  - button \"2026年10月14日\" [ref=e521]\n- gridcell \"2026年10月15日\" [ref=e431]\n  - button \"2026年10月15日\" [ref=e522]\n- gridcell \"2026年10月16日\" [ref=e432]\n  - button \"2026年10月16日\" [ref=e523]\n- gridcell \"2026年10月17日\" [ref=e433]\n  - button \"2026年10月17日\" [ref=e524]\n- gridcell \"2026年10月18日\" [ref=e434]\n  - button \"2026年10月18日\" [ref=e525]\n- gridcell \"2026年10月19日\" [ref=e435]\n  - button \"2026年10月19日\" [ref=e526]\n- gridcell \"2026年10月20日\" [ref=e436]\n  - button \"2026年10月20日\" [ref=e527]\n- gridcell \"2026年10月21日\" [ref=e437]\n  - button \"2026年10月21日\" [ref=e528]\n- gridcell \"2026年10月22日\" [ref=e438]\n  - button \"2026年10月22日\" [ref=e529]\n- gridcell \"2026年10月23日\" [ref=e439]\n  - button \"2026年10月23日\" [ref=e530]\n- gridcell \"2026年10月24日\" [ref=e440]\n  - button \"2026年10月24日\" [ref=e531]\n- gridcell \"2026年10月25日\" [ref=e441]\n  - button \"2026年10月25日\" [ref=e532]\n- gridcell \"2026年10月26日\" [ref=e442]\n  - button \"2026年10月26日\" [ref=e533]\n- gridcell \"2026年10月27日\" [ref=e443]\n  - button \"2026年10月27日\" [ref=e534]\n- gridcell \"2026年10月28日\" [ref=e444]\n  - button \"2026年10月28日\" [ref=e535]\n- gridcell \"2026年10月29日\" [ref=e445]\n  - button \"2026年10月29日\" [ref=e536]\n- gridcell \"2026年10月30日\" [ref=e446]\n  - button \"2026年10月30日\" [ref=e537]\n- gridcell \"2026年10月31日\" [ref=e447]\n  - button \"2026年10月31日\" [ref=e538]\n- gridcell \"2026年11月1日\" [ref=e448]\n  - button \"2026年11月1日\" [disabled, ref=e539]\n- gridcell \"2026年11月2日\" [ref=e449]\n  - button \"2026年11月2日\" [disabled, ref=e540]\n- gridcell \"2026年11月3日\" [ref=e450]\n  - button \"2026年11月3日\" [disabled, ref=e541]\n- gridcell \"2026年11月4日\" [ref=e451]\n  - button \"2026年11月4日\" [disabled, ref=e542]\n- gridcell \"2026年11月5日\" [ref=e452]\n  - button \"2026年11月5日\" [disabled, ref=e543]\n- gridcell \"2026年11月6日\" [ref=e453]\n  - button \"2026年11月6日\" [disabled, ref=e544]\n- gridcell \"2026年11月7日\" [ref=e454]\n  - button \"2026年11月7日\" [disabled, ref=e545]\n- heading \"2026年11月\" [level=4, ref=e405]\n- columnheader \"日\" [ref=e455]\n- columnheader \"一\" [ref=e456]\n- columnheader \"二\" [ref=e457]\n- columnheader \"三\" [ref=e458]\n- columnheader \"四\" [ref=e459]\n- columnheader \"五\" [ref=e460]\n- columnheader \"六\" [ref=e461]\n- gridcell \"2026年11月1日\" [ref=e462]\n  - button \"2026年11月1日\" [ref=e546]\n- gridcell \"2026年11月2日\" [ref=e463]\n  - button \"2026年11月2日\" [ref=e547]\n- gridcell \"2026年11月3日\" [ref=e464]\n  - button \"2026年11月3日\" [ref=e548]\n- gridcell \"2026年11月4日\" [ref=e465]\n  - button \"2026年11月4日\" [ref=e549]\n- gridcell \"2026年11月5日\" [ref=e466]\n  - button \"2026年11月5日\" [ref=e550]\n- gridcell \"2026年11月6日\" [ref=e467]\n  - button \"2026年11月6日\" [ref=e551]\n- gridcell \"2026年11月7日\" [ref=e468]\n  - button \"2026年11月7日\" [ref=e552]\n- gridcell \"2026年11月8日\" [ref=e469]\n  - button \"2026年11月8日\" [ref=e553]\n- gridcell \"2026年11月9日\" [ref=e470]\n  - button \"2026年11月9日\" [ref=e554]\n- gridcell \"2026年11月10日\" [ref=e471]\n  - button \"2026年11月10日\" [ref=e555]\n- gridcell \"2026年11月11日\" [ref=e472]\n  - button \"2026年11月11日\" [ref=e556]\n- gridcell \"2026年11月12日\" [ref=e473]\n  - button \"2026年11月12日\" [ref=e557]\n- gridcell \"2026年11月13日\" [ref=e474]\n  - button \"2026年11月13日\" [ref=e558]\n- gridcell \"2026年11月14日\" [ref=e475]\n  - button \"2026年11月14日\" [ref=e559]\n- gridcell \"2026年11月15日\" [ref=e476]\n  - button \"2026年11月15日\" [ref=e560]\n- gridcell \"2026年11月16日\" [ref=e477]\n  - button \"2026年11月16日\" [ref=e561]\n- gridcell \"2026年11月17日\" [ref=e478]\n  - button \"2026年11月17日\" [ref=e562]\n- gridcell \"2026年11月18日\" [ref=e479]\n  - button \"2026年11月18日\" [ref=e563]\n- gridcell \"2026年11月19日\" [ref=e480]\n  - button \"2026年11月19日\" [ref=e564]\n- gridcell \"2026年11月20日\" [ref=e481]\n  - button \"2026年11月20日\" [ref=e565]\n- gridcell \"2026年11月21日\" [ref=e482]\n  - button \"2026年11月21日\" [ref=e566]\n- gridcell \"2026年11月22日\" [ref=e483]\n  - button \"2026年11月22日\" [ref=e567]\n- gridcell \"2026年11月23日\" [ref=e484]\n  - button \"2026年11月23日\" [ref=e568]\n- gridcell \"2026年11月24日\" [ref=e485]\n  - button \"2026年11月24日\" [ref=e569]\n- gridcell \"2026年11月25日\" [ref=e486]\n  - button \"2026年11月25日\" [ref=e570]\n- gridcell \"2026年11月26日\" [ref=e487]\n  - button \"2026年11月26日\" [ref=e571]\n- gridcell \"2026年11月27日\" [ref=e488]\n  - button \"2026年11月27日\" [ref=e572]\n- gridcell \"2026年11月28日\" [ref=e489]\n  - button \"2026年11月28日\" [ref=e573]\n- gridcell \"2026年11月29日\" [ref=e490]\n  - button \"2026年11月29日\" [ref=e574]\n- gridcell \"2026年11月30日\" [ref=e491]\n  - button \"2026年11月30日\" [ref=e575]\n- gridcell \"2026年12月1日\" [ref=e492]\n  - button \"2026年12月1日\" [disabled, ref=e576]\n- gridcell \"2026年12月2日\" [ref=e493]\n  - button \"2026年12月2日\" [disabled, ref=e577]\n- gridcell \"2026年12月3日\" [ref=e494]\n  - button \"2026年12月3日\" [disabled, ref=e578]\n- gridcell \"2026年12月4日\" [ref=e495]\n  - button \"2026年12月4日\" [disabled, ref=e579]\n- gridcell \"2026年12月5日\" [ref=e496]\n  - button \"2026年12月5日\" [disabled, ref=e580]\n- gridcell \"2026年12月6日\" [ref=e497]\n  - button \"2026年12月6日\" [disabled, ref=e581]\n- gridcell \"2026年12月7日\" [ref=e498]\n  - button \"2026年12月7日\" [disabled, ref=e582]\n- gridcell \"2026年12月8日\" [ref=e499]\n  - button \"2026年12月8日\" [disabled, ref=e583]\n- gridcell \"2026年12月9日\" [ref=e500]\n  - button \"2026年12月9日\" [disabled, ref=e584]\n- gridcell \"2026年12月10日\" [ref=e501]\n  - button \"2026年12月10日\" [disabled, ref=e585]\n- gridcell \"2026年12月11日\" [ref=e502]\n  - button \"2026年12月11日\" [disabled, ref=e586]\n- gridcell \"2026年12月12日\" [ref=e503]\n  - button \"2026年12月12日\" [disabled, ref=e587]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "[data-day='2026-10-01']:not(:disabled)"
+    ],
+    "error": null,
+    "result": {
+      "clicked": "[data-day='2026-10-01']:not(:disabled)",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e208": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e209": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e210": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e211": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e212": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e213": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e214": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e215": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e216": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e245": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e246": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e247": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e248": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e249": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e251": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e588": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e589": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e590": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e591": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e592": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e593": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e594": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e595": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e596": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e597": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e598": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e599": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e600": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e601": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e602": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e603": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e604": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e605": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e606": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e607": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e608": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e609": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e610": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e611": {
+          "name": "−$1K 10月",
+          "role": "button"
+        },
+        "e612": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e613": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e614": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e615": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e616": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.13",
+          "role": "button"
+        },
+        "e617": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e618": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e619": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e620": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e621": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e622": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e623": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e624": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e625": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e626": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e627": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e628": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e629": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e630": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e631": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e632": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e633": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e634": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e635": {
+          "name": "75%",
+          "role": "cell"
+        },
+        "e636": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e637": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e638": {
+          "name": "−$1,000",
+          "role": "cell"
+        },
+        "e639": {
+          "name": "-100.0%",
+          "role": "cell"
+        },
+        "e640": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e641": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e642": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e643": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e644": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e645": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e646": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e647": {
+          "name": "通过考核 → 资金账号 · 0% · 0/8",
+          "role": "button"
+        },
+        "e648": {
+          "name": "资金账号 · 0 个账号",
+          "role": "button"
+        },
+        "e649": {
+          "name": "资金账号 → 出金到账 · — · 0/0",
+          "role": "button"
+        },
+        "e650": {
+          "name": "出金到账 · 0 个账号",
+          "role": "button"
+        },
+        "e651": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e652": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e653": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e654": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e655": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e656": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e657": {
+          "name": "ROI",
+          "role": "columnheader"
+        }
+      },
+      "removedRefs": [
+        "@e217",
+        "@e218",
+        "@e219",
+        "@e220",
+        "@e221",
+        "@e222",
+        "@e223",
+        "@e224",
+        "@e225",
+        "@e226",
+        "@e227",
+        "@e228",
+        "@e229",
+        "@e230",
+        "@e231",
+        "@e232",
+        "@e233",
+        "@e234",
+        "@e235",
+        "@e236",
+        "@e237",
+        "@e238",
+        "@e239",
+        "@e240",
+        "@e241",
+        "@e242",
+        "@e243",
+        "@e244",
+        "@e250",
+        "@e252",
+        "@e253",
+        "@e254",
+        "@e255",
+        "@e256",
+        "@e257",
+        "@e258",
+        "@e259",
+        "@e260",
+        "@e261",
+        "@e262",
+        "@e263",
+        "@e264",
+        "@e265",
+        "@e266",
+        "@e267",
+        "@e268",
+        "@e269",
+        "@e270",
+        "@e271",
+        "@e272",
+        "@e273",
+        "@e274",
+        "@e275",
+        "@e276",
+        "@e277",
+        "@e278",
+        "@e279",
+        "@e280",
+        "@e281",
+        "@e282",
+        "@e283",
+        "@e284",
+        "@e285",
+        "@e286",
+        "@e287",
+        "@e288",
+        "@e289",
+        "@e290",
+        "@e291",
+        "@e292",
+        "@e293",
+        "@e294",
+        "@e396",
+        "@e397",
+        "@e398",
+        "@e399",
+        "@e400",
+        "@e401",
+        "@e402",
+        "@e403",
+        "@e404",
+        "@e405",
+        "@e406",
+        "@e407",
+        "@e408",
+        "@e409",
+        "@e410",
+        "@e411",
+        "@e412",
+        "@e413",
+        "@e414",
+        "@e415",
+        "@e416",
+        "@e417",
+        "@e418",
+        "@e419",
+        "@e420",
+        "@e421",
+        "@e422",
+        "@e423",
+        "@e424",
+        "@e425",
+        "@e426",
+        "@e427",
+        "@e428",
+        "@e429",
+        "@e430",
+        "@e431",
+        "@e432",
+        "@e433",
+        "@e434",
+        "@e435",
+        "@e436",
+        "@e437",
+        "@e438",
+        "@e439",
+        "@e440",
+        "@e441",
+        "@e442",
+        "@e443",
+        "@e444",
+        "@e445",
+        "@e446",
+        "@e447",
+        "@e448",
+        "@e449",
+        "@e450",
+        "@e451",
+        "@e452",
+        "@e453",
+        "@e454",
+        "@e455",
+        "@e456",
+        "@e457",
+        "@e458",
+        "@e459",
+        "@e460",
+        "@e461",
+        "@e462",
+        "@e463",
+        "@e464",
+        "@e465",
+        "@e466",
+        "@e467",
+        "@e468",
+        "@e469",
+        "@e470",
+        "@e471",
+        "@e472",
+        "@e473",
+        "@e474",
+        "@e475",
+        "@e476",
+        "@e477",
+        "@e478",
+        "@e479",
+        "@e480",
+        "@e481",
+        "@e482",
+        "@e483",
+        "@e484",
+        "@e485",
+        "@e486",
+        "@e487",
+        "@e488",
+        "@e489",
+        "@e490",
+        "@e491",
+        "@e492",
+        "@e493",
+        "@e494",
+        "@e495",
+        "@e496",
+        "@e497",
+        "@e498",
+        "@e499",
+        "@e500",
+        "@e501",
+        "@e502",
+        "@e503",
+        "@e504",
+        "@e505",
+        "@e506",
+        "@e507",
+        "@e508",
+        "@e509",
+        "@e510",
+        "@e511",
+        "@e512",
+        "@e513",
+        "@e514",
+        "@e515",
+        "@e516",
+        "@e517",
+        "@e518",
+        "@e519",
+        "@e520",
+        "@e521",
+        "@e522",
+        "@e523",
+        "@e524",
+        "@e525",
+        "@e526",
+        "@e527",
+        "@e528",
+        "@e529",
+        "@e530",
+        "@e531",
+        "@e532",
+        "@e533",
+        "@e534",
+        "@e535",
+        "@e536",
+        "@e537",
+        "@e538",
+        "@e539",
+        "@e540",
+        "@e541",
+        "@e542",
+        "@e543",
+        "@e544",
+        "@e545",
+        "@e546",
+        "@e547",
+        "@e548",
+        "@e549",
+        "@e550",
+        "@e551",
+        "@e552",
+        "@e553",
+        "@e554",
+        "@e555",
+        "@e556",
+        "@e557",
+        "@e558",
+        "@e559",
+        "@e560",
+        "@e561",
+        "@e562",
+        "@e563",
+        "@e564",
+        "@e565",
+        "@e566",
+        "@e567",
+        "@e568",
+        "@e569",
+        "@e570",
+        "@e571",
+        "@e572",
+        "@e573",
+        "@e574",
+        "@e575",
+        "@e576",
+        "@e577",
+        "@e578",
+        "@e579",
+        "@e580",
+        "@e581",
+        "@e582",
+        "@e583",
+        "@e584",
+        "@e585",
+        "@e586",
+        "@e587"
+      ],
+      "snapshot": "- button \"回测\" [ref=e245]\n- button \"实盘\" [ref=e246]\n- button \"切换主题\" [ref=e247]\n- button \"导出\" [ref=e248]\n- button \"新建交易\" [ref=e249]\n- button \"账号\" [ref=e251]\n- button \"IFVG Journal Demo\" [ref=e208]\n- button \"记录\" [ref=e209]\n- button \"分析\" [ref=e210]\n- button \"月度\" [ref=e211]\n- button \"复盘\" [ref=e212]\n- button \"模型库\" [ref=e213]\n- button \"Prop 账户\" [ref=e214]\n- button \"更新日志\" [ref=e215]\n- button \"设置\" [ref=e216]\n- button \"总览\" [ref=e588]\n- button \"我的账号\" [ref=e589]\n- button \"公司计划\" [ref=e590]\n- button \"记录购买\" [ref=e591]\n- button \"全部公司\" [ref=e592]\n- button \"Demo Firm A\" [ref=e593]\n- button \"Demo Firm B\" [ref=e594]\n- button \"全部分组\" [ref=e595]\n- button \"Group A\" [ref=e596]\n- button \"Group B\" [ref=e597]\n- region \"资金概览\" [ref=e598]\n  - heading \"资金概览\" [level=2, ref=e615]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.13\" [expanded=false, ref=e616]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e617]\n    - button \"查看区间净收益说明\" [ref=e640]\n  - button \"查看区间走势说明\" [ref=e618]\n  - button \"查看ROI说明\" [ref=e619]\n  - heading \"投入与到账\" [level=3, ref=e620]\n  - button \"查看区间投入说明\" [ref=e641]\n  - button \"查看出金到账说明\" [ref=e642]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e621]\n    - button \"查看当前账号状态说明\" [ref=e643]\n  - button \"我的账号 · 考核中\" [ref=e622]\n  - button \"我的账号 · 待激活\" [ref=e623]\n  - button \"我的账号 · 资金账号\" [ref=e624]\n- region \"账号漏斗\" [ref=e599]\n  - heading \"账号漏斗\" [level=2, ref=e625]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e614] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e644]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e645]\n    - button \"通过考核 · 8 个账号\" [ref=e646]\n    - button \"通过考核 → 资金账号 · 0% · 0/8\" [ref=e647]\n    - button \"资金账号 · 0 个账号\" [ref=e648]\n    - button \"资金账号 → 出金到账 · — · 0/0\" [disabled, ref=e649]\n    - button \"出金到账 · 0 个账号\" [ref=e650]\n- button \"上一年\" [disabled, ref=e600]\n- button \"下一年\" [disabled, ref=e601]\n- button \"1月\" [disabled, ref=e602]\n- button \"2月\" [disabled, ref=e603]\n- button \"3月\" [disabled, ref=e604]\n- button \"4月\" [disabled, ref=e605]\n- button \"5月\" [disabled, ref=e606]\n- button \"6月\" [disabled, ref=e607]\n- button \"7月\" [disabled, ref=e608]\n- button \"8月\" [disabled, ref=e609]\n- button \"9月\" [disabled, ref=e610]\n- button \"−$1K 10月\" [ref=e611]\n- button \"11月\" [disabled, ref=e612]\n- button \"12月\" [disabled, ref=e613]\n- columnheader \"公司\" [ref=e651]\n- columnheader \"当前账号数\" [ref=e652]\n- columnheader \"通过率\" [ref=e653]\n- columnheader \"区间投入\" [ref=e654]\n- columnheader \"出金到账\" [ref=e655]\n- columnheader \"净收益\" [ref=e656]\n- columnheader \"ROI\" [ref=e657]\n- cell \"Demo Firm B\" [ref=e626]\n- cell \"8\" [ref=e627]\n- cell \"100%\" [ref=e628]\n- cell \"$0\" [ref=e629]\n- cell \"$0\" [ref=e630]\n- cell \"$0\" [ref=e631]\n- cell \"—\" [ref=e632]\n- cell \"Demo Firm A\" [ref=e633]\n- cell \"10\" [ref=e634]\n- cell \"75%\" [ref=e635]\n- cell \"$1,000\" [ref=e636]\n- cell \"$0\" [ref=e637]\n- cell \"−$1,000\" [ref=e638]\n- cell \"-100.0%\" [ref=e639]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(()=>{const stages=[...document.querySelectorAll('.propProgressValue strong')].map(e=>Number(e.textContent));const net=Number(document.querySelector('.propOverviewValue').dataset.netCents);if(JSON.stringify(stages)!=='[10,8,0,0]'||net!==-100000)throw Error('range did not link');return {range:propOverviewRange,stages,net,month:propMonth,year:propYear,yearNav:[...document.querySelectorAll('[data-action=prop-year]')].map(e=>e.disabled),disabledMonths:document.querySelectorAll('[data-action=prop-month]:disabled').length,company:document.querySelector('.propTable')?.innerText}})()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "company": "公司\t当前账号数\t通过率\t区间投入\t出金到账\t净收益\tROI\nDemo Firm B\t8\t100%\t$0\t$0\t$0\t—\nDemo Firm A\t10\t75%\t$1,000\t$0\t−$1,000\t-100.0%",
+        "disabledMonths": 11,
+        "month": 10,
+        "net": -100000,
+        "range": {
+          "from": "2026-10-01",
+          "preset": "custom",
+          "to": "2026-10-13"
+        },
+        "stages": [
+          10,
+          8,
+          0,
+          0
+        ],
+        "year": 2026,
+        "yearNav": [
+          true,
+          true
+        ]
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:45649/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "#propOverviewRangeTrigger"
+    ],
+    "error": null,
+    "result": {
+      "clicked": "#propOverviewRangeTrigger",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e208": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e209": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e210": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e211": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e212": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e213": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e214": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e215": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e216": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e245": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e246": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e247": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e248": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e249": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e251": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e588": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e589": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e590": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e591": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e592": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e593": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e594": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e595": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e596": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e597": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e598": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e599": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e600": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e601": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e602": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e603": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e604": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e605": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e606": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e607": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e608": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e609": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e610": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e611": {
+          "name": "−$1K 10月",
+          "role": "button"
+        },
+        "e612": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e613": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e614": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e615": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e616": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.13",
+          "role": "button"
+        },
+        "e617": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e618": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e619": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e620": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e621": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e622": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e623": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e624": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e625": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e626": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e627": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e628": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e629": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e630": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e631": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e632": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e633": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e634": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e635": {
+          "name": "75%",
+          "role": "cell"
+        },
+        "e636": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e637": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e638": {
+          "name": "−$1,000",
+          "role": "cell"
+        },
+        "e639": {
+          "name": "-100.0%",
+          "role": "cell"
+        },
+        "e640": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e641": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e642": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e643": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e644": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e645": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e646": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e647": {
+          "name": "通过考核 → 资金账号 · 0% · 0/8",
+          "role": "button"
+        },
+        "e648": {
+          "name": "资金账号 · 0 个账号",
+          "role": "button"
+        },
+        "e649": {
+          "name": "资金账号 → 出金到账 · — · 0/0",
+          "role": "button"
+        },
+        "e650": {
+          "name": "出金到账 · 0 个账号",
+          "role": "button"
+        },
+        "e651": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e652": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e653": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e654": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e655": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e656": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e657": {
+          "name": "ROI",
+          "role": "columnheader"
+        },
+        "e658": {
+          "name": "自定义",
+          "role": "button"
+        },
+        "e659": {
+          "name": "全部时间",
+          "role": "button"
+        },
+        "e660": {
+          "name": "最近7天",
+          "role": "button"
+        },
+        "e661": {
+          "name": "最近30天",
+          "role": "button"
+        },
+        "e662": {
+          "name": "本月",
+          "role": "button"
+        },
+        "e663": {
+          "name": "上月",
+          "role": "button"
+        },
+        "e664": {
+          "name": "上一个月",
+          "role": "button"
+        },
+        "e665": {
+          "name": "下一个月",
+          "role": "button"
+        },
+        "e666": {
+          "name": "2026年10月",
+          "role": "heading"
+        },
+        "e667": {
+          "name": "2026年11月",
+          "role": "heading"
+        },
+        "e668": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e669": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e670": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e671": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e672": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e673": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e674": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e675": {
+          "name": "2026年9月27日",
+          "role": "gridcell"
+        },
+        "e676": {
+          "name": "2026年9月28日",
+          "role": "gridcell"
+        },
+        "e677": {
+          "name": "2026年9月29日",
+          "role": "gridcell"
+        },
+        "e678": {
+          "name": "2026年9月30日",
+          "role": "gridcell"
+        },
+        "e679": {
+          "name": "2026年10月1日",
+          "role": "gridcell"
+        },
+        "e680": {
+          "name": "2026年10月2日",
+          "role": "gridcell"
+        },
+        "e681": {
+          "name": "2026年10月3日",
+          "role": "gridcell"
+        },
+        "e682": {
+          "name": "2026年10月4日",
+          "role": "gridcell"
+        },
+        "e683": {
+          "name": "2026年10月5日",
+          "role": "gridcell"
+        },
+        "e684": {
+          "name": "2026年10月6日",
+          "role": "gridcell"
+        },
+        "e685": {
+          "name": "2026年10月7日",
+          "role": "gridcell"
+        },
+        "e686": {
+          "name": "2026年10月8日",
+          "role": "gridcell"
+        },
+        "e687": {
+          "name": "2026年10月9日",
+          "role": "gridcell"
+        },
+        "e688": {
+          "name": "2026年10月10日",
+          "role": "gridcell"
+        },
+        "e689": {
+          "name": "2026年10月11日",
+          "role": "gridcell"
+        },
+        "e690": {
+          "name": "2026年10月12日",
+          "role": "gridcell"
+        },
+        "e691": {
+          "name": "2026年10月13日",
+          "role": "gridcell"
+        },
+        "e692": {
+          "name": "2026年10月14日",
+          "role": "gridcell"
+        },
+        "e693": {
+          "name": "2026年10月15日",
+          "role": "gridcell"
+        },
+        "e694": {
+          "name": "2026年10月16日",
+          "role": "gridcell"
+        },
+        "e695": {
+          "name": "2026年10月17日",
+          "role": "gridcell"
+        },
+        "e696": {
+          "name": "2026年10月18日",
+          "role": "gridcell"
+        },
+        "e697": {
+          "name": "2026年10月19日",
+          "role": "gridcell"
+        },
+        "e698": {
+          "name": "2026年10月20日",
+          "role": "gridcell"
+        },
+        "e699": {
+          "name": "2026年10月21日",
+          "role": "gridcell"
+        },
+        "e700": {
+          "name": "2026年10月22日",
+          "role": "gridcell"
+        },
+        "e701": {
+          "name": "2026年10月23日",
+          "role": "gridcell"
+        },
+        "e702": {
+          "name": "2026年10月24日",
+          "role": "gridcell"
+        },
+        "e703": {
+          "name": "2026年10月25日",
+          "role": "gridcell"
+        },
+        "e704": {
+          "name": "2026年10月26日",
+          "role": "gridcell"
+        },
+        "e705": {
+          "name": "2026年10月27日",
+          "role": "gridcell"
+        },
+        "e706": {
+          "name": "2026年10月28日",
+          "role": "gridcell"
+        },
+        "e707": {
+          "name": "2026年10月29日",
+          "role": "gridcell"
+        },
+        "e708": {
+          "name": "2026年10月30日",
+          "role": "gridcell"
+        },
+        "e709": {
+          "name": "2026年10月31日",
+          "role": "gridcell"
+        },
+        "e710": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e711": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e712": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e713": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e714": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e715": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e716": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e717": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e718": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e719": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e720": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e721": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e722": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e723": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e724": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e725": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e726": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e727": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e728": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e729": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e730": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e731": {
+          "name": "2026年11月8日",
+          "role": "gridcell"
+        },
+        "e732": {
+          "name": "2026年11月9日",
+          "role": "gridcell"
+        },
+        "e733": {
+          "name": "2026年11月10日",
+          "role": "gridcell"
+        },
+        "e734": {
+          "name": "2026年11月11日",
+          "role": "gridcell"
+        },
+        "e735": {
+          "name": "2026年11月12日",
+          "role": "gridcell"
+        },
+        "e736": {
+          "name": "2026年11月13日",
+          "role": "gridcell"
+        },
+        "e737": {
+          "name": "2026年11月14日",
+          "role": "gridcell"
+        },
+        "e738": {
+          "name": "2026年11月15日",
+          "role": "gridcell"
+        },
+        "e739": {
+          "name": "2026年11月16日",
+          "role": "gridcell"
+        },
+        "e740": {
+          "name": "2026年11月17日",
+          "role": "gridcell"
+        },
+        "e741": {
+          "name": "2026年11月18日",
+          "role": "gridcell"
+        },
+        "e742": {
+          "name": "2026年11月19日",
+          "role": "gridcell"
+        },
+        "e743": {
+          "name": "2026年11月20日",
+          "role": "gridcell"
+        },
+        "e744": {
+          "name": "2026年11月21日",
+          "role": "gridcell"
+        },
+        "e745": {
+          "name": "2026年11月22日",
+          "role": "gridcell"
+        },
+        "e746": {
+          "name": "2026年11月23日",
+          "role": "gridcell"
+        },
+        "e747": {
+          "name": "2026年11月24日",
+          "role": "gridcell"
+        },
+        "e748": {
+          "name": "2026年11月25日",
+          "role": "gridcell"
+        },
+        "e749": {
+          "name": "2026年11月26日",
+          "role": "gridcell"
+        },
+        "e750": {
+          "name": "2026年11月27日",
+          "role": "gridcell"
+        },
+        "e751": {
+          "name": "2026年11月28日",
+          "role": "gridcell"
+        },
+        "e752": {
+          "name": "2026年11月29日",
+          "role": "gridcell"
+        },
+        "e753": {
+          "name": "2026年11月30日",
+          "role": "gridcell"
+        },
+        "e754": {
+          "name": "2026年12月1日",
+          "role": "gridcell"
+        },
+        "e755": {
+          "name": "2026年12月2日",
+          "role": "gridcell"
+        },
+        "e756": {
+          "name": "2026年12月3日",
+          "role": "gridcell"
+        },
+        "e757": {
+          "name": "2026年12月4日",
+          "role": "gridcell"
+        },
+        "e758": {
+          "name": "2026年12月5日",
+          "role": "gridcell"
+        },
+        "e759": {
+          "name": "2026年12月6日",
+          "role": "gridcell"
+        },
+        "e760": {
+          "name": "2026年12月7日",
+          "role": "gridcell"
+        },
+        "e761": {
+          "name": "2026年12月8日",
+          "role": "gridcell"
+        },
+        "e762": {
+          "name": "2026年12月9日",
+          "role": "gridcell"
+        },
+        "e763": {
+          "name": "2026年12月10日",
+          "role": "gridcell"
+        },
+        "e764": {
+          "name": "2026年12月11日",
+          "role": "gridcell"
+        },
+        "e765": {
+          "name": "2026年12月12日",
+          "role": "gridcell"
+        },
+        "e766": {
+          "name": "2026年9月27日",
+          "role": "button"
+        },
+        "e767": {
+          "name": "2026年9月28日",
+          "role": "button"
+        },
+        "e768": {
+          "name": "2026年9月29日",
+          "role": "button"
+        },
+        "e769": {
+          "name": "2026年9月30日",
+          "role": "button"
+        },
+        "e770": {
+          "name": "2026年10月1日",
+          "role": "button"
+        },
+        "e771": {
+          "name": "2026年10月2日",
+          "role": "button"
+        },
+        "e772": {
+          "name": "2026年10月3日",
+          "role": "button"
+        },
+        "e773": {
+          "name": "2026年10月4日",
+          "role": "button"
+        },
+        "e774": {
+          "name": "2026年10月5日",
+          "role": "button"
+        },
+        "e775": {
+          "name": "2026年10月6日",
+          "role": "button"
+        },
+        "e776": {
+          "name": "2026年10月7日",
+          "role": "button"
+        },
+        "e777": {
+          "name": "2026年10月8日",
+          "role": "button"
+        },
+        "e778": {
+          "name": "2026年10月9日",
+          "role": "button"
+        },
+        "e779": {
+          "name": "2026年10月10日",
+          "role": "button"
+        },
+        "e780": {
+          "name": "2026年10月11日",
+          "role": "button"
+        },
+        "e781": {
+          "name": "2026年10月12日",
+          "role": "button"
+        },
+        "e782": {
+          "name": "2026年10月13日",
+          "role": "button"
+        },
+        "e783": {
+          "name": "2026年10月14日",
+          "role": "button"
+        },
+        "e784": {
+          "name": "2026年10月15日",
+          "role": "button"
+        },
+        "e785": {
+          "name": "2026年10月16日",
+          "role": "button"
+        },
+        "e786": {
+          "name": "2026年10月17日",
+          "role": "button"
+        },
+        "e787": {
+          "name": "2026年10月18日",
+          "role": "button"
+        },
+        "e788": {
+          "name": "2026年10月19日",
+          "role": "button"
+        },
+        "e789": {
+          "name": "2026年10月20日",
+          "role": "button"
+        },
+        "e790": {
+          "name": "2026年10月21日",
+          "role": "button"
+        },
+        "e791": {
+          "name": "2026年10月22日",
+          "role": "button"
+        },
+        "e792": {
+          "name": "2026年10月23日",
+          "role": "button"
+        },
+        "e793": {
+          "name": "2026年10月24日",
+          "role": "button"
+        },
+        "e794": {
+          "name": "2026年10月25日",
+          "role": "button"
+        },
+        "e795": {
+          "name": "2026年10月26日",
+          "role": "button"
+        },
+        "e796": {
+          "name": "2026年10月27日",
+          "role": "button"
+        },
+        "e797": {
+          "name": "2026年10月28日",
+          "role": "button"
+        },
+        "e798": {
+          "name": "2026年10月29日",
+          "role": "button"
+        },
+        "e799": {
+          "name": "2026年10月30日",
+          "role": "button"
+        },
+        "e800": {
+          "name": "2026年10月31日",
+          "role": "button"
+        },
+        "e801": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e802": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e803": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e804": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e805": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e806": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e807": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e808": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e809": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e810": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e811": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e812": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e813": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e814": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e815": {
+          "name": "2026年11月8日",
+          "role": "button"
+        },
+        "e816": {
+          "name": "2026年11月9日",
+          "role": "button"
+        },
+        "e817": {
+          "name": "2026年11月10日",
+          "role": "button"
+        },
+        "e818": {
+          "name": "2026年11月11日",
+          "role": "button"
+        },
+        "e819": {
+          "name": "2026年11月12日",
+          "role": "button"
+        },
+        "e820": {
+          "name": "2026年11月13日",
+          "role": "button"
+        },
+        "e821": {
+          "name": "2026年11月14日",
+          "role": "button"
+        },
+        "e822": {
+          "name": "2026年11月15日",
+          "role": "button"
+        },
+        "e823": {
+          "name": "2026年11月16日",
+          "role": "button"
+        },
+        "e824": {
+          "name": "2026年11月17日",
+          "role": "button"
+        },
+        "e825": {
+          "name": "2026年11月18日",
+          "role": "button"
+        },
+        "e826": {
+          "name": "2026年11月19日",
+          "role": "button"
+        },
+        "e827": {
+          "name": "2026年11月20日",
+          "role": "button"
+        },
+        "e828": {
+          "name": "2026年11月21日",
+          "role": "button"
+        },
+        "e829": {
+          "name": "2026年11月22日",
+          "role": "button"
+        },
+        "e830": {
+          "name": "2026年11月23日",
+          "role": "button"
+        },
+        "e831": {
+          "name": "2026年11月24日",
+          "role": "button"
+        },
+        "e832": {
+          "name": "2026年11月25日",
+          "role": "button"
+        },
+        "e833": {
+          "name": "2026年11月26日",
+          "role": "button"
+        },
+        "e834": {
+          "name": "2026年11月27日",
+          "role": "button"
+        },
+        "e835": {
+          "name": "2026年11月28日",
+          "role": "button"
+        },
+        "e836": {
+          "name": "2026年11月29日",
+          "role": "button"
+        },
+        "e837": {
+          "name": "2026年11月30日",
+          "role": "button"
+        },
+        "e838": {
+          "name": "2026年12月1日",
+          "role": "button"
+        },
+        "e839": {
+          "name": "2026年12月2日",
+          "role": "button"
+        },
+        "e840": {
+          "name": "2026年12月3日",
+          "role": "button"
+        },
+        "e841": {
+          "name": "2026年12月4日",
+          "role": "button"
+        },
+        "e842": {
+          "name": "2026年12月5日",
+          "role": "button"
+        },
+        "e843": {
+          "name": "2026年12月6日",
+          "role": "button"
+        },
+        "e844": {
+          "name": "2026年12月7日",
+          "role": "button"
+        },
+        "e845": {
+          "name": "2026年12月8日",
+          "role": "button"
+        },
+        "e846": {
+          "name": "2026年12月9日",
+          "role": "button"
+        },
+        "e847": {
+          "name": "2026年12月10日",
+          "role": "button"
+        },
+        "e848": {
+          "name": "2026年12月11日",
+          "role": "button"
+        },
+        "e849": {
+          "name": "2026年12月12日",
+          "role": "button"
+        }
+      },
+      "removedRefs": [],
+      "snapshot": "- button \"回测\" [ref=e245]\n- button \"实盘\" [ref=e246]\n- button \"切换主题\" [ref=e247]\n- button \"导出\" [ref=e248]\n- button \"新建交易\" [ref=e249]\n- button \"账号\" [ref=e251]\n- button \"IFVG Journal Demo\" [ref=e208]\n- button \"记录\" [ref=e209]\n- button \"分析\" [ref=e210]\n- button \"月度\" [ref=e211]\n- button \"复盘\" [ref=e212]\n- button \"模型库\" [ref=e213]\n- button \"Prop 账户\" [ref=e214]\n- button \"更新日志\" [ref=e215]\n- button \"设置\" [ref=e216]\n- button \"总览\" [ref=e588]\n- button \"我的账号\" [ref=e589]\n- button \"公司计划\" [ref=e590]\n- button \"记录购买\" [ref=e591]\n- button \"全部公司\" [ref=e592]\n- button \"Demo Firm A\" [ref=e593]\n- button \"Demo Firm B\" [ref=e594]\n- button \"全部分组\" [ref=e595]\n- button \"Group A\" [ref=e596]\n- button \"Group B\" [ref=e597]\n- region \"资金概览\" [ref=e598]\n  - heading \"资金概览\" [level=2, ref=e615]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.13\" [expanded=true, ref=e616]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e617]\n    - button \"查看区间净收益说明\" [ref=e640]\n  - button \"查看区间走势说明\" [ref=e618]\n  - button \"查看ROI说明\" [ref=e619]\n  - heading \"投入与到账\" [level=3, ref=e620]\n  - button \"查看区间投入说明\" [ref=e641]\n  - button \"查看出金到账说明\" [ref=e642]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e621]\n    - button \"查看当前账号状态说明\" [ref=e643]\n  - button \"我的账号 · 考核中\" [ref=e622]\n  - button \"我的账号 · 待激活\" [ref=e623]\n  - button \"我的账号 · 资金账号\" [ref=e624]\n- region \"账号漏斗\" [ref=e599]\n  - heading \"账号漏斗\" [level=2, ref=e625]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e614] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e644]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e645]\n    - button \"通过考核 · 8 个账号\" [ref=e646]\n    - button \"通过考核 → 资金账号 · 0% · 0/8\" [ref=e647]\n    - button \"资金账号 · 0 个账号\" [ref=e648]\n    - button \"资金账号 → 出金到账 · — · 0/0\" [disabled, ref=e649]\n    - button \"出金到账 · 0 个账号\" [ref=e650]\n- button \"上一年\" [disabled, ref=e600]\n- button \"下一年\" [disabled, ref=e601]\n- button \"1月\" [disabled, ref=e602]\n- button \"2月\" [disabled, ref=e603]\n- button \"3月\" [disabled, ref=e604]\n- button \"4月\" [disabled, ref=e605]\n- button \"5月\" [disabled, ref=e606]\n- button \"6月\" [disabled, ref=e607]\n- button \"7月\" [disabled, ref=e608]\n- button \"8月\" [disabled, ref=e609]\n- button \"9月\" [disabled, ref=e610]\n- button \"−$1K 10月\" [ref=e611]\n- button \"11月\" [disabled, ref=e612]\n- button \"12月\" [disabled, ref=e613]\n- columnheader \"公司\" [ref=e651]\n- columnheader \"当前账号数\" [ref=e652]\n- columnheader \"通过率\" [ref=e653]\n- columnheader \"区间投入\" [ref=e654]\n- columnheader \"出金到账\" [ref=e655]\n- columnheader \"净收益\" [ref=e656]\n- columnheader \"ROI\" [ref=e657]\n- cell \"Demo Firm B\" [ref=e626]\n- cell \"8\" [ref=e627]\n- cell \"100%\" [ref=e628]\n- cell \"$0\" [ref=e629]\n- cell \"$0\" [ref=e630]\n- cell \"$0\" [ref=e631]\n- cell \"—\" [ref=e632]\n- cell \"Demo Firm A\" [ref=e633]\n- cell \"10\" [ref=e634]\n- cell \"75%\" [ref=e635]\n- cell \"$1,000\" [ref=e636]\n- cell \"$0\" [ref=e637]\n- cell \"−$1,000\" [ref=e638]\n- cell \"-100.0%\" [ref=e639]\n- button \"自定义\" [ref=e658]\n- button \"全部时间\" [ref=e659]\n- button \"最近7天\" [ref=e660]\n- button \"最近30天\" [ref=e661]\n- button \"本月\" [ref=e662]\n- button \"上月\" [ref=e663]\n- button \"上一个月\" [ref=e664]\n- button \"下一个月\" [ref=e665]\n- heading \"2026年10月\" [level=4, ref=e666]\n- columnheader \"日\" [ref=e668]\n- columnheader \"一\" [ref=e669]\n- columnheader \"二\" [ref=e670]\n- columnheader \"三\" [ref=e671]\n- columnheader \"四\" [ref=e672]\n- columnheader \"五\" [ref=e673]\n- columnheader \"六\" [ref=e674]\n- gridcell \"2026年9月27日\" [ref=e675]\n  - button \"2026年9月27日\" [disabled, ref=e766]\n- gridcell \"2026年9月28日\" [ref=e676]\n  - button \"2026年9月28日\" [disabled, ref=e767]\n- gridcell \"2026年9月29日\" [ref=e677]\n  - button \"2026年9月29日\" [disabled, ref=e768]\n- gridcell \"2026年9月30日\" [ref=e678]\n  - button \"2026年9月30日\" [disabled, ref=e769]\n- gridcell \"2026年10月1日\" [selected, ref=e679]\n  - button \"2026年10月1日\" [ref=e770]\n- gridcell \"2026年10月2日\" [selected, ref=e680]\n  - button \"2026年10月2日\" [ref=e771]\n- gridcell \"2026年10月3日\" [selected, ref=e681]\n  - button \"2026年10月3日\" [ref=e772]\n- gridcell \"2026年10月4日\" [selected, ref=e682]\n  - button \"2026年10月4日\" [ref=e773]\n- gridcell \"2026年10月5日\" [selected, ref=e683]\n  - button \"2026年10月5日\" [ref=e774]\n- gridcell \"2026年10月6日\" [selected, ref=e684]\n  - button \"2026年10月6日\" [ref=e775]\n- gridcell \"2026年10月7日\" [selected, ref=e685]\n  - button \"2026年10月7日\" [ref=e776]\n- gridcell \"2026年10月8日\" [selected, ref=e686]\n  - button \"2026年10月8日\" [ref=e777]\n- gridcell \"2026年10月9日\" [selected, ref=e687]\n  - button \"2026年10月9日\" [ref=e778]\n- gridcell \"2026年10月10日\" [selected, ref=e688]\n  - button \"2026年10月10日\" [ref=e779]\n- gridcell \"2026年10月11日\" [selected, ref=e689]\n  - button \"2026年10月11日\" [ref=e780]\n- gridcell \"2026年10月12日\" [selected, ref=e690]\n  - button \"2026年10月12日\" [ref=e781]\n- gridcell \"2026年10月13日\" [selected, ref=e691]\n  - button \"2026年10月13日\" [ref=e782]\n- gridcell \"2026年10月14日\" [ref=e692]\n  - button \"2026年10月14日\" [ref=e783]\n- gridcell \"2026年10月15日\" [ref=e693]\n  - button \"2026年10月15日\" [ref=e784]\n- gridcell \"2026年10月16日\" [ref=e694]\n  - button \"2026年10月16日\" [ref=e785]\n- gridcell \"2026年10月17日\" [ref=e695]\n  - button \"2026年10月17日\" [ref=e786]\n- gridcell \"2026年10月18日\" [ref=e696]\n  - button \"2026年10月18日\" [ref=e787]\n- gridcell \"2026年10月19日\" [ref=e697]\n  - button \"2026年10月19日\" [ref=e788]\n- gridcell \"2026年10月20日\" [ref=e698]\n  - button \"2026年10月20日\" [ref=e789]\n- gridcell \"2026年10月21日\" [ref=e699]\n  - button \"2026年10月21日\" [ref=e790]\n- gridcell \"2026年10月22日\" [ref=e700]\n  - button \"2026年10月22日\" [ref=e791]\n- gridcell \"2026年10月23日\" [ref=e701]\n  - button \"2026年10月23日\" [ref=e792]\n- gridcell \"2026年10月24日\" [ref=e702]\n  - button \"2026年10月24日\" [ref=e793]\n- gridcell \"2026年10月25日\" [ref=e703]\n  - button \"2026年10月25日\" [ref=e794]\n- gridcell \"2026年10月26日\" [ref=e704]\n  - button \"2026年10月26日\" [ref=e795]\n- gridcell \"2026年10月27日\" [ref=e705]\n  - button \"2026年10月27日\" [ref=e796]\n- gridcell \"2026年10月28日\" [ref=e706]\n  - button \"2026年10月28日\" [ref=e797]\n- gridcell \"2026年10月29日\" [ref=e707]\n  - button \"2026年10月29日\" [ref=e798]\n- gridcell \"2026年10月30日\" [ref=e708]\n  - button \"2026年10月30日\" [ref=e799]\n- gridcell \"2026年10月31日\" [ref=e709]\n  - button \"2026年10月31日\" [ref=e800]\n- gridcell \"2026年11月1日\" [ref=e710]\n  - button \"2026年11月1日\" [disabled, ref=e801]\n- gridcell \"2026年11月2日\" [ref=e711]\n  - button \"2026年11月2日\" [disabled, ref=e802]\n- gridcell \"2026年11月3日\" [ref=e712]\n  - button \"2026年11月3日\" [disabled, ref=e803]\n- gridcell \"2026年11月4日\" [ref=e713]\n  - button \"2026年11月4日\" [disabled, ref=e804]\n- gridcell \"2026年11月5日\" [ref=e714]\n  - button \"2026年11月5日\" [disabled, ref=e805]\n- gridcell \"2026年11月6日\" [ref=e715]\n  - button \"2026年11月6日\" [disabled, ref=e806]\n- gridcell \"2026年11月7日\" [ref=e716]\n  - button \"2026年11月7日\" [disabled, ref=e807]\n- heading \"2026年11月\" [level=4, ref=e667]\n- columnheader \"日\" [ref=e717]\n- columnheader \"一\" [ref=e718]\n- columnheader \"二\" [ref=e719]\n- columnheader \"三\" [ref=e720]\n- columnheader \"四\" [ref=e721]\n- columnheader \"五\" [ref=e722]\n- columnheader \"六\" [ref=e723]\n- gridcell \"2026年11月1日\" [ref=e724]\n  - button \"2026年11月1日\" [ref=e808]\n- gridcell \"2026年11月2日\" [ref=e725]\n  - button \"2026年11月2日\" [ref=e809]\n- gridcell \"2026年11月3日\" [ref=e726]\n  - button \"2026年11月3日\" [ref=e810]\n- gridcell \"2026年11月4日\" [ref=e727]\n  - button \"2026年11月4日\" [ref=e811]\n- gridcell \"2026年11月5日\" [ref=e728]\n  - button \"2026年11月5日\" [ref=e812]\n- gridcell \"2026年11月6日\" [ref=e729]\n  - button \"2026年11月6日\" [ref=e813]\n- gridcell \"2026年11月7日\" [ref=e730]\n  - button \"2026年11月7日\" [ref=e814]\n- gridcell \"2026年11月8日\" [ref=e731]\n  - button \"2026年11月8日\" [ref=e815]\n- gridcell \"2026年11月9日\" [ref=e732]\n  - button \"2026年11月9日\" [ref=e816]\n- gridcell \"2026年11月10日\" [ref=e733]\n  - button \"2026年11月10日\" [ref=e817]\n- gridcell \"2026年11月11日\" [ref=e734]\n  - button \"2026年11月11日\" [ref=e818]\n- gridcell \"2026年11月12日\" [ref=e735]\n  - button \"2026年11月12日\" [ref=e819]\n- gridcell \"2026年11月13日\" [ref=e736]\n  - button \"2026年11月13日\" [ref=e820]\n- gridcell \"2026年11月14日\" [ref=e737]\n  - button \"2026年11月14日\" [ref=e821]\n- gridcell \"2026年11月15日\" [ref=e738]\n  - button \"2026年11月15日\" [ref=e822]\n- gridcell \"2026年11月16日\" [ref=e739]\n  - button \"2026年11月16日\" [ref=e823]\n- gridcell \"2026年11月17日\" [ref=e740]\n  - button \"2026年11月17日\" [ref=e824]\n- gridcell \"2026年11月18日\" [ref=e741]\n  - button \"2026年11月18日\" [ref=e825]\n- gridcell \"2026年11月19日\" [ref=e742]\n  - button \"2026年11月19日\" [ref=e826]\n- gridcell \"2026年11月20日\" [ref=e743]\n  - button \"2026年11月20日\" [ref=e827]\n- gridcell \"2026年11月21日\" [ref=e744]\n  - button \"2026年11月21日\" [ref=e828]\n- gridcell \"2026年11月22日\" [ref=e745]\n  - button \"2026年11月22日\" [ref=e829]\n- gridcell \"2026年11月23日\" [ref=e746]\n  - button \"2026年11月23日\" [ref=e830]\n- gridcell \"2026年11月24日\" [ref=e747]\n  - button \"2026年11月24日\" [ref=e831]\n- gridcell \"2026年11月25日\" [ref=e748]\n  - button \"2026年11月25日\" [ref=e832]\n- gridcell \"2026年11月26日\" [ref=e749]\n  - button \"2026年11月26日\" [ref=e833]\n- gridcell \"2026年11月27日\" [ref=e750]\n  - button \"2026年11月27日\" [ref=e834]\n- gridcell \"2026年11月28日\" [ref=e751]\n  - button \"2026年11月28日\" [ref=e835]\n- gridcell \"2026年11月29日\" [ref=e752]\n  - button \"2026年11月29日\" [ref=e836]\n- gridcell \"2026年11月30日\" [ref=e753]\n  - button \"2026年11月30日\" [ref=e837]\n- gridcell \"2026年12月1日\" [ref=e754]\n  - button \"2026年12月1日\" [disabled, ref=e838]\n- gridcell \"2026年12月2日\" [ref=e755]\n  - button \"2026年12月2日\" [disabled, ref=e839]\n- gridcell \"2026年12月3日\" [ref=e756]\n  - button \"2026年12月3日\" [disabled, ref=e840]\n- gridcell \"2026年12月4日\" [ref=e757]\n  - button \"2026年12月4日\" [disabled, ref=e841]\n- gridcell \"2026年12月5日\" [ref=e758]\n  - button \"2026年12月5日\" [disabled, ref=e842]\n- gridcell \"2026年12月6日\" [ref=e759]\n  - button \"2026年12月6日\" [disabled, ref=e843]\n- gridcell \"2026年12月7日\" [ref=e760]\n  - button \"2026年12月7日\" [disabled, ref=e844]\n- gridcell \"2026年12月8日\" [ref=e761]\n  - button \"2026年12月8日\" [disabled, ref=e845]\n- gridcell \"2026年12月9日\" [ref=e762]\n  - button \"2026年12月9日\" [disabled, ref=e846]\n- gridcell \"2026年12月10日\" [ref=e763]\n  - button \"2026年12月10日\" [disabled, ref=e847]\n- gridcell \"2026年12月11日\" [ref=e764]\n  - button \"2026年12月11日\" [disabled, ref=e848]\n- gridcell \"2026年12月12日\" [ref=e765]\n  - button \"2026年12月12日\" [disabled, ref=e849]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "[data-day='2026-10-30']:not(:disabled)"
+    ],
+    "error": null,
+    "result": {
+      "clicked": "[data-day='2026-10-30']:not(:disabled)",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e208": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e209": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e210": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e211": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e212": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e213": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e214": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e215": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e216": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e245": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e246": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e247": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e248": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e249": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e251": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e588": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e589": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e590": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e591": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e592": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e593": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e594": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e595": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e596": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e597": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e598": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e599": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e600": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e601": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e602": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e603": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e604": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e605": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e606": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e607": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e608": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e609": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e610": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e611": {
+          "name": "−$1K 10月",
+          "role": "button"
+        },
+        "e612": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e613": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e614": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e615": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e616": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.13",
+          "role": "button"
+        },
+        "e617": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e618": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e619": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e620": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e621": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e622": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e623": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e624": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e625": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e626": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e627": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e628": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e629": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e630": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e631": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e632": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e633": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e634": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e635": {
+          "name": "75%",
+          "role": "cell"
+        },
+        "e636": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e637": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e638": {
+          "name": "−$1,000",
+          "role": "cell"
+        },
+        "e639": {
+          "name": "-100.0%",
+          "role": "cell"
+        },
+        "e640": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e641": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e642": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e643": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e644": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e645": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e646": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e647": {
+          "name": "通过考核 → 资金账号 · 0% · 0/8",
+          "role": "button"
+        },
+        "e648": {
+          "name": "资金账号 · 0 个账号",
+          "role": "button"
+        },
+        "e649": {
+          "name": "资金账号 → 出金到账 · — · 0/0",
+          "role": "button"
+        },
+        "e650": {
+          "name": "出金到账 · 0 个账号",
+          "role": "button"
+        },
+        "e651": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e652": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e653": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e654": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e655": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e656": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e657": {
+          "name": "ROI",
+          "role": "columnheader"
+        },
+        "e658": {
+          "name": "自定义",
+          "role": "button"
+        },
+        "e659": {
+          "name": "全部时间",
+          "role": "button"
+        },
+        "e660": {
+          "name": "最近7天",
+          "role": "button"
+        },
+        "e661": {
+          "name": "最近30天",
+          "role": "button"
+        },
+        "e662": {
+          "name": "本月",
+          "role": "button"
+        },
+        "e663": {
+          "name": "上月",
+          "role": "button"
+        },
+        "e664": {
+          "name": "上一个月",
+          "role": "button"
+        },
+        "e665": {
+          "name": "下一个月",
+          "role": "button"
+        },
+        "e666": {
+          "name": "2026年10月",
+          "role": "heading"
+        },
+        "e667": {
+          "name": "2026年11月",
+          "role": "heading"
+        },
+        "e668": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e669": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e670": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e671": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e672": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e673": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e674": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e675": {
+          "name": "2026年9月27日",
+          "role": "gridcell"
+        },
+        "e676": {
+          "name": "2026年9月28日",
+          "role": "gridcell"
+        },
+        "e677": {
+          "name": "2026年9月29日",
+          "role": "gridcell"
+        },
+        "e678": {
+          "name": "2026年9月30日",
+          "role": "gridcell"
+        },
+        "e679": {
+          "name": "2026年10月1日",
+          "role": "gridcell"
+        },
+        "e680": {
+          "name": "2026年10月2日",
+          "role": "gridcell"
+        },
+        "e681": {
+          "name": "2026年10月3日",
+          "role": "gridcell"
+        },
+        "e682": {
+          "name": "2026年10月4日",
+          "role": "gridcell"
+        },
+        "e683": {
+          "name": "2026年10月5日",
+          "role": "gridcell"
+        },
+        "e684": {
+          "name": "2026年10月6日",
+          "role": "gridcell"
+        },
+        "e685": {
+          "name": "2026年10月7日",
+          "role": "gridcell"
+        },
+        "e686": {
+          "name": "2026年10月8日",
+          "role": "gridcell"
+        },
+        "e687": {
+          "name": "2026年10月9日",
+          "role": "gridcell"
+        },
+        "e688": {
+          "name": "2026年10月10日",
+          "role": "gridcell"
+        },
+        "e689": {
+          "name": "2026年10月11日",
+          "role": "gridcell"
+        },
+        "e690": {
+          "name": "2026年10月12日",
+          "role": "gridcell"
+        },
+        "e691": {
+          "name": "2026年10月13日",
+          "role": "gridcell"
+        },
+        "e692": {
+          "name": "2026年10月14日",
+          "role": "gridcell"
+        },
+        "e693": {
+          "name": "2026年10月15日",
+          "role": "gridcell"
+        },
+        "e694": {
+          "name": "2026年10月16日",
+          "role": "gridcell"
+        },
+        "e695": {
+          "name": "2026年10月17日",
+          "role": "gridcell"
+        },
+        "e696": {
+          "name": "2026年10月18日",
+          "role": "gridcell"
+        },
+        "e697": {
+          "name": "2026年10月19日",
+          "role": "gridcell"
+        },
+        "e698": {
+          "name": "2026年10月20日",
+          "role": "gridcell"
+        },
+        "e699": {
+          "name": "2026年10月21日",
+          "role": "gridcell"
+        },
+        "e700": {
+          "name": "2026年10月22日",
+          "role": "gridcell"
+        },
+        "e701": {
+          "name": "2026年10月23日",
+          "role": "gridcell"
+        },
+        "e702": {
+          "name": "2026年10月24日",
+          "role": "gridcell"
+        },
+        "e703": {
+          "name": "2026年10月25日",
+          "role": "gridcell"
+        },
+        "e704": {
+          "name": "2026年10月26日",
+          "role": "gridcell"
+        },
+        "e705": {
+          "name": "2026年10月27日",
+          "role": "gridcell"
+        },
+        "e706": {
+          "name": "2026年10月28日",
+          "role": "gridcell"
+        },
+        "e707": {
+          "name": "2026年10月29日",
+          "role": "gridcell"
+        },
+        "e708": {
+          "name": "2026年10月30日",
+          "role": "gridcell"
+        },
+        "e709": {
+          "name": "2026年10月31日",
+          "role": "gridcell"
+        },
+        "e710": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e711": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e712": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e713": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e714": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e715": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e716": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e717": {
+          "name": "日",
+          "role": "columnheader"
+        },
+        "e718": {
+          "name": "一",
+          "role": "columnheader"
+        },
+        "e719": {
+          "name": "二",
+          "role": "columnheader"
+        },
+        "e720": {
+          "name": "三",
+          "role": "columnheader"
+        },
+        "e721": {
+          "name": "四",
+          "role": "columnheader"
+        },
+        "e722": {
+          "name": "五",
+          "role": "columnheader"
+        },
+        "e723": {
+          "name": "六",
+          "role": "columnheader"
+        },
+        "e724": {
+          "name": "2026年11月1日",
+          "role": "gridcell"
+        },
+        "e725": {
+          "name": "2026年11月2日",
+          "role": "gridcell"
+        },
+        "e726": {
+          "name": "2026年11月3日",
+          "role": "gridcell"
+        },
+        "e727": {
+          "name": "2026年11月4日",
+          "role": "gridcell"
+        },
+        "e728": {
+          "name": "2026年11月5日",
+          "role": "gridcell"
+        },
+        "e729": {
+          "name": "2026年11月6日",
+          "role": "gridcell"
+        },
+        "e730": {
+          "name": "2026年11月7日",
+          "role": "gridcell"
+        },
+        "e731": {
+          "name": "2026年11月8日",
+          "role": "gridcell"
+        },
+        "e732": {
+          "name": "2026年11月9日",
+          "role": "gridcell"
+        },
+        "e733": {
+          "name": "2026年11月10日",
+          "role": "gridcell"
+        },
+        "e734": {
+          "name": "2026年11月11日",
+          "role": "gridcell"
+        },
+        "e735": {
+          "name": "2026年11月12日",
+          "role": "gridcell"
+        },
+        "e736": {
+          "name": "2026年11月13日",
+          "role": "gridcell"
+        },
+        "e737": {
+          "name": "2026年11月14日",
+          "role": "gridcell"
+        },
+        "e738": {
+          "name": "2026年11月15日",
+          "role": "gridcell"
+        },
+        "e739": {
+          "name": "2026年11月16日",
+          "role": "gridcell"
+        },
+        "e740": {
+          "name": "2026年11月17日",
+          "role": "gridcell"
+        },
+        "e741": {
+          "name": "2026年11月18日",
+          "role": "gridcell"
+        },
+        "e742": {
+          "name": "2026年11月19日",
+          "role": "gridcell"
+        },
+        "e743": {
+          "name": "2026年11月20日",
+          "role": "gridcell"
+        },
+        "e744": {
+          "name": "2026年11月21日",
+          "role": "gridcell"
+        },
+        "e745": {
+          "name": "2026年11月22日",
+          "role": "gridcell"
+        },
+        "e746": {
+          "name": "2026年11月23日",
+          "role": "gridcell"
+        },
+        "e747": {
+          "name": "2026年11月24日",
+          "role": "gridcell"
+        },
+        "e748": {
+          "name": "2026年11月25日",
+          "role": "gridcell"
+        },
+        "e749": {
+          "name": "2026年11月26日",
+          "role": "gridcell"
+        },
+        "e750": {
+          "name": "2026年11月27日",
+          "role": "gridcell"
+        },
+        "e751": {
+          "name": "2026年11月28日",
+          "role": "gridcell"
+        },
+        "e752": {
+          "name": "2026年11月29日",
+          "role": "gridcell"
+        },
+        "e753": {
+          "name": "2026年11月30日",
+          "role": "gridcell"
+        },
+        "e754": {
+          "name": "2026年12月1日",
+          "role": "gridcell"
+        },
+        "e755": {
+          "name": "2026年12月2日",
+          "role": "gridcell"
+        },
+        "e756": {
+          "name": "2026年12月3日",
+          "role": "gridcell"
+        },
+        "e757": {
+          "name": "2026年12月4日",
+          "role": "gridcell"
+        },
+        "e758": {
+          "name": "2026年12月5日",
+          "role": "gridcell"
+        },
+        "e759": {
+          "name": "2026年12月6日",
+          "role": "gridcell"
+        },
+        "e760": {
+          "name": "2026年12月7日",
+          "role": "gridcell"
+        },
+        "e761": {
+          "name": "2026年12月8日",
+          "role": "gridcell"
+        },
+        "e762": {
+          "name": "2026年12月9日",
+          "role": "gridcell"
+        },
+        "e763": {
+          "name": "2026年12月10日",
+          "role": "gridcell"
+        },
+        "e764": {
+          "name": "2026年12月11日",
+          "role": "gridcell"
+        },
+        "e765": {
+          "name": "2026年12月12日",
+          "role": "gridcell"
+        },
+        "e766": {
+          "name": "2026年9月27日",
+          "role": "button"
+        },
+        "e767": {
+          "name": "2026年9月28日",
+          "role": "button"
+        },
+        "e768": {
+          "name": "2026年9月29日",
+          "role": "button"
+        },
+        "e769": {
+          "name": "2026年9月30日",
+          "role": "button"
+        },
+        "e770": {
+          "name": "2026年10月1日",
+          "role": "button"
+        },
+        "e771": {
+          "name": "2026年10月2日",
+          "role": "button"
+        },
+        "e772": {
+          "name": "2026年10月3日",
+          "role": "button"
+        },
+        "e773": {
+          "name": "2026年10月4日",
+          "role": "button"
+        },
+        "e774": {
+          "name": "2026年10月5日",
+          "role": "button"
+        },
+        "e775": {
+          "name": "2026年10月6日",
+          "role": "button"
+        },
+        "e776": {
+          "name": "2026年10月7日",
+          "role": "button"
+        },
+        "e777": {
+          "name": "2026年10月8日",
+          "role": "button"
+        },
+        "e778": {
+          "name": "2026年10月9日",
+          "role": "button"
+        },
+        "e779": {
+          "name": "2026年10月10日",
+          "role": "button"
+        },
+        "e780": {
+          "name": "2026年10月11日",
+          "role": "button"
+        },
+        "e781": {
+          "name": "2026年10月12日",
+          "role": "button"
+        },
+        "e782": {
+          "name": "2026年10月13日",
+          "role": "button"
+        },
+        "e783": {
+          "name": "2026年10月14日",
+          "role": "button"
+        },
+        "e784": {
+          "name": "2026年10月15日",
+          "role": "button"
+        },
+        "e785": {
+          "name": "2026年10月16日",
+          "role": "button"
+        },
+        "e786": {
+          "name": "2026年10月17日",
+          "role": "button"
+        },
+        "e787": {
+          "name": "2026年10月18日",
+          "role": "button"
+        },
+        "e788": {
+          "name": "2026年10月19日",
+          "role": "button"
+        },
+        "e789": {
+          "name": "2026年10月20日",
+          "role": "button"
+        },
+        "e790": {
+          "name": "2026年10月21日",
+          "role": "button"
+        },
+        "e791": {
+          "name": "2026年10月22日",
+          "role": "button"
+        },
+        "e792": {
+          "name": "2026年10月23日",
+          "role": "button"
+        },
+        "e793": {
+          "name": "2026年10月24日",
+          "role": "button"
+        },
+        "e794": {
+          "name": "2026年10月25日",
+          "role": "button"
+        },
+        "e795": {
+          "name": "2026年10月26日",
+          "role": "button"
+        },
+        "e796": {
+          "name": "2026年10月27日",
+          "role": "button"
+        },
+        "e797": {
+          "name": "2026年10月28日",
+          "role": "button"
+        },
+        "e798": {
+          "name": "2026年10月29日",
+          "role": "button"
+        },
+        "e799": {
+          "name": "2026年10月30日",
+          "role": "button"
+        },
+        "e800": {
+          "name": "2026年10月31日",
+          "role": "button"
+        },
+        "e801": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e802": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e803": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e804": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e805": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e806": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e807": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e808": {
+          "name": "2026年11月1日",
+          "role": "button"
+        },
+        "e809": {
+          "name": "2026年11月2日",
+          "role": "button"
+        },
+        "e810": {
+          "name": "2026年11月3日",
+          "role": "button"
+        },
+        "e811": {
+          "name": "2026年11月4日",
+          "role": "button"
+        },
+        "e812": {
+          "name": "2026年11月5日",
+          "role": "button"
+        },
+        "e813": {
+          "name": "2026年11月6日",
+          "role": "button"
+        },
+        "e814": {
+          "name": "2026年11月7日",
+          "role": "button"
+        },
+        "e815": {
+          "name": "2026年11月8日",
+          "role": "button"
+        },
+        "e816": {
+          "name": "2026年11月9日",
+          "role": "button"
+        },
+        "e817": {
+          "name": "2026年11月10日",
+          "role": "button"
+        },
+        "e818": {
+          "name": "2026年11月11日",
+          "role": "button"
+        },
+        "e819": {
+          "name": "2026年11月12日",
+          "role": "button"
+        },
+        "e820": {
+          "name": "2026年11月13日",
+          "role": "button"
+        },
+        "e821": {
+          "name": "2026年11月14日",
+          "role": "button"
+        },
+        "e822": {
+          "name": "2026年11月15日",
+          "role": "button"
+        },
+        "e823": {
+          "name": "2026年11月16日",
+          "role": "button"
+        },
+        "e824": {
+          "name": "2026年11月17日",
+          "role": "button"
+        },
+        "e825": {
+          "name": "2026年11月18日",
+          "role": "button"
+        },
+        "e826": {
+          "name": "2026年11月19日",
+          "role": "button"
+        },
+        "e827": {
+          "name": "2026年11月20日",
+          "role": "button"
+        },
+        "e828": {
+          "name": "2026年11月21日",
+          "role": "button"
+        },
+        "e829": {
+          "name": "2026年11月22日",
+          "role": "button"
+        },
+        "e830": {
+          "name": "2026年11月23日",
+          "role": "button"
+        },
+        "e831": {
+          "name": "2026年11月24日",
+          "role": "button"
+        },
+        "e832": {
+          "name": "2026年11月25日",
+          "role": "button"
+        },
+        "e833": {
+          "name": "2026年11月26日",
+          "role": "button"
+        },
+        "e834": {
+          "name": "2026年11月27日",
+          "role": "button"
+        },
+        "e835": {
+          "name": "2026年11月28日",
+          "role": "button"
+        },
+        "e836": {
+          "name": "2026年11月29日",
+          "role": "button"
+        },
+        "e837": {
+          "name": "2026年11月30日",
+          "role": "button"
+        },
+        "e838": {
+          "name": "2026年12月1日",
+          "role": "button"
+        },
+        "e839": {
+          "name": "2026年12月2日",
+          "role": "button"
+        },
+        "e840": {
+          "name": "2026年12月3日",
+          "role": "button"
+        },
+        "e841": {
+          "name": "2026年12月4日",
+          "role": "button"
+        },
+        "e842": {
+          "name": "2026年12月5日",
+          "role": "button"
+        },
+        "e843": {
+          "name": "2026年12月6日",
+          "role": "button"
+        },
+        "e844": {
+          "name": "2026年12月7日",
+          "role": "button"
+        },
+        "e845": {
+          "name": "2026年12月8日",
+          "role": "button"
+        },
+        "e846": {
+          "name": "2026年12月9日",
+          "role": "button"
+        },
+        "e847": {
+          "name": "2026年12月10日",
+          "role": "button"
+        },
+        "e848": {
+          "name": "2026年12月11日",
+          "role": "button"
+        },
+        "e849": {
+          "name": "2026年12月12日",
+          "role": "button"
+        }
+      },
+      "removedRefs": [],
+      "snapshot": "- button \"回测\" [ref=e245]\n- button \"实盘\" [ref=e246]\n- button \"切换主题\" [ref=e247]\n- button \"导出\" [ref=e248]\n- button \"新建交易\" [ref=e249]\n- button \"账号\" [ref=e251]\n- button \"IFVG Journal Demo\" [ref=e208]\n- button \"记录\" [ref=e209]\n- button \"分析\" [ref=e210]\n- button \"月度\" [ref=e211]\n- button \"复盘\" [ref=e212]\n- button \"模型库\" [ref=e213]\n- button \"Prop 账户\" [ref=e214]\n- button \"更新日志\" [ref=e215]\n- button \"设置\" [ref=e216]\n- button \"总览\" [ref=e588]\n- button \"我的账号\" [ref=e589]\n- button \"公司计划\" [ref=e590]\n- button \"记录购买\" [ref=e591]\n- button \"全部公司\" [ref=e592]\n- button \"Demo Firm A\" [ref=e593]\n- button \"Demo Firm B\" [ref=e594]\n- button \"全部分组\" [ref=e595]\n- button \"Group A\" [ref=e596]\n- button \"Group B\" [ref=e597]\n- region \"资金概览\" [ref=e598]\n  - heading \"资金概览\" [level=2, ref=e615]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.13\" [expanded=true, ref=e616]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e617]\n    - button \"查看区间净收益说明\" [ref=e640]\n  - button \"查看区间走势说明\" [ref=e618]\n  - button \"查看ROI说明\" [ref=e619]\n  - heading \"投入与到账\" [level=3, ref=e620]\n  - button \"查看区间投入说明\" [ref=e641]\n  - button \"查看出金到账说明\" [ref=e642]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e621]\n    - button \"查看当前账号状态说明\" [ref=e643]\n  - button \"我的账号 · 考核中\" [ref=e622]\n  - button \"我的账号 · 待激活\" [ref=e623]\n  - button \"我的账号 · 资金账号\" [ref=e624]\n- region \"账号漏斗\" [ref=e599]\n  - heading \"账号漏斗\" [level=2, ref=e625]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e614] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e644]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e645]\n    - button \"通过考核 · 8 个账号\" [ref=e646]\n    - button \"通过考核 → 资金账号 · 0% · 0/8\" [ref=e647]\n    - button \"资金账号 · 0 个账号\" [ref=e648]\n    - button \"资金账号 → 出金到账 · — · 0/0\" [disabled, ref=e649]\n    - button \"出金到账 · 0 个账号\" [ref=e650]\n- button \"上一年\" [disabled, ref=e600]\n- button \"下一年\" [disabled, ref=e601]\n- button \"1月\" [disabled, ref=e602]\n- button \"2月\" [disabled, ref=e603]\n- button \"3月\" [disabled, ref=e604]\n- button \"4月\" [disabled, ref=e605]\n- button \"5月\" [disabled, ref=e606]\n- button \"6月\" [disabled, ref=e607]\n- button \"7月\" [disabled, ref=e608]\n- button \"8月\" [disabled, ref=e609]\n- button \"9月\" [disabled, ref=e610]\n- button \"−$1K 10月\" [ref=e611]\n- button \"11月\" [disabled, ref=e612]\n- button \"12月\" [disabled, ref=e613]\n- columnheader \"公司\" [ref=e651]\n- columnheader \"当前账号数\" [ref=e652]\n- columnheader \"通过率\" [ref=e653]\n- columnheader \"区间投入\" [ref=e654]\n- columnheader \"出金到账\" [ref=e655]\n- columnheader \"净收益\" [ref=e656]\n- columnheader \"ROI\" [ref=e657]\n- cell \"Demo Firm B\" [ref=e626]\n- cell \"8\" [ref=e627]\n- cell \"100%\" [ref=e628]\n- cell \"$0\" [ref=e629]\n- cell \"$0\" [ref=e630]\n- cell \"$0\" [ref=e631]\n- cell \"—\" [ref=e632]\n- cell \"Demo Firm A\" [ref=e633]\n- cell \"10\" [ref=e634]\n- cell \"75%\" [ref=e635]\n- cell \"$1,000\" [ref=e636]\n- cell \"$0\" [ref=e637]\n- cell \"−$1,000\" [ref=e638]\n- cell \"-100.0%\" [ref=e639]\n- button \"自定义\" [ref=e658]\n- button \"全部时间\" [ref=e659]\n- button \"最近7天\" [ref=e660]\n- button \"最近30天\" [ref=e661]\n- button \"本月\" [ref=e662]\n- button \"上月\" [ref=e663]\n- button \"上一个月\" [ref=e664]\n- button \"下一个月\" [ref=e665]\n- heading \"2026年10月\" [level=4, ref=e666]\n- columnheader \"日\" [ref=e668]\n- columnheader \"一\" [ref=e669]\n- columnheader \"二\" [ref=e670]\n- columnheader \"三\" [ref=e671]\n- columnheader \"四\" [ref=e672]\n- columnheader \"五\" [ref=e673]\n- columnheader \"六\" [ref=e674]\n- gridcell \"2026年9月27日\" [ref=e675]\n  - button \"2026年9月27日\" [disabled, ref=e766]\n- gridcell \"2026年9月28日\" [ref=e676]\n  - button \"2026年9月28日\" [disabled, ref=e767]\n- gridcell \"2026年9月29日\" [ref=e677]\n  - button \"2026年9月29日\" [disabled, ref=e768]\n- gridcell \"2026年9月30日\" [ref=e678]\n  - button \"2026年9月30日\" [disabled, ref=e769]\n- gridcell \"2026年10月1日\" [ref=e679]\n  - button \"2026年10月1日\" [ref=e770]\n- gridcell \"2026年10月2日\" [ref=e680]\n  - button \"2026年10月2日\" [ref=e771]\n- gridcell \"2026年10月3日\" [ref=e681]\n  - button \"2026年10月3日\" [ref=e772]\n- gridcell \"2026年10月4日\" [ref=e682]\n  - button \"2026年10月4日\" [ref=e773]\n- gridcell \"2026年10月5日\" [ref=e683]\n  - button \"2026年10月5日\" [ref=e774]\n- gridcell \"2026年10月6日\" [ref=e684]\n  - button \"2026年10月6日\" [ref=e775]\n- gridcell \"2026年10月7日\" [ref=e685]\n  - button \"2026年10月7日\" [ref=e776]\n- gridcell \"2026年10月8日\" [ref=e686]\n  - button \"2026年10月8日\" [ref=e777]\n- gridcell \"2026年10月9日\" [ref=e687]\n  - button \"2026年10月9日\" [ref=e778]\n- gridcell \"2026年10月10日\" [ref=e688]\n  - button \"2026年10月10日\" [ref=e779]\n- gridcell \"2026年10月11日\" [ref=e689]\n  - button \"2026年10月11日\" [ref=e780]\n- gridcell \"2026年10月12日\" [ref=e690]\n  - button \"2026年10月12日\" [ref=e781]\n- gridcell \"2026年10月13日\" [ref=e691]\n  - button \"2026年10月13日\" [ref=e782]\n- gridcell \"2026年10月14日\" [ref=e692]\n  - button \"2026年10月14日\" [ref=e783]\n- gridcell \"2026年10月15日\" [ref=e693]\n  - button \"2026年10月15日\" [ref=e784]\n- gridcell \"2026年10月16日\" [ref=e694]\n  - button \"2026年10月16日\" [ref=e785]\n- gridcell \"2026年10月17日\" [ref=e695]\n  - button \"2026年10月17日\" [ref=e786]\n- gridcell \"2026年10月18日\" [ref=e696]\n  - button \"2026年10月18日\" [ref=e787]\n- gridcell \"2026年10月19日\" [ref=e697]\n  - button \"2026年10月19日\" [ref=e788]\n- gridcell \"2026年10月20日\" [ref=e698]\n  - button \"2026年10月20日\" [ref=e789]\n- gridcell \"2026年10月21日\" [ref=e699]\n  - button \"2026年10月21日\" [ref=e790]\n- gridcell \"2026年10月22日\" [ref=e700]\n  - button \"2026年10月22日\" [ref=e791]\n- gridcell \"2026年10月23日\" [ref=e701]\n  - button \"2026年10月23日\" [ref=e792]\n- gridcell \"2026年10月24日\" [ref=e702]\n  - button \"2026年10月24日\" [ref=e793]\n- gridcell \"2026年10月25日\" [ref=e703]\n  - button \"2026年10月25日\" [ref=e794]\n- gridcell \"2026年10月26日\" [ref=e704]\n  - button \"2026年10月26日\" [ref=e795]\n- gridcell \"2026年10月27日\" [ref=e705]\n  - button \"2026年10月27日\" [ref=e796]\n- gridcell \"2026年10月28日\" [ref=e706]\n  - button \"2026年10月28日\" [ref=e797]\n- gridcell \"2026年10月29日\" [ref=e707]\n  - button \"2026年10月29日\" [ref=e798]\n- gridcell \"2026年10月30日\" [selected, ref=e708]\n  - button \"2026年10月30日\" [ref=e799]\n- gridcell \"2026年10月31日\" [ref=e709]\n  - button \"2026年10月31日\" [ref=e800]\n- gridcell \"2026年11月1日\" [ref=e710]\n  - button \"2026年11月1日\" [disabled, ref=e801]\n- gridcell \"2026年11月2日\" [ref=e711]\n  - button \"2026年11月2日\" [disabled, ref=e802]\n- gridcell \"2026年11月3日\" [ref=e712]\n  - button \"2026年11月3日\" [disabled, ref=e803]\n- gridcell \"2026年11月4日\" [ref=e713]\n  - button \"2026年11月4日\" [disabled, ref=e804]\n- gridcell \"2026年11月5日\" [ref=e714]\n  - button \"2026年11月5日\" [disabled, ref=e805]\n- gridcell \"2026年11月6日\" [ref=e715]\n  - button \"2026年11月6日\" [disabled, ref=e806]\n- gridcell \"2026年11月7日\" [ref=e716]\n  - button \"2026年11月7日\" [disabled, ref=e807]\n- heading \"2026年11月\" [level=4, ref=e667]\n- columnheader \"日\" [ref=e717]\n- columnheader \"一\" [ref=e718]\n- columnheader \"二\" [ref=e719]\n- columnheader \"三\" [ref=e720]\n- columnheader \"四\" [ref=e721]\n- columnheader \"五\" [ref=e722]\n- columnheader \"六\" [ref=e723]\n- gridcell \"2026年11月1日\" [ref=e724]\n  - button \"2026年11月1日\" [ref=e808]\n- gridcell \"2026年11月2日\" [ref=e725]\n  - button \"2026年11月2日\" [ref=e809]\n- gridcell \"2026年11月3日\" [ref=e726]\n  - button \"2026年11月3日\" [ref=e810]\n- gridcell \"2026年11月4日\" [ref=e727]\n  - button \"2026年11月4日\" [ref=e811]\n- gridcell \"2026年11月5日\" [ref=e728]\n  - button \"2026年11月5日\" [ref=e812]\n- gridcell \"2026年11月6日\" [ref=e729]\n  - button \"2026年11月6日\" [ref=e813]\n- gridcell \"2026年11月7日\" [ref=e730]\n  - button \"2026年11月7日\" [ref=e814]\n- gridcell \"2026年11月8日\" [ref=e731]\n  - button \"2026年11月8日\" [ref=e815]\n- gridcell \"2026年11月9日\" [ref=e732]\n  - button \"2026年11月9日\" [ref=e816]\n- gridcell \"2026年11月10日\" [ref=e733]\n  - button \"2026年11月10日\" [ref=e817]\n- gridcell \"2026年11月11日\" [ref=e734]\n  - button \"2026年11月11日\" [ref=e818]\n- gridcell \"2026年11月12日\" [ref=e735]\n  - button \"2026年11月12日\" [ref=e819]\n- gridcell \"2026年11月13日\" [ref=e736]\n  - button \"2026年11月13日\" [ref=e820]\n- gridcell \"2026年11月14日\" [ref=e737]\n  - button \"2026年11月14日\" [ref=e821]\n- gridcell \"2026年11月15日\" [ref=e738]\n  - button \"2026年11月15日\" [ref=e822]\n- gridcell \"2026年11月16日\" [ref=e739]\n  - button \"2026年11月16日\" [ref=e823]\n- gridcell \"2026年11月17日\" [ref=e740]\n  - button \"2026年11月17日\" [ref=e824]\n- gridcell \"2026年11月18日\" [ref=e741]\n  - button \"2026年11月18日\" [ref=e825]\n- gridcell \"2026年11月19日\" [ref=e742]\n  - button \"2026年11月19日\" [ref=e826]\n- gridcell \"2026年11月20日\" [ref=e743]\n  - button \"2026年11月20日\" [ref=e827]\n- gridcell \"2026年11月21日\" [ref=e744]\n  - button \"2026年11月21日\" [ref=e828]\n- gridcell \"2026年11月22日\" [ref=e745]\n  - button \"2026年11月22日\" [ref=e829]\n- gridcell \"2026年11月23日\" [ref=e746]\n  - button \"2026年11月23日\" [ref=e830]\n- gridcell \"2026年11月24日\" [ref=e747]\n  - button \"2026年11月24日\" [ref=e831]\n- gridcell \"2026年11月25日\" [ref=e748]\n  - button \"2026年11月25日\" [ref=e832]\n- gridcell \"2026年11月26日\" [ref=e749]\n  - button \"2026年11月26日\" [ref=e833]\n- gridcell \"2026年11月27日\" [ref=e750]\n  - button \"2026年11月27日\" [ref=e834]\n- gridcell \"2026年11月28日\" [ref=e751]\n  - button \"2026年11月28日\" [ref=e835]\n- gridcell \"2026年11月29日\" [ref=e752]\n  - button \"2026年11月29日\" [ref=e836]\n- gridcell \"2026年11月30日\" [ref=e753]\n  - button \"2026年11月30日\" [ref=e837]\n- gridcell \"2026年12月1日\" [ref=e754]\n  - button \"2026年12月1日\" [disabled, ref=e838]\n- gridcell \"2026年12月2日\" [ref=e755]\n  - button \"2026年12月2日\" [disabled, ref=e839]\n- gridcell \"2026年12月3日\" [ref=e756]\n  - button \"2026年12月3日\" [disabled, ref=e840]\n- gridcell \"2026年12月4日\" [ref=e757]\n  - button \"2026年12月4日\" [disabled, ref=e841]\n- gridcell \"2026年12月5日\" [ref=e758]\n  - button \"2026年12月5日\" [disabled, ref=e842]\n- gridcell \"2026年12月6日\" [ref=e759]\n  - button \"2026年12月6日\" [disabled, ref=e843]\n- gridcell \"2026年12月7日\" [ref=e760]\n  - button \"2026年12月7日\" [disabled, ref=e844]\n- gridcell \"2026年12月8日\" [ref=e761]\n  - button \"2026年12月8日\" [disabled, ref=e845]\n- gridcell \"2026年12月9日\" [ref=e762]\n  - button \"2026年12月9日\" [disabled, ref=e846]\n- gridcell \"2026年12月10日\" [ref=e763]\n  - button \"2026年12月10日\" [disabled, ref=e847]\n- gridcell \"2026年12月11日\" [ref=e764]\n  - button \"2026年12月11日\" [disabled, ref=e848]\n- gridcell \"2026年12月12日\" [ref=e765]\n  - button \"2026年12月12日\" [disabled, ref=e849]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Escape"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Escape"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(()=>{if(propOverviewRange.to!=='2026-10-13'||document.querySelector('.propOverviewPicker'))throw Error('cancel changed range');return {range:propOverviewRange,net:document.querySelector('.propOverviewValue').dataset.netCents,focus:document.activeElement.id,blocked:offlineCalls}})()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "blocked": [],
+        "focus": "propOverviewRangeTrigger",
+        "net": "-100000",
+        "range": {
+          "from": "2026-10-01",
+          "preset": "custom",
+          "to": "2026-10-13"
+        }
+      }
+    },
+    "success": true
+  }
+]

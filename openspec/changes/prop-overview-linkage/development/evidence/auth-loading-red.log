@@ -1,0 +1,138 @@
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 41.830518
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 11.178278
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 11.235138
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 9.762962
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 8.021353
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 9.930278
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 10.271106
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 10.205997
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 7.842919
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 35.471514
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 8.563112
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 12 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 8.931622
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 13 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 12.455155
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 14 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 9.457023
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 15 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 10.685542
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 16 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 10.170765
+  type: 'test'
+  ...
+# Subtest: stale linkage sheets clear their rendered DOM before authentication early returns
+not ok 17 - stale linkage sheets clear their rendered DOM before authentication early returns
+  ---
+  duration_ms: 8.274499
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:202:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:204:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: linked Back preserves its click through input blur without intercepting other actions
+ok 18 - linked Back preserves its click through input blur without intercepting other actions
+  ---
+  duration_ms: 7.647526
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 17
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 303.714784

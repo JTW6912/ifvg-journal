@@ -1,0 +1,30 @@
+{
+  "schema":"specnav.prototype.verifier.v1",
+  "status":"green",
+  "checked_entry":"artifact/index.html",
+  "project_fidelity":{
+    "status":"green","inventory":"visual-inventory.json","shell_checked":true,"generic_shell_detected":false,
+    "notes":["Header, real navigation labels and Prop tab strip are rendered by existing project functions in a no-network VM with synthetic identity.","The approved financial panel is preserved; fixture data and locale/state review controls are isolated, not product functionality.","Loading and permission screens are unchanged application-level behavior and are not applicable to this synchronous owner-only component prototype."]
+  },
+  "visual_matrix":{
+    "viewports":["1920x1080 desktop","1600x900 desktop","390x844 mobile viewport"],
+    "theme_modes":["light","dark"],"locales":["zh","en"],
+    "states":["populated","empty","error","disabled"]
+  },
+  "checks":[
+    "Opened the declared entry through a loopback-only server and inspected desktop English/light, Chinese/dark and mobile English/light screenshots.",
+    "Checked all seven palettes in light/dark and zh/en: totals remained unchanged and no page overflow was observed at desktop size.",
+    "Synthetic default totals: invested 200, received 420, net 220, ROI 110%, curve endpoint 22000 cents.",
+    "Selected October 19-26 through calendar buttons: invested 50, received 420, net and curve endpoint 37000 cents; partial selection followed by Escape preserved the applied range.",
+    "Verified empty net=0/ROI not applicable, visible error example, and disabled range trigger using actual state control callbacks.",
+    "Mobile help tap displayed localized text associated by aria-describedby; 44x44 target, tooltip inside viewport, and no horizontal page overflow.",
+    "Stress-checked a synthetic 22000 net amount at 1600px: no clipped value or overlap with its curve.",
+    "All local browser scripts passed syntax checks. Browser reported no page errors or console messages; observed resources were local and CSP forbids connections."
+  ],
+  "evidence":[
+    "evidence/desktop-en.png","evidence/desktop-zh-dark.png","evidence/desktop-1600.png","evidence/mobile-en.png","evidence/mobile-calendar-en.png",
+    "evidence/state-checks.json","evidence/date-checks.json","evidence/theme-locale-matrix.json","evidence/mobile-help-check.json","evidence/amount-layout-check.json","evidence/browser-diagnostics.json","evidence/syntax.log"
+  ],
+  "blockers":[],
+  "limitations":["This is prototype verification, not acceptance of the unimplemented production feature.","Only Chromium and mobile-sized viewports were used, not physical phones or all assistive technologies.","Prototype fixture date bounds, dense date iteration, locale DOM adapter and direct node updates must not be promoted into production.","Production still needs full-history, refund/pending, invalid-date, cent-precision, ownership and classic-layout regression tests."]
+}

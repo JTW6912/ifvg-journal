@@ -1,0 +1,173 @@
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 26.769023
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 7.153278
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 7.141156
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 6.772552
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 5.736666
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 6.751746
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 6.379055
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 6.887213
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 5.702547
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 21.225761
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 6.377446
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 12 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 6.202834
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 13 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 8.109154
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 14 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 6.449776
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 15 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 8.179226
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 16 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 6.609486
+  type: 'test'
+  ...
+# Subtest: stale linkage sheets clear their rendered DOM before authentication early returns
+ok 17 - stale linkage sheets clear their rendered DOM before authentication early returns
+  ---
+  duration_ms: 5.755152
+  type: 'test'
+  ...
+# Subtest: blown status or history discloses missing funding dates without inventing stage events
+not ok 18 - blown status or history discloses missing funding dates without inventing stage events
+  ---
+  duration_ms: 6.773236
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:207:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'blown',
+    -   'ended'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'blown'
+    1: 'ended'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:211:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: nested entry, status and balance saves retain list origin without changing persistence
+not ok 19 - nested entry, status and balance saves retain list origin without changing persistence
+  ---
+  duration_ms: 6.133586
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:215:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageDetailBack is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:574
+    evalmachine.<anonymous>:1:807
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:217:28)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linked Back preserves its click through input blur without intercepting other actions
+ok 20 - linked Back preserves its click through input blur without intercepting other actions
+  ---
+  duration_ms: 10.198961
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 18
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 214.27808

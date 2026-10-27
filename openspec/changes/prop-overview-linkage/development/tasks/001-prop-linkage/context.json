@@ -1,0 +1,14 @@
+{
+ "task_id":"001-prop-linkage","task_items":["1.1","1.2","1.3","1.4"],
+ "goal":"Consistent selected-period financial and account-progress reporting with exact drill-down and separate current-state navigation.",
+ "must_read":["AGENTS.md","PROJECT_HANDOFF.md","openspec/specs/ui-design/design.md","openspec/specs/system-architecture/design.md","openspec/specs/frontend-backend-data-flow/design.md","openspec/specs/component-architecture/design.md","openspec/changes/prop-overview-linkage/requirements.md","openspec/changes/prop-overview-linkage/acceptance.md","openspec/changes/prop-overview-linkage/spec-map.json","openspec/changes/prop-overview-linkage/component-impact-map.json","openspec/changes/prop-overview-linkage/prototype/decision.json","openspec/changes/prop-overview-linkage/prototype/handoff.md","openspec/changes/prop-overview-linkage/prototype/artifact/index.html","openspec/changes/prop-overview-linkage/development/tasks/001-prop-linkage/brief.md","src/11d-prop-data.js","src/11e-prop-view.js","src/11g-prop-overview.js"],
+ "allowed_files":["src/11d-prop-data.js","src/11e-prop-view.js","src/11g-prop-overview.js","src/11h-prop-linkage.js","theme-modern.css","i18n.js","test/prop-linkage.test.js","test/prop-overview.test.js","dev/prop-overview-check"],
+ "test_paths":["node --test test/prop-linkage.test.js test/prop-overview.test.js","npm test","npm run bundle","node --check app.js","node --check i18n.js","git diff --check"],
+ "test_files":["test/prop-linkage.test.js","test/prop-overview.test.js","dev/prop-overview-check"],
+ "acceptance_primary":["A1","A2","A3","A4","A5","A6","A7","A8"],
+ "test_protection":"The installed managed runner interprets test_paths as executable commands. Original file paths remain in test_files and all three are protected by scope.requires_review_on; no test assertion or file was weakened.",
+ "non_goals":["No remote requests or live-account testing","No classic or ledger-edit behavior change","No master merge or production release; prop-test push requires the release gate. User has explicitly authorized the local implementation checkpoint."],
+ "expected_evidence":["Focused failing then passing tests","Full test/bundle/syntax results","Actual-source offline browser checks","Independent specification and quality reviews"],
+ "unsafe_assumptions":["Stage counts can represent different cohorts","Current status is not a historical event date","Preceding panel and linkage code are now in local implementation checkpoint 6e3c9dc but neither formal acceptance nor release is implied","Preview fixture status derivation is not production logic"],
+ "stop_condition":"Stop if scope or entry fails, product meaning needs a decision, a test needs real data, or missing history would be fabricated."
+}

@@ -1,0 +1,47 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=2",
+  "result": {
+    "documentWidth": 390,
+    "locale": "en",
+    "minimumStatusTarget": 48,
+    "stageCards": [
+      {
+        "scroll": 157,
+        "width": 157
+      },
+      {
+        "scroll": 157,
+        "width": 157
+      },
+      {
+        "scroll": 157,
+        "width": 157
+      },
+      {
+        "scroll": 157,
+        "width": 157
+      }
+    ],
+    "stages": {
+      "bought": 10,
+      "funded": 6,
+      "paid": 4,
+      "passed": 8
+    },
+    "theme": "dark",
+    "width": 390
+  }
+}

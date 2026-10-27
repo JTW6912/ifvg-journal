@@ -1,0 +1,1205 @@
+[
+  {
+    "width": 1440,
+    "result": {
+      "data": {
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 10555201366498914000
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_attempted"
+        },
+        "origin": "http://127.0.0.1:45649/",
+        "result": {
+          "blocked": [],
+          "results": [
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "gold",
+              "scrollWidth": 1114,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "gold",
+              "scrollWidth": 1114,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "gold",
+              "scrollWidth": 1114,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "gold",
+              "scrollWidth": 1114,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sky",
+              "scrollWidth": 1114,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sky",
+              "scrollWidth": 1114,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sky",
+              "scrollWidth": 1114,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sky",
+              "scrollWidth": 1114,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "violet",
+              "scrollWidth": 1114,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "violet",
+              "scrollWidth": 1114,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "violet",
+              "scrollWidth": 1114,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "violet",
+              "scrollWidth": 1114,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "rose",
+              "scrollWidth": 1114,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "rose",
+              "scrollWidth": 1114,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "rose",
+              "scrollWidth": 1114,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "rose",
+              "scrollWidth": 1114,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sunset",
+              "scrollWidth": 1114,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sunset",
+              "scrollWidth": 1114,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sunset",
+              "scrollWidth": 1114,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "sunset",
+              "scrollWidth": 1114,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "ocean",
+              "scrollWidth": 1114,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "ocean",
+              "scrollWidth": 1114,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "ocean",
+              "scrollWidth": 1114,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "ocean",
+              "scrollWidth": 1114,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "graphite",
+              "scrollWidth": 1114,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "graphite",
+              "scrollWidth": 1114,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "graphite",
+              "scrollWidth": 1114,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 1440
+            },
+            {
+              "clientWidth": 1114,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 1440,
+              "palette": "graphite",
+              "scrollWidth": 1114,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 1440
+            }
+          ]
+        }
+      },
+      "details": {
+        "artifactVerification": {
+          "artifacts": [
+            {
+              "kind": "spill",
+              "path": "/root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-f0861ed4250a19c1.json",
+              "retentionState": "live",
+              "state": "verified",
+              "storageScope": "persistent-session"
+            }
+          ],
+          "missingCount": 0,
+          "pendingCount": 0,
+          "unverifiedCount": 0,
+          "verified": true,
+          "verifiedCount": 1
+        },
+        "resultCategory": "success",
+        "successCategory": "completed"
+      },
+      "nextActions": [
+        {
+          "id": "inspect-after-mutation",
+          "params": {
+            "args": [
+              "snapshot",
+              "-i"
+            ]
+          },
+          "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+          "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+          "tool": "agent_browser"
+        }
+      ],
+      "ok": true,
+      "resultCategory": "success",
+      "successCategory": "completed",
+      "summary": "Eval result: { (compact)",
+      "text": "Large eval output compacted.\n\nPreview:\n{\n  \"blocked\": [],\n  \"results\": [\n    {\n      \"clientWidth\": 1114,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 1440,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 1114,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 1440\n    },\n    {\n      \"clientWidth\": 1114,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"en\",\n      \"missingKeys\": false,\n      \"pageWidth\": 1440,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 1114,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 1440\n    },\n    {\n      \"clientWidth\": 1114,\n      \"fill\": \"color(srgb 0.113647 0.126588 0.131922)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 1440,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 1114,\n      \"text\": \"rgb(232, 230, 223)\",\n      \"theme\": \"dark\",\n      \"viewport\": 1440\n    },\n    {\n- ... (303 additional lines omitted)\n\nFull output path: /root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-f0861ed4250a19c1.json\n\nSession artifacts: 100 live, 0 evicted (100/100 recent)."
+    }
+  },
+  {
+    "width": 390,
+    "result": {
+      "data": {
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 10555201366498914000
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_attempted"
+        },
+        "origin": "http://127.0.0.1:45649/",
+        "result": {
+          "blocked": [],
+          "results": [
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 390
+            },
+            {
+              "clientWidth": 360,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 390,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 390
+            }
+          ]
+        }
+      },
+      "details": {
+        "artifactVerification": {
+          "artifacts": [
+            {
+              "kind": "spill",
+              "path": "/root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-6368e569beceaaff.json",
+              "retentionState": "live",
+              "state": "verified",
+              "storageScope": "persistent-session"
+            }
+          ],
+          "missingCount": 0,
+          "pendingCount": 0,
+          "unverifiedCount": 0,
+          "verified": true,
+          "verifiedCount": 1
+        },
+        "resultCategory": "success",
+        "successCategory": "completed"
+      },
+      "nextActions": [
+        {
+          "id": "inspect-after-mutation",
+          "params": {
+            "args": [
+              "snapshot",
+              "-i"
+            ]
+          },
+          "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+          "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+          "tool": "agent_browser"
+        }
+      ],
+      "ok": true,
+      "resultCategory": "success",
+      "successCategory": "completed",
+      "summary": "Eval result: { (compact)",
+      "text": "Large eval output compacted.\n\nPreview:\n{\n  \"blocked\": [],\n  \"results\": [\n    {\n      \"clientWidth\": 360,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 390,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 390\n    },\n    {\n      \"clientWidth\": 360,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"en\",\n      \"missingKeys\": false,\n      \"pageWidth\": 390,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 390\n    },\n    {\n      \"clientWidth\": 360,\n      \"fill\": \"color(srgb 0.113647 0.126588 0.131922)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 390,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(232, 230, 223)\",\n      \"theme\": \"dark\",\n      \"viewport\": 390\n    },\n    {\n- ... (303 additional lines omitted)\n\nFull output path: /root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-6368e569beceaaff.json\n\nSession artifacts: 100 live, 0 evicted (100/100 recent)."
+    }
+  },
+  {
+    "width": 375,
+    "result": {
+      "data": {
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 10555201366498914000
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_attempted"
+        },
+        "origin": "http://127.0.0.1:45649/",
+        "result": {
+          "blocked": [],
+          "results": [
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.979529 0.967529 0.948941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(33, 29, 22)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.113647 0.126588 0.131922)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "gold",
+              "scrollWidth": 832,
+              "text": "rgb(232, 230, 223)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.950118 0.969412 0.994824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(16, 35, 63)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sky",
+              "scrollWidth": 832,
+              "text": "rgb(229, 237, 249)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.967294 0.956941 0.994118)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(30, 22, 56)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "violet",
+              "scrollWidth": 832,
+              "text": "rgb(236, 232, 250)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.990353 0.954824 0.971059)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(58, 22, 40)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "rose",
+              "scrollWidth": 832,
+              "text": "rgb(248, 233, 240)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.993176 0.963059 0.946353)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(46, 27, 12)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "sunset",
+              "scrollWidth": 832,
+              "text": "rgb(246, 236, 226)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.942588 0.973412 0.976706)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(13, 42, 48)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "ocean",
+              "scrollWidth": 832,
+              "text": "rgb(226, 243, 245)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.949176 0.949176 0.949882)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(24, 24, 27)",
+              "theme": "light",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "zh",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 375
+            },
+            {
+              "clientWidth": 345,
+              "fill": "color(srgb 0.134824 0.134824 0.142431)",
+              "locale": "en",
+              "missingKeys": false,
+              "pageWidth": 375,
+              "palette": "graphite",
+              "scrollWidth": 832,
+              "text": "rgb(237, 237, 239)",
+              "theme": "dark",
+              "viewport": 375
+            }
+          ]
+        }
+      },
+      "details": {
+        "artifactVerification": {
+          "artifacts": [
+            {
+              "kind": "spill",
+              "path": "/root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-2228aa6fd6c25ba7.json",
+              "retentionState": "live",
+              "state": "verified",
+              "storageScope": "persistent-session"
+            }
+          ],
+          "missingCount": 0,
+          "pendingCount": 0,
+          "unverifiedCount": 0,
+          "verified": true,
+          "verifiedCount": 1
+        },
+        "resultCategory": "success",
+        "successCategory": "completed"
+      },
+      "nextActions": [
+        {
+          "id": "inspect-after-mutation",
+          "params": {
+            "args": [
+              "snapshot",
+              "-i"
+            ]
+          },
+          "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+          "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+          "tool": "agent_browser"
+        }
+      ],
+      "ok": true,
+      "resultCategory": "success",
+      "successCategory": "completed",
+      "summary": "Eval result: { (compact)",
+      "text": "Large eval output compacted.\n\nPreview:\n{\n  \"blocked\": [],\n  \"results\": [\n    {\n      \"clientWidth\": 345,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 375,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 375\n    },\n    {\n      \"clientWidth\": 345,\n      \"fill\": \"color(srgb 0.979529 0.967529 0.948941)\",\n      \"locale\": \"en\",\n      \"missingKeys\": false,\n      \"pageWidth\": 375,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(33, 29, 22)\",\n      \"theme\": \"light\",\n      \"viewport\": 375\n    },\n    {\n      \"clientWidth\": 345,\n      \"fill\": \"color(srgb 0.113647 0.126588 0.131922)\",\n      \"locale\": \"zh\",\n      \"missingKeys\": false,\n      \"pageWidth\": 375,\n      \"palette\": \"gold\",\n      \"scrollWidth\": 832,\n      \"text\": \"rgb(232, 230, 223)\",\n      \"theme\": \"dark\",\n      \"viewport\": 375\n    },\n    {\n- ... (303 additional lines omitted)\n\nFull output path: /root/.pi/agent/sessions/--root-ifvg-journal--/.pi-agent-browser-artifacts/01a17603-21cd-7313-9287-154a94b20e5d/pi-agent-browser-output-2228aa6fd6c25ba7.json\n\nSession artifacts: 100 live, 0 evicted (100/100 recent)."
+    }
+  }
+]

@@ -1,0 +1,2 @@
+{"task_id":"001-prop-linkage","status":"planned","source":"approved-vertical-slice-plan"}
+{"task_id":"001-prop-linkage","status":"in_progress","source":"local-implementation-and-offline-checks","reason":"133 tests pass; independent read-only findings corrected. Formal verdicts, user-authorized implementation checkpoint and managed receipts remain pending; no complete/review_passed status asserted."}

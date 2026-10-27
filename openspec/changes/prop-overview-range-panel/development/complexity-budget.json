@@ -1,0 +1,11 @@
+{
+  "schema_version":1,
+  "budgets":[
+    {"area":"dependencies","limit":"zero new runtime or test packages"},
+    {"area":"source scope","limit":"one new Prop UI source module, focused existing integration edits, one focused test file"},
+    {"area":"finance","limit":"one range snapshot used by all metrics; no separate chart accounting; no full-range empty-day enumeration"},
+    {"area":"state","limit":"one applied range, one picker draft and one shared tooltip lifecycle; no persistent financial copies"},
+    {"area":"side effects","limit":"no new backend reads/writes or authentication path"},
+    {"area":"review","limit":"if UI module exceeds about 700 lines, review cohesion and split responsibilities before completion"}
+  ]
+}

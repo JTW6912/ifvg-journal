@@ -1,0 +1,62 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:44899/index.html",
+  "result": {
+    "checks": [
+      {
+        "curveEnd": "22000",
+        "errorVisible": false,
+        "net": "22000",
+        "rangeDisabled": false,
+        "roi": "+110.0%",
+        "state": "populated"
+      },
+      {
+        "curveEnd": "0",
+        "errorVisible": false,
+        "net": "0",
+        "rangeDisabled": false,
+        "roi": "—",
+        "state": "empty"
+      },
+      {
+        "curveEnd": "22000",
+        "errorVisible": true,
+        "net": "22000",
+        "rangeDisabled": false,
+        "roi": "+110.0%",
+        "state": "error"
+      },
+      {
+        "curveEnd": "22000",
+        "errorVisible": false,
+        "net": "22000",
+        "rangeDisabled": true,
+        "roi": "+110.0%",
+        "state": "disabled"
+      },
+      {
+        "curveEnd": "22000",
+        "errorVisible": false,
+        "net": "22000",
+        "rangeDisabled": false,
+        "roi": "+110.0%",
+        "state": "populated"
+      }
+    ],
+    "external": [],
+    "shell": true
+  }
+}

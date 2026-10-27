@@ -1,0 +1,368 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45649/",
+  "refs": {
+    "e100": {
+      "name": "新建交易",
+      "role": "button"
+    },
+    "e101": {
+      "name": "从左向右的账号漏斗，可横向滚动",
+      "role": "region"
+    },
+    "e102": {
+      "name": "账号",
+      "role": "button"
+    },
+    "e103": {
+      "name": "资金概览",
+      "role": "heading"
+    },
+    "e104": {
+      "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.31",
+      "role": "button"
+    },
+    "e105": {
+      "name": "区间净收益 查看区间净收益说明",
+      "role": "heading"
+    },
+    "e106": {
+      "name": "查看区间走势说明",
+      "role": "button"
+    },
+    "e107": {
+      "name": "查看ROI说明",
+      "role": "button"
+    },
+    "e108": {
+      "name": "投入与到账",
+      "role": "heading"
+    },
+    "e109": {
+      "name": "当前账号状态 查看当前账号状态说明",
+      "role": "heading"
+    },
+    "e110": {
+      "name": "我的账号 · 考核中",
+      "role": "button"
+    },
+    "e111": {
+      "name": "我的账号 · 待激活",
+      "role": "button"
+    },
+    "e112": {
+      "name": "我的账号 · 资金账号",
+      "role": "button"
+    },
+    "e113": {
+      "name": "账号漏斗",
+      "role": "heading"
+    },
+    "e114": {
+      "name": "Demo Firm B",
+      "role": "cell"
+    },
+    "e115": {
+      "name": "8",
+      "role": "cell"
+    },
+    "e116": {
+      "name": "100%",
+      "role": "cell"
+    },
+    "e117": {
+      "name": "$0",
+      "role": "cell"
+    },
+    "e118": {
+      "name": "$1,500",
+      "role": "cell"
+    },
+    "e119": {
+      "name": "+$1,500",
+      "role": "cell"
+    },
+    "e120": {
+      "name": "—",
+      "role": "cell"
+    },
+    "e121": {
+      "name": "Demo Firm A",
+      "role": "cell"
+    },
+    "e122": {
+      "name": "10",
+      "role": "cell"
+    },
+    "e123": {
+      "name": "50%",
+      "role": "cell"
+    },
+    "e124": {
+      "name": "$1,000",
+      "role": "cell"
+    },
+    "e125": {
+      "name": "$500",
+      "role": "cell"
+    },
+    "e126": {
+      "name": "−$500",
+      "role": "cell"
+    },
+    "e127": {
+      "name": "-50.0%",
+      "role": "cell"
+    },
+    "e128": {
+      "name": "查看区间净收益说明",
+      "role": "button"
+    },
+    "e129": {
+      "name": "查看区间投入说明",
+      "role": "button"
+    },
+    "e130": {
+      "name": "查看出金到账说明",
+      "role": "button"
+    },
+    "e131": {
+      "name": "查看当前账号状态说明",
+      "role": "button"
+    },
+    "e132": {
+      "name": "买入 · 10 个账号",
+      "role": "button"
+    },
+    "e133": {
+      "name": "买入 → 通过考核 · 30% · 3/10",
+      "role": "button"
+    },
+    "e134": {
+      "name": "通过考核 · 8 个账号",
+      "role": "button"
+    },
+    "e135": {
+      "name": "通过考核 → 资金账号 · 50% · 4/8",
+      "role": "button"
+    },
+    "e136": {
+      "name": "资金账号 · 6 个账号",
+      "role": "button"
+    },
+    "e137": {
+      "name": "资金账号 → 出金到账 · 50% · 3/6",
+      "role": "button"
+    },
+    "e138": {
+      "name": "出金到账 · 4 个账号",
+      "role": "button"
+    },
+    "e139": {
+      "name": "公司",
+      "role": "columnheader"
+    },
+    "e140": {
+      "name": "当前账号数",
+      "role": "columnheader"
+    },
+    "e141": {
+      "name": "通过率",
+      "role": "columnheader"
+    },
+    "e142": {
+      "name": "累计投入",
+      "role": "columnheader"
+    },
+    "e143": {
+      "name": "出金到账",
+      "role": "columnheader"
+    },
+    "e144": {
+      "name": "净收益",
+      "role": "columnheader"
+    },
+    "e145": {
+      "name": "ROI",
+      "role": "columnheader"
+    },
+    "e59": {
+      "name": "IFVG Journal Demo",
+      "role": "button"
+    },
+    "e60": {
+      "name": "记录",
+      "role": "button"
+    },
+    "e61": {
+      "name": "分析",
+      "role": "button"
+    },
+    "e62": {
+      "name": "月度",
+      "role": "button"
+    },
+    "e63": {
+      "name": "复盘",
+      "role": "button"
+    },
+    "e64": {
+      "name": "模型库",
+      "role": "button"
+    },
+    "e65": {
+      "name": "Prop 账户",
+      "role": "button"
+    },
+    "e66": {
+      "name": "更新日志",
+      "role": "button"
+    },
+    "e67": {
+      "name": "设置",
+      "role": "button"
+    },
+    "e68": {
+      "name": "总览",
+      "role": "button"
+    },
+    "e69": {
+      "name": "我的账号",
+      "role": "button"
+    },
+    "e70": {
+      "name": "公司计划",
+      "role": "button"
+    },
+    "e71": {
+      "name": "记录购买",
+      "role": "button"
+    },
+    "e72": {
+      "name": "全部公司",
+      "role": "button"
+    },
+    "e73": {
+      "name": "Demo Firm A",
+      "role": "button"
+    },
+    "e74": {
+      "name": "Demo Firm B",
+      "role": "button"
+    },
+    "e75": {
+      "name": "全部分组",
+      "role": "button"
+    },
+    "e76": {
+      "name": "Group A",
+      "role": "button"
+    },
+    "e77": {
+      "name": "Group B",
+      "role": "button"
+    },
+    "e78": {
+      "name": "资金概览",
+      "role": "region"
+    },
+    "e79": {
+      "name": "账号漏斗",
+      "role": "region"
+    },
+    "e80": {
+      "name": "上一年",
+      "role": "button"
+    },
+    "e81": {
+      "name": "下一年",
+      "role": "button"
+    },
+    "e82": {
+      "name": "1月",
+      "role": "button"
+    },
+    "e83": {
+      "name": "2月",
+      "role": "button"
+    },
+    "e84": {
+      "name": "3月",
+      "role": "button"
+    },
+    "e85": {
+      "name": "4月",
+      "role": "button"
+    },
+    "e86": {
+      "name": "5月",
+      "role": "button"
+    },
+    "e87": {
+      "name": "6月",
+      "role": "button"
+    },
+    "e88": {
+      "name": "7月",
+      "role": "button"
+    },
+    "e89": {
+      "name": "8月",
+      "role": "button"
+    },
+    "e90": {
+      "name": "9月",
+      "role": "button"
+    },
+    "e91": {
+      "name": "+$1K 10月",
+      "role": "button"
+    },
+    "e92": {
+      "name": "11月",
+      "role": "button"
+    },
+    "e93": {
+      "name": "12月",
+      "role": "button"
+    },
+    "e94": {
+      "name": "DE Demo account 01 ↑ 出金 +$500",
+      "role": "button"
+    },
+    "e95": {
+      "name": "DE Demo account 08 ↑ 出金 · 待到账 +$777",
+      "role": "button"
+    },
+    "e96": {
+      "name": "回测",
+      "role": "button"
+    },
+    "e97": {
+      "name": "实盘",
+      "role": "button"
+    },
+    "e98": {
+      "name": "切换主题",
+      "role": "button"
+    },
+    "e99": {
+      "name": "导出",
+      "role": "button"
+    }
+  },
+  "removedRefs": [],
+  "snapshot": "- button \"回测\" [ref=e96]\n- button \"实盘\" [ref=e97]\n- button \"切换主题\" [ref=e98]\n- button \"导出\" [ref=e99]\n- button \"新建交易\" [ref=e100]\n- button \"账号\" [ref=e102]\n- button \"IFVG Journal Demo\" [ref=e59]\n- button \"记录\" [ref=e60]\n- button \"分析\" [ref=e61]\n- button \"月度\" [ref=e62]\n- button \"复盘\" [ref=e63]\n- button \"模型库\" [ref=e64]\n- button \"Prop 账户\" [ref=e65]\n- button \"更新日志\" [ref=e66]\n- button \"设置\" [ref=e67]\n- button \"总览\" [ref=e68]\n- button \"我的账号\" [ref=e69]\n- button \"公司计划\" [ref=e70]\n- button \"记录购买\" [ref=e71]\n- button \"全部公司\" [ref=e72]\n- button \"Demo Firm A\" [ref=e73]\n- button \"Demo Firm B\" [ref=e74]\n- button \"全部分组\" [ref=e75]\n- button \"Group A\" [ref=e76]\n- button \"Group B\" [ref=e77]\n- region \"资金概览\" [ref=e78]\n  - heading \"资金概览\" [level=2, ref=e103]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.31\" [expanded=false, ref=e104]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e105]\n    - button \"查看区间净收益说明\" [ref=e128]\n  - button \"查看区间走势说明\" [ref=e106]\n  - button \"查看ROI说明\" [ref=e107]\n  - heading \"投入与到账\" [level=3, ref=e108]\n  - button \"查看区间投入说明\" [ref=e129]\n  - button \"查看出金到账说明\" [ref=e130]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e109]\n    - button \"查看当前账号状态说明\" [ref=e131]\n  - button \"我的账号 · 考核中\" [ref=e110]\n  - button \"我的账号 · 待激活\" [ref=e111]\n  - button \"我的账号 · 资金账号\" [ref=e112]\n- region \"账号漏斗\" [ref=e79]\n  - heading \"账号漏斗\" [level=2, ref=e113]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e101] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e132]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e133]\n    - button \"通过考核 · 8 个账号\" [ref=e134]\n    - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e135]\n    - button \"资金账号 · 6 个账号\" [ref=e136]\n    - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e137]\n    - button \"出金到账 · 4 个账号\" [ref=e138]\n- button \"上一年\" [disabled, ref=e80]\n- button \"下一年\" [disabled, ref=e81]\n- button \"1月\" [disabled, ref=e82]\n- button \"2月\" [disabled, ref=e83]\n- button \"3月\" [disabled, ref=e84]\n- button \"4月\" [disabled, ref=e85]\n- button \"5月\" [disabled, ref=e86]\n- button \"6月\" [disabled, ref=e87]\n- button \"7月\" [disabled, ref=e88]\n- button \"8月\" [disabled, ref=e89]\n- button \"9月\" [disabled, ref=e90]\n- button \"+$1K 10月\" [ref=e91]\n- button \"11月\" [disabled, ref=e92]\n- button \"12月\" [disabled, ref=e93]\n- button \"DE Demo account 01 ↑ 出金 +$500\" [ref=e94]\n- button \"DE Demo account 08 ↑ 出金 · 待到账 +$777\" [ref=e95]\n- columnheader \"公司\" [ref=e139]\n- columnheader \"当前账号数\" [ref=e140]\n- columnheader \"通过率\" [ref=e141]\n- columnheader \"累计投入\" [ref=e142]\n- columnheader \"出金到账\" [ref=e143]\n- columnheader \"净收益\" [ref=e144]\n- columnheader \"ROI\" [ref=e145]\n- cell \"Demo Firm B\" [ref=e114]\n- cell \"8\" [ref=e115]\n- cell \"100%\" [ref=e116]\n- cell \"$0\" [ref=e117]\n- cell \"$1,500\" [ref=e118]\n- cell \"+$1,500\" [ref=e119]\n- cell \"—\" [ref=e120]\n- cell \"Demo Firm A\" [ref=e121]\n- cell \"10\" [ref=e122]\n- cell \"50%\" [ref=e123]\n- cell \"$1,000\" [ref=e124]\n- cell \"$500\" [ref=e125]\n- cell \"−$500\" [ref=e126]\n- cell \"-50.0%\" [ref=e127]"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version":1,
+  "promotion_policy":"reimplement_under_development_gate",
+  "allowed_to_copy":["Approved static label/help meaning, rewritten through T() in zh and en","Approved SVG line icon geometry and CSS design values, adapted to scoped project styles"],
+  "must_reimplement":["Financial ranges and sparse cumulative points using existing accounting primitives","App state, date draft lifecycle, event delegation and render cleanup","Production HTML and CSS using currentLayout, T, esc and existing theme variables"],
+  "blocked_direct_copies":["Synthetic or private fixture amounts and account counts","Review shell snapshots and locale DOM translation adapter","Fixture date bounds and dense day-by-day loops","Direct mutation of production app regions outside render/patchAppShell","Preview theme controls or network/auth setup"]
+}

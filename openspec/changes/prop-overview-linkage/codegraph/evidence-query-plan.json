@@ -1,0 +1,22 @@
+{
+  "schema": "specnav.codegraph.evidence_query_plan.v1",
+  "generated_at": "2026-10-27T08:34:36.202Z",
+  "active_change": "prop-overview-linkage",
+  "queries": [
+    {
+      "id": "development:task-001-prop-linkage:evidence",
+      "claim_id": "development:task-001-prop-linkage",
+      "stage": "development",
+      "task_id": "001-prop-linkage",
+      "status": "planned",
+      "query": "Find the files, symbols, components, routes, services, data flow, and tests that implement \"Implement one user-visible flow from UI entry through state, API/data boundary,\" in change \"prop-overview-linkage\". Return concrete file paths, symbols, relationships, and any missing implementation evidence.",
+      "expected_evidence": [
+        "file paths",
+        "symbols",
+        "call relationships",
+        "tests or verification commands"
+      ],
+      "command": "node \"$SPECNAV_CODEGRAPH_ROOT/scripts/codegraph-context.js\" --stage development --claim development:task-001-prop-linkage --query \"<query>\" --write --json"
+    }
+  ]
+}

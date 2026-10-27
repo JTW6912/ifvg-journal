@@ -1,0 +1,47 @@
+{
+  "git_head": "108a83536c6799a3fd9870720c26ae1524eeccda",
+  "captured_at": "2026-10-27T11:00:16.679011+00:00",
+  "uncommitted": true,
+  "files": [
+    {
+      "path": "src/11d-prop-data.js",
+      "sha256": "f40a8a88dd0c0915053c479669eca5c401e90db7ea478085bcaab7745e506106",
+      "baseline_sha256": "274524fdebb995ec17858d37b9edf14b44d681f2df7bebd91b400c7e25e0a4f6"
+    },
+    {
+      "path": "src/11e-prop-view.js",
+      "sha256": "51d1ad11c162f4a9bd4c4c7ba940ad5387b503a1085414c252cd06725c9689b8",
+      "baseline_sha256": "7c5258befe386b71431c9e2cd65b1169ca907ec3bd049a2688c4408e90d339be"
+    },
+    {
+      "path": "src/11g-prop-overview.js",
+      "sha256": "279a379b864f78b16c1f6d3faccfb95c1424dd2fbce4e81f805cdb60a71fa71b",
+      "baseline_sha256": "21220a1efdecb26be7620f13291625734a1df6d1137dd15424f0577347c8bbc4"
+    },
+    {
+      "path": "src/11h-prop-linkage.js",
+      "sha256": "89a7553047c19383c6b18cdc1ccddd492ad2fc987044971fdc02b72772c5291e",
+      "baseline_sha256": null
+    },
+    {
+      "path": "theme-modern.css",
+      "sha256": "932b94b7cab267d1d3c27c496ee9b17c858cfbea05e6fb7893052ca29ac60c8d",
+      "baseline_sha256": "70343b71f4d405e273c4c449a74120fe127a70e513c0ddd158249710fb08caed"
+    },
+    {
+      "path": "i18n.js",
+      "sha256": "9d567a60f56409d6e9e0f58209dd2f0374ac886cc0f0f3115afe39ccee87d57c",
+      "baseline_sha256": "183eb53c6b9d3396a2c4748f92cb15cbb85d4200481d117ba49f0ad74a8a18f8"
+    },
+    {
+      "path": "test/prop-linkage.test.js",
+      "sha256": "5ce9b7e3107afa6fc9fdc37bbdbad9d72a51c21b3ea79283838b577bbeb9a925",
+      "baseline_sha256": null
+    },
+    {
+      "path": "test/prop-overview.test.js",
+      "sha256": "6c79c18bb01be32d1d68df5170f3e9130ddec57ef91f3b0c02d3bc01abed2695",
+      "baseline_sha256": "6c79c18bb01be32d1d68df5170f3e9130ddec57ef91f3b0c02d3bc01abed2695"
+    }
+  ]
+}

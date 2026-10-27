@@ -1,0 +1,60 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=6",
+  "result": [
+    {
+      "disabledConversions": 0,
+      "sample": "period",
+      "summary": {
+        "costPerFunded": 246.66666666666663,
+        "decided": 11,
+        "fails": 3,
+        "funded": 6,
+        "passRate": 72.72727272727273,
+        "passed": 8,
+        "spentCents": 148000
+      },
+      "text": "通过率\n73%\n按 11 次有结果的考核算\n平均每个资金账号成本\n$246.67\n区间投入 ÷ 区间内获得的资金账号数"
+    },
+    {
+      "disabledConversions": 0,
+      "sample": "all",
+      "summary": {
+        "costPerFunded": 334.2857142857143,
+        "decided": 14,
+        "fails": 3,
+        "funded": 7,
+        "passRate": 78.57142857142857,
+        "passed": 11,
+        "spentCents": 234000
+      },
+      "text": "通过率\n79%\n按 14 次有结果的考核算\n平均每个资金账号成本\n$334.29\n全部投入 ÷ 拿到的资金账号数"
+    },
+    {
+      "disabledConversions": 3,
+      "sample": "empty",
+      "summary": {
+        "costPerFunded": null,
+        "decided": 0,
+        "fails": 0,
+        "funded": 0,
+        "passRate": null,
+        "passed": 0,
+        "spentCents": 0
+      },
+      "text": "通过率\n—\n按 0 次有结果的考核算\n平均每个资金账号成本\n—\n区间投入 ÷ 区间内获得的资金账号数"
+    }
+  ]
+}

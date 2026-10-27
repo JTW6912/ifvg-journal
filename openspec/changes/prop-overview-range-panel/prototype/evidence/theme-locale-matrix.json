@@ -1,0 +1,270 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:44899/index.html",
+  "result": [
+    {
+      "foreground": "rgb(33, 29, 22)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "gold",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(232, 230, 223)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "gold",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(16, 35, 63)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sky",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(229, 237, 249)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sky",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(30, 22, 56)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "violet",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(236, 232, 250)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "violet",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(58, 22, 40)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "rose",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(248, 233, 240)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "rose",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(46, 27, 12)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sunset",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(246, 236, 226)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sunset",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(13, 42, 48)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "ocean",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(226, 243, 245)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "ocean",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(24, 24, 27)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "graphite",
+      "theme": "light",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(237, 237, 239)",
+      "locale": "en",
+      "net": "37000",
+      "overflow": false,
+      "palette": "graphite",
+      "theme": "dark",
+      "title": "Financial overview"
+    },
+    {
+      "foreground": "rgb(33, 29, 22)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "gold",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(232, 230, 223)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "gold",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(16, 35, 63)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sky",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(229, 237, 249)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sky",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(30, 22, 56)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "violet",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(236, 232, 250)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "violet",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(58, 22, 40)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "rose",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(248, 233, 240)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "rose",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(46, 27, 12)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sunset",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(246, 236, 226)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "sunset",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(13, 42, 48)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "ocean",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(226, 243, 245)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "ocean",
+      "theme": "dark",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(24, 24, 27)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "graphite",
+      "theme": "light",
+      "title": "资金概览"
+    },
+    {
+      "foreground": "rgb(237, 237, 239)",
+      "locale": "zh-CN",
+      "net": "37000",
+      "overflow": false,
+      "palette": "graphite",
+      "theme": "dark",
+      "title": "资金概览"
+    }
+  ]
+}

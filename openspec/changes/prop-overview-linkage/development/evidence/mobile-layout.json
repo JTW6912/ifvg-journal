@@ -1,0 +1,532 @@
+[
+  {
+    "command": [
+      "set",
+      "viewport",
+      "390",
+      "844"
+    ],
+    "result": {
+      "deviceScaleFactor": 1,
+      "height": 844,
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "mobile": false,
+      "width": 390
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "demo.linkage();demo.appearance('sky','dark','en');document.querySelector('.propProgress').scrollIntoView()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "interrupted": false
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:45649/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e1019": {
+          "name": "Trades",
+          "role": "button"
+        },
+        "e1020": {
+          "name": "Analytics",
+          "role": "button"
+        },
+        "e1021": {
+          "name": "Monthly",
+          "role": "button"
+        },
+        "e1022": {
+          "name": "Reviews",
+          "role": "button"
+        },
+        "e1023": {
+          "name": "Playbook",
+          "role": "button"
+        },
+        "e1024": {
+          "name": "Prop Accounts",
+          "role": "button"
+        },
+        "e1025": {
+          "name": "Changelog",
+          "role": "button"
+        },
+        "e1026": {
+          "name": "Settings",
+          "role": "button"
+        },
+        "e1027": {
+          "name": "Overview",
+          "role": "button"
+        },
+        "e1028": {
+          "name": "My accounts",
+          "role": "button"
+        },
+        "e1029": {
+          "name": "Firms & plans",
+          "role": "button"
+        },
+        "e1030": {
+          "name": "Record purchase",
+          "role": "button"
+        },
+        "e1031": {
+          "name": "All firms",
+          "role": "button"
+        },
+        "e1032": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e1033": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e1034": {
+          "name": "All groups",
+          "role": "button"
+        },
+        "e1035": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e1036": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e1037": {
+          "name": "Financial overview",
+          "role": "region"
+        },
+        "e1038": {
+          "name": "Account funnel",
+          "role": "region"
+        },
+        "e1039": {
+          "name": "Previous year",
+          "role": "button"
+        },
+        "e1040": {
+          "name": "Next year",
+          "role": "button"
+        },
+        "e1041": {
+          "name": "Jan",
+          "role": "button"
+        },
+        "e1042": {
+          "name": "Feb",
+          "role": "button"
+        },
+        "e1043": {
+          "name": "Mar",
+          "role": "button"
+        },
+        "e1044": {
+          "name": "Apr",
+          "role": "button"
+        },
+        "e1045": {
+          "name": "May",
+          "role": "button"
+        },
+        "e1046": {
+          "name": "Jun",
+          "role": "button"
+        },
+        "e1047": {
+          "name": "Jul",
+          "role": "button"
+        },
+        "e1048": {
+          "name": "Aug",
+          "role": "button"
+        },
+        "e1049": {
+          "name": "Sep",
+          "role": "button"
+        },
+        "e1050": {
+          "name": "+$1K Oct",
+          "role": "button"
+        },
+        "e1051": {
+          "name": "Nov",
+          "role": "button"
+        },
+        "e1052": {
+          "name": "Dec",
+          "role": "button"
+        },
+        "e1053": {
+          "name": "DE Demo account 01 ↑ Payout +$500",
+          "role": "button"
+        },
+        "e1054": {
+          "name": "DE Demo account 08 ↑ Payout · Pending +$777",
+          "role": "button"
+        },
+        "e1055": {
+          "name": "Backtest",
+          "role": "button"
+        },
+        "e1056": {
+          "name": "Live",
+          "role": "button"
+        },
+        "e1057": {
+          "name": "Toggle theme",
+          "role": "button"
+        },
+        "e1058": {
+          "name": "Export",
+          "role": "button"
+        },
+        "e1059": {
+          "name": "New trade",
+          "role": "button"
+        },
+        "e1060": {
+          "name": "Left-to-right account funnel; scroll horizontally",
+          "role": "region"
+        },
+        "e1061": {
+          "name": "Account",
+          "role": "button"
+        },
+        "e1062": {
+          "name": "Financial overview",
+          "role": "heading"
+        },
+        "e1063": {
+          "name": "Prop overview reporting range: 2026.10.01 – 2026.10.31",
+          "role": "button"
+        },
+        "e1064": {
+          "name": "Period net return About Period net return",
+          "role": "heading"
+        },
+        "e1065": {
+          "name": "About Period trend",
+          "role": "button"
+        },
+        "e1066": {
+          "name": "About ROI",
+          "role": "button"
+        },
+        "e1067": {
+          "name": "Investment & payouts",
+          "role": "heading"
+        },
+        "e1068": {
+          "name": "Current account status About Current account status",
+          "role": "heading"
+        },
+        "e1069": {
+          "name": "My accounts · Evaluation",
+          "role": "button"
+        },
+        "e1070": {
+          "name": "My accounts · To activate",
+          "role": "button"
+        },
+        "e1071": {
+          "name": "My accounts · Funded",
+          "role": "button"
+        },
+        "e1072": {
+          "name": "Account funnel",
+          "role": "heading"
+        },
+        "e1073": {
+          "name": "About Period net return",
+          "role": "button"
+        },
+        "e1074": {
+          "name": "About Period invested",
+          "role": "button"
+        },
+        "e1075": {
+          "name": "About Payouts received",
+          "role": "button"
+        },
+        "e1076": {
+          "name": "About Current account status",
+          "role": "button"
+        },
+        "e1077": {
+          "name": "Purchased · 10 accounts",
+          "role": "button"
+        },
+        "e1078": {
+          "name": "Purchased → Passed · 30% · 3/10",
+          "role": "button"
+        },
+        "e1079": {
+          "name": "Passed · 8 accounts",
+          "role": "button"
+        },
+        "e1080": {
+          "name": "Passed → Funded · 50% · 4/8",
+          "role": "button"
+        },
+        "e1081": {
+          "name": "Funded · 6 accounts",
+          "role": "button"
+        },
+        "e1082": {
+          "name": "Funded → Paid out · 50% · 3/6",
+          "role": "button"
+        },
+        "e1083": {
+          "name": "Paid out · 4 accounts",
+          "role": "button"
+        },
+        "e1084": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e1085": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e1086": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e1087": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e1088": {
+          "name": "$1,500",
+          "role": "cell"
+        },
+        "e1089": {
+          "name": "+$1,500",
+          "role": "cell"
+        },
+        "e1090": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e1091": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e1092": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e1093": {
+          "name": "50%",
+          "role": "cell"
+        },
+        "e1094": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e1095": {
+          "name": "$500",
+          "role": "cell"
+        },
+        "e1096": {
+          "name": "−$500",
+          "role": "cell"
+        },
+        "e1097": {
+          "name": "-50.0%",
+          "role": "cell"
+        },
+        "e1098": {
+          "name": "Firm",
+          "role": "columnheader"
+        },
+        "e1099": {
+          "name": "Current accounts",
+          "role": "columnheader"
+        },
+        "e1100": {
+          "name": "Pass rate",
+          "role": "columnheader"
+        },
+        "e1101": {
+          "name": "Period invested",
+          "role": "columnheader"
+        },
+        "e1102": {
+          "name": "Payouts received",
+          "role": "columnheader"
+        },
+        "e1103": {
+          "name": "Net",
+          "role": "columnheader"
+        },
+        "e1104": {
+          "name": "ROI",
+          "role": "columnheader"
+        }
+      },
+      "removedRefs": [
+        "@e208",
+        "@e209",
+        "@e210",
+        "@e211",
+        "@e212",
+        "@e213",
+        "@e214",
+        "@e215",
+        "@e216",
+        "@e245",
+        "@e246",
+        "@e247",
+        "@e248",
+        "@e249",
+        "@e251",
+        "@e994",
+        "@e995",
+        "@e996",
+        "@e997",
+        "@e998",
+        "@e999",
+        "@e1000",
+        "@e1001",
+        "@e1002",
+        "@e1003",
+        "@e1004",
+        "@e1005",
+        "@e1006",
+        "@e1007",
+        "@e1008",
+        "@e1009",
+        "@e1010",
+        "@e1011",
+        "@e1012",
+        "@e1013",
+        "@e1014",
+        "@e1015",
+        "@e1016",
+        "@e1017",
+        "@e1018"
+      ],
+      "snapshot": "- button \"Backtest\" [ref=e1055]\n- button \"Live\" [ref=e1056]\n- button \"Toggle theme\" [ref=e1057]\n- button \"Export\" [ref=e1058]\n- button \"New trade\" [ref=e1059]\n- button \"Account\" [ref=e1061]\n- button \"Trades\" [ref=e1019]\n- button \"Analytics\" [ref=e1020]\n- button \"Monthly\" [ref=e1021]\n- button \"Reviews\" [ref=e1022]\n- button \"Playbook\" [ref=e1023]\n- button \"Prop Accounts\" [ref=e1024]\n- button \"Changelog\" [ref=e1025]\n- button \"Settings\" [ref=e1026]\n- button \"Overview\" [ref=e1027]\n- button \"My accounts\" [ref=e1028]\n- button \"Firms & plans\" [ref=e1029]\n- button \"Record purchase\" [ref=e1030]\n- button \"All firms\" [ref=e1031]\n- button \"Demo Firm A\" [ref=e1032]\n- button \"Demo Firm B\" [ref=e1033]\n- button \"All groups\" [ref=e1034]\n- button \"Group A\" [ref=e1035]\n- button \"Group B\" [ref=e1036]\n- region \"Financial overview\" [ref=e1037]\n  - heading \"Financial overview\" [level=2, ref=e1062]\n  - button \"Prop overview reporting range: 2026.10.01 – 2026.10.31\" [expanded=false, ref=e1063]\n  - heading \"Period net return About Period net return\" [level=3, ref=e1064]\n    - button \"About Period net return\" [ref=e1073]\n  - button \"About Period trend\" [ref=e1065]\n  - button \"About ROI\" [ref=e1066]\n  - heading \"Investment & payouts\" [level=3, ref=e1067]\n  - button \"About Period invested\" [ref=e1074]\n  - button \"About Payouts received\" [ref=e1075]\n  - heading \"Current account status About Current account status\" [level=3, ref=e1068]\n    - button \"About Current account status\" [ref=e1076]\n  - button \"My accounts · Evaluation\" [ref=e1069]\n  - button \"My accounts · To activate\" [ref=e1070]\n  - button \"My accounts · Funded\" [ref=e1071]\n- region \"Account funnel\" [ref=e1038]\n  - heading \"Account funnel\" [level=2, ref=e1072]\n  - region \"Left-to-right account funnel; scroll horizontally\" [ref=e1060] focusable [tabindex]\n    - button \"Purchased · 10 accounts\" [ref=e1077]\n    - button \"Purchased → Passed · 30% · 3/10\" [ref=e1078]\n    - button \"Passed · 8 accounts\" [ref=e1079]\n    - button \"Passed → Funded · 50% · 4/8\" [ref=e1080]\n    - button \"Funded · 6 accounts\" [ref=e1081]\n    - button \"Funded → Paid out · 50% · 3/6\" [ref=e1082]\n    - button \"Paid out · 4 accounts\" [ref=e1083]\n- button \"Previous year\" [disabled, ref=e1039]\n- button \"Next year\" [disabled, ref=e1040]\n- button \"Jan\" [disabled, ref=e1041]\n- button \"Feb\" [disabled, ref=e1042]\n- button \"Mar\" [disabled, ref=e1043]\n- button \"Apr\" [disabled, ref=e1044]\n- button \"May\" [disabled, ref=e1045]\n- button \"Jun\" [disabled, ref=e1046]\n- button \"Jul\" [disabled, ref=e1047]\n- button \"Aug\" [disabled, ref=e1048]\n- button \"Sep\" [disabled, ref=e1049]\n- button \"+$1K Oct\" [ref=e1050]\n- button \"Nov\" [disabled, ref=e1051]\n- button \"Dec\" [disabled, ref=e1052]\n- button \"DE Demo account 01 ↑ Payout +$500\" [ref=e1053]\n- button \"DE Demo account 08 ↑ Payout · Pending +$777\" [ref=e1054]\n- columnheader \"Firm\" [ref=e1098]\n- columnheader \"Current accounts\" [ref=e1099]\n- columnheader \"Pass rate\" [ref=e1100]\n- columnheader \"Period invested\" [ref=e1101]\n- columnheader \"Payouts received\" [ref=e1102]\n- columnheader \"Net\" [ref=e1103]\n- columnheader \"ROI\" [ref=e1104]\n- cell \"Demo Firm B\" [ref=e1084]\n- cell \"8\" [ref=e1085]\n- cell \"100%\" [ref=e1086]\n- cell \"$0\" [ref=e1087]\n- cell \"$1,500\" [ref=e1088]\n- cell \"+$1,500\" [ref=e1089]\n- cell \"—\" [ref=e1090]\n- cell \"Demo Firm A\" [ref=e1091]\n- cell \"10\" [ref=e1092]\n- cell \"50%\" [ref=e1093]\n- cell \"$1,000\" [ref=e1094]\n- cell \"$500\" [ref=e1095]\n- cell \"−$500\" [ref=e1096]\n- cell \"-50.0%\" [ref=e1097]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(()=>{const s=document.querySelector('.propProgressScroll');const b=document.querySelector('.propProgressStage');const r=b.getBoundingClientRect();if(document.documentElement.scrollWidth>innerWidth+1)throw Error('page overflow');if(s.scrollWidth<=s.clientWidth)throw Error('missing local scroll');return {viewport:[innerWidth,innerHeight],bodyWidth:document.documentElement.scrollWidth,scroll:[s.clientWidth,s.scrollWidth,s.scrollLeft],stage:[r.width,r.height],locale:lang,blocked:offlineCalls}})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "blocked": [],
+        "bodyWidth": 390,
+        "locale": "en",
+        "scroll": [
+          360,
+          832,
+          0
+        ],
+        "stage": [
+          191,
+          288
+        ],
+        "viewport": [
+          390,
+          844
+        ]
+      }
+    },
+    "success": true
+  }
+]

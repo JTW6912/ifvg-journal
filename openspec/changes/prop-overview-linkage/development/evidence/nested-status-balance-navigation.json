@@ -1,0 +1,74 @@
+[
+  {
+    "command": "eval",
+    "result": null
+  },
+  {
+    "command": "eval",
+    "result": {
+      "interrupted": false
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-open-status'][data-to='blown']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "blocked": [],
+      "focus": "prop-close-modal",
+      "origin": "passed",
+      "title": "爆仓",
+      "type": "status"
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-modal-back']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "backVisible": true,
+      "blocked": [],
+      "type": "detail"
+    }
+  },
+  {
+    "command": "eval",
+    "result": {
+      "interrupted": false
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-open-balance']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "blocked": [],
+      "focus": "prop-close-modal",
+      "origin": "passed",
+      "title": "记余额",
+      "type": "balance"
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-modal-back']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "backVisible": true,
+      "blocked": [],
+      "type": "detail"
+    }
+  }
+]

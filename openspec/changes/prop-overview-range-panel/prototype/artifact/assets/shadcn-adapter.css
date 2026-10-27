@@ -1,0 +1,120 @@
+/*
+ * Native adaptation of shadcn/ui base-nova design rules, not a React install.
+ * Sources + measured values: ../design-contract.md and ../reference/.
+ * Project --accent is a brand color; NEVER alias it to shadcn's hover meaning.
+ */
+:root {
+  --ui-background:var(--bg);
+  --ui-foreground:var(--text);
+  --ui-card:var(--surface);
+  --ui-card-foreground:var(--text);
+  --ui-popover:var(--surface);
+  --ui-popover-foreground:var(--text);
+  --ui-muted:var(--surface2);
+  --ui-muted-foreground:var(--muted);
+  --ui-hover:var(--surface2);
+  --ui-selection:color-mix(in srgb,var(--accent) 6%,var(--surface2));
+  --ui-border:var(--border);
+  --ui-input:var(--border);
+  --ui-ring:var(--accent);
+  --ui-radius:10px;
+  --ui-radius-sm:calc(var(--ui-radius)*.6);
+  --ui-radius-md:calc(var(--ui-radius)*.8);
+  --ui-radius-lg:var(--ui-radius);
+  --ui-radius-xl:calc(var(--ui-radius)*1.4);
+  --ui-space:4px;
+  --card-spacing:calc(var(--ui-space)*6);
+  --ui-duration:100ms;
+  --ui-ease:cubic-bezier(.2,0,0,1);
+  --ui-popover-shadow:0 4px 6px -1px rgb(0 0 0 / .1),0 2px 4px -2px rgb(0 0 0 / .1);
+}
+:root:not([data-theme="light"]){
+  --ui-popover-shadow:0 4px 6px -1px rgb(0 0 0 / .28),0 2px 4px -2px rgb(0 0 0 / .24);
+}
+/* Card anatomy and rhythm: flat surfaces, one outline, shared content inset. */
+.board{border-radius:var(--ui-radius-xl);border-color:var(--ui-border);background:var(--ui-card);color:var(--ui-card-foreground);box-shadow:none}
+.board-header{padding:calc(var(--ui-space)*4) var(--card-spacing);gap:calc(var(--ui-space)*4)}
+.board-body{grid-template-columns:1.12fr 1.14fr .74fr}
+.zone{padding:var(--card-spacing);min-height:296px}
+.zone-heading{gap:calc(var(--ui-space)*2);font-size:15px;font-weight:500;line-height:22px}
+.brand-heading{gap:calc(var(--ui-space)*2)}
+h1{font-size:16px;font-weight:600;letter-spacing:-.15px}
+.mark{width:32px;height:32px;border-radius:var(--ui-radius-md);background:var(--ui-muted);border-color:transparent;color:var(--ui-foreground)}
+.mark svg{width:18px;height:18px}
+.section-icon{width:32px;height:32px;border-radius:var(--ui-radius-md);color:var(--ui-muted-foreground)}
+.net-zone .section-icon{color:var(--metric-tone)}
+.section-icon svg{width:19px;height:19px}
+.header-tools{gap:calc(var(--ui-space)*2)}
+.currency-unit{font-size:12px;letter-spacing:.3px;padding:0 var(--ui-space)}
+/* Outline controls request an action; Ghost controls stay visually secondary. */
+.ui-button{height:36px;min-height:36px;padding:0 10px;gap:6px;border-radius:var(--ui-radius-lg);font-size:14px;line-height:20px;font-weight:500;box-shadow:none;transition:background-color var(--ui-duration) var(--ui-ease),box-shadow var(--ui-duration) var(--ui-ease);outline:none}
+.ui-button[data-variant="outline"]{background:var(--ui-card);border-color:var(--ui-input)}
+.ui-button[data-variant="outline"]:where(:hover,[aria-expanded="true"]){background:var(--ui-hover);border-color:var(--ui-input)}
+.ui-button[data-variant="ghost"]{color:var(--ui-muted-foreground)}
+.ui-button[data-variant="ghost"]:where(:hover,[aria-expanded="true"]){background:var(--ui-hover);color:var(--ui-foreground)}
+.ui-button svg{width:16px;height:16px}
+.ui-button:disabled{opacity:.5;pointer-events:none}
+:where(.ui-button,.range-preset,.date-cell button,.preview-controls select):focus-visible{outline:1px solid var(--ui-ring);outline-offset:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-ring) 40%,transparent)}
+/* Keep the user's approved hierarchy. Remove only the redundant nested frame. */
+.net-spotlight{grid-template-columns:minmax(0,1fr) 188px;gap:calc(var(--ui-space)*6);margin-top:calc(var(--ui-space)*6)}
+.net-value{font-size:clamp(44px,3.5vw,56px);font-weight:700;letter-spacing:-1.7px}
+.net-trend{border:0;border-radius:0;background:transparent;padding:0}
+.trend-heading{font-size:12px;line-height:18px;margin-bottom:8px}
+.trend-plot{height:96px}
+.trend-line,.trend-zero,.trend-last{vector-effect:non-scaling-stroke}
+.trend-dates{margin-top:6px;font-size:11px}
+.trend-empty{min-height:96px}
+.roi-block{gap:calc(var(--ui-space)*2);padding-top:calc(var(--ui-space)*6)}
+.roi-icon{width:32px;height:32px;border-radius:var(--ui-radius-md)}
+.roi-icon svg{width:18px;height:18px}
+.roi-number{font-size:30px;font-weight:600}
+.roi-label{font-size:12px}
+.cash-figure{margin-top:calc(var(--ui-space)*6)}
+.cash-row+.cash-row{margin-top:calc(var(--ui-space)*6)}
+.cash-label{margin-bottom:calc(var(--ui-space)*3)}
+.cash-label strong{font-size:26px;font-weight:600}
+.bar{height:14px;border-radius:var(--ui-radius-sm)}
+.cash-legend{gap:calc(var(--ui-space)*4);margin-top:calc(var(--ui-space)*5)}
+.account-zone{background:color-mix(in srgb,var(--ui-muted) 30%,var(--ui-card))}
+.account-summary{grid-template-columns:76px minmax(0,1fr);gap:calc(var(--ui-space)*6);margin-top:calc(var(--ui-space)*6)}
+.account-value strong{font-size:52px;font-weight:600}
+.account-label{font-size:13px}
+.account-breakdown{gap:calc(var(--ui-space)*2);padding-left:calc(var(--ui-space)*5)}
+.account-breakdown dt{font-size:13px}
+.count-badge{height:24px;min-width:28px;border-radius:var(--ui-radius-sm);font-size:14px;font-weight:600;line-height:20px}
+.account-total{padding-top:calc(var(--ui-space)*4)}
+.account-total strong{font-size:20px;font-weight:600}
+/* Portal surface: a light shadow is meaningful here, unlike on static cards. */
+.popover{border-radius:var(--ui-radius-lg);border-color:var(--ui-border);background:var(--ui-popover);color:var(--ui-popover-foreground);box-shadow:var(--ui-popover-shadow)}
+.popover:not([hidden]){animation:ui-popover-in var(--ui-duration) var(--ui-ease)}
+@keyframes ui-popover-in{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+.help-box{padding:calc(var(--ui-space)*5)}
+.help-box h2{font-size:14px;font-weight:500;line-height:20px}
+.help-box dl{font-size:13px;gap:12px;grid-template-columns:56px minmax(0,1fr)}
+.help-box dt{font-weight:500}
+/* Calendar: shared cell size, ghost navigation, strong endpoints, muted range. */
+.range-picker{--cell-size:36px;--cell-radius:var(--ui-radius-md);width:min(760px,calc(100vw - 24px));grid-template-columns:144px minmax(0,1fr)}
+.range-presets{padding:calc(var(--ui-space)*2);gap:var(--ui-space)}
+.range-preset{min-height:36px;padding:8px 10px;font-size:14px;border-radius:var(--ui-radius-md)}
+.range-preset.active{font-weight:500}
+.calendar-area{padding:calc(var(--ui-space)*4)}
+.range-months{gap:calc(var(--ui-space)*4)}
+.range-month h3{font-size:14px;font-weight:500;line-height:var(--cell-size);margin:0 var(--cell-size) 12px}
+.picker-nav{top:16px;left:16px;right:16px}
+.picker-nav button{width:var(--cell-size);height:var(--cell-size);min-height:var(--cell-size);padding:0;border-radius:var(--ui-radius-md)}
+.calendar-weekdays span{font-size:12px;line-height:28px}
+.date-cell{height:var(--cell-size);margin:3px 0}
+:where(.date-cell button){width:var(--cell-size);height:var(--cell-size);border-radius:var(--cell-radius);font-size:14px;font-weight:400;line-height:1}
+.date-cell.in-range{background:var(--ui-selection)}
+.date-cell.range-start{border-radius:var(--cell-radius) 0 0 var(--cell-radius)}
+.date-cell.range-end{border-radius:0 var(--cell-radius) var(--cell-radius) 0}
+.date-cell.range-start.range-end{border-radius:var(--cell-radius)}
+.date-cell.range-start button,.date-cell.range-end button{border-radius:var(--cell-radius);font-weight:500}
+.date-cell button:disabled{opacity:.5}
+.date-cell.adjacent button{opacity:.35}
+.picker-footer{padding:12px 16px;font-size:11px;background:color-mix(in srgb,var(--ui-muted) 30%,var(--ui-popover))}
+.preview-controls select{border-radius:var(--ui-radius-md);height:36px;min-height:36px;background:var(--ui-card);border-color:var(--ui-input)}
+@media(max-width:1390px){.net-spotlight{grid-template-columns:1fr;gap:16px}.net-value{font-size:52px}.trend-plot{height:80px}.trend-empty{min-height:80px}.account-summary{grid-template-columns:60px minmax(0,1fr);gap:16px}.account-breakdown{padding-left:12px}}
+@media(max-width:980px){.board-body{grid-template-columns:1fr 1.12fr}.zone{min-height:0}.account-summary{grid-template-columns:100px 1fr;max-width:420px}.account-total{margin-top:24px}}
+@media(max-width:640px){:root{--card-spacing:24px}.board-header{padding:20px}.board-body{grid-template-columns:1fr}.net-value{font-size:52px}.trend-plot{height:100px}.net-spotlight{gap:24px}.account-summary{grid-template-columns:76px minmax(0,1fr);gap:24px}.zone-heading{font-size:15px}.roi-number{font-size:28px}.cash-label strong{font-size:24px}.ui-button{height:44px;min-height:44px}.range-trigger{font-size:12px}.preview-controls select{height:44px;min-height:44px}.range-picker{grid-template-columns:1fr;--cell-size:44px}.range-presets{grid-template-columns:repeat(3,minmax(0,1fr))}.range-preset{min-height:44px;font-size:12px}.range-month h3{margin-bottom:8px}.picker-nav button{width:44px;height:44px}.range-months{grid-template-columns:1fr;gap:0}.calendar-area{padding:12px}.picker-nav{top:12px;left:12px;right:12px}.date-cell{height:44px;margin:2px 0}.picker-footer{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.popover:not([hidden]){animation:none}.ui-button{transition:none}}

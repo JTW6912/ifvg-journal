@@ -1,0 +1,31 @@
+{
+  "captured_at": "2026-10-27T08:40:18.773076+00:00",
+  "git_head": "108a83536c6799a3fd9870720c26ae1524eeccda",
+  "kind": "uncommitted worktree dependency snapshot, not a commit or approval",
+  "files": [
+    {
+      "path": "src/11d-prop-data.js",
+      "sha256": "274524fdebb995ec17858d37b9edf14b44d681f2df7bebd91b400c7e25e0a4f6"
+    },
+    {
+      "path": "src/11e-prop-view.js",
+      "sha256": "7c5258befe386b71431c9e2cd65b1169ca907ec3bd049a2688c4408e90d339be"
+    },
+    {
+      "path": "src/11g-prop-overview.js",
+      "sha256": "21220a1efdecb26be7620f13291625734a1df6d1137dd15424f0577347c8bbc4"
+    },
+    {
+      "path": "theme-modern.css",
+      "sha256": "70343b71f4d405e273c4c449a74120fe127a70e513c0ddd158249710fb08caed"
+    },
+    {
+      "path": "i18n.js",
+      "sha256": "183eb53c6b9d3396a2c4748f92cb15cbb85d4200481d117ba49f0ad74a8a18f8"
+    },
+    {
+      "path": "test/prop-overview.test.js",
+      "sha256": "6c79c18bb01be32d1d68df5170f3e9130ddec57ef91f3b0c02d3bc01abed2695"
+    }
+  ]
+}

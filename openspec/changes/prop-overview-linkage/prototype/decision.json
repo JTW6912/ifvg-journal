@@ -1,0 +1,6 @@
+{
+ "status":"approved","prototype_code":"required_present","prototype_type":"ui-html","approved_variant":"horizontal-funnel-v2","promotion":"requires_development_gate","approved_by":"user",
+ "approval_source":"Explicit conversation response to the horizontal funnel with restored bottom summaries: 好的我同意就这样做吧",
+ "approval_scope":"Previously reviewed funnel v2, clickable stage/cohort lists and current-status navigation. This registration adds nonvisual anchors and repeat offline checks, not a new user visual review. User separately approved a new specifications/tasks-only baseline with 好的开始吧.",
+ "blocked_reasons":[]
+}

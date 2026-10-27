@@ -1,0 +1,68 @@
+[
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:45649/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "({type:propModal?.type,draft:propModal?.draft,error:propModal?.error,origin:!!propModal?.linkageBack,nickname:propAccounts[0].nickname,blocked:offlineCalls,field:document.querySelector('[data-prop-field=nickname]')?.value})"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "blocked": [],
+        "draft": {
+          "billing": "once",
+          "bought_on": "2026-10-01",
+          "firm_name": "Demo Firm A",
+          "group_name": "Group A",
+          "monthly_fee": "",
+          "nickname": "Synthetic unsaved name",
+          "note": "",
+          "plan_name": "Synthetic plan",
+          "renewing": false,
+          "size": 50000,
+          "status": "funded"
+        },
+        "field": "Synthetic unsaved name",
+        "nickname": "Demo account 01",
+        "origin": true,
+        "type": "detail"
+      }
+    },
+    "success": true
+  }
+]

@@ -1,0 +1,13 @@
+/* Review-only integration chrome. Production CSS and the approved panel remain separate. */
+#tabBody .stage{padding:0;max-width:none;margin:0}
+#tabBody .preview-heading{margin:8px 0 16px}
+#prototypeError{margin-bottom:16px}
+.preview-controls{padding:12px 0;border-bottom:1px solid var(--border)}
+#appHeader .headerActions button[aria-disabled="true"],#appNav button[aria-disabled="true"],#propTabs button[aria-disabled="true"]{cursor:default}
+#propTabs{margin-bottom:20px}
+#app .board-body{grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(280px,.8fr)}
+#app .net-spotlight{display:flex;flex-wrap:wrap}
+#app .net-value{flex:0 0 auto;max-width:100%}
+#app .net-trend{flex:1 1 188px;min-width:160px}
+@media(max-width:1390px){#app .board-body{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}#app .account-zone{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);min-height:0}#app .account-summary{max-width:420px}#app .account-total{margin-top:24px}}
+@media(max-width:720px){#app .board-body{grid-template-columns:1fr}#app .zone+.zone{border-left:0;border-top:1px solid var(--border)}.preview-controls{gap:10px}.header-tools{flex-wrap:wrap}.cash-label{flex-wrap:wrap}.roi-block{flex-wrap:wrap}}

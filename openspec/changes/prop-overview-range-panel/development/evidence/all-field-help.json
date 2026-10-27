@@ -1,0 +1,59 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45649/?rev=3",
+  "result": {
+    "blockedCalls": [],
+    "emptyAndRefundROI": "—",
+    "redrawCleanup": true,
+    "rows": [
+      {
+        "described": true,
+        "field": "net",
+        "inside": true,
+        "text": "所选时间范围内的已到账出金，减去投入（已扣除退款）。"
+      },
+      {
+        "described": true,
+        "field": "spent",
+        "inside": true,
+        "text": "所选时间范围内的费用合计，已扣除退款。"
+      },
+      {
+        "described": true,
+        "field": "received",
+        "inside": true,
+        "text": "仅统计所选时间范围内已到账的出金，不含待到账金额。"
+      },
+      {
+        "described": true,
+        "field": "roi",
+        "inside": true,
+        "text": "净收益 ÷ 投入。投入不大于0时显示“—”。"
+      },
+      {
+        "described": true,
+        "field": "trend",
+        "inside": true,
+        "text": "从所选区间起点0按日累计净收支，曲线终点与净收益一致。"
+      },
+      {
+        "described": true,
+        "field": "accounts",
+        "inside": true,
+        "text": "进行中包含考核中、待激活和资金账号。显示当前状态，不随日期范围回放。"
+      }
+    ]
+  }
+}

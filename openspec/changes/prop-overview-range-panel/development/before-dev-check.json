@@ -1,0 +1,17 @@
+{
+  "schema_version":1,
+  "active_change":"prop-overview-range-panel",
+  "status":"passed",
+  "ok":true,
+  "checked_at":"2026-10-26T17:44:52Z",
+  "baseline_commit":"6342a805f62faf716cc5a342474e7696826a092d",
+  "checks":[
+    "requirements-contract returned ok:true",
+    "prototype-contract returned ok:true with explicit user approval and direct synthetic runtime evidence",
+    "Git HEAD tracks tasks.md and all four baseline task IDs are preserved",
+    "Development scope, basis, ownership graph, task context and promotion map validated; the last preflight run reported only this not-yet-recorded before-dev status",
+    "No production source edits or remote business operations have occurred; allowed files are explicitly limited",
+    "User authorized the completed docs/tasks-only baseline commit; no push or deployment occurred"
+  ],
+  "blockers":[]
+}

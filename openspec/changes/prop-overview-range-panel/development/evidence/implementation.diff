@@ -1,0 +1,978 @@
+diff --git a/i18n.js b/i18n.js
+index 5bf1f5d..d22c563 100644
+--- a/i18n.js
++++ b/i18n.js
+@@ -1266,6 +1266,50 @@ const I18N = {
+     "prop.stat.roiSub": "净收益 ÷ 投入",
+     "prop.stat.accounts": "进行中的账号",
+     "prop.stat.accountsSub": "考核中、待激活、资金账号 / 全部",
++    "prop.overview.title": "资金概览",
++    "prop.overview.netAll": "累计净收益",
++    "prop.overview.netRange": "区间净收益",
++    "prop.overview.spentAll": "累计投入",
++    "prop.overview.spentRange": "区间投入",
++    "prop.overview.cash": "投入与到账",
++    "prop.overview.roi": "投资回报率",
++    "prop.overview.trendAll": "累计走势",
++    "prop.overview.trendRange": "区间走势",
++    "prop.overview.accounts": "当前账号状态",
++    "prop.overview.totalAccounts": "全部账号",
++    "prop.overview.accountUnit": "个",
++    "prop.overview.toActivate": "待激活",
++    "prop.overview.covered": "覆盖投入",
++    "prop.overview.netRefund": "净退款",
++    "prop.overview.helpLabel": "查看{label}说明",
++    "prop.overview.help.net": "所选时间范围内的已到账出金，减去投入（已扣除退款）。",
++    "prop.overview.help.spent": "所选时间范围内的费用合计，已扣除退款。",
++    "prop.overview.help.received": "仅统计所选时间范围内已到账的出金，不含待到账金额。",
++    "prop.overview.help.roi": "净收益 ÷ 投入。投入不大于0时显示“—”。",
++    "prop.overview.help.trend": "从所选区间起点0按日累计净收支，曲线终点与净收益一致。",
++    "prop.overview.help.accounts": "进行中包含考核中、待激活和资金账号。显示当前状态，不随日期范围回放。",
++    "prop.overview.refundBars": "退款超过费用；金额条按绝对值展示。",
++    "prop.overview.emptyTrend": "该范围暂无已发生收支",
++    "prop.overview.invalidDates": "部分收支日期无效，暂不能按日期展示。",
++    "prop.overview.invalidRange": "日期范围无效，请重新选择。",
++    "prop.overview.invalidData": "收支数据不完整，暂不能计算。",
++    "prop.overview.amountRange": "金额超出可精确计算范围。",
++    "prop.overview.trendDescription": "{from}至{to}，从0按日累计，净收益{net}。",
++    "prop.overview.cashDescription": "同一刻度：投入{spent}，到账{received}，净收益{net}。",
++    "prop.overview.rangeLabel": "资金概览统计日期范围",
++    "prop.overview.rangeChoose": "选择日期范围",
++    "prop.overview.range.custom": "自定义",
++    "prop.overview.range.all": "全部时间",
++    "prop.overview.range.last7": "最近7天",
++    "prop.overview.range.last30": "最近30天",
++    "prop.overview.range.thisMonth": "本月",
++    "prop.overview.range.lastMonth": "上月",
++    "prop.overview.rangeHint": "先选起始日期，再选结束日期",
++    "prop.overview.rangeStartSelected": "已选择 {date}，请选择结束日期",
++    "prop.overview.previousMonth": "上一个月",
++    "prop.overview.nextMonth": "下一个月",
++    "prop.overview.monthDates": "{month}的日期",
++    "prop.overview.weekdays": "日,一,二,三,四,五,六",
+     "prop.funnel.title": "账号漏斗",
+     "prop.funnel.bought": "买过",
+     "prop.funnel.passed": "通过考核",
+@@ -2959,6 +3003,50 @@ const I18N = {
+     "prop.stat.roiSub": "Net ÷ spent",
+     "prop.stat.accounts": "Active accounts",
+     "prop.stat.accountsSub": "In evaluation, to activate or funded / all",
++    "prop.overview.title": "Financial overview",
++    "prop.overview.netAll": "Net return",
++    "prop.overview.netRange": "Period net return",
++    "prop.overview.spentAll": "Total invested",
++    "prop.overview.spentRange": "Period invested",
++    "prop.overview.cash": "Investment & payouts",
++    "prop.overview.roi": "Return on investment",
++    "prop.overview.trendAll": "Cumulative trend",
++    "prop.overview.trendRange": "Period trend",
++    "prop.overview.accounts": "Current account status",
++    "prop.overview.totalAccounts": "All accounts",
++    "prop.overview.accountUnit": "",
++    "prop.overview.toActivate": "To activate",
++    "prop.overview.covered": "Investment covered",
++    "prop.overview.netRefund": "Net refunds",
++    "prop.overview.helpLabel": "About {label}",
++    "prop.overview.help.net": "Received payouts minus investment, with refunds deducted, for the selected range.",
++    "prop.overview.help.spent": "Fees in the selected range, less refunds.",
++    "prop.overview.help.received": "Only received payouts in the selected range. Pending payouts are excluded.",
++    "prop.overview.help.roi": "Net return divided by investment. Shows “—” when investment is not positive.",
++    "prop.overview.help.trend": "Starts at zero and accumulates daily cash flow. The endpoint equals net return.",
++    "prop.overview.help.accounts": "Active includes evaluation, awaiting activation and funded accounts. These are current stages, not a historical replay.",
++    "prop.overview.refundBars": "Refunds exceed fees; bars show absolute amounts.",
++    "prop.overview.emptyTrend": "No cash flow in this range",
++    "prop.overview.invalidDates": "Some cash-flow dates are invalid; dated results are unavailable.",
++    "prop.overview.invalidRange": "Invalid date range. Please select it again.",
++    "prop.overview.invalidData": "Cash-flow data is incomplete.",
++    "prop.overview.amountRange": "Amounts exceed the supported precision.",
++    "prop.overview.trendDescription": "{from} to {to}: daily cash flow from zero, ending at {net}.",
++    "prop.overview.cashDescription": "Same scale: invested {spent}, received {received}, net return {net}.",
++    "prop.overview.rangeLabel": "Financial overview date range",
++    "prop.overview.rangeChoose": "Choose date range",
++    "prop.overview.range.custom": "Custom",
++    "prop.overview.range.all": "All time",
++    "prop.overview.range.last7": "Last 7 days",
++    "prop.overview.range.last30": "Last 30 days",
++    "prop.overview.range.thisMonth": "This month",
++    "prop.overview.range.lastMonth": "Last month",
++    "prop.overview.rangeHint": "Choose a start date, then an end date",
++    "prop.overview.rangeStartSelected": "{date} selected; choose an end date",
++    "prop.overview.previousMonth": "Previous month",
++    "prop.overview.nextMonth": "Next month",
++    "prop.overview.monthDates": "Days in {month}",
++    "prop.overview.weekdays": "Su,Mo,Tu,We,Th,Fr,Sa",
+     "prop.funnel.title": "Account funnel",
+     "prop.funnel.bought": "Bought",
+     "prop.funnel.passed": "Passed",
+diff --git a/src/03-state.js b/src/03-state.js
+index ba3c915..3d90d5d 100644
+--- a/src/03-state.js
++++ b/src/03-state.js
+@@ -103,6 +103,10 @@ let propCatalogInfo = null;           // 最近一次导入 { imported_at, summa
+ let propAccounts = [];
+ let propEntries = [];
+ let propError = null;
++// 仅概览财务面板的本次查看范围，不落库、不影响月度图或账号当前阶段。
++let propOverviewRange = { preset: "all", from: null, to: null };
++let propOverviewOwner = null;
++let propOverviewPicker = null;        // 选日草稿；确认前不改已应用范围
+ let propYear = new Date().getFullYear();
+ let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
+ let propYearTouched = false;          // 用户自己翻过年份：之后不再自动跳到有数据的年份
+diff --git a/src/11d-prop-data.js b/src/11d-prop-data.js
+index f9a1b73..67b147a 100644
+--- a/src/11d-prop-data.js
++++ b/src/11d-prop-data.js
+@@ -260,6 +260,117 @@ function propMonthly(entries, year) {
+ }
+ function propEntryMonth(e) { return String(e.day || "").slice(0, 7); }
+ 
++/* ---------- 概览日期范围：日期键是自然日，UTC 只用于不受夏令时影响的运算 ---------- */
++const PROP_OVERVIEW_DAY_MS = 86400000;
++const PROP_OVERVIEW_PRESETS = ["custom", "all", "last7", "last30", "thisMonth", "lastMonth"];
++function propOverviewDay(day) {
++  if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day) || day.startsWith("0000")) return null;
++  const time = Date.parse(day + "T00:00:00Z");
++  return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === day ? time : null;
++}
++function propOverviewShiftDay(day, delta) {
++  const time = propOverviewDay(day);
++  if (time === null || !Number.isSafeInteger(delta)) return null;
++  const d = new Date(time + delta * PROP_OVERVIEW_DAY_MS);
++  if (!Number.isFinite(d.getTime())) return null;
++  const next = d.toISOString().slice(0, 10);
++  return propOverviewDay(next) === null ? null : next;
++}
++function propOverviewMonthIndex(day) {
++  const time = propOverviewDay(day);
++  if (time === null) return null;
++  const d = new Date(time);
++  return d.getUTCFullYear() * 12 + d.getUTCMonth();
++}
++function propOverviewMonthStart(index) {
++  if (!Number.isInteger(index) || index < 12 || index > 119999) return null;
++  return String(Math.floor(index / 12)).padStart(4, "0") + "-" + String(index % 12 + 1).padStart(2, "0") + "-01";
++}
++function propOverviewShiftMonth(day, delta) {
++  const index = propOverviewMonthIndex(day);
++  if (index === null || !Number.isSafeInteger(delta)) return null;
++  const first = propOverviewMonthStart(index + delta);
++  if (!first) return null;
++  const year = Number(first.slice(0, 4)), month = Number(first.slice(5, 7));
++  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
++  const last = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
++  return first.slice(0, 8) + String(Math.min(Number(day.slice(8)), last)).padStart(2, "0");
++}
++function propOverviewResolveRange(choice, today) {
++  if (!choice || !PROP_OVERVIEW_PRESETS.includes(choice.preset) || propOverviewDay(today) === null) return null;
++  const preset = choice.preset;
++  if (preset === "all") return { preset, from: null, to: null };
++  let from, to = today;
++  if (preset === "custom") {
++    if (propOverviewDay(choice.from) === null || propOverviewDay(choice.to) === null) return null;
++    from = choice.from < choice.to ? choice.from : choice.to;
++    to = choice.from < choice.to ? choice.to : choice.from;
++  } else if (preset === "last7" || preset === "last30") from = propOverviewShiftDay(today, preset === "last7" ? -6 : -29);
++  else if (preset === "thisMonth") from = today.slice(0, 8) + "01";
++  else {
++    const first = today.slice(0, 8) + "01";
++    from = propOverviewShiftMonth(first, -1);
++    to = propOverviewShiftDay(first, -1);
++  }
++  return from && to ? { preset, from, to } : null;
++}
++/* 只派生、不改原流水。每天仍用 propSum，避免曲线另造一套退款/pending口径。
++   稀疏点只覆盖有收支的日子和区间两端；横坐标按日期距离，不枚举空白年月。 */
++function propOverviewSnapshot(entries, choice, today) {
++  const range = propOverviewResolveRange(choice, today);
++  const unavailable = (reason) => ({ available: false, reason, sum: null, points: [], trendUnavailable: true, range, from: null, to: null });
++  if (!range) return unavailable("invalidRange");
++  if (!Array.isArray(entries) || entries.some((e) => !e || typeof e !== "object")) return unavailable("invalidData");
++  const all = range.preset === "all", selected = [], groups = new Map();
++  let invalidDates = 0;
++  entries.forEach((e) => {
++    if (propOverviewDay(e.day) === null) {
++      const s = propSum([e]);
++      if (s.spent || s.received || s.refund) invalidDates++;
++      if (all) selected.push(e);
++      return;
++    }
++    if (!all && (e.day < range.from || e.day > range.to)) return;
++    selected.push(e);
++    if (!groups.has(e.day)) groups.set(e.day, []);
++    groups.get(e.day).push(e);
++  });
++  if (!all && invalidDates) return unavailable("invalidDates");
++  if (selected.some(e => PROP_ENTRY_KINDS.includes(e.kind) &&
++      ((typeof e.amount !== "number" && typeof e.amount !== "string") || String(e.amount).trim() === "" || !Number.isFinite(Number(e.amount)) || Number(e.amount) < 0))) return unavailable("invalidData");
++  const sum = propSum(selected);
++  const safe = (s) => [s.spent, s.received, s.refund, s.pending, s.net].every((v) => Number.isSafeInteger(Math.round(v * 100)));
++  if (!safe(sum)) return unavailable("amountRange");
++  const days = [...groups].map(([day, list]) => ({ day, sum: propSum(list) }))
++    .filter((d) => d.sum.spent || d.sum.received || d.sum.refund).sort((a, b) => a.day.localeCompare(b.day));
++  if (days.some((d) => !safe(d.sum))) return unavailable("amountRange");
++  const from = all ? (days[0] ? days[0].day : today) : range.from;
++  const lastDay = days.length ? days[days.length - 1].day : today;
++  const to = all ? (lastDay > today ? lastDay : today) : range.to;
++  const result = { available: true, reason: invalidDates ? "invalidDates" : null, sum, points: [], trendUnavailable: !!invalidDates, range, from, to };
++  if (invalidDates || !days.length) return result;
++  let cents = 0;
++  const points = [{ day: from, at: propOverviewDay(from), net: 0 }];
++  for (const d of days) {
++    cents += Math.round(d.sum.net * 100);
++    if (!Number.isSafeInteger(cents)) return unavailable("amountRange");
++    points.push({ day: d.day, at: propOverviewDay(d.day) + PROP_OVERVIEW_DAY_MS, net: cents / 100 });
++  }
++  // 不强行改末点来掩盖两套结果的差异；不能精确表达时明确报不可用。
++  if (cents !== Math.round(sum.net * 100)) return unavailable("amountRange");
++  const end = propOverviewDay(to) + PROP_OVERVIEW_DAY_MS;
++  if (points[points.length - 1].at < end) points.push({ day: to, at: end, net: cents / 100 });
++  result.points = points;
++  return result;
++}
++function propOverviewBarModel(sum) {
++  const refundMode = sum.spent < 0;
++  const scale = Math.max(Math.abs(sum.spent), sum.received, 1);
++  const percent = (v) => Math.max(0, Math.min(100, v / scale * 100));
++  return { refundMode, spent: percent(Math.abs(sum.spent)), covered: refundMode ? 0 : percent(Math.min(sum.spent, sum.received)),
++    income: percent(refundMode ? sum.received : Math.max(0, sum.net)) };
++}
++
+ /* ---------- 月付订阅 ----------
+    续费中的月付账号，每到购买日的同一天记一笔月费（31 号买的，小月记在月底）。
+    renewed_through 是「已经记到哪天」的水位：删掉自动记的那笔不会被补回来，关掉续费再打开也不会补记中间那段 */
+diff --git a/src/11e-prop-view.js b/src/11e-prop-view.js
+index 157f5de..6f95e96 100644
+--- a/src/11e-prop-view.js
++++ b/src/11e-prop-view.js
+@@ -148,7 +148,7 @@ function renderPropOverview() {
+   const { accounts, entries } = propScoped();
+   const s = propSum(entries);
+   let html = propFilterChips();
+-  html += `<div class="statRow propStats">
++  html += currentLayout() === "modern" ? renderPropOverviewPanel(accounts, entries) : `<div class="statRow propStats">
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.spent"))}</div><div class="statValue">${propUsd(s.spent)}</div><div class="statSub">${esc(T("prop.stat.spentSub"))}${s.refund ? " · " + esc(T("prop.stat.refunded", { v: propUsd(s.refund) })) : ""}</div></div>
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.received"))}</div><div class="statValue">${propUsd(s.received)}</div><div class="statSub">${s.pending ? esc(T("prop.stat.pendingSub", { v: propUsd(s.pending) })) : esc(T("prop.stat.receivedSub"))}</div></div>
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.net"))}</div><div class="statValue ${propTone(s.net)}">${propUsd(s.net, true)}</div><div class="statSub">${esc(T("prop.stat.netSub"))}</div></div>
+diff --git a/src/14-main-render.js b/src/14-main-render.js
+index 4ae2331..71ff3e4 100644
+--- a/src/14-main-render.js
++++ b/src/14-main-render.js
+@@ -493,6 +493,7 @@ function renderSecondaryModals(force) {
+   const root = document.getElementById("secondaryModalRoot");
+   if (!root) return;
+   const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : (propModal ? "prop" : null))))))));
++  if (want) propOverviewCleanup(); // Let existing editing dialogs own focus and Escape.
+   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
+   secondaryModalState = want;
+   if (want === "profile") root.innerHTML = profileModalHtml();
+@@ -570,6 +571,7 @@ function patchAppShell(regions) {
+   });
+ }
+ function render() {
++  propOverviewBeforeRender();
+   const app = document.getElementById("app");
+ 
+   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
+@@ -681,5 +683,6 @@ function render() {
+   renderReviewEditor();
+   renderExportCenter();
+   renderAcctPop();
++  propOverviewAfterRender();
+ }
+ 
+diff --git a/src/15-events.js b/src/15-events.js
+index a652083..c380a54 100644
+--- a/src/15-events.js
++++ b/src/15-events.js
+@@ -1694,6 +1694,7 @@ document.addEventListener("keydown", (e) => {
+ }, true);
+ 
+ document.addEventListener("keydown", (e) => {
++  if (propOverviewKeydown(e)) return;
+   if (focusKeyNav(e)) return;
+   if (pbTriageKey(e)) return;
+   if (e.key !== "Escape") return;
+diff --git a/theme-modern.css b/theme-modern.css
+index fa05194..8247903 100644
+--- a/theme-modern.css
++++ b/theme-modern.css
+@@ -669,3 +669,132 @@
+ [data-layout="modern"] .propStep{border-radius:14px;}
+ [data-layout="modern"] .propAccNums{border-radius:12px;}
+ [data-layout="modern"] .propCompareBar{border-radius:16px;}
++
++/* Prop financial overview — native shadcn-style boundaries, product color tokens.
++   Portals share this namespace; no global theme tokens or classic styles change. */
++[data-layout="modern"] :is(.propOverview,.propOverviewPicker,.propOverviewTooltip){
++  --ui-card:var(--surface);--ui-muted:var(--surface2);--ui-border:var(--border);
++  --ui-hover:var(--surface2);--ui-selection:color-mix(in srgb,var(--accent) 8%,var(--surface2));
++  font-family:var(--fontUI);font-variant-numeric:tabular-nums;line-height:1.5;box-sizing:border-box;
++}
++[data-layout="modern"] .propOverview{border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-card);margin-bottom:20px;color:var(--text);container-type:inline-size;--metric-tone:var(--muted);}
++[data-layout="modern"] .propOverview[data-tone="positive"]{--metric-tone:var(--pnlPos);}
++[data-layout="modern"] .propOverview[data-tone="negative"]{--metric-tone:var(--pnlNeg);}
++[data-layout="modern"] .propOverviewHeader{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:16px 24px;border-bottom:1px solid var(--ui-border);}
++[data-layout="modern"] .propOverview :is(h2,h3){display:flex;align-items:center;gap:8px;margin:0;line-height:1.5;}
++[data-layout="modern"] .propOverview h2{font-size:16px;font-weight:600;}
++[data-layout="modern"] .propOverview h3{font-size:15px;font-weight:500;}
++[data-layout="modern"] .propOverviewIcon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;border-radius:8px;background:var(--surface2);color:var(--muted);}
++[data-layout="modern"] .propOverviewIcon svg{width:19px;height:19px;}
++[data-layout="modern"] .propOverviewHeader .propOverviewIcon{color:var(--text);}
++[data-layout="modern"] .propOverviewTools{display:flex;align-items:center;gap:12px;margin-left:auto;font-size:12px;color:var(--muted);min-width:0;}
++:where([data-layout="modern"]) :where(.propOverviewButton){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 10px;max-width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;cursor:pointer;}
++[data-layout="modern"] .propOverviewButton span{overflow-wrap:anywhere;}
++[data-layout="modern"] .propOverviewButton svg{width:16px;height:16px;flex-shrink:0;}
++:where([data-layout="modern"]) :where(.propOverviewButton:hover,.propOverviewButton[aria-expanded="true"]){background:var(--surface2);}
++[data-layout="modern"] .propOverviewBody{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(280px,.8fr);}
++[data-layout="modern"] .propOverviewZone{min-width:0;padding:24px;display:flex;flex-direction:column;}
++[data-layout="modern"] .propOverviewZone+.propOverviewZone{border-left:1px solid var(--ui-border);}
++[data-layout="modern"] .propOverviewNet .propOverviewIcon{color:var(--metric-tone);}
++[data-layout="modern"] .propOverviewSpotlight{display:flex;align-items:center;flex-wrap:wrap;gap:24px;margin-top:24px;flex:1;}
++[data-layout="modern"] .propOverviewValue{color:var(--metric-tone);font-size:clamp(42px,3.5vw,56px);font-weight:700;letter-spacing:-1.7px;line-height:1.15;max-width:100%;overflow-wrap:anywhere;}
++[data-layout="modern"] .propOverviewValue small{font-size:.7em;}
++[data-layout="modern"] .propOverviewValueCompact{font-size:clamp(22px,2.5vw,36px);letter-spacing:-.8px;}
++[data-layout="modern"] .propOverviewTrend{flex:1 1 170px;min-width:140px;}
++[data-layout="modern"] .propOverviewCaption{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:13px;}
++[data-layout="modern"] .propOverviewPlot{display:block;width:100%;height:96px;margin-top:8px;overflow:visible;}
++[data-layout="modern"] .propOverviewZero{fill:none;stroke:var(--borderLight);stroke-dasharray:3 3;vector-effect:non-scaling-stroke;}
++[data-layout="modern"] .propOverviewTrace[data-tone="positive"]{color:var(--pnlPos);}
++[data-layout="modern"] .propOverviewTrace[data-tone="negative"]{color:var(--pnlNeg);}
++[data-layout="modern"] .propOverviewArea{fill:currentColor;opacity:.1;}
++[data-layout="modern"] .propOverviewLine{fill:none;stroke:currentColor;stroke-width:1.8;vector-effect:non-scaling-stroke;}
++[data-layout="modern"] .propOverviewDot{fill:var(--metric-tone);stroke:var(--surface);stroke-width:1.5;vector-effect:non-scaling-stroke;}
++[data-layout="modern"] .propOverviewDates{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:6px;}
++[data-layout="modern"] .propOverviewTrendEmpty{display:flex;align-items:center;min-height:96px;color:var(--muted);font-size:12px;}
++[data-layout="modern"] .propOverviewROI{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:24px;}
++[data-layout="modern"] .propOverviewROI strong{font-size:30px;font-weight:600;color:var(--metric-tone);overflow-wrap:anywhere;max-width:100%;}
++[data-layout="modern"] .propOverviewROI .propOverviewCaption{font-size:12px;}
++[data-layout="modern"] .propOverviewROI[data-applicable="false"] :is(strong,.propOverviewIcon){color:var(--muted);}
++[data-layout="modern"] .propOverviewCashFigure{margin-top:24px;}
++[data-layout="modern"] .propOverviewCashLabel{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
++[data-layout="modern"] .propOverviewCashLabel strong{font-size:26px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;max-width:100%;}
++[data-layout="modern"] .propOverviewBar{display:flex;height:14px;background:var(--surface2);border-radius:6px;overflow:hidden;}
++[data-layout="modern"] .propOverviewBar+.propOverviewCashLabel{margin-top:24px;}
++[data-layout="modern"] .propOverviewBar i{display:block;height:100%;flex-shrink:0;}
++[data-layout="modern"] .propOverviewHatch{background:repeating-linear-gradient(125deg,transparent 0 2px,color-mix(in srgb,var(--muted) 22%,transparent) 2px 4px),var(--surface2);}
++[data-layout="modern"] .propOverviewIncome{background:var(--pnlPos);}
++[data-layout="modern"] .propOverviewLegend{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;font-size:11px;color:var(--muted);}
++[data-layout="modern"] .propOverviewLegend span{display:inline-flex;align-items:center;gap:6px;}
++[data-layout="modern"] .propOverviewLegend i{width:11px;height:8px;border-radius:2px;}
++[data-layout="modern"] .propOverviewRefundNote{color:var(--muted);font-size:12px;margin:8px 0 0;}
++[data-layout="modern"] .propOverviewAccounts{background:color-mix(in srgb,var(--surface2) 30%,var(--surface));border-radius:0 0 14px 0;}
++[data-layout="modern"] .propOverviewAccountSummary{display:grid;grid-template-columns:76px minmax(0,1fr);gap:24px;margin-top:24px;font-size:13px;}
++[data-layout="modern"] .propOverviewAccountCount{display:flex;align-items:baseline;gap:6px;margin-bottom:4px;}
++[data-layout="modern"] .propOverviewAccountCount strong{font-size:52px;font-weight:600;line-height:1.2;}
++[data-layout="modern"] .propOverviewAccountCount span{color:var(--muted);}
++[data-layout="modern"] .propOverviewAccountSummary dl{margin:0;padding-left:20px;border-left:1px solid var(--ui-border);display:flex;flex-direction:column;gap:8px;}
++[data-layout="modern"] .propOverviewAccountSummary dl div{display:flex;align-items:center;justify-content:space-between;gap:8px;}
++[data-layout="modern"] .propOverviewAccountSummary dt{color:var(--muted);font-size:13px;}
++[data-layout="modern"] .propOverviewAccountSummary dd{margin:0;min-width:28px;padding:1px 6px;box-sizing:border-box;border-radius:6px;background:var(--surface2);font-size:14px;font-weight:600;text-align:center;}
++[data-layout="modern"] .propOverviewAccountTotal{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding-top:16px;margin-top:auto;color:var(--muted);font-size:13px;}
++[data-layout="modern"] .propOverviewAccountSummary+.propOverviewAccountTotal{margin-top:52px;}
++[data-layout="modern"] .propOverviewAccountTotal strong{color:var(--text);font-size:20px;}
++[data-layout="modern"] .propOverviewError{margin:16px 24px 0;padding:12px;border:1px solid var(--neg);color:var(--neg);border-radius:8px;font-size:13px;}
++:where([data-layout="modern"]) :where(.propOverviewHelp){display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;padding:3px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:help;}
++[data-layout="modern"] .propOverviewHelp svg{width:14px;height:14px;}
++:where([data-layout="modern"]) :where(.propOverviewHelp:hover,.propOverviewHelp.is-showing){background:var(--surface2);color:var(--text);}
++[data-layout="modern"] .propOverviewTooltip{position:fixed;z-index:49;max-width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 16px);overflow:auto;background:var(--text);color:var(--bg);font-size:13px;padding:10px 12px;border-radius:8px;box-shadow:var(--shadowPop);}
++[data-layout="modern"] .propOverviewPicker{position:fixed;z-index:48;display:grid;grid-template-columns:144px minmax(0,1fr);width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 16px);overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadowPop);}
++[data-layout="modern"] .propOverviewPresets{display:flex;flex-direction:column;gap:4px;padding:8px;border-right:1px solid var(--border);}
++:where([data-layout="modern"]) :where(.propOverviewPreset,.propOverviewDateCell button,.propOverviewCalendarNav button){font:inherit;color:var(--text);border:0;background:transparent;cursor:pointer;border-radius:8px;}
++:where([data-layout="modern"]) :where(.propOverviewPreset){min-height:36px;padding:8px 10px;font-size:14px;text-align:left;}
++:where([data-layout="modern"]) :where(.propOverviewPreset:hover,.propOverviewDateCell button:hover,.propOverviewCalendarNav button:hover){background:var(--surface2);}
++[data-layout="modern"] .propOverviewPreset.active{background:var(--accent);color:var(--onAccent);}
++[data-layout="modern"] .propOverviewCalendar{position:relative;padding:16px;}
++[data-layout="modern"] .propOverviewCalendarNav{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;pointer-events:none;}
++[data-layout="modern"] .propOverviewCalendarNav button{width:36px;height:36px;pointer-events:auto;font-size:22px;}
++[data-layout="modern"] .propOverviewMonths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
++[data-layout="modern"] .propOverviewMonth h4{margin:0 36px 12px;text-align:center;font-size:14px;line-height:36px;font-weight:500;}
++[data-layout="modern"] .propOverviewWeek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
++[data-layout="modern"] .propOverviewWeek>span{text-align:center;line-height:28px;color:var(--muted);font-size:12px;}
++[data-layout="modern"] .propOverviewDateCell{display:flex;align-items:center;justify-content:center;height:36px;margin:3px 0;}
++:where([data-layout="modern"]) :where(.propOverviewDateCell button){width:36px;height:36px;padding:0;font-size:14px;}
++[data-layout="modern"] .propOverviewDateCell.in-range{background:var(--ui-selection);}
++[data-layout="modern"] .propOverviewDateCell.range-start{border-radius:8px 0 0 8px;}
++[data-layout="modern"] .propOverviewDateCell.range-end{border-radius:0 8px 8px 0;}
++[data-layout="modern"] .propOverviewDateCell.range-start.range-end{border-radius:8px;}
++[data-layout="modern"] :is(.propOverviewDateCell.range-start,.propOverviewDateCell.range-end) button{background:var(--accent);color:var(--onAccent);}
++[data-layout="modern"] .propOverviewDateCell button[aria-current="date"]{box-shadow:inset 0 0 0 1px var(--borderLight);}
++[data-layout="modern"] .propOverviewPicker button:disabled{opacity:.35;cursor:default;}
++[data-layout="modern"] .propOverviewPickerFooter{grid-column:1/-1;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
++:where([data-layout="modern"]) :where(.propOverviewButton,.propOverviewHelp,.propOverviewPicker button):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
++@container (max-width:1100px){
++  [data-layout="modern"] .propOverviewBody{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);}
++  [data-layout="modern"] .propOverviewAccounts{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);border-radius:0 0 14px 14px;}
++  [data-layout="modern"] .propOverviewAccountSummary{max-width:420px;}
++  [data-layout="modern"] .propOverviewAccountSummary+.propOverviewAccountTotal{margin-top:24px;}
++}
++@container (max-width:670px){
++  [data-layout="modern"] .propOverviewBody{grid-template-columns:minmax(0,1fr);}
++  [data-layout="modern"] .propOverviewZone+.propOverviewZone{border-left:0;border-top:1px solid var(--border);}
++}
++@media(max-width:640px){
++  [data-layout="modern"] .propOverviewHeader{padding:20px;}
++  [data-layout="modern"] .propOverviewButton{min-height:44px;font-size:12px;}
++  [data-layout="modern"] .propOverviewHelp{width:44px;height:44px;flex-basis:44px;}
++  [data-layout="modern"] .propOverview h3{gap:6px;font-size:14px;}
++  [data-layout="modern"] .propOverviewCashLabel strong{font-size:24px;}
++  [data-layout="modern"] .propOverviewSpotlight{flex-direction:column;align-items:stretch;}
++  [data-layout="modern"] .propOverviewTrend{flex:auto;min-width:0;}
++  [data-layout="modern"] .propOverviewPicker{grid-template-columns:1fr;}
++  [data-layout="modern"] .propOverviewPresets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-right:0;border-bottom:1px solid var(--border);}
++  [data-layout="modern"] .propOverviewPreset{min-height:44px;font-size:12px;text-align:center;}
++  [data-layout="modern"] .propOverviewCalendar{padding:12px;}
++  [data-layout="modern"] .propOverviewCalendarNav{top:12px;left:12px;right:12px;}
++  [data-layout="modern"] .propOverviewMonths{grid-template-columns:minmax(0,1fr);}
++  [data-layout="modern"] .propOverviewMonth[data-month-ordinal="1"]{display:none;}
++  [data-layout="modern"] .propOverviewMonth h4{line-height:44px;}
++  [data-layout="modern"] .propOverviewCalendarNav button{width:44px;height:44px;}
++  [data-layout="modern"] .propOverviewDateCell{height:44px;margin:2px 0;}
++  [data-layout="modern"] .propOverviewDateCell button{width:44px;height:44px;}
++}
+
+diff --git a/src/11g-prop-overview.js b/src/11g-prop-overview.js
+new file mode 100644
+index 0000000..54a15a7
+--- /dev/null
++++ b/src/11g-prop-overview.js
+@@ -0,0 +1,319 @@
++/* Modern Prop overview. No fetching, persistence or ledger mutation.
++   Finance/date helpers live in 11d; render() owns lifecycle of the page. */
++function propOverviewIcon(name) {
++  const paths = {
++    net: '<circle cx="12" cy="12" r="9"/><path d="M15 8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10v12"/>',
++    cash: '<path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/>',
++    accounts: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6 16c0-3 6-3 6 0m3-7h3m-3 4h3"/>',
++    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/>',
++    up: '<path d="m3 16 6-6 4 4 8-9m-7 0h7v7"/>',
++    down: '<path d="m3 8 6 6 4-4 8 9m-7 0h7v-7"/>',
++    flat: '<path d="M3 12h18m-5-5 5 5-5 5"/>',
++  };
++  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.info}</svg>`;
++}
++function propOverviewHelp(field, label) {
++  return `<button type="button" class="propOverviewHelp" data-prop-overview-tip="${field}" aria-label="${esc(T("prop.overview.helpLabel", { label }))}">${propOverviewIcon("info")}</button>`;
++}
++function propOverviewLabel(key, field) {
++  const text = T(key);
++  return `<span>${esc(text)}</span>${field ? propOverviewHelp(field, text) : ""}`;
++}
++function propOverviewDateText(day, options) {
++  const time = propOverviewDay(day);
++  return time === null ? "" : new Date(time).toLocaleDateString(localeTag(), { timeZone: "UTC", ...options });
++}
++function propOverviewRangeText(range) {
++  return range && range.preset === "custom" ? `${range.from.replaceAll("-", ".")} – ${range.to.replaceAll("-", ".")}` : T("prop.overview.range." + (range?.preset || "all"));
++}
++function propOverviewTrend(snapshot) {
++  const { points, from, to, sum } = snapshot;
++  if (!points.length) return `<div class="propOverviewTrendEmpty">${esc(T("prop.overview." + (snapshot.reason || "emptyTrend")))}</div>`;
++  let low = 0, high = 0;
++  for (const p of points) { low = Math.min(low, p.net); high = Math.max(high, p.net); }
++  const start = points[0].at, end = points[points.length - 1].at;
++  const x = (p) => 6 + (p.at - start) / (end - start || 1) * 188;
++  const y = (v) => high === low ? 48 : 8 + (high - v) / (high - low) * 80;
++  const f = (v) => v.toFixed(2), zero = y(0);
++  let path = `M6,${f(zero)}`;
++  points.slice(1).forEach((p) => { path += `H${f(x(p))}V${f(y(p.net))}`; });
++  const area = path + `V${f(zero)}H6Z`;
++  const description = T("prop.overview.trendDescription", { from, to, net: propUsd(sum.net, true) });
++  return `<svg class="propOverviewPlot" viewBox="0 0 200 100" preserveAspectRatio="none" role="img" aria-label="${esc(description)}" data-end-cents="${Math.round(sum.net * 100)}">
++    <defs><clipPath id="propOverviewAbove"><rect width="200" height="${f(zero)}"/></clipPath><clipPath id="propOverviewBelow"><rect y="${f(zero)}" width="200" height="${f(100-zero)}"/></clipPath></defs>
++    <path class="propOverviewZero" d="M6,${f(zero)}H194"/>
++    ${(high === low ? [] : [["positive", "Above"], ["negative", "Below"]]).map(([tone, clip]) => `<g class="propOverviewTrace" data-tone="${tone}" clip-path="url(#propOverview${clip})"><path class="propOverviewArea" d="${area}"/><path class="propOverviewLine" d="${path}"/></g>`).join("")}
++    <circle cx="194" cy="${f(y(sum.net))}" r="2.5" class="propOverviewDot"/>
++    </svg><div class="propOverviewDates"><span>${esc(from.slice(5).replace("-", "."))}</span><span>${esc(to.slice(5).replace("-", "."))}</span></div>`;
++}
++function renderPropOverviewPanel(accounts, entries) {
++  const snapshot = propOverviewSnapshot(entries, propOverviewRange, todayStr());
++  const all = snapshot.range?.preset === "all", s = snapshot.sum;
++  const tone = !s || !s.net ? "neutral" : s.net > 0 ? "positive" : "negative";
++  const netKey = "prop.overview." + (all ? "netAll" : "netRange");
++  const spentKey = "prop.overview." + (all ? "spentAll" : "spentRange");
++  const trendKey = "prop.overview." + (all ? "trendAll" : "trendRange");
++  const money = s ? propUsd(s.net, true) : "—", parts = money.split(".");
++  const bars = s ? propOverviewBarModel(s) : null;
++  const amounts = s ? T("prop.overview.cashDescription", { spent: propUsd(s.spent), received: propUsd(s.received), net: propUsd(s.net, true) }) : "";
++  const stages = [["eval", "prop.status.eval"], ["passed", "prop.overview.toActivate"], ["funded", "prop.status.funded"]];
++  return `<section class="propOverview" aria-label="${esc(T("prop.overview.title"))}" data-tone="${tone}">
++    <header class="propOverviewHeader"><h2><span class="propOverviewIcon">${ICONS.wallet}</span>${esc(T("prop.overview.title"))}</h2>
++      <div class="propOverviewTools"><button type="button" id="propOverviewRangeTrigger" class="propOverviewButton" data-action="prop-overview-range" aria-haspopup="dialog" aria-expanded="false" aria-label="${esc(T("prop.overview.rangeLabel") + ": " + propOverviewRangeText(snapshot.range))}">${ICONS.calendar}<span>${esc(propOverviewRangeText(snapshot.range))}</span>${ICONS.chevDown}</button><span>USD</span></div></header>
++    ${snapshot.available ? "" : `<div class="propOverviewError" role="status">${esc(T("prop.overview." + snapshot.reason))}</div>`}
++    <div class="propOverviewBody"><section class="propOverviewZone propOverviewNet">
++      <h3><span class="propOverviewIcon">${propOverviewIcon("net")}</span>${propOverviewLabel(netKey, "net")}</h3>
++      <div class="propOverviewSpotlight"><div class="propOverviewValue${money.length > 12 ? " propOverviewValueCompact" : ""}" data-net-cents="${s ? Math.round(s.net * 100) : ""}" aria-label="${esc(money)}"><span>${esc(parts[0])}</span>${parts[1] ? `<small>.${esc(parts[1])}</small>` : ""}</div>
++        <div class="propOverviewTrend"><div class="propOverviewCaption">${propOverviewLabel(trendKey, "trend")}</div>${propOverviewTrend(snapshot)}</div></div>
++      <div class="propOverviewROI" data-applicable="${s?.roi !== null && !!s}"><span class="propOverviewIcon">${propOverviewIcon(!s || s.roi === null || s.net === 0 ? "flat" : s.net > 0 ? "up" : "down")}</span><strong>${s ? propPct(s.roi) : "—"}</strong><div class="propOverviewCaption">${propOverviewLabel("prop.overview.roi")} · ROI ${propOverviewHelp("roi", "ROI")}</div></div>
++    </section><section class="propOverviewZone propOverviewCash"><h3><span class="propOverviewIcon">${propOverviewIcon("cash")}</span>${esc(T("prop.overview.cash"))}</h3>
++      <div class="propOverviewCashFigure" role="group" aria-label="${esc(amounts)}">
++        <div class="propOverviewCashLabel"><div class="propOverviewCaption">${propOverviewLabel(spentKey, "spent")}</div><strong>${s ? propUsd(s.spent) : "—"}</strong></div>
++        <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:${bars?.spent || 0}%"></i></div>
++        <div class="propOverviewCashLabel"><div class="propOverviewCaption">${propOverviewLabel("prop.stat.received", "received")}</div><strong>${s ? propUsd(s.received) : "—"}</strong></div>
++        <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:${bars?.covered || 0}%"></i><i class="propOverviewIncome" style="width:${bars?.income || 0}%"></i></div>
++      </div><div class="propOverviewLegend"><span><i class="propOverviewHatch"></i>${esc(T(bars?.refundMode ? "prop.overview.netRefund" : "prop.overview.covered"))}</span><span><i class="propOverviewIncome"></i>${esc(T(bars?.refundMode ? "prop.stat.received" : "prop.stat.net"))}</span></div>
++      ${bars?.refundMode ? `<p class="propOverviewRefundNote">${esc(T("prop.overview.refundBars"))}</p>` : ""}
++    </section><section class="propOverviewZone propOverviewAccounts"><h3><span class="propOverviewIcon">${propOverviewIcon("accounts")}</span>${propOverviewLabel("prop.overview.accounts", "accounts")}</h3>
++      <div class="propOverviewAccountSummary"><div><div class="propOverviewAccountCount"><strong>${accounts.filter(propIsActive).length}</strong><span>${esc(T("prop.overview.accountUnit"))}</span></div><span>${esc(T("prop.filter.active"))}</span></div>
++        <dl>${stages.map(([status, label]) => `<div><dt>${esc(T(label))}</dt><dd>${accounts.filter(a => a.status === status).length}</dd></div>`).join("")}</dl></div>
++      <div class="propOverviewAccountTotal"><span>${esc(T("prop.overview.totalAccounts"))}</span><strong>${accounts.length}</strong></div>
++    </section></div></section>`;
++}
++
++/* Portal controller: no page DOM is patched outside the main renderer. */
++const propOverviewUI = { panel: null, tip: null, active: null, hovered: null, pending: null, dismissed: null, overTip: false, pinned: false, openTimer: 0, closeTimer: 0, restore: null };
++function propOverviewCanInteract() {
++  return currentLayout() === "modern" && tab === "prop" && propView === "overview" && !authLoading && !!session && currentProfile?.active !== false && !propModal && !editingTrade && !editingReview && !profileModalOpen && !lightboxUrl && !exportCenterOpen && !dataScopeModalOpen;
++}
++function propOverviewClosePicker(restore = true) {
++  propOverviewPicker = null;
++  propOverviewUI.panel?.remove(); propOverviewUI.panel = null;
++  const trigger = document.getElementById("propOverviewRangeTrigger");
++  trigger?.setAttribute("aria-expanded", "false");
++  if (restore) trigger?.focus({ preventScroll: true });
++}
++function propOverviewHideHelp(suppress = false) {
++  const ui = propOverviewUI;
++  clearTimeout(ui.openTimer); clearTimeout(ui.closeTimer);
++  ui.dismissed = suppress ? ui.active || ui.pending : null;
++  ui.active?.removeAttribute("aria-describedby");
++  ui.active?.classList.remove("is-showing");
++  ui.tip?.remove(); ui.tip = null; ui.active = null; ui.pending = null; ui.pinned = false; ui.overTip = false;
++}
++function propOverviewCleanup() {
++  propOverviewClosePicker(false); propOverviewHideHelp(); propOverviewUI.hovered = null;
++}
++function propOverviewBeforeRender() {
++  const focus = document.activeElement;
++  propOverviewUI.restore = propOverviewPicker || focus?.id === "propOverviewRangeTrigger" ? "range" : focus?.dataset?.propOverviewTip || null;
++  propOverviewCleanup();
++  const owner = session?.user?.id ? JSON.stringify([session.user.id, viewingUserId || ""]) : null;
++  if (owner !== propOverviewOwner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
++  propOverviewOwner = owner;
++}
++function propOverviewAfterRender() {
++  const restore = propOverviewUI.restore; propOverviewUI.restore = null;
++  if (!restore || !propOverviewCanInteract()) return;
++  const button = restore === "range" ? document.getElementById("propOverviewRangeTrigger") : document.querySelector(`[data-prop-overview-tip="${restore}"]`);
++  // Returning focus must not reopen a tooltip cancelled by repaint.
++  propOverviewUI.dismissed = button; button?.focus({ preventScroll: true });
++}
++function propOverviewPosition(panel, anchor, tooltip = false) {
++  if (!panel || !anchor?.isConnected) return;
++  const r = anchor.getBoundingClientRect(), w = panel.offsetWidth, h = panel.offsetHeight;
++  const left = Math.max(8, Math.min(tooltip ? r.left + r.width / 2 - w / 2 : r.right - w, window.innerWidth - w - 8));
++  let top = r.bottom + 8;
++  if (tooltip ? r.top - h - 8 >= 8 : top + h > window.innerHeight - 8 && r.top - h - 8 >= 8) top = r.top - h - 8;
++  panel.style.left = left + "px";
++  panel.style.top = Math.max(8, Math.min(top, window.innerHeight - h - 8)) + "px";
++}
++
++/* Calendar: one applied range, an independent draft; no fixture date bounds. */
++function propOverviewOpenPicker() {
++  if (!propOverviewCanInteract()) return;
++  if (userMenuOpen || calColorPopOpen) { userMenuOpen = false; calColorPopOpen = false; render(); }
++  propOverviewClosePicker(false);
++  propOverviewHideHelp();
++  const range = propOverviewResolveRange(propOverviewRange, todayStr());
++  const start = range?.from || null, end = range?.to || null;
++  propOverviewPicker = { start, end, choosingEnd: false, hover: null, preset: range?.preset || "all", month: propOverviewMonthIndex(start || todayStr()), focus: start || todayStr() };
++  const panel = document.createElement("div");
++  panel.id = "propOverviewPicker"; panel.className = "propOverviewPicker";
++  panel.setAttribute("role", "dialog"); panel.setAttribute("aria-label", T("prop.overview.rangeChoose"));
++  document.body.appendChild(panel); propOverviewUI.panel = panel;
++  propOverviewRenderPicker();
++  document.getElementById("propOverviewRangeTrigger")?.setAttribute("aria-expanded", "true");
++  panel.querySelector(`[data-preset="${propOverviewPicker.preset}"]`)?.focus({ preventScroll: true });
++}
++function propOverviewCalendarMonth(index, ordinal) {
++  const first = propOverviewMonthStart(index);
++  if (!first) return "";
++  const p = propOverviewPicker, offset = new Date(propOverviewDay(first)).getUTCDay();
++  const title = propOverviewDateText(first, { year: "numeric", month: "long" });
++  const cells = Array.from({ length: 42 }, (_, i) => {
++    const day = propOverviewShiftDay(first, i - offset), inMonth = day?.slice(0, 7) === first.slice(0, 7);
++    if (!day) return '<div role="gridcell" class="propOverviewDateCell"></div>';
++    const label = propOverviewDateText(day, { year: "numeric", month: "long", day: "numeric" });
++    return `<div role="gridcell" class="propOverviewDateCell${inMonth ? "" : " adjacent"}" data-cell-day="${day}" aria-selected="false"><button type="button" data-action="prop-overview-day" data-day="${day}" aria-label="${esc(label)}" tabindex="${inMonth && day === p.focus ? 0 : -1}"${day === todayStr() ? ' aria-current="date"' : ""}${inMonth ? "" : " disabled"}>${Number(day.slice(8))}</button></div>`;
++  });
++  let grid = `<div role="row" class="propOverviewWeek">${T("prop.overview.weekdays").split(",").map(d => `<span role="columnheader">${esc(d)}</span>`).join("")}</div>`;
++  for (let i = 0; i < 6; i++) grid += `<div role="row" class="propOverviewWeek">${cells.slice(i * 7, i * 7 + 7).join("")}</div>`;
++  return `<section class="propOverviewMonth" data-month-ordinal="${ordinal}"><h4>${esc(title)}</h4><div role="grid" aria-label="${esc(T("prop.overview.monthDates", { month: title }))}">${grid}</div></section>`;
++}
++function propOverviewRenderPicker(focusDay) {
++  const p = propOverviewPicker, panel = propOverviewUI.panel;
++  if (!p || !panel) return;
++  if (focusDay) p.focus = focusDay;
++  // A newly navigated month must always offer a keyboard entry point.
++  const visibleEnd = p.month + (window.innerWidth <= 640 ? 0 : 1);
++  const fm = propOverviewMonthIndex(p.focus);
++  if (fm < p.month || fm > visibleEnd) p.focus = propOverviewMonthStart(p.month);
++  panel.innerHTML = `<div class="propOverviewPresets">${PROP_OVERVIEW_PRESETS.map(k => `<button type="button" class="propOverviewPreset${k === p.preset ? " active" : ""}" data-action="prop-overview-preset" data-preset="${k}" aria-pressed="${k === p.preset}">${esc(T("prop.overview.range." + k))}</button>`).join("")}</div>
++    <div class="propOverviewCalendar"><div class="propOverviewCalendarNav"><button type="button" data-action="prop-overview-month" data-step="-1" aria-label="${esc(T("prop.overview.previousMonth"))}"${p.month <= 12 ? " disabled" : ""}>‹</button><button type="button" data-action="prop-overview-month" data-step="1" aria-label="${esc(T("prop.overview.nextMonth"))}"${p.month >= 119999 ? " disabled" : ""}>›</button></div><div class="propOverviewMonths">${propOverviewCalendarMonth(p.month, 0)}${propOverviewCalendarMonth(p.month + 1, 1)}</div></div>
++    <div class="propOverviewPickerFooter" role="status" aria-live="polite"></div>`;
++  propOverviewHighlight();
++  propOverviewPosition(panel, document.getElementById("propOverviewRangeTrigger"));
++  if (focusDay) panel.querySelector(`[data-day="${p.focus}"]:not(:disabled)`)?.focus({ preventScroll: true });
++}
++function propOverviewHighlight() {
++  const p = propOverviewPicker, panel = propOverviewUI.panel;
++  if (!p || !panel) return;
++  const target = p.choosingEnd ? p.hover || p.start : p.end;
++  const lo = p.start && target ? (p.start < target ? p.start : target) : null;
++  const hi = p.start && target ? (p.start > target ? p.start : target) : null;
++  panel.querySelectorAll("[data-cell-day]").forEach(cell => {
++    const day = cell.dataset.cellDay, chosen = !cell.firstElementChild.disabled && !!lo && day >= lo && day <= hi;
++    cell.classList.toggle("in-range", chosen); cell.classList.toggle("range-start", chosen && day === lo); cell.classList.toggle("range-end", chosen && day === hi);
++    cell.setAttribute("aria-selected", String(chosen));
++    cell.firstElementChild.tabIndex = !cell.firstElementChild.disabled && day === p.focus ? 0 : -1;
++  });
++  panel.querySelectorAll("[data-preset]").forEach(b => { const active = b.dataset.preset === p.preset; b.classList.toggle("active", active); b.setAttribute("aria-pressed", String(active)); });
++  panel.querySelector(".propOverviewPickerFooter").textContent = p.choosingEnd ? T("prop.overview.rangeStartSelected", { date: p.start }) : lo ? `${lo} – ${hi}` : T("prop.overview.rangeHint");
++}
++function propOverviewApply(choice) {
++  const next = propOverviewResolveRange(choice, todayStr());
++  if (!next || !propOverviewCanInteract()) return;
++  propOverviewRange = next;
++  propOverviewClosePicker(false); render();
++  document.getElementById("propOverviewRangeTrigger")?.focus({ preventScroll: true });
++}
++function propOverviewKeydown(e) {
++  if (e.isComposing) return false;
++  if (propModal || editingTrade || editingReview || profileModalOpen || lightboxUrl || exportCenterOpen || acctPopOpen || dataScopeModalOpen || pbNameModal || dayDetailDate || tradePreviewId) { propOverviewCleanup(); return false; }
++  if (e.key === "Escape") {
++    if (propOverviewUI.active || propOverviewUI.pending) { propOverviewHideHelp(true); e.preventDefault(); return true; }
++    if (propOverviewPicker) { propOverviewClosePicker(); e.preventDefault(); return true; }
++    return false;
++  }
++  const p = propOverviewPicker, b = e.target.closest?.('[data-action="prop-overview-day"]');
++  if (!p || !b || e.altKey || e.ctrlKey || e.metaKey) return false;
++  const day = b.dataset.day, shift = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
++  let next = null;
++  if (e.key in shift) next = propOverviewShiftDay(day, shift[e.key]);
++  else if (e.key === "Home" || e.key === "End") { const weekday = new Date(propOverviewDay(day)).getUTCDay(); next = propOverviewShiftDay(day, e.key === "Home" ? -weekday : 6 - weekday); }
++  else if (e.key === "PageUp" || e.key === "PageDown") next = propOverviewShiftMonth(day, (e.key === "PageUp" ? -1 : 1) * (e.shiftKey ? 12 : 1));
++  else return false;
++  e.preventDefault(); if (!next) return true;
++  const index = propOverviewMonthIndex(next);
++  if (index < p.month || index > p.month + (window.innerWidth <= 640 ? 0 : 1)) p.month = index;
++  if (p.choosingEnd) p.hover = next;
++  propOverviewRenderPicker(next); return true;
++}
++
++/* Six field labels share one noninteractive tooltip with hover/focus/tap support. */
++function propOverviewShowHelp(button, pinned = false) {
++  if (!propOverviewCanInteract() || !button?.isConnected || propOverviewUI.dismissed === button) return;
++  const field = button.dataset.propOverviewTip;
++  if (!["net", "spent", "received", "roi", "trend", "accounts"].includes(field)) return;
++  propOverviewClosePicker(false); propOverviewHideHelp();
++  const tip = document.createElement("div"); tip.id = "propOverviewTooltip"; tip.className = "propOverviewTooltip"; tip.setAttribute("role", "tooltip");
++  tip.textContent = T("prop.overview.help." + field); document.body.appendChild(tip);
++  const ui = propOverviewUI; ui.tip = tip; ui.active = button; ui.pinned = pinned;
++  button.setAttribute("aria-describedby", tip.id); button.classList.add("is-showing");
++  propOverviewPosition(tip, button, true);
++}
++function propOverviewScheduleHide() {
++  const ui = propOverviewUI; clearTimeout(ui.closeTimer);
++  ui.closeTimer = setTimeout(() => {
++    if (!ui.pinned && !ui.overTip && ui.hovered !== ui.active && !(ui.active && document.activeElement === ui.active && ui.active.matches(":focus-visible"))) propOverviewHideHelp();
++  }, 160);
++}
++document.addEventListener("click", e => {
++  const b = e.target.closest?.("[data-action]");
++  if (b && !b.disabled && propOverviewCanInteract()) {
++    const action = b.dataset.action, p = propOverviewPicker;
++    if (action === "prop-overview-range") { if (p) propOverviewClosePicker(); else propOverviewOpenPicker(); }
++    else if (action === "prop-overview-preset" && p) {
++      if (b.dataset.preset !== "custom") propOverviewApply({ preset: b.dataset.preset });
++      else { p.preset = "custom"; propOverviewHighlight(); propOverviewUI.panel.querySelector('[data-day][tabindex="0"]')?.focus({ preventScroll: true }); }
++    } else if (action === "prop-overview-month" && p) {
++      const next = p.month + Number(b.dataset.step);
++      if (propOverviewMonthStart(next)) { p.month = next; propOverviewRenderPicker(); propOverviewUI.panel.querySelector(`[data-step="${b.dataset.step}"]`)?.focus({ preventScroll: true }); }
++    } else if (action === "prop-overview-day" && p && propOverviewDay(b.dataset.day) !== null) {
++      const day = b.dataset.day;
++      if (p.choosingEnd) propOverviewApply({ preset: "custom", from: p.start, to: day });
++      else { p.start = day; p.end = null; p.hover = null; p.focus = day; p.choosingEnd = true; p.preset = "custom"; propOverviewHighlight(); }
++    }
++  }
++  let help = e.target.closest?.("[data-prop-overview-tip]");
++  if (help) {
++    if (userMenuOpen) { const field = help.dataset.propOverviewTip; userMenuOpen = false; render(); help = document.querySelector(`[data-prop-overview-tip="${field}"]`); }
++    const ui = propOverviewUI;
++    if (ui.active === help && ui.pinned) propOverviewHideHelp(true);
++    else { ui.dismissed = null; propOverviewShowHelp(help, true); }
++  }
++});
++document.addEventListener("pointerover", e => {
++  const ui = propOverviewUI, tip = e.target.closest?.(".propOverviewTooltip");
++  if (tip) { ui.overTip = true; clearTimeout(ui.closeTimer); return; }
++  const button = e.target.closest?.("[data-prop-overview-tip]");
++  if (button && e.pointerType !== "touch" && !button.contains(e.relatedTarget)) {
++    ui.hovered = button; clearTimeout(ui.closeTimer);
++    if (ui.active !== button && ui.dismissed !== button) { clearTimeout(ui.openTimer); ui.pending = button; ui.openTimer = setTimeout(() => { if (ui.hovered === button) propOverviewShowHelp(button); }, 180); }
++  }
++  const day = e.target.closest?.('[data-action="prop-overview-day"]');
++  if (day && !day.disabled && propOverviewPicker?.choosingEnd) { propOverviewPicker.hover = day.dataset.day; propOverviewHighlight(); }
++});
++document.addEventListener("pointerout", e => {
++  const ui = propOverviewUI, button = e.target.closest?.("[data-prop-overview-tip]");
++  if (button && !button.contains(e.relatedTarget)) {
++    if (ui.hovered === button) ui.hovered = null;
++    if (ui.dismissed === button) ui.dismissed = null;
++    if (ui.pending === button) { clearTimeout(ui.openTimer); ui.pending = null; }
++    propOverviewScheduleHide();
++  }
++  if (ui.tip?.contains(e.target) && !ui.tip.contains(e.relatedTarget)) { ui.overTip = false; propOverviewScheduleHide(); }
++  const months = e.target.closest?.(".propOverviewMonths");
++  if (months && !months.contains(e.relatedTarget) && propOverviewPicker?.choosingEnd) { propOverviewPicker.hover = null; propOverviewHighlight(); }
++});
++document.addEventListener("focusin", e => {
++  const b = e.target.closest?.("[data-prop-overview-tip]");
++  if (b && b.matches(":focus-visible")) propOverviewShowHelp(b);
++  if (propOverviewPicker && !propOverviewUI.panel?.contains(e.target) && e.target.id !== "propOverviewRangeTrigger") propOverviewClosePicker(false);
++});
++document.addEventListener("focusout", e => {
++  const ui = propOverviewUI;
++  if (e.target === ui.dismissed) ui.dismissed = null;
++  if (e.target === ui.active) { ui.pinned = false; propOverviewScheduleHide(); }
++});
++document.addEventListener("pointerdown", e => {
++  const ui = propOverviewUI;
++  if (propOverviewPicker && !ui.panel?.contains(e.target) && !e.target.closest?.('[data-action="prop-overview-range"]')) propOverviewClosePicker(false);
++  if ((ui.active || ui.pending) && !(ui.active || ui.pending).contains(e.target) && !ui.tip?.contains(e.target)) propOverviewHideHelp();
++});
++function propOverviewReposition() {
++  const ui = propOverviewUI;
++  if (!ui.panel && !ui.tip) return;
++  if (!propOverviewCanInteract()) { propOverviewCleanup(); return; }
++  const anchor = ui.active || document.getElementById("propOverviewRangeTrigger");
++  if (!anchor?.isConnected) { propOverviewCleanup(); return; }
++  const r = anchor.getBoundingClientRect();
++  if (r.bottom < 0 || r.top > window.innerHeight) { propOverviewCleanup(); return; }
++  propOverviewPosition(ui.panel || ui.tip, anchor, !!ui.tip);
++}
++window.addEventListener("resize", () => {
++  if (propOverviewPicker) propOverviewRenderPicker(propOverviewPicker.focus);
++  propOverviewReposition();
++});
++window.addEventListener("scroll", propOverviewReposition, true);
+
+diff --git a/test/prop-overview.test.js b/test/prop-overview.test.js
+new file mode 100644
+index 0000000..5a51e1c
+--- /dev/null
++++ b/test/prop-overview.test.js
+@@ -0,0 +1,213 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { createHash } = require('node:crypto');
++const { makeContext, ENGINE_FILES } = require('./load');
++
++const TODAY = '2026-10-26';
++const entry = (kind, amount, day, pending = false) => ({ account_id: 'a', kind, amount, day, pending });
++function setup() {
++  const ctx = makeContext(ENGINE_FILES);
++  ctx.set('lang', 'zh');
++  const call = (name, ...args) => {
++    ctx.sandbox.__args = JSON.parse(JSON.stringify(args));
++    return JSON.parse(JSON.stringify(ctx.run(`${name}(...__args)`)));
++  };
++  return { ctx, call };
++}
++const range = (from, to) => ({ preset: 'custom', from, to });
++
++test('overview dates validate calendar days without local-time rollover', () => {
++  const { call } = setup();
++  assert.equal(call('propOverviewDay', '2024-02-29'), Date.parse('2024-02-29T00:00:00Z'));
++  for (const bad of ['2026-02-29', '2026-04-31', '2026-1-01', '2026-10-01T12:00:00Z', '0000-01-01', '<img>', null]) {
++    assert.equal(call('propOverviewDay', bad), null);
++  }
++  assert.equal(call('propOverviewShiftDay', '2026-03-08', 1), '2026-03-09');
++  assert.equal(call('propOverviewShiftMonth', '2024-01-31', 1), '2024-02-29');
++  assert.equal(call('propOverviewShiftMonth', '2026-01-31', 1), '2026-02-28');
++  assert.equal(call('propOverviewShiftMonth', '0001-01-01', -1), null);
++});
++
++test('overview presets include today and use full prior calendar month', () => {
++  const { call } = setup();
++  assert.deepEqual(call('propOverviewResolveRange', { preset: 'last7' }, '2026-03-03'), { preset: 'last7', from: '2026-02-25', to: '2026-03-03' });
++  assert.deepEqual(call('propOverviewResolveRange', { preset: 'last30' }, '2026-03-03'), { preset: 'last30', from: '2026-02-02', to: '2026-03-03' });
++  assert.deepEqual(call('propOverviewResolveRange', { preset: 'lastMonth' }, '2024-03-20'), { preset: 'lastMonth', from: '2024-02-01', to: '2024-02-29' });
++  assert.deepEqual(call('propOverviewResolveRange', { preset: 'thisMonth' }, TODAY), { preset: 'thisMonth', from: '2026-10-01', to: TODAY });
++  assert.deepEqual(call('propOverviewResolveRange', range(TODAY, '2026-10-01'), TODAY), range('2026-10-01', TODAY));
++  assert.equal(call('propOverviewResolveRange', { preset: 'unknown' }, TODAY), null);
++  assert.equal(call('propOverviewResolveRange', range('bad', TODAY), TODAY), null);
++});
++
++test('overview uses inclusive dates, refunds and only received payouts', () => {
++  const { call } = setup();
++  const list = [entry('purchase', 999, '2026-09-30'), entry('purchase', 100, '2026-10-01'), entry('refund', 20, TODAY), entry('payout', 300, TODAY), entry('payout', 80, TODAY, true), entry('other', 400, '2026-10-27')];
++  const result = call('propOverviewSnapshot', list, range('2026-10-01', TODAY), TODAY);
++  assert.equal(result.available, true);
++  assert.deepEqual(result.sum, { spent: 80, received: 300, pending: 80, refund: 20, net: 220, roi: 275 });
++  assert.equal(result.points[0].net, 0);
++  assert.equal(result.points.at(-1).net, 220);
++  assert.equal(result.from, '2026-10-01');
++  assert.equal(result.to, TODAY);
++});
++
++test('overview daily steps are sorted, merged and exact to a cent', () => {
++  const { call } = setup();
++  const list = [entry('payout', 0.3, '2026-10-04'), entry('purchase', 0.1, '2026-10-02'), entry('purchase', 0.2, '2026-10-02'), entry('refund', 0.01, '2026-10-03')];
++  const before = JSON.stringify(list);
++  const result = call('propOverviewSnapshot', list, range('2026-10-01', '2026-10-05'), TODAY);
++  assert.deepEqual(result.points.map(p => p.net), [0, -0.3, -0.29, 0.01, 0.01]);
++  assert.equal(result.sum.net, 0.01);
++  assert.ok(result.points.every((p, i, ps) => !i || p.at > ps[i - 1].at));
++  assert.equal(JSON.stringify(list), before);
++});
++
++test('overview does not mutate the actual VM input objects', () => {
++  const { ctx } = setup();
++  ctx.set('__entries', [entry('purchase', 2, TODAY), entry('payout', 4, '2026-10-20')]);
++  assert.equal(ctx.run(`(()=>{const before=JSON.stringify(__entries);__entries.forEach(Object.freeze);Object.freeze(__entries);propOverviewSnapshot(__entries,{preset:'all'},'${TODAY}');return JSON.stringify(__entries)===before})()`), true);
++});
++
++test('overview refunds can make investment negative, never fake ROI or clamp totals', () => {
++  const { call } = setup();
++  const result = call('propOverviewSnapshot', [entry('refund', 100, TODAY), entry('payout', 50, TODAY)], range(TODAY, TODAY), TODAY);
++  assert.equal(result.sum.spent, -100);
++  assert.equal(result.sum.net, 150);
++  assert.equal(result.sum.roi, null);
++  assert.equal(result.points.at(-1).net, 150);
++  const bars = call('propOverviewBarModel', result.sum);
++  assert.equal(bars.refundMode, true);
++  assert.equal(bars.spent, 100);
++  assert.equal(bars.covered, 0);
++  assert.equal(bars.income, 50);
++});
++
++test('overview empty and pending-only ranges have no fabricated trend', () => {
++  const { call } = setup();
++  for (const list of [[], [entry('payout', 400, TODAY, true)], [entry('unexpected', 100, TODAY)]]) {
++    const result = call('propOverviewSnapshot', list, { preset: 'all' }, TODAY);
++    assert.equal(result.available, true);
++    assert.equal(result.sum.net, 0);
++    assert.equal(result.sum.roi, null);
++    assert.deepEqual(result.points, []);
++  }
++});
++
++test('overview invalid financial dates cannot silently become a zero range', () => {
++  const { call } = setup();
++  const entries = [entry('purchase', 100, 'invalid'), entry('payout', 150, TODAY)];
++  const all = call('propOverviewSnapshot', entries, { preset: 'all' }, TODAY);
++  assert.equal(all.sum.net, 50);
++  assert.equal(all.trendUnavailable, true);
++  assert.deepEqual(all.points, []);
++  const bounded = call('propOverviewSnapshot', entries, range(TODAY, TODAY), TODAY);
++  assert.equal(bounded.available, false);
++  assert.equal(bounded.sum, null);
++});
++
++test('overview all-time includes full loaded history and sparse long intervals', () => {
++  const { call } = setup();
++  const list = [entry('purchase', 100, '2001-01-01'), entry('payout', 300, '2027-01-01')];
++  const all = call('propOverviewSnapshot', list, { preset: 'all' }, TODAY);
++  assert.equal(all.sum.net, 200);
++  assert.equal(all.from, '2001-01-01');
++  assert.equal(all.to, '2027-01-01');
++  const long = call('propOverviewSnapshot', list, range('0001-01-01', '9999-12-31'), TODAY);
++  assert.ok(long.points.length <= list.length + 2);
++  assert.equal(long.points.at(-1).net, 200);
++});
++
++test('overview malformed amounts never turn into a zero balance', () => {
++  const { call } = setup();
++  for (const amount of ['NaN', '', -10, null, {}, true]) {
++    const result = call('propOverviewSnapshot', [entry('purchase', amount, TODAY)], { preset: 'all' }, TODAY);
++    assert.equal(result.available, false);
++    assert.equal(result.sum, null);
++  }
++});
++
++test('overview unsafe cent totals are unavailable, not rounded into apparent accuracy', () => {
++  const { call } = setup();
++  const result = call('propOverviewSnapshot', [entry('payout', Number.MAX_SAFE_INTEGER, TODAY)], { preset: 'all' }, TODAY);
++  assert.equal(result.available, false);
++  assert.equal(result.sum, null);
++});
++
++function setRenderFixture(ctx) {
++  ctx.set('propAccounts', [{ id: 'a', firm_name: 'Demo A', group_name: '', status: 'eval', events: [] }, { id: 'b', firm_name: 'Demo B', group_name: '', status: 'funded', events: [] }]);
++  ctx.set('propEntries', [
++    { account_id: 'a', kind: 'purchase', amount: 100, day: '2026-10-02' },
++    { account_id: 'b', kind: 'purchase', amount: 40, day: '2026-10-03' },
++    { account_id: 'a', kind: 'refund', amount: 20, day: '2026-10-04' },
++    { account_id: 'b', kind: 'payout', amount: 400, day: '2026-10-20' },
++    { account_id: 'b', kind: 'payout', amount: 50, day: '2026-10-21', pending: true },
++  ]);
++  ctx.run('propYear=2026;propMonth=10;propYearTouched=true;');
++}
++
++test('classic metric strip remains byte-for-byte identical in both languages', () => {
++  const { ctx } = setup();
++  setRenderFixture(ctx);
++  // Captured from the pre-implementation renderer at 6342a80 using exactly this synthetic fixture.
++  const expected = { zh: 'da6a550f9598ac980cd18f539c022471607e6b35fbe3573cbb1eecba5126d724', en: '3ab0f6e6f5938abde4165fe313a1298ce43e950638bd329f67ded17aae4fa097' };
++  for (const lang of ['zh', 'en']) {
++    ctx.set('lang', lang);
++    const html = ctx.run('renderPropOverview()').split('<div class="calendarPanel propPanel">')[0];
++    assert.equal(createHash('sha256').update(html).digest('hex'), expected[lang]);
++  }
++});
++
++test('overview lifecycle resets identity/page/layout range and removes portals without touching forms', () => {
++  const { ctx } = setup();
++  ctx.sandbox.document.documentElement.dataset.layout = 'modern';
++  ctx.run(`session={user:{id:'owner-a'}};authLoading=false;tab='prop';propView='overview';
++    propOverviewBeforeRender();propOverviewRange={preset:'last7'};
++    propOverviewBeforeRender();`);
++  assert.equal(ctx.run('propOverviewRange.preset'), 'last7');
++  ctx.run(`propModal={type:'entry',draft:{amount:'123'}};
++    propOverviewPicker={start:'2026-10-01'};
++    propOverviewUI.panel={remove(){globalThis.__removed=true}};
++    propOverviewBeforeRender();`);
++  assert.equal(ctx.run('__removed'), true);
++  assert.equal(ctx.run('propOverviewPicker'), null);
++  assert.equal(ctx.run('propModal.draft.amount'), '123');
++  assert.equal(ctx.run('propOverviewRange.preset'), 'last7');
++  ctx.run(`propModal=null;session={user:{id:'owner-b'}};propOverviewBeforeRender()`);
++  assert.equal(ctx.run('propOverviewRange.preset'), 'all');
++  ctx.run(`propOverviewRange={preset:'last30'};tab='grid';propOverviewBeforeRender()`);
++  assert.equal(ctx.run('propOverviewRange.preset'), 'all');
++  ctx.run(`tab='prop';propOverviewRange={preset:'thisMonth'}`);
++  delete ctx.sandbox.document.documentElement.dataset.layout;
++  ctx.run('propOverviewBeforeRender()');
++  assert.equal(ctx.run('propOverviewRange.preset'), 'all');
++  ctx.run(`propOverviewRange={preset:'last7'};session=null;propOverviewBeforeRender()`);
++  assert.equal(ctx.run('propOverviewOwner'), null);
++  assert.equal(ctx.run('propOverviewRange.preset'), 'all');
++});
++
++test('overview keyboard only consumes active overlays and preserves applied range on Escape', () => {
++  const { ctx } = setup();
++  ctx.run(`globalThis.__key={key:'Escape',target:{closest(){return null}},preventDefault(){this.prevented=true}}`);
++  assert.equal(ctx.run('propOverviewKeydown(__key)'), false);
++  ctx.run(`propOverviewRange={preset:'last7'};propOverviewPicker={start:'2026-10-01'};`);
++  assert.equal(ctx.run('propOverviewKeydown(__key)'), true);
++  assert.equal(ctx.run('propOverviewRange.preset'), 'last7');
++  assert.equal(ctx.run('propOverviewPicker'), null);
++  ctx.run(`__key.key='j';propOverviewPicker={start:'2026-10-01'}`);
++  assert.equal(ctx.run('propOverviewKeydown(__key)'), false);
++  ctx.run(`__key.key='Escape';propModal={type:'entry',draft:{}}`);
++  assert.equal(ctx.run('propOverviewKeydown(__key)'), false);
++  assert.equal(ctx.run('propModal.type'), 'entry');
++  assert.equal(ctx.run('propOverviewPicker'), null);
++});
++
++test('modern renders a unified summary and six field-local explanations', () => {
++  const { ctx } = setup();
++  setRenderFixture(ctx);
++  ctx.sandbox.document.documentElement.dataset.layout = 'modern';
++  const html = ctx.run('renderPropOverview()');
++  assert.match(html, /class="propOverview/);
++  assert.equal((html.match(/data-prop-overview-tip=/g) || []).length, 6);
++  assert.doesNotMatch(html, /class="statRow propStats"/);
++  assert.match(html, /data-action="prop-overview-range"/);
++});
