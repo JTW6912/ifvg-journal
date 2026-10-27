@@ -1,0 +1,9 @@
+{
+ "schema_version":1,"change_id":"prop-monthly-cashflow-visual","stage":"development",
+ "allowed_roots":["src/03-state.js","src/11e-prop-view.js","src/11g-prop-overview.js","src/11i-prop-months.js","src/14-main-render.js","src/15-events.js","theme-modern.css","i18n.js","test/prop-months.test.js","dev/prop-months-check","openspec/changes/prop-monthly-cashflow-visual"],
+ "denied_roots":[".git","node_modules","supabase","config.js","src/01-config.js","src/07-data-layer.js","src/07b-accounts.js","src/11d-prop-data.js","src/11f-prop-admin.js","src/11h-prop-linkage.js","src/16-init.js","style.css","palettes.css","package.json","package-lock.json","openspec/changes/prop-overview-linkage","openspec/changes/prop-overview-range-panel"],
+ "requires_review_on":["src/03-state.js","src/11g-prop-overview.js","src/14-main-render.js","src/15-events.js","test/prop-months.test.js"],
+ "allowed_operations":{"create":true,"modify":true,"delete":false,"rename":false},
+ "prototype_sources":["openspec/changes/prop-monthly-cashflow-visual/prototype/artifact/index.html"],
+ "expires_when":"verification_started"
+}

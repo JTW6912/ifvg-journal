@@ -1,0 +1,19 @@
+{
+  "status": "approved",
+  "prototype_code": "required_present",
+  "prototype_type": "ui-html",
+  "approved_variant": "original-bars-optional-lines",
+  "promotion": "requires_development_gate",
+  "approval": {
+    "source": "explicit project-owner message",
+    "quote": "开始开发吧",
+    "context": "After final preview revision placing invested/received/net immediately beside the month and date, following prior approvals of default bars, optional lines, recovery footer and icons.",
+    "scope": "Implement the final monthly UI on prop-test under development gates. No remote-account testing, push or deployment. No claim of production verification approval."
+  },
+  "local_baseline_approval": {
+    "source": "explicit project-owner message",
+    "quote": "允许提交",
+    "scope": "Documentation, design-approval records and tasks only; exclude business source, configuration, screenshots and other work. No push or deployment."
+  },
+  "blocked_reasons": []
+}

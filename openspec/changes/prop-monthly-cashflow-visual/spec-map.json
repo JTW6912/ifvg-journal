@@ -1,0 +1,13 @@
+{
+  "touched_specs":["ui-design","system-architecture","frontend-backend-data-flow","component-architecture"],
+  "ui_rules":["Project-native shell and fonts; shadcn chart guidance; consistent SVG icons","Modern-only; classic unchanged; field-level explanations"],
+  "architecture_modules":["Prop monthly presentation; existing propMonthly/propSum financial semantics"],
+  "api_contracts":["No new or changed API; existing authorized cache only; validation offline"],
+  "database_entities":["Existing prop_entries/prop_accounts caches; no schema changes; synthetic test fixtures"],
+  "permissions":["No real ledger access, no administrator personal-data access"],
+  "operational_constraints":["Approved production UI edits only after development entry; documentation/task-only local baseline commit explicitly authorized; no push/deploy/real-account tests; preserve earlier verification records"],
+  "data_flows":["FLOW-PROP-MONTHLY-VISUAL","FLOW-PROP-MONTH-SELECT","FLOW-PROP-ENTRY-DETAIL"],
+  "theme_modes":["light-dark","theme-toggle:existing","prototype-theme-toggle:true","seven-palettes","custom-pnl-colors"],
+  "locale_policy":["i18n:enabled","locales:zh,en","default-locale:en","existing-user-browser-precedence","prototype-locale-switch:true"],
+  "unresolved_gaps":[]
+}
