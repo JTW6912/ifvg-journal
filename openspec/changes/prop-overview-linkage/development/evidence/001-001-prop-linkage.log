@@ -1,0 +1,235 @@
+# command: node --test test/prop-linkage.test.js test/prop-overview.test.js
+# exit_status: 0
+# duration_ms: 216
+
+## stdout
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 23.594999
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 6.003209
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 6.715347
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 6.427977
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 5.29368
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 6.456259
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 5.88203
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 6.47704
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 5.470438
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 19.556975
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 5.901886
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 12 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 5.779185
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 13 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 7.464487
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 14 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 5.020314
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 15 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 7.375576
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 16 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 6.142178
+  type: 'test'
+  ...
+# Subtest: stale linkage sheets clear their rendered DOM before authentication early returns
+ok 17 - stale linkage sheets clear their rendered DOM before authentication early returns
+  ---
+  duration_ms: 5.599024
+  type: 'test'
+  ...
+# Subtest: blown status or history discloses missing funding dates without inventing stage events
+ok 18 - blown status or history discloses missing funding dates without inventing stage events
+  ---
+  duration_ms: 5.740312
+  type: 'test'
+  ...
+# Subtest: nested entry, status and balance saves retain list origin without changing persistence
+ok 19 - nested entry, status and balance saves retain list origin without changing persistence
+  ---
+  duration_ms: 5.834223
+  type: 'test'
+  ...
+# Subtest: linked Back preserves its click through input blur without intercepting other actions
+ok 20 - linked Back preserves its click through input blur without intercepting other actions
+  ---
+  duration_ms: 9.553816
+  type: 'test'
+  ...
+# Subtest: overview dates validate calendar days without local-time rollover
+ok 21 - overview dates validate calendar days without local-time rollover
+  ---
+  duration_ms: 16.873193
+  type: 'test'
+  ...
+# Subtest: overview presets include today and use full prior calendar month
+ok 22 - overview presets include today and use full prior calendar month
+  ---
+  duration_ms: 6.481367
+  type: 'test'
+  ...
+# Subtest: overview uses inclusive dates, refunds and only received payouts
+ok 23 - overview uses inclusive dates, refunds and only received payouts
+  ---
+  duration_ms: 10.8983
+  type: 'test'
+  ...
+# Subtest: overview daily steps are sorted, merged and exact to a cent
+ok 24 - overview daily steps are sorted, merged and exact to a cent
+  ---
+  duration_ms: 6.68588
+  type: 'test'
+  ...
+# Subtest: overview does not mutate the actual VM input objects
+ok 25 - overview does not mutate the actual VM input objects
+  ---
+  duration_ms: 5.274245
+  type: 'test'
+  ...
+# Subtest: overview refunds can make investment negative, never fake ROI or clamp totals
+ok 26 - overview refunds can make investment negative, never fake ROI or clamp totals
+  ---
+  duration_ms: 6.044925
+  type: 'test'
+  ...
+# Subtest: overview empty and pending-only ranges have no fabricated trend
+ok 27 - overview empty and pending-only ranges have no fabricated trend
+  ---
+  duration_ms: 5.317479
+  type: 'test'
+  ...
+# Subtest: overview invalid financial dates cannot silently become a zero range
+ok 28 - overview invalid financial dates cannot silently become a zero range
+  ---
+  duration_ms: 6.36589
+  type: 'test'
+  ...
+# Subtest: overview all-time includes full loaded history and sparse long intervals
+ok 29 - overview all-time includes full loaded history and sparse long intervals
+  ---
+  duration_ms: 5.233618
+  type: 'test'
+  ...
+# Subtest: overview malformed amounts never turn into a zero balance
+ok 30 - overview malformed amounts never turn into a zero balance
+  ---
+  duration_ms: 7.014538
+  type: 'test'
+  ...
+# Subtest: overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+ok 31 - overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+  ---
+  duration_ms: 5.129428
+  type: 'test'
+  ...
+# Subtest: classic metric strip remains byte-for-byte identical in both languages
+ok 32 - classic metric strip remains byte-for-byte identical in both languages
+  ---
+  duration_ms: 18.24764
+  type: 'test'
+  ...
+# Subtest: overview lifecycle resets identity/page/layout range and removes portals without touching forms
+ok 33 - overview lifecycle resets identity/page/layout range and removes portals without touching forms
+  ---
+  duration_ms: 5.757516
+  type: 'test'
+  ...
+# Subtest: overview keyboard only consumes active overlays and preserves applied range on Escape
+ok 34 - overview keyboard only consumes active overlays and preserves applied range on Escape
+  ---
+  duration_ms: 5.073585
+  type: 'test'
+  ...
+# Subtest: restored help focus suppresses reopening once, not the next hover
+ok 35 - restored help focus suppresses reopening once, not the next hover
+  ---
+  duration_ms: 7.343061
+  type: 'test'
+  ...
+# Subtest: modern renders a unified summary and six field-local explanations
+ok 36 - modern renders a unified summary and six field-local explanations
+  ---
+  duration_ms: 8.385651
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 193.878982
+
+
+## stderr
+(empty)

@@ -1,10 +1,10 @@
-# Handoff draft — NOT READY
+# Development handoff — prepared for contract validation
 
-The owning handoff contract has not returned ok:true. This file describes local implementation evidence, not an approved stage transition.
+Native task acceptance and human specification/quality approval are recorded for checkpoint ac5011f. The owning handoff contract must return ok:true before entering Verification; this file is not a release approval.
 
 ## Implemented Slices
 
-001-prop-linkage local working-tree implementation: shared reporting range, dated progress/cohorts, drill-down and exact current-state navigation. Formal task completion remains pending.
+001-prop-linkage: shared reporting range, dated progress/cohorts, drill-down and exact current-state navigation. Native task acceptance materialized successfully for all four original engineering checklist items.
 
 ## Files Changed
 
@@ -12,7 +12,7 @@ The owning handoff contract has not returned ok:true. This file describes local 
 
 ## Requirements Covered
 
-R1–R10 have local implementation/test evidence. A1–A8 remain formally unapproved; no frozen assertions were changed.
+R1–R10 have implementation/test evidence. A1–A8 are linked to the native task-acceptance receipt with managed command and direct browser evidence. Frozen assertion identities were not changed.
 
 ## Prototype Decisions Implemented
 
@@ -32,12 +32,12 @@ No API/schema/RLS or persistence changes. Existing cached owner accounts/entries
 
 ## Local Validation
 
-133 tests pass; bundle, syntax and diff checks pass. Browser evidence uses synthetic actual-source fixtures only. See command-results.json, browser-checks.json and nested form navigation evidence. Independent read-only scout findings were verified and fixed, but no formal approved verdict was issued.
+133 tests pass; bundle, syntax and diff checks pass. Browser evidence uses synthetic actual-source fixtures only. See command-results.json, browser-checks.json and nested form navigation evidence. Independent read-only scout findings were verified and fixed. The user then confirmed complete human review; human-review-record.json and the two approved review reports register that approval without inventing an AI verdict.
 
 ## Known Risks
 
-Business implementation remains uncommitted and no commit/push/deploy permission is implied. Managed evidence runner rejects dirty implementation scope. Historical failed executions must be superseded by trusted receipts rather than deleted. Physical devices and live Supabase were not tested.
+Implementation is committed locally in 6e3c9dc and reviewed with its evidence at ac5011f. Six native signed command passes bind to that HEAD/tree; historical failures remain intact. Prop-test push is user-authorized but remains gated. No master merge or production release is authorized. Physical devices and live Supabase were not tested.
 
 ## Items Requiring Six-Domain Verification
 
-First obtain explicit implementation-checkpoint authorization, independent formal reviews, managed current-HEAD evidence and task acceptance. Only after development handoff returns ok:true may the owning Verification lifecycle select/approve six-domain cases. Do not treat this draft as entry authorization.
+After the development handoff contract returns ok:true, use the owning Verification V2 workflow to inspect locked runtime readiness, prepare all-six-domain cases, obtain the required exact case-snapshot/generation approvals and execute/finalize. The current human development review is not approval of an uncreated V2 case snapshot or generation. Release remains blocked until those separate gates pass.

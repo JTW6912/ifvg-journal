@@ -2,9 +2,9 @@
 
 ## Status
 
-IN_PROGRESS
+DONE
 
-Local implementation checks pass; formal review and authorized checkpoint remain pending. This report is execution evidence, not a completed SpecNav handoff.
+The local implementation and its managed current-HEAD checks are done. The user has confirmed full human specification/quality review; that approval is recorded in human-review-record.json and the two review reports. Task acceptance and stage handoff are the remaining development steps; this report does not claim Verification V2 or release approval.
 
 ## What Changed
 
@@ -16,7 +16,7 @@ Local implementation checks pass; formal review and authorized checkpoint remain
 
 ## Files Changed
 
-`../../evidence/implementation.diff` is the incremental diff against the explicitly uncommitted prior-panel snapshot `../../evidence/before-linkage/`. `../../evidence/review-source-manifest.json` records current source hashes and Git HEAD 108a835. This snapshot is not a Git checkpoint and does not satisfy the final clean reviewed-HEAD contract.
+`../../evidence/implementation.diff` is the incremental diff against the explicitly uncommitted prior-panel snapshot `../../evidence/before-linkage/`. `../../evidence/review-source-manifest.json` records current source hashes and Git HEAD 108a835. That historical snapshot is not a Git checkpoint. The user subsequently authorized implementation commits: code is now in 6e3c9dc, with audited design/evidence in ac5011fd0d3f73d176bfac286a6d5637c04f6a29. The native evidence runner binds its six current passes to HEAD ac5011fd0d3f73d176bfac286a6d5637c04f6a29 and tree 462f05a5666ef7d5d4f85988fd2b28e3fcc27870.
 
 Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview.js`, `theme-modern.css`, `i18n.js`. New: `src/11h-prop-linkage.js`, `test/prop-linkage.test.js`. Existing `test/prop-overview.test.js` remains byte-identical to the pre-linkage snapshot. The ignored actual-source browser fixture gained synthetic linkage data, a `?demo=linkage` entry and fail-closed write-call guards. No changes to 03/14/15 in this increment, migrations, configuration, RLS or persistence functions.
 
@@ -25,6 +25,7 @@ Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview
 - `npm test`: 133 passed, zero failed, including 20 linkage tests and the previous overview/legacy regressions.
 - `npm run bundle`, `node --check app.js`, `node --check i18n.js`, `git diff --check`: exit 0.
 - Actual logs: `../../evidence/command-results.json`, `tests-final.log`, `bundle.log`, `syntax-app.log`, `syntax-i18n.log`, `diff-check.log`; command executions also appended to `../../validation-log.jsonl`.
+- Managed current-HEAD validation: `../../evidence/001-001-prop-linkage.log` through `006-001-prop-linkage.log`, with signed `specnav.validationLog.v2` entries appended by the native runner to `../../validation-log.jsonl`. All six commands passed; no historical failure was deleted.
 - Browser evidence index: `../../evidence/browser-checks.json`, derived from retained raw command/postcondition JSON, not from this narrative.
 
 ## Browser evidence map
@@ -34,7 +35,7 @@ Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview
 - A4: `implementation-final-desktop.png`, `funnel-mobile-start.png`, `list-mobile.png`; `mobile-scroll-sheet.json` records real horizontal scrolling to offset 472 and the last stage visible, then four payout rows in a viewport-bounded sheet. Shape conveys stages, not independent cohort volume ratios.
 - A6: `current-navigation.json` records actual firm/group selection, exact funded navigation (2 accounts despite a period with zero funding events), focused status chip and clearing to all 10 scoped accounts.
 - A7: `unsaved-forms.json` proves dirty detail Back retains draft and gives a warning, and opening linkage cannot replace an unrelated purchase form or its DOM. Write-call counters remain empty. `final-browser-diagnostics.json` records no remote resources, no page errors and no console messages.
-- A8: `theme-locale-matrix.json` covers 7 palettes × 2 themes × 2 locales at widths 1440, 390 and 375 (84 geometry/style checks), without document overflow or missing keys. `browser-lifecycle-boundaries.json` covers empty/negative/refund/large/invalid data and custom P&L color. Read-only independent scouts checked specifications and quality, but did not issue formal approved verdicts. Their findings and fix validation are recorded separately; formal review receipts remain pending.
+- A8: `theme-locale-matrix.json` covers 7 palettes × 2 themes × 2 locales at widths 1440, 390 and 375 (84 geometry/style checks), without document overflow or missing keys. `browser-lifecycle-boundaries.json` covers empty/negative/refund/large/invalid data and custom P&L color. Read-only independent scouts checked specifications and quality, but did not issue formal approved verdicts. Their findings and fix validation are recorded separately. The subsequent human approval, rather than a fabricated scout verdict, is recorded in human-review-record.json and the approved specification/quality reports.
 
 ## TDD Evidence
 
@@ -46,9 +47,9 @@ Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview
 
 ## Concerns
 
-All data is synthetic; actual source is loaded with init omitted, empty configuration, memory storage, blocked network APIs and CSP. No Supabase access, real-account tests, business commit, push or deployment occurred. Viewport emulation is not physical-device testing. Existing business form save/delete behavior was not tested or changed. Runtime sample funding without passed history is disclosed, not guessed.
+All data is synthetic; actual source is loaded with init omitted, empty configuration, memory storage, blocked network APIs and CSP. No Supabase access or real-account tests were performed during validation. The user-authorized implementation and evidence commits are local only; no push or deployment occurred. Viewport emulation is not physical-device testing. Existing business form save/delete behavior was not tested or changed. Runtime sample funding without passed history is disclosed, not guessed.
 
-The earlier panel's frozen acceptance remains untouched. This change's assertions are not marked passing until formal review evidence is accepted. Final reviewed HEAD/tree receipt and standard handoff remain unavailable without the user's authorization to commit implementation code locally. The user authorized only specification/task commits so far.
+The earlier panel's frozen acceptance remains untouched. This change's assertions are not marked passing until formal review evidence is accepted. The user has now authorized implementation commits and eventual prop-test push after validation. A committed checkpoint, native signed command receipts and user-confirmed human review approvals now exist; the native task acceptance and handoff contracts must still validate their bindings.
 
 ## Scope Deviations
 
@@ -56,4 +57,4 @@ No production-scope deviation. Nested modal back metadata, labels and focus were
 
 ## Follow-up Needed
 
-Obtain explicit local implementation commit authorization; obtain independent formal spec/quality verdict receipts (read-only scout facts are retained but not relabeled approvals); run the managed current-HEAD evidence runner and task acceptance emitter; only then update acceptance statuses/checklists and request handoff. Historical failed checks must be superseded by trusted later evidence, not deleted. Until that process returns ok:true the stage remains incomplete.
+Run the task acceptance emitter using the registered human review approvals and managed current-HEAD receipts; only after it succeeds update acceptance statuses/checklists and request handoff. Subsequent Verification V2 must follow its own case/generation approval contract. Historical failed checks must be superseded by trusted later evidence, not deleted. Until that process returns ok:true the stage remains incomplete.

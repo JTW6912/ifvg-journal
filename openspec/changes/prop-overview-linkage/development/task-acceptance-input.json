@@ -1,0 +1,139 @@
+{
+  "schema": "specnav.task-acceptance-input-set.v1",
+  "tasks": {
+    "001-prop-linkage": {
+      "schema": "specnav.task-acceptance-input.v1",
+      "task_id": "001-prop-linkage",
+      "assertions": {
+        "A1": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/date-reverse-cancel.json",
+            "test/prop-linkage.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A2": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "test/prop-linkage.test.js",
+            "development/evidence/conversion-partitions.json"
+          ],
+          "reused_evidence": []
+        },
+        "A3": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/stage-list.json",
+            "development/evidence/conversion-partitions.json",
+            "development/evidence/detail-return-focus.json",
+            "development/evidence/browser-lifecycle-boundaries.json",
+            "development/evidence/nested-entry-navigation.json",
+            "development/evidence/nested-status-balance-navigation.json"
+          ],
+          "reused_evidence": []
+        },
+        "A4": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/implementation-final-desktop.png",
+            "development/evidence/funnel-mobile-start.png",
+            "development/evidence/mobile-scroll-sheet.json"
+          ],
+          "reused_evidence": []
+        },
+        "A5": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "test/prop-linkage.test.js",
+            "development/evidence/browser-checks.json"
+          ],
+          "reused_evidence": []
+        },
+        "A6": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/current-navigation.json",
+            "test/prop-linkage.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A7": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/unsaved-forms.json",
+            "development/evidence/unchanged-boundaries.json",
+            "development/evidence/final-browser-diagnostics.json",
+            "test/prop-overview.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A8": {
+          "test_run_ids": [
+            "receipt-2177a0e151ed3e7ca302c7ee369a99acd4a1040044812b8ea257d5b9c911bb72",
+            "receipt-2231b71f194eb10405f6355aaa72e11eaa59a4848a19b49d3b051ffd0ebaf027",
+            "receipt-2c71cf188707da44c27419587bd6f52847bc9173f69e8c59ae721959201ff4eb",
+            "receipt-8cae60adf9c4983f1635168e83ba111eae34f56513f602c420d0c358e2e11dc1",
+            "receipt-643e72243162e2db57d17c3205d4a17e7c27238b27828f67cedaae2a4211b8b9",
+            "receipt-73c7f973876d8c616d9d68069ed4e20c47fa4209c8adc7e054cf08dbc2e4fc66"
+          ],
+          "direct_evidence": [
+            "development/evidence/theme-locale-matrix.json",
+            "development/evidence/browser-lifecycle-boundaries.json",
+            "development/tasks/001-prop-linkage/human-review-record.json"
+          ],
+          "reused_evidence": []
+        }
+      }
+    }
+  }
+}
