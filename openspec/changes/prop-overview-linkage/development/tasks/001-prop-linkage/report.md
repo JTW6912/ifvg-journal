@@ -16,7 +16,7 @@ The local implementation and its managed current-HEAD checks are done. The user 
 
 ## Files Changed
 
-`../../evidence/implementation.diff` is the incremental diff against the explicitly uncommitted prior-panel snapshot `../../evidence/before-linkage/`. `../../evidence/review-source-manifest.json` records current source hashes and Git HEAD 108a835. That historical snapshot is not a Git checkpoint. The user subsequently authorized implementation commits: code is now in 6e3c9dc, with audited design/evidence in ac5011fd0d3f73d176bfac286a6d5637c04f6a29. The native evidence runner binds its six current passes to HEAD ac5011fd0d3f73d176bfac286a6d5637c04f6a29 and tree 462f05a5666ef7d5d4f85988fd2b28e3fcc27870.
+`../../evidence/implementation.diff` is the incremental diff against the explicitly uncommitted prior-panel snapshot `../../evidence/before-linkage/`. `../../evidence/review-source-manifest.json` records current source hashes and Git HEAD 108a835. That historical snapshot is not a Git checkpoint. The user subsequently authorized implementation commits: code is now in 6e3c9dc, with audited design/evidence in ac5011fd0d3f73d176bfac286a6d5637c04f6a29. The first native pass set binds to HEAD ac5011fd0d3f73d176bfac286a6d5637c04f6a29 and tree 462f05a5666ef7d5d4f85988fd2b28e3fcc27870. After registering the human review and task statuses, all six commands were replayed successfully at metadata-only descendant d5cd3c440805c0423346eee67447b755c4a3489a (tree 2ea8419aa4af44f1d8bc96bfdcec59754fbfdfe8). A direct Git comparison confirms source, tests, i18n and modern CSS are unchanged from the human-reviewed checkpoint.
 
 Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview.js`, `theme-modern.css`, `i18n.js`. New: `src/11h-prop-linkage.js`, `test/prop-linkage.test.js`. Existing `test/prop-overview.test.js` remains byte-identical to the pre-linkage snapshot. The ignored actual-source browser fixture gained synthetic linkage data, a `?demo=linkage` entry and fail-closed write-call guards. No changes to 03/14/15 in this increment, migrations, configuration, RLS or persistence functions.
 
@@ -25,7 +25,7 @@ Modified: `src/11d-prop-data.js`, `src/11e-prop-view.js`, `src/11g-prop-overview
 - `npm test`: 133 passed, zero failed, including 20 linkage tests and the previous overview/legacy regressions.
 - `npm run bundle`, `node --check app.js`, `node --check i18n.js`, `git diff --check`: exit 0.
 - Actual logs: `../../evidence/command-results.json`, `tests-final.log`, `bundle.log`, `syntax-app.log`, `syntax-i18n.log`, `diff-check.log`; command executions also appended to `../../validation-log.jsonl`.
-- Managed current-HEAD validation: `../../evidence/001-001-prop-linkage.log` through `006-001-prop-linkage.log`, with signed `specnav.validationLog.v2` entries appended by the native runner to `../../validation-log.jsonl`. All six commands passed; no historical failure was deleted.
+- Managed current-HEAD validation: latest logs `../../evidence/007-001-prop-linkage.log` through `012-001-prop-linkage.log`; the earlier `001`–`006` records are preserved. These logs have signed `specnav.validationLog.v2` entries appended by the native runner to `../../validation-log.jsonl`. All six commands passed; no historical failure was deleted.
 - Browser evidence index: `../../evidence/browser-checks.json`, derived from retained raw command/postcondition JSON, not from this narrative.
 
 ## Browser evidence map

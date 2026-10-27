@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "status": "materialized",
+  "change_id": "prop-overview-linkage",
+  "reviewed_git_head": "d5cd3c440805c0423346eee67447b755c4a3489a",
+  "reviewed_git_tree": "2ea8419aa4af44f1d8bc96bfdcec59754fbfdfe8",
+  "task_count": 1,
+  "written": [
+    {
+      "task_id": "001-prop-linkage",
+      "file": "openspec/changes/prop-overview-linkage/development/tasks/001-prop-linkage/acceptance.json",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "test_run_count": 6,
+      "recorded_at": "2026-10-27T13:31:04.302Z",
+      "reviewed_git_head": "d5cd3c440805c0423346eee67447b755c4a3489a"
+    }
+  ],
+  "existing": [],
+  "fallback_used": false
+}

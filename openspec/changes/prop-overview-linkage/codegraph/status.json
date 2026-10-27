@@ -1,7 +1,7 @@
 {
   "schema": "specnav.codegraph.status.v1",
   "ok": true,
-  "generated_at": "2026-10-27T13:24:05.372Z",
+  "generated_at": "2026-10-27T13:32:46.311Z",
   "project_root": "/root/ifvg-journal",
   "active_change": "prop-overview-linkage",
   "policy": {

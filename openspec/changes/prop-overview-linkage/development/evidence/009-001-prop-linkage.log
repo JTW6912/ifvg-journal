@@ -1,0 +1,14 @@
+# command: npm run bundle
+# exit_status: 0
+# duration_ms: 86
+
+## stdout
+
+> ifvg-journal@1.0.0 bundle
+> node bundle.js
+
+app.js bundled from 26 files.
+
+
+## stderr
+(empty)

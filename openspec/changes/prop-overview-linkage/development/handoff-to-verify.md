@@ -1,6 +1,6 @@
-# Development handoff — prepared for contract validation
+# Development handoff — validated
 
-Native task acceptance and human specification/quality approval are recorded for checkpoint ac5011f. The owning handoff contract must return ok:true before entering Verification; this file is not a release approval.
+Native task acceptance and human specification/quality approval are recorded for the unchanged implementation reviewed at ac5011f. After the metadata-only d5cd3c4 checkpoint, the native task-acceptance emitter and owning development handoff contract both returned ok:true with no blockers. This confirms development handoff, not Verification V2 or release approval.
 
 ## Implemented Slices
 
@@ -40,4 +40,4 @@ Implementation is committed locally in 6e3c9dc and reviewed with its evidence at
 
 ## Items Requiring Six-Domain Verification
 
-After the development handoff contract returns ok:true, use the owning Verification V2 workflow to inspect locked runtime readiness, prepare all-six-domain cases, obtain the required exact case-snapshot/generation approvals and execute/finalize. The current human development review is not approval of an uncreated V2 case snapshot or generation. Release remains blocked until those separate gates pass.
+The development handoff contract has returned ok:true. Verification V2 inspection now reports no selected runtime scope and neither project nor user locked runtime installed; its validate action also requires an explicit human reviewer identifier. Obtain the user's project/user scope selection and installation approval before installing anything, then prepare all-six-domain cases, obtain the exact case-snapshot/generation approvals and execute/finalize. The current human development review is not approval of an uncreated V2 case snapshot or generation. Release remains blocked until those separate gates pass.
