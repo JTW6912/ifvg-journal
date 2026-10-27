@@ -781,7 +781,7 @@ async function pbConvertNote() {
 /* ============================================================
    交易区：系统 / 策略 / 错题 / 待验证 / 标签页下面同一套
      1.（待验证）可以下结论了的提示
-     2.（笔记）关联交易：真正决定结论的那几笔，单独算成绩
+     2.（笔记 / 系统 / 策略）关联交易：真正决定结论的那几笔，单独算成绩；可以开好几组
      3. 收藏（系统 / 策略页叫「关注的交易」，存在交易的 __pb_star；笔记 / 标签存在页面的 trade_marks）
      4. 全部交易：成绩表（全部 / 关联 / 支持 / 反驳 / 其余 / 收藏 / 按 taken 分）+ 列表
    列表里每一行直接点收藏、点关联、改记录、移出，不用进交易的编辑表单
@@ -811,6 +811,8 @@ function pbAreaFilterLabel(ctx, f) {
   if (which === "fav") return ctx.mode === "page" ? T("pb.section.starred") : T("pb.area.fav");
   return T("pb.area." + (which === "ev" ? "evRow" : which === "rest" ? "restRow" : which));
 }
+/* 关联按钮 / 提示文案用哪一套：错题、待验证各一套，系统 / 策略共用 page */
+function pbEvHintKind(kind) { return kind === "mistake" || kind === "verify" ? kind : "page"; }
 function pbEvLabel(ev) { return T("pb.area." + (ev || "evNone")); }
 function pbEvBadgeHtml(ev) { return ev ? `<span class="pbEvBadge ev-${ev}">${esc(pbEvLabel(ev))}</span>` : ""; }
 
@@ -827,7 +829,7 @@ function pbTradeRowHtml(t, opts) {
   const favAction = ctx.mode === "page" ? "pb-star" : "pb-fav";
   const ev = ctx.evStates.length ? pbEvOf(ctx.page, t.id) : "";
   const evBtn = ctx.evStates.length
-    ? `<button class="pbEvBtn ev-${ev || "none"}" ${ro ? "disabled" : `data-action="pb-ev" data-id="${esc(t.id)}"`} title="${esc(T("pb.area.evBtnTitle." + ctx.page.kind))}">${ev ? "" : ICONS.plus}${esc(pbEvLabel(ev))}</button>` : "";
+    ? `<button class="pbEvBtn ev-${ev || "none"}" ${ro ? "disabled" : `data-action="pb-ev" data-id="${esc(t.id)}"`} title="${esc(T("pb.area.evBtnTitle." + pbEvHintKind(ctx.page.kind)))}">${ev ? "" : ICONS.plus}${esc(pbEvLabel(ev))}</button>` : "";
   const rmAction = ctx.mode === "note" ? "pb-note-remove-trade" : ctx.mode === "tag" ? "pb-tag-remove-trade" : "";
   const note = ctx.mode === "page" || !ctx.page ? pbTradeNote(t) : pbRowNoteOf(ctx.page, t, ctx.body);
   // 笔记页上，交易自己的归类记录（所有页面共用的那句）也摆出来，灰一点、只看不改
@@ -930,15 +932,16 @@ function pbTradeAreaHtml(d) {
   const evList = ctx.evStates.length ? pbMarkedTrades(page, list, "ev") : [];
   const tileNote = (t) => (mode === "page" ? pbTradeNote(t) : pbRowNoteOf(page, t, ctx.body));
 
-  // 关联交易：真正决定这条笔记结论的那几笔
+  // 关联交易：真正决定这条笔记（这个模型）结论的那几笔
+  const hasPC = ctx.evStates.includes("con");   // 待验证 / 系统 / 策略分支持、反驳；错题只有「关联」
   if (ctx.evStates.length) {
-    const isV = d.kind === "verify";
-    const pro = isV ? pbMarkedTrades(page, list, "pro").length : 0, con = isV ? pbMarkedTrades(page, list, "con").length : 0;
+    const pro = hasPC ? pbMarkedTrades(page, list, "pro").length : 0, con = hasPC ? pbMarkedTrades(page, list, "con").length : 0;
     const newGroup = ro || !pbFind(d.id) ? "" : `<button class="tinyBtn pbAddBtn" data-action="pb-evg-new">${ICONS.plus} ${esc(T("pb.evg.new"))}</button>`;
-    html += `<section class="pbPanel pbEvPanel">${pbSectionHeadHtml(T("pb.area.ev"), evList.length, newGroup, T(isV ? "pb.area.evHintVerify" : "pb.area.evHintMistake"))}
+    const hint = { verify: "pb.area.evHintVerify", mistake: "pb.area.evHintMistake", page: "pb.area.evHintPage" }[pbEvHintKind(d.kind)];
+    html += `<section class="pbPanel pbEvPanel">${pbSectionHeadHtml(T("pb.area.ev"), evList.length, newGroup, T(hint))}
       ${pbEvGroupTabsHtml(page, list)}
       ${evList.length
-        ? `<div class="pbEvSummary">${isV ? `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))} ${pro}</span><span class="pbEvBadge ev-con">${esc(T("pb.area.con"))} ${con}</span>` : ""}<span class="pbStatsRow">${pbStatsHtml(pbStats(evList))}</span></div>
+        ? `<div class="pbEvSummary">${hasPC ? `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))} ${pro}</span><span class="pbEvBadge ev-con">${esc(T("pb.area.con"))} ${con}</span>` : ""}<span class="pbStatsRow">${pbStatsHtml(pbStats(evList))}</span></div>
            <div class="pbTileGrid">${evList.map((t) => pbTileHtml(t, { showLabel: true, note: tileNote(t), fav: pbAreaFav(ctx, t), badge: pbEvBadgeHtml(pbEvOf(page, t.id)) })).join("")}</div>`
         : `<div class="pbEmptyLine">${esc(T("pb.area.evEmpty"))}</div>`}
     </section>`;
@@ -958,7 +961,7 @@ function pbTradeAreaHtml(d) {
   const extra = [];
   if (ctx.evStates.length) {
     extra.push({ val: "m:ev", label: esc(T("pb.area.evRow")), list: evList });
-    if (d.kind === "verify") {
+    if (hasPC) {
       extra.push({ val: "m:pro", label: `<span class="pbEvBadge ev-pro">${esc(T("pb.area.pro"))}</span>`, list: pbMarkedTrades(page, list, "pro"), cls: " isSub" });
       extra.push({ val: "m:con", label: `<span class="pbEvBadge ev-con">${esc(T("pb.area.con"))}</span>`, list: pbMarkedTrades(page, list, "con"), cls: " isSub" });
     }
@@ -990,7 +993,7 @@ function pbTradeAreaHtml(d) {
 async function pbAreaSetMark(tradeId, patchFn) {
   const d = editingReview;
   const page = d && pbFind(d.id);
-  if (!page || viewingUserId || !(pbIsNote(page) || page.kind === "tag")) return;
+  if (!page || viewingUserId || !(pbIsNote(page) || page.kind === "tag" || (PB_EV_STATES[page.kind] || []).length)) return;
   const p = pbWriteMarks(page.id, pbMarksWith(page, tradeId, patchFn(page)));
   refreshPbPanels();
   if (!(await p)) showReviewToast(pbError || T("error.dbOutdated"));
