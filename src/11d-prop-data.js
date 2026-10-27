@@ -260,6 +260,194 @@ function propMonthly(entries, year) {
 }
 function propEntryMonth(e) { return String(e.day || "").slice(0, 7); }
 
+/* ---------- 概览日期范围：日期键是自然日，UTC 只用于不受夏令时影响的运算 ---------- */
+const PROP_OVERVIEW_DAY_MS = 86400000;
+const PROP_OVERVIEW_PRESETS = ["custom", "all", "last7", "last30", "thisMonth", "lastMonth"];
+function propOverviewDay(day) {
+  if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day) || day.startsWith("0000")) return null;
+  const time = Date.parse(day + "T00:00:00Z");
+  return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === day ? time : null;
+}
+function propOverviewShiftDay(day, delta) {
+  const time = propOverviewDay(day);
+  if (time === null || !Number.isSafeInteger(delta)) return null;
+  const d = new Date(time + delta * PROP_OVERVIEW_DAY_MS);
+  if (!Number.isFinite(d.getTime())) return null;
+  const next = d.toISOString().slice(0, 10);
+  return propOverviewDay(next) === null ? null : next;
+}
+function propOverviewMonthIndex(day) {
+  const time = propOverviewDay(day);
+  if (time === null) return null;
+  const d = new Date(time);
+  return d.getUTCFullYear() * 12 + d.getUTCMonth();
+}
+function propOverviewMonthStart(index) {
+  if (!Number.isInteger(index) || index < 12 || index > 119999) return null;
+  return String(Math.floor(index / 12)).padStart(4, "0") + "-" + String(index % 12 + 1).padStart(2, "0") + "-01";
+}
+function propOverviewShiftMonth(day, delta) {
+  const index = propOverviewMonthIndex(day);
+  if (index === null || !Number.isSafeInteger(delta)) return null;
+  const first = propOverviewMonthStart(index + delta);
+  if (!first) return null;
+  const year = Number(first.slice(0, 4)), month = Number(first.slice(5, 7));
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const last = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  return first.slice(0, 8) + String(Math.min(Number(day.slice(8)), last)).padStart(2, "0");
+}
+function propOverviewResolveRange(choice, today) {
+  if (!choice || !PROP_OVERVIEW_PRESETS.includes(choice.preset) || propOverviewDay(today) === null) return null;
+  const preset = choice.preset;
+  if (preset === "all") return { preset, from: null, to: null };
+  let from, to = today;
+  if (preset === "custom") {
+    if (propOverviewDay(choice.from) === null || propOverviewDay(choice.to) === null) return null;
+    from = choice.from < choice.to ? choice.from : choice.to;
+    to = choice.from < choice.to ? choice.to : choice.from;
+  } else if (preset === "last7" || preset === "last30") from = propOverviewShiftDay(today, preset === "last7" ? -6 : -29);
+  else if (preset === "thisMonth") from = today.slice(0, 8) + "01";
+  else {
+    const first = today.slice(0, 8) + "01";
+    from = propOverviewShiftMonth(first, -1);
+    to = propOverviewShiftDay(first, -1);
+  }
+  return from && to ? { preset, from, to } : null;
+}
+/* 只派生、不改原流水。每天仍用 propSum，避免曲线另造一套退款/pending口径。
+   稀疏点只覆盖有收支的日子和区间两端；横坐标按日期距离，不枚举空白年月。 */
+function propOverviewSnapshot(entries, choice, today) {
+  const range = propOverviewResolveRange(choice, today);
+  const unavailable = (reason) => ({ available: false, reason, sum: null, points: [], trendUnavailable: true, range, from: null, to: null });
+  if (!range) return unavailable("invalidRange");
+  if (!Array.isArray(entries) || entries.some((e) => !e || typeof e !== "object")) return unavailable("invalidData");
+  const all = range.preset === "all", selected = [], groups = new Map();
+  let invalidDates = 0;
+  entries.forEach((e) => {
+    if (propOverviewDay(e.day) === null) {
+      const s = propSum([e]);
+      if (s.spent || s.received || s.refund) invalidDates++;
+      if (all) selected.push(e);
+      return;
+    }
+    if (!all && (e.day < range.from || e.day > range.to)) return;
+    selected.push(e);
+    if (!groups.has(e.day)) groups.set(e.day, []);
+    groups.get(e.day).push(e);
+  });
+  if (!all && invalidDates) return unavailable("invalidDates");
+  if (selected.some(e => PROP_ENTRY_KINDS.includes(e.kind) &&
+      ((typeof e.amount !== "number" && typeof e.amount !== "string") || String(e.amount).trim() === "" || !Number.isFinite(Number(e.amount)) || Number(e.amount) < 0))) return unavailable("invalidData");
+  const sum = propSum(selected);
+  const safe = (s) => [s.spent, s.received, s.refund, s.pending, s.net].every((v) => Number.isSafeInteger(Math.round(v * 100)));
+  if (!safe(sum)) return unavailable("amountRange");
+  const days = [...groups].map(([day, list]) => ({ day, sum: propSum(list) }))
+    .filter((d) => d.sum.spent || d.sum.received || d.sum.refund).sort((a, b) => a.day.localeCompare(b.day));
+  if (days.some((d) => !safe(d.sum))) return unavailable("amountRange");
+  const from = all ? (days[0] ? days[0].day : today) : range.from;
+  const lastDay = days.length ? days[days.length - 1].day : today;
+  const to = all ? (lastDay > today ? lastDay : today) : range.to;
+  const result = { available: true, reason: invalidDates ? "invalidDates" : null, sum, points: [], trendUnavailable: !!invalidDates, range, from, to };
+  if (invalidDates || !days.length) return result;
+  let cents = 0;
+  const points = [{ day: from, at: propOverviewDay(from), net: 0 }];
+  for (const d of days) {
+    cents += Math.round(d.sum.net * 100);
+    if (!Number.isSafeInteger(cents)) return unavailable("amountRange");
+    points.push({ day: d.day, at: propOverviewDay(d.day) + PROP_OVERVIEW_DAY_MS, net: cents / 100 });
+  }
+  // 不强行改末点来掩盖两套结果的差异；不能精确表达时明确报不可用。
+  if (cents !== Math.round(sum.net * 100)) return unavailable("amountRange");
+  const end = propOverviewDay(to) + PROP_OVERVIEW_DAY_MS;
+  if (points[points.length - 1].at < end) points.push({ day: to, at: end, net: cents / 100 });
+  result.points = points;
+  return result;
+}
+function propOverviewBarModel(sum) {
+  const refundMode = sum.spent < 0;
+  const scale = Math.max(Math.abs(sum.spent), sum.received, 1);
+  const percent = (v) => Math.max(0, Math.min(100, v / scale * 100));
+  return { refundMode, spent: percent(Math.abs(sum.spent)), covered: refundMode ? 0 : percent(Math.min(sum.spent, sum.received)),
+    income: percent(refundMode ? sum.received : Math.max(0, sum.net)) };
+}
+
+/* ---------- 总览联动：财务范围与实际发生的进展；不改经典 propFunnel ---------- */
+const PROP_LINKAGE_STAGES = ["bought", "passed", "funded", "paid"];
+function propLinkageIncludes(day, range) {
+  return !!range && propOverviewDay(day) !== null && (range.preset === "all" || (day >= range.from && day <= range.to));
+}
+function propLinkageMonthAllowed(range, year, month) {
+  const first = propOverviewMonthStart(year * 12 + month - 1);
+  return !!first && (!range || range.preset === "all" || (first.slice(0, 7) >= range.from.slice(0, 7) && first.slice(0, 7) <= range.to.slice(0, 7)));
+}
+function propLinkageMonth(range, year, month) {
+  if (!range || range.preset === "all") return { year, month };
+  const index = Math.max(propOverviewMonthIndex(range.from), Math.min(propOverviewMonthIndex(range.to), year * 12 + month - 1));
+  return { year: Math.floor(index / 12), month: index % 12 + 1 };
+}
+function propAccountMatchesStatus(account, filter) {
+  if (filter === "all") return true;
+  if (filter === "active") return propIsActive(account);
+  if (filter === "ended") return !propIsActive(account);
+  return PROP_STATUSES.includes(filter) && account.status === filter;
+}
+/* Rows own IDs/dates, not persistent account copies. Both counts and drill-downs
+   consume these same rows. A known missing event is disclosed, never dated from
+   current status or a later stage. Direct/instant funding does not invent a pass. */
+function propLinkageReport(accounts, entries, choice, today) {
+  const range = propOverviewResolveRange(choice, today);
+  const unique = [...new Map(accounts.filter(a => a && a.id).map(a => [a.id, a])).values()];
+  const ids = new Set(unique.map(a => a.id));
+  const ownedEntries = entries.filter(e => e && ids.has(e.account_id));
+  const finance = propOverviewSnapshot(ownedEntries, choice, today);
+  const selected = range?.preset === "all" ? ownedEntries.slice() : ownedEntries.filter(e => propLinkageIncludes(e.day, range));
+  const byAccount = new Map(unique.map(a => [a.id, []]));
+  ownedEntries.forEach(e => byAccount.get(e.account_id).push(e));
+  const stages = Object.fromEntries(PROP_LINKAGE_STAGES.map(k => [k, []]));
+  const histories = new Map(), incomplete = new Set();
+  let fails = 0;
+  for (const a of unique) {
+    const dates = { bought: [], passed: [], funded: [], paid: [] };
+    const add = (key, day) => {
+      if (propOverviewDay(day) === null) incomplete.add(a.id);
+      else dates[key].push(day);
+    };
+    add("bought", a.bought_on);
+    const events = Array.isArray(a.events) ? a.events : [];
+    for (const ev of events) {
+      if (!ev || !["passed", "funded", "failed"].includes(ev.to)) continue;
+      if (ev.to === "failed") {
+        if (propOverviewDay(ev.day) === null) incomplete.add(a.id);
+        else if (propLinkageIncludes(ev.day, range)) fails++;
+      } else add(ev.to, ev.day);
+    }
+    for (const e of byAccount.get(a.id)) {
+      if (e.kind === "payout" && !e.pending && Number(e.amount) > 0 && Number.isFinite(Number(e.amount))) add("paid", e.day);
+    }
+    const instant = a.plan_snapshot?.type === "instant";
+    const knownFunded = ["funded", "blown"].includes(a.status) || dates.funded.length || dates.paid.length || events.some(ev => ev?.to === "blown");
+    if ((a.status === "passed" || (!instant && knownFunded)) && !dates.passed.length) incomplete.add(a.id);
+    if (knownFunded && !dates.funded.length) incomplete.add(a.id);
+    if (a.status === "failed" && !events.some(ev => ev?.to === "failed" && propOverviewDay(ev.day) !== null)) incomplete.add(a.id);
+    for (const key of PROP_LINKAGE_STAGES) {
+      dates[key] = [...new Set(dates[key])].sort();
+      const day = dates[key].find(d => propLinkageIncludes(d, range));
+      if (day) stages[key].push({ id: a.id, day });
+    }
+    histories.set(a.id, dates);
+  }
+  const edges = PROP_LINKAGE_STAGES.slice(0, -1).map((from, i) => {
+    const to = PROP_LINKAGE_STAGES[i + 1];
+    const rows = stages[from].map(row => ({ ...row, next: histories.get(row.id)[to].find(day => day >= row.day && (range.preset === "all" || day <= range.to)) || null }));
+    const converted = rows.filter(row => row.next), unconverted = rows.filter(row => !row.next);
+    return { from, to, rows, converted, unconverted, rate: rows.length ? converted.length / rows.length * 100 : null };
+  });
+  const passed = stages.passed.length, decided = passed + fails;
+  return { range, finance, entries: selected, stages, edges, incompleteIds: [...incomplete],
+    summary: { passed, fails, decided, passRate: decided ? passed / decided * 100 : null,
+      costPerFunded: stages.funded.length && finance.available ? propMoney(finance.sum.spent / stages.funded.length) : null } };
+}
+
 /* ---------- 月付订阅 ----------
    续费中的月付账号，每到购买日的同一天记一笔月费（31 号买的，小月记在月底）。
    renewed_through 是「已经记到哪天」的水位：删掉自动记的那笔不会被补回来，关掉续费再打开也不会补记中间那段 */

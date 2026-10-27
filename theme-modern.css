@@ -669,3 +669,207 @@
 [data-layout="modern"] .propStep{border-radius:14px;}
 [data-layout="modern"] .propAccNums{border-radius:12px;}
 [data-layout="modern"] .propCompareBar{border-radius:16px;}
+
+/* Prop financial overview — native shadcn-style boundaries, product color tokens.
+   Portals share this namespace; no global theme tokens or classic styles change. */
+[data-layout="modern"] :is(.propOverview,.propOverviewPicker,.propOverviewTooltip){
+  --ui-card:var(--surface);--ui-muted:var(--surface2);--ui-border:var(--border);
+  --ui-hover:var(--surface2);--ui-selection:color-mix(in srgb,var(--accent) 8%,var(--surface2));
+  font-family:var(--fontUI);font-variant-numeric:tabular-nums;line-height:1.5;box-sizing:border-box;
+}
+[data-layout="modern"] .propOverview{border:1px solid var(--ui-border);border-radius:14px;background:var(--ui-card);margin-bottom:20px;color:var(--text);container-type:inline-size;--metric-tone:var(--muted);}
+[data-layout="modern"] .propOverview[data-tone="positive"]{--metric-tone:var(--pnlPos);}
+[data-layout="modern"] .propOverview[data-tone="negative"]{--metric-tone:var(--pnlNeg);}
+[data-layout="modern"] .propOverviewHeader{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:16px 24px;border-bottom:1px solid var(--ui-border);}
+[data-layout="modern"] .propOverview :is(h2,h3){display:flex;align-items:center;gap:8px;margin:0;line-height:1.5;}
+[data-layout="modern"] .propOverview h2{font-size:16px;font-weight:600;}
+[data-layout="modern"] .propOverview h3{font-size:15px;font-weight:500;}
+[data-layout="modern"] .propOverviewIcon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 32px;width:32px;height:32px;border-radius:8px;background:var(--surface2);color:var(--muted);}
+[data-layout="modern"] .propOverviewIcon svg{width:19px;height:19px;}
+[data-layout="modern"] .propOverviewHeader .propOverviewIcon{color:var(--text);}
+[data-layout="modern"] .propOverviewTools{display:flex;align-items:center;gap:12px;margin-left:auto;font-size:12px;color:var(--muted);min-width:0;}
+:where([data-layout="modern"]) :where(.propOverviewButton){display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 10px;max-width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;font-size:13px;cursor:pointer;}
+[data-layout="modern"] .propOverviewButton span{overflow-wrap:anywhere;}
+[data-layout="modern"] .propOverviewButton svg{width:16px;height:16px;flex-shrink:0;}
+:where([data-layout="modern"]) :where(.propOverviewButton:hover,.propOverviewButton[aria-expanded="true"]){background:var(--surface2);}
+[data-layout="modern"] .propOverviewBody{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(280px,.8fr);}
+[data-layout="modern"] .propOverviewZone{min-width:0;padding:24px;display:flex;flex-direction:column;}
+[data-layout="modern"] .propOverviewZone+.propOverviewZone{border-left:1px solid var(--ui-border);}
+[data-layout="modern"] .propOverviewNet .propOverviewIcon{color:var(--metric-tone);}
+[data-layout="modern"] .propOverviewSpotlight{display:flex;align-items:center;flex-wrap:wrap;gap:24px;margin-top:24px;flex:1;}
+[data-layout="modern"] .propOverviewValue{color:var(--metric-tone);font-size:clamp(42px,3.5vw,56px);font-weight:700;letter-spacing:-1.7px;line-height:1.15;max-width:100%;overflow-wrap:anywhere;}
+[data-layout="modern"] .propOverviewValue small{font-size:.7em;}
+[data-layout="modern"] .propOverviewValueCompact{font-size:clamp(22px,2.5vw,36px);letter-spacing:-.8px;}
+[data-layout="modern"] .propOverviewTrend{flex:1 1 170px;min-width:140px;}
+[data-layout="modern"] .propOverviewCaption{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:13px;}
+[data-layout="modern"] .propOverviewPlot{display:block;width:100%;height:96px;margin-top:8px;overflow:visible;}
+[data-layout="modern"] .propOverviewZero{fill:none;stroke:var(--borderLight);stroke-dasharray:3 3;vector-effect:non-scaling-stroke;}
+[data-layout="modern"] .propOverviewTrace[data-tone="positive"]{color:var(--pnlPos);}
+[data-layout="modern"] .propOverviewTrace[data-tone="negative"]{color:var(--pnlNeg);}
+[data-layout="modern"] .propOverviewArea{fill:currentColor;opacity:.1;}
+[data-layout="modern"] .propOverviewLine{fill:none;stroke:currentColor;stroke-width:1.8;vector-effect:non-scaling-stroke;}
+[data-layout="modern"] .propOverviewDot{fill:var(--metric-tone);stroke:var(--surface);stroke-width:1.5;vector-effect:non-scaling-stroke;}
+[data-layout="modern"] .propOverviewDates{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:6px;}
+[data-layout="modern"] .propOverviewTrendEmpty{display:flex;align-items:center;min-height:96px;color:var(--muted);font-size:12px;}
+[data-layout="modern"] .propOverviewROI{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:24px;}
+[data-layout="modern"] .propOverviewROI strong{font-size:30px;font-weight:600;color:var(--metric-tone);overflow-wrap:anywhere;max-width:100%;}
+[data-layout="modern"] .propOverviewROI .propOverviewCaption{font-size:12px;}
+[data-layout="modern"] .propOverviewROI[data-applicable="false"] :is(strong,.propOverviewIcon){color:var(--muted);}
+[data-layout="modern"] .propOverviewCashFigure{margin-top:24px;}
+[data-layout="modern"] .propOverviewCashLabel{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+[data-layout="modern"] .propOverviewCashLabel strong{font-size:26px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;max-width:100%;}
+[data-layout="modern"] .propOverviewBar{display:flex;height:14px;background:var(--surface2);border-radius:6px;overflow:hidden;}
+[data-layout="modern"] .propOverviewBar+.propOverviewCashLabel{margin-top:24px;}
+[data-layout="modern"] .propOverviewBar i{display:block;height:100%;flex-shrink:0;}
+[data-layout="modern"] .propOverviewHatch{background:repeating-linear-gradient(125deg,transparent 0 2px,color-mix(in srgb,var(--muted) 22%,transparent) 2px 4px),var(--surface2);}
+[data-layout="modern"] .propOverviewIncome{background:var(--pnlPos);}
+[data-layout="modern"] .propOverviewLegend{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px;font-size:11px;color:var(--muted);}
+[data-layout="modern"] .propOverviewLegend span{display:inline-flex;align-items:center;gap:6px;}
+[data-layout="modern"] .propOverviewLegend i{width:11px;height:8px;border-radius:2px;}
+[data-layout="modern"] .propOverviewRefundNote{color:var(--muted);font-size:12px;margin:8px 0 0;}
+[data-layout="modern"] .propOverviewAccounts{background:color-mix(in srgb,var(--surface2) 30%,var(--surface));border-radius:0 0 14px 0;}
+[data-layout="modern"] .propOverviewAccountSummary{display:grid;grid-template-columns:76px minmax(0,1fr);gap:24px;margin-top:24px;font-size:13px;}
+[data-layout="modern"] .propOverviewAccountCount{display:flex;align-items:baseline;gap:6px;margin-bottom:4px;}
+[data-layout="modern"] .propOverviewAccountCount strong{font-size:52px;font-weight:600;line-height:1.2;}
+[data-layout="modern"] .propOverviewAccountCount span{color:var(--muted);}
+[data-layout="modern"] .propOverviewStages{margin:0;padding-left:16px;border-left:1px solid var(--ui-border);display:flex;flex-direction:column;gap:4px;}
+:where([data-layout="modern"]) :where(.propOverviewStatusLink){display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:6px;padding:5px 3px;min-height:32px;font:inherit;color:var(--text);text-align:left;cursor:pointer;}
+:where([data-layout="modern"]) :where(.propOverviewStatusLink:hover){background:var(--surface2);}
+[data-layout="modern"] .propOverviewStatusLink>span{flex:1;color:var(--muted);font-size:13px;}
+[data-layout="modern"] .propOverviewStatusLink>b{min-width:28px;padding:1px 6px;box-sizing:border-box;border-radius:6px;background:var(--surface2);font-size:14px;font-weight:600;text-align:center;}
+[data-layout="modern"] .propOverviewStatusLink>svg{width:12px;height:12px;flex:none;color:var(--muted);}
+[data-layout="modern"] .propOverviewAccountTotal{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding-top:16px;margin-top:auto;color:var(--muted);font-size:13px;}
+[data-layout="modern"] .propOverviewAccountSummary+.propOverviewAccountTotal{margin-top:52px;}
+[data-layout="modern"] .propOverviewAccountTotal strong{color:var(--text);font-size:20px;}
+[data-layout="modern"] .propOverviewError{margin:16px 24px 0;padding:12px;border:1px solid var(--neg);color:var(--neg);border-radius:8px;font-size:13px;}
+:where([data-layout="modern"]) :where(.propOverviewHelp){display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;padding:3px;border:0;border-radius:50%;background:transparent;color:var(--muted);cursor:help;}
+[data-layout="modern"] .propOverviewHelp svg{width:14px;height:14px;}
+:where([data-layout="modern"]) :where(.propOverviewHelp:hover,.propOverviewHelp.is-showing){background:var(--surface2);color:var(--text);}
+[data-layout="modern"] .propOverviewTooltip{position:fixed;z-index:49;max-width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 16px);overflow:auto;background:var(--text);color:var(--bg);font-size:13px;padding:10px 12px;border-radius:8px;box-shadow:var(--shadowPop);}
+[data-layout="modern"] .propOverviewPicker{position:fixed;z-index:48;display:grid;grid-template-columns:144px minmax(0,1fr);width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 16px);overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadowPop);}
+[data-layout="modern"] .propOverviewPresets{display:flex;flex-direction:column;gap:4px;padding:8px;border-right:1px solid var(--border);}
+:where([data-layout="modern"]) :where(.propOverviewPreset,.propOverviewDateCell button,.propOverviewCalendarNav button){font:inherit;color:var(--text);border:0;background:transparent;cursor:pointer;border-radius:8px;}
+:where([data-layout="modern"]) :where(.propOverviewPreset){min-height:36px;padding:8px 10px;font-size:14px;text-align:left;}
+:where([data-layout="modern"]) :where(.propOverviewPreset:hover,.propOverviewDateCell button:hover,.propOverviewCalendarNav button:hover){background:var(--surface2);}
+[data-layout="modern"] .propOverviewPreset.active{background:var(--accent);color:var(--onAccent);}
+[data-layout="modern"] .propOverviewCalendar{position:relative;padding:16px;}
+[data-layout="modern"] .propOverviewCalendarNav{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;pointer-events:none;}
+[data-layout="modern"] .propOverviewCalendarNav button{width:36px;height:36px;pointer-events:auto;font-size:22px;}
+[data-layout="modern"] .propOverviewMonths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+[data-layout="modern"] .propOverviewMonth h4{margin:0 36px 12px;text-align:center;font-size:14px;line-height:36px;font-weight:500;}
+[data-layout="modern"] .propOverviewWeek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));}
+[data-layout="modern"] .propOverviewWeek>span{text-align:center;line-height:28px;color:var(--muted);font-size:12px;}
+[data-layout="modern"] .propOverviewDateCell{display:flex;align-items:center;justify-content:center;height:36px;margin:3px 0;}
+:where([data-layout="modern"]) :where(.propOverviewDateCell button){width:36px;height:36px;padding:0;font-size:14px;}
+[data-layout="modern"] .propOverviewDateCell.in-range{background:var(--ui-selection);}
+[data-layout="modern"] .propOverviewDateCell.range-start{border-radius:8px 0 0 8px;}
+[data-layout="modern"] .propOverviewDateCell.range-end{border-radius:0 8px 8px 0;}
+[data-layout="modern"] .propOverviewDateCell.range-start.range-end{border-radius:8px;}
+[data-layout="modern"] :is(.propOverviewDateCell.range-start,.propOverviewDateCell.range-end) button{background:var(--accent);color:var(--onAccent);}
+[data-layout="modern"] .propOverviewDateCell button[aria-current="date"]{box-shadow:inset 0 0 0 1px var(--borderLight);}
+[data-layout="modern"] .propOverviewPicker button:disabled{opacity:.35;cursor:default;}
+[data-layout="modern"] .propOverviewPickerFooter{grid-column:1/-1;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
+:where([data-layout="modern"]) :where(.propOverviewButton,.propOverviewHelp,.propOverviewPicker button):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+@container (max-width:1100px){
+  [data-layout="modern"] .propOverviewBody{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);}
+  [data-layout="modern"] .propOverviewAccounts{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);border-radius:0 0 14px 14px;}
+  [data-layout="modern"] .propOverviewAccountSummary{max-width:420px;}
+  [data-layout="modern"] .propOverviewAccountSummary+.propOverviewAccountTotal{margin-top:24px;}
+}
+@container (max-width:670px){
+  [data-layout="modern"] .propOverviewBody{grid-template-columns:minmax(0,1fr);}
+  [data-layout="modern"] .propOverviewZone+.propOverviewZone{border-left:0;border-top:1px solid var(--border);}
+}
+@media(max-width:640px){
+  [data-layout="modern"] .propOverviewHeader{padding:20px;}
+  [data-layout="modern"] .propOverviewButton{min-height:44px;font-size:12px;}
+  [data-layout="modern"] .propOverviewHelp{width:44px;height:44px;flex-basis:44px;}
+  [data-layout="modern"] .propOverview h3{gap:6px;font-size:14px;}
+  [data-layout="modern"] .propOverviewCashLabel strong{font-size:24px;}
+  [data-layout="modern"] .propOverviewSpotlight{flex-direction:column;align-items:stretch;}
+  [data-layout="modern"] .propOverviewTrend{flex:auto;min-width:0;}
+  [data-layout="modern"] .propOverviewPicker{grid-template-columns:1fr;}
+  [data-layout="modern"] .propOverviewPresets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-right:0;border-bottom:1px solid var(--border);}
+  [data-layout="modern"] .propOverviewPreset{min-height:44px;font-size:12px;text-align:center;}
+  [data-layout="modern"] .propOverviewCalendar{padding:12px;}
+  [data-layout="modern"] .propOverviewCalendarNav{top:12px;left:12px;right:12px;}
+  [data-layout="modern"] .propOverviewMonths{grid-template-columns:minmax(0,1fr);}
+  [data-layout="modern"] .propOverviewMonth[data-month-ordinal="1"]{display:none;}
+  [data-layout="modern"] .propOverviewMonth h4{line-height:44px;}
+  [data-layout="modern"] .propOverviewCalendarNav button{width:44px;height:44px;}
+  [data-layout="modern"] .propOverviewDateCell{height:44px;margin:2px 0;}
+  [data-layout="modern"] .propOverviewDateCell button{width:44px;height:44px;}
+  [data-layout="modern"] .propOverviewStatusLink{min-height:44px;}
+}
+
+/* Approved horizontal account progression — modern only, illustrative geometry. */
+[data-layout="modern"] .propProgress{border:1px solid var(--border);border-radius:14px;background:var(--surface);margin-bottom:20px;overflow:hidden;color:var(--text);font-family:var(--fontUI);font-variant-numeric:tabular-nums;}
+[data-layout="modern"] .propProgressHead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
+[data-layout="modern"] .propProgressHead>div{display:flex;align-items:center;gap:10px;}
+[data-layout="modern"] .propProgressHead h2{font-size:16px;font-weight:600;margin:0;}
+[data-layout="modern"] .propProgressHead p{font-size:12px;color:var(--muted);margin:3px 0 0;}
+[data-layout="modern"] .propProgressRange{font-size:12px;padding:4px 9px;border-radius:6px;background:var(--surface2);overflow-wrap:anywhere;}
+[data-layout="modern"] .propProgressScroll{padding:18px 24px 8px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;}
+[data-layout="modern"] .propProgressTrack{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:800px;}
+[data-layout="modern"] .propProgressStep{position:relative;min-width:0;}
+:where([data-layout="modern"]) :where(.propProgressStage){display:block;width:100%;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;cursor:pointer;text-align:center;}
+[data-layout="modern"] .propProgressCaption{height:36px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;}
+[data-layout="modern"] .propProgressCaption svg{width:18px;height:18px;color:var(--accent);}
+[data-layout="modern"] .propProgressShape{display:block;position:relative;height:240px;margin-top:12px;}
+[data-layout="modern"] .propProgressShape>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
+[data-layout="modern"] .propProgressShape polygon{fill:color-mix(in srgb,var(--accent) var(--stage-tint),var(--surface));stroke:color-mix(in srgb,var(--accent) 28%,var(--border));stroke-width:1;stroke-linejoin:round;}
+:where([data-layout="modern"]) :where(.propProgressStage:hover) polygon{fill:color-mix(in srgb,var(--accent) calc(var(--stage-tint) + 6%),var(--surface));}
+[data-layout="modern"] .propProgressValue{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);font-size:12px;}
+[data-layout="modern"] .propProgressValue strong{font-size:48px;line-height:1.1;font-weight:600;letter-spacing:-1.5px;}
+[data-layout="modern"] .propProgressValue small{display:block;margin-top:9px;font-size:12px;}
+:where([data-layout="modern"]) :where(.propProgressEdge){position:absolute;z-index:2;top:168px;left:calc(100% + 6px);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;min-width:78px;min-height:58px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;box-shadow:0 2px 5px rgb(0 0 0 / .04);}
+:where([data-layout="modern"]) :where(.propProgressEdge:hover){border-color:var(--accent);background:var(--surface2);}
+[data-layout="modern"] .propProgressEdge>span{display:flex;align-items:center;gap:6px;}
+[data-layout="modern"] .propProgressEdge strong{font-size:16px;font-weight:600;}
+[data-layout="modern"] .propProgressEdge svg{width:14px;height:14px;color:var(--muted);}
+[data-layout="modern"] .propProgressEdge small{font-size:11px;color:var(--muted);}
+[data-layout="modern"] .propProgressEdge:disabled{opacity:.5;cursor:default;}
+[data-layout="modern"] .propProgressDescription{display:flex;justify-content:space-between;gap:8px;margin:4px 24px 18px;font-size:12px;line-height:1.6;color:var(--muted);}
+[data-layout="modern"] .propProgressSwipe{display:none;}
+[data-layout="modern"] .propProgressSummary{display:grid;grid-template-columns:1fr 1.5fr;gap:24px;padding:18px 24px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--surface2) 30%,var(--surface));}
+[data-layout="modern"] .propProgressSummary>div{display:flex;flex-wrap:wrap;align-items:baseline;align-content:center;gap:6px 10px;min-width:0;}
+[data-layout="modern"] .propProgressSummary span{font-size:14px;color:var(--muted);}
+[data-layout="modern"] .propProgressSummary strong{font-size:24px;font-weight:600;line-height:1.2;max-width:100%;overflow-wrap:anywhere;}
+[data-layout="modern"] .propProgressSummary small{font-size:12px;line-height:1.6;color:var(--muted);}
+[data-layout="modern"] .propProgressNotice{margin:12px 24px;font-size:12px;line-height:1.6;color:var(--muted);padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);}
+[data-layout="modern"] .propLinkageModal{font-family:var(--fontUI);color:var(--text);}
+[data-layout="modern"] .propLinkageModal h2{font-size:18px;font-weight:600;margin:0;}
+[data-layout="modern"] .propLinkageSubtitle{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 12px;}
+[data-layout="modern"] .propLinkageTabs{display:flex;gap:4px;padding:4px;background:var(--surface2);border-radius:8px;margin-bottom:16px;}
+:where([data-layout="modern"]) :where(.propLinkageTabs button){border:0;background:transparent;border-radius:6px;padding:8px 10px;min-height:36px;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;}
+[data-layout="modern"] .propLinkageTabs button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgb(0 0 0 / .08);}
+:where([data-layout="modern"]) :where(.propLinkageAccount){display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:8px;padding:14px 12px;margin-bottom:8px;width:100%;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;}
+:where([data-layout="modern"]) :where(.propLinkageAccount:hover){background:var(--surface2);}
+[data-layout="modern"] .propLinkageAccountText{flex:1;min-width:0;overflow-wrap:anywhere;}
+[data-layout="modern"] .propLinkageAccountText>strong{display:block;font-size:14px;font-weight:500;}
+[data-layout="modern"] .propLinkageAccountText>small{display:block;font-size:12px;color:var(--muted);margin-top:3px;}
+[data-layout="modern"] .propLinkageAccountText>span{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:7px;}
+[data-layout="modern"] .propLinkageAccountText>span>small{font-size:11px;padding:3px 7px;border-radius:5px;background:var(--surface2);color:var(--muted);}
+[data-layout="modern"] .propLinkageAccount>svg{width:16px;height:16px;flex:none;color:var(--muted);}
+[data-layout="modern"] .propLinkageModal .modalFoot{justify-content:space-between;font-size:12px;color:var(--muted);}
+[data-layout="modern"] .propLinkageBack{margin-bottom:14px;}
+[data-layout="modern"] .propLinkedPeriod{display:block;font-size:12px;color:var(--muted);line-height:1.6;}
+[data-layout="modern"] .propLinkedRefundHint{font-size:12px;color:var(--muted);margin:8px 0 0;}
+[data-layout="modern"] .propLinkedMonths .propMoCol:disabled{opacity:.3;cursor:default;}
+[data-layout="modern"] .propLinkedMonths .propMoRefund i{transform:translate(-7px,-100%);width:8px;background:repeating-linear-gradient(125deg,var(--pnlPos) 0 2px,var(--pnlPosSoft) 2px 4px);border-radius:4px 4px 1px 1px;}
+[data-layout="modern"] .propLinkedMonths .up:has(+.propMoRefund) i{transform:translateX(6px);}
+:where([data-layout="modern"]) :where(.propProgress button,.propLinkageModal button,.propOverviewStatusLink,.propLinkageBack):focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+[data-layout="modern"] .propProgressScroll:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
+@media(max-width:1100px){[data-layout="modern"] .propProgressSummary small{flex-basis:100%;}}
+@media(max-width:640px){
+  [data-layout="modern"] .propProgressHead{padding:16px;}
+  [data-layout="modern"] .propProgressScroll{padding:14px 16px 10px;}
+  [data-layout="modern"] .propProgressValue strong{font-size:42px;}
+  [data-layout="modern"] .propProgressDescription{flex-direction:column;margin:8px 16px 16px;}
+  [data-layout="modern"] .propProgressSwipe{display:block;color:var(--text);}
+  [data-layout="modern"] .propProgressSummary{grid-template-columns:1fr;gap:18px;padding:18px 16px;}
+  [data-layout="modern"] .propLinkageTabs button{min-height:44px;}
+  [data-layout="modern"] .propLinkageBack{min-height:44px;}
+  [data-layout="modern"] .propLinkageModal .iconBtn{width:44px;height:44px;}
+  [data-layout="modern"] .propLinkageAccount{padding:12px 10px;gap:8px;}
+}

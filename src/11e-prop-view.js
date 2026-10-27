@@ -146,18 +146,28 @@ function propEmpty(msgKey) {
 function renderPropOverview() {
   if (!propAccounts.length) return propEmpty("prop.empty.accounts");
   const { accounts, entries } = propScoped();
-  const s = propSum(entries);
+  const modern = currentLayout() === "modern";
+  const report = modern ? propLinkageReport(accounts, entries, propOverviewRange, todayStr()) : null;
+  const s = modern ? report.finance.sum : propSum(entries);
   let html = propFilterChips();
-  html += `<div class="statRow propStats">
+  html += modern ? renderPropOverviewPanel(accounts, entries, report.finance) : `<div class="statRow propStats">
     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.spent"))}</div><div class="statValue">${propUsd(s.spent)}</div><div class="statSub">${esc(T("prop.stat.spentSub"))}${s.refund ? " · " + esc(T("prop.stat.refunded", { v: propUsd(s.refund) })) : ""}</div></div>
     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.received"))}</div><div class="statValue">${propUsd(s.received)}</div><div class="statSub">${s.pending ? esc(T("prop.stat.pendingSub", { v: propUsd(s.pending) })) : esc(T("prop.stat.receivedSub"))}</div></div>
     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.net"))}</div><div class="statValue ${propTone(s.net)}">${propUsd(s.net, true)}</div><div class="statSub">${esc(T("prop.stat.netSub"))}</div></div>
     <div class="statBox"><div class="statLabel">ROI</div><div class="statValue ${propTone(s.roi || 0)}">${propPct(s.roi)}</div><div class="statSub">${esc(T("prop.stat.roiSub"))}</div></div>
     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.accounts"))}</div><div class="statValue">${accounts.filter(propIsActive).length}<span class="propStatOf"> / ${accounts.length}</span></div><div class="statSub">${esc(T("prop.stat.accountsSub"))}</div></div>
   </div>`;
-  html += renderPropFunnel(accounts, entries);
-  html += renderPropMonths(accounts, entries);
-  html += renderPropByFirm(accounts, entries);
+  if (modern) {
+    html += renderPropProgress(report);
+    if (report.finance.available && !report.finance.trendUnavailable) {
+      html += renderPropMonths(accounts, report.entries, report.range);
+      html += renderPropByFirm(accounts, report.entries, report.range, entries);
+    } else html += `<div class="notice error" role="status">${esc(T("prop.linkage.financialUnavailable"))}</div>`;
+  } else {
+    html += renderPropFunnel(accounts, entries);
+    html += renderPropMonths(accounts, entries);
+    html += renderPropByFirm(accounts, entries);
+  }
   return html;
 }
 function renderPropFunnel(accounts, entries) {
@@ -175,14 +185,15 @@ function renderPropFunnel(accounts, entries) {
 /* ---------- 每月收支 ----------
    上面：12 个月的柱子（到账向上绿、投入向下红，顶上标净收支），右边全年汇总 + 回本进度（按全部时间算）。
    下面：选中月份的流水，按天分组的卡片；同一天同一批买的号（同公司同计划同规模、同类型）合成一条，点开看每个号 */
-function renderPropMonths(accounts, entries) {
+function renderPropMonths(accounts, entries, range = null) {
   // 今年还没有数据（比如只补录了去年的号）：自动跳到最近一个有数据的年份；用户自己翻过年份就不再跳
-  if (!propYearTouched && entries.length && !propMonthly(entries, propYear).some((m) => m.n)) {
+  if ((!range || range.preset === "all") && !propYearTouched && entries.length && !propMonthly(entries, propYear).some((m) => m.n)) {
     const latest = entries.map((e) => Number(String(e.day || "").slice(0, 4))).filter((y) => y > 2000).sort((a, b) => b - a)[0];
     if (latest) { propYear = latest; propMonth = Number((entries.filter((e) => String(e.day).startsWith(latest + "-")).map((e) => e.day).sort().pop() || "").slice(5, 7)) || 1; }
   }
+  if (range) ({ year: propYear, month: propMonth } = propLinkageMonth(range, propYear, propMonth));
   const months = propMonthly(entries, propYear);
-  const max = Math.max(1, ...months.map((m) => Math.max(m.spent, m.received)));
+  const max = Math.max(1, ...months.map((m) => Math.max(range ? Math.abs(m.spent) : m.spent, m.received)));
   const year = months.reduce((a, m) => ({ spent: a.spent + m.spent, received: a.received + m.received, n: a.n + m.n }), { spent: 0, received: 0, n: 0 });
   year.net = propMoney(year.received - year.spent);
   const all = propSum(entries);
@@ -190,35 +201,37 @@ function renderPropMonths(accounts, entries) {
   const back = pct === null ? "" : pct >= 1
     ? `<b class="pos">${esc(T("prop.mo.paidBack"))}</b><span>${esc(T("prop.mo.netProfit", { v: propUsd(all.net) }))}</span>`
     : `<b>${esc(T("prop.mo.backPct", { p: Math.round(pct * 100) }))}</b><span>${esc(T("prop.mo.toGo", { v: propUsd(all.spent - all.received) }))}</span>`;
-  let html = `<div class="calendarPanel propPanel">
-    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.month.title"))}</div>
-      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>
+  const bounded = range && range.preset !== "all";
+  let html = `<div class="calendarPanel propPanel${range ? " propLinkedMonths" : ""}">
+    <div class="propPanelHead"><div><div class="sectionLabel propLabel">${esc(T("prop.month.title"))}</div>${bounded ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear))}</small>` : ""}</div>
+      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1" ${bounded && propYear <= Number(range.from.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.previousYear"))}">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1" ${bounded && propYear >= Number(range.to.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.nextYear"))}">›</button></div></div>
     <div class="propMo">
       <div class="propMoChart">${months.map((m, i) => `<button class="propMoCol ${propMonth === i + 1 ? "on" : ""} ${m.n ? "" : "empty"}" data-action="prop-month" data-m="${i + 1}"
-          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}">
+          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}" ${bounded && !propLinkageMonthAllowed(range, propYear, i + 1) ? "disabled" : ""}>
         <span class="propMoNet ${m.n ? propTone(m.net) : ""}">${m.n ? propUsdShort(m.net, true) : ""}</span>
-        <span class="propMoBars"><span class="up"><i style="height:${Math.round((m.received / max) * 100)}%"></i></span><span class="down"><i style="height:${Math.round((m.spent / max) * 100)}%"></i></span></span>
+        <span class="propMoBars"><span class="up"><i style="height:${Math.round((m.received / max) * 100)}%"></i></span><span class="down${range && m.spent < 0 ? " propMoRefund" : ""}"><i style="height:${Math.round(((range ? Math.abs(m.spent) : m.spent) / max) * 100)}%"></i></span></span>
         <span class="propMoLabel">${esc(new Date(2000, i, 1).toLocaleString(localeTag(), { month: "short" }))}</span></button>`).join("")}</div>
       <div class="propMoSum">
-        <div class="propMiniLabel">${esc(T("prop.mo.yearSum", { y: propYear }))}</div>
+        <div class="propMiniLabel">${esc(T(bounded ? "prop.linkage.yearSlice" : "prop.mo.yearSum", { y: propYear }))}</div>
         <div class="propMoSumRow"><span>${esc(T("prop.month.spent"))}</span><b>${propUsd(year.spent)}</b></div>
         <div class="propMoSumRow"><span>${esc(T("prop.month.received"))}</span><b>${propUsd(year.received)}</b></div>
         <div class="propMoSumRow big"><span>${esc(T("prop.month.net"))}</span><b class="${propTone(year.net)}">${propUsd(year.net, true)}</b></div>
         ${pct === null ? "" : `<div class="propMoBack"><div class="propMoBackHead">${back}</div>
           <div class="propMoBackBar"><i style="width:${Math.round(Math.min(1, pct) * 100)}%"></i></div>
-          <small>${esc(T("prop.mo.backHint"))}</small></div>`}
+          <small>${esc(T(range ? "prop.linkage.backHint" : "prop.mo.backHint"))}</small></div>`}
       </div>
     </div>`;
-  html += renderPropMonthDetail(accounts, entries);
+  if (range && months.some(m => m.spent < 0)) html += `<p class="propLinkedRefundHint">${esc(T("prop.linkage.refundBars"))}</p>`;
+  html += renderPropMonthDetail(accounts, entries, range);
   return html + `</div>`;
 }
 const PROP_KIND_ICON = { purchase: "🛒", monthly: "↻", reset: "⟲", activation: "⚡", payout: "↑", refund: "↩", other: "•" };
-function renderPropMonthDetail(accounts, entries) {
+function renderPropMonthDetail(accounts, entries, range = null) {
   const key = propYear + "-" + String(propMonth).padStart(2, "0");
   const list = entries.filter((e) => propEntryMonth(e) === key);
   const m = propMonthly(list, propYear)[propMonth - 1];
   const title = new Date(propYear, propMonth - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" });
-  let html = `<div class="propMonthDetail"><div class="propMonthHead"><b>${esc(title)}</b>
+  let html = `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
     <span>${esc(T("prop.month.spent"))} <b>${propUsd(m.spent)}</b></span><span>${esc(T("prop.month.received"))} <b>${propUsd(m.received)}</b></span>
     <span>${esc(T("prop.month.net"))} <b class="${propTone(m.net)}">${propUsd(m.net, true)}</b></span></div>`;
   if (!list.length) return html + `<div class="propMuted">${esc(T("prop.month.empty"))}</div></div>`;
@@ -257,18 +270,18 @@ function propAmountCell(e) {
   const v = propMoney(e.amount) * (income ? 1 : -1);
   return `<td class="num ${e.pending ? "propMuted" : propTone(v)}">${propUsd(v, true)}</td>`;
 }
-function renderPropByFirm(accounts, entries) {
+function renderPropByFirm(accounts, entries, range = null, allEntries = entries) {
   const firms = [...new Set(accounts.map((a) => a.firm_name || "—"))];
   if (firms.length < 2 && !propFirmFilter) return "";
   const rows = firms.map((name) => {
     const accs = accounts.filter((a) => (a.firm_name || "—") === name);
     const ids = new Set(accs.map((a) => a.id));
-    return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: propFunnel(accs, entries) };
+    return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: range ? propLinkageReport(accs, allEntries, range, todayStr()).summary : propFunnel(accs, entries) };
   }).sort((a, b) => b.s.net - a.s.net);
-  return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div></div>
-    <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T("prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T("prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
+  return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div>${range ? `<small class="propLinkedPeriod">${esc(propOverviewRangeText(range))}</small>` : ""}</div>
+    <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T(range ? "prop.linkage.currentCount" : "prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T(range && range.preset !== "all" ? "prop.overview.spentRange" : "prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
     ${rows.map((r) => `<tr><td>${esc(r.name)}</td><td class="num">${r.n}</td><td class="num">${r.f.passRate === null ? "—" : r.f.passRate.toFixed(0) + "%"}</td><td class="num">${propUsd(r.s.spent)}</td><td class="num">${propUsd(r.s.received)}</td><td class="num ${propTone(r.s.net)}">${propUsd(r.s.net, true)}</td>
-      ${r.open && !r.s.received ? `<td class="num propMuted">${esc(T("prop.acc.inProgress"))}</td>` : `<td class="num ${propTone(r.s.roi || 0)}">${propPct(r.s.roi)}</td>`}</tr>`).join("")}
+      ${!range && r.open && !r.s.received ? `<td class="num propMuted">${esc(T("prop.acc.inProgress"))}</td>` : `<td class="num ${propTone(r.s.roi || 0)}">${propPct(r.s.roi)}</td>`}</tr>`).join("")}
     </tbody></table></div></div>`;
 }
 
@@ -281,9 +294,12 @@ function renderPropAccounts() {
   if (!propAccounts.length) return propEmpty("prop.empty.accounts");
   const { accounts } = propScoped();
   const counts = { active: accounts.filter(propIsActive).length, ended: accounts.filter((a) => !propIsActive(a)).length, all: accounts.length };
-  const list = accounts.filter((a) => propStatusFilter === "all" || (propStatusFilter === "active") === propIsActive(a));
+  // Exact statuses are modern navigation filters; classic keeps its aggregate controls.
+  const exact = currentLayout() === "modern" && PROP_STATUSES.includes(propStatusFilter);
+  const statusFilter = exact || ["active", "ended", "all"].includes(propStatusFilter) ? propStatusFilter : "active";
+  const list = accounts.filter(a => propAccountMatchesStatus(a, statusFilter));
   let html = `<div class="propFilters propAccFilters"><div class="chipGroup">${["active", "ended", "all"].map((k) =>
-    `<button class="chip ${propStatusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}</div>
+    `<button class="chip ${statusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}${exact ? `<button type="button" id="propExactStatus" class="chip active" data-action="prop-status-filter" data-val="all" aria-label="${esc(T("prop.linkage.clearStatus", { status: T("prop.status." + statusFilter) }))}">${esc(T("prop.status." + statusFilter))} · ${list.length} ×</button>` : ""}</div>
     ${propReadOnly() ? "" : `<button class="btn btn-sm ${propBatch ? "active" : ""}" data-action="prop-batch-toggle">${ICONS.check} ${esc(T(propBatch ? "prop.batch.exit" : "prop.batch.enter"))}</button>`}</div>`;
   html += propFilterChips();
   if (!list.length) return html + `<div class="emptyState">${esc(T("prop.empty.filtered"))}</div>`;
@@ -758,6 +774,7 @@ function propRenderModal() {
   let sel = null;
   try { sel = act && typeof act.selectionStart === "number" ? [act.selectionStart, act.selectionEnd] : null; } catch (err) {}
   renderSecondaryModals(true);
+  propLinkageFocusDialog();
   if (!keep || !propModal || propModal.type !== keep.type || (propModal.id || propModal.accountId || "") !== keep.id) return;
   const nb = document.querySelector(".propModal .modalBody");
   if (nb) nb.scrollTop = keep.top;
@@ -769,10 +786,11 @@ function propRenderModal() {
     }
   }
 }
-function propCloseModal() { propModal = null; propRenderModal(); render(); }
+function propCloseModal() { const origin = propLinkageOrigin(propModal); propModal = null; propRenderModal(); render(); propLinkageReturnFocus(origin); }
 function propModalHtml() {
   const m = propModal;
   if (!m) return "";
+  if (m.type === "overview-list") return propLinkageModalHtml(m);
   let title = "", body = "", foot = "", wide = false;
   if (m.type === "account") { ({ title, body, foot } = propAccountForm(m)); wide = 1080; }
   else if (m.type === "entry") ({ title, body, foot } = propEntryForm(m));
@@ -785,12 +803,12 @@ function propModalHtml() {
   else if (m.type === "admBatch") { ({ title, body, foot } = propAdmBatchForm(m)); wide = true; }
   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
   else if (m.type === "compare") { ({ title, body, foot } = propCompareView()); wide = true; }
-  const drawer = wide === "drawer";
+  const drawer = wide === "drawer", linked = !!propLinkageOrigin(m);
   // 抽屉只在第一次打开时滑进来，里面改东西重画时不再动
   if (drawer) setTimeout(() => { if (propModal === m) m.shown = true; }, 0);
   return `<div class="overlay ${drawer ? "propDrawerOverlay" : ""}" data-action="prop-dismiss-overlay">
-    <div class="modal propModal ${drawer ? "propDrawer" + (m.shown ? "" : " anim") : ""}" style="max-width:${drawer ? 640 : typeof wide === "number" ? wide : wide ? 860 : 480}px;">
-      <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal">${ICONS.x}</button></div>
+    <div class="modal propModal ${drawer ? "propDrawer" + (m.shown ? "" : " anim") : ""}"${linked ? ` role="dialog" aria-modal="true" ${m.type === "detail" ? `aria-label="${esc(T("prop.linkage.details"))}"` : 'aria-labelledby="propLinkageDialogTitle"'}` : ""} style="max-width:${drawer ? 640 : typeof wide === "number" ? wide : wide ? 860 : 480}px;">
+      <div class="modalHead"><div class="display"${linked ? ' id="propLinkageDialogTitle"' : ""} style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal"${linked ? ` aria-label="${esc(T("common.close"))}"` : ""}>${ICONS.x}</button></div>
       <div class="modalBody">${m.error ? `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(m.error)}</span></div>` : ""}${body}</div>
       ${foot ? `<div class="modalFoot">${foot}</div>` : ""}
     </div></div>`;
@@ -1178,6 +1196,7 @@ function propDetail(m) {
     ${ro ? "" : m.confirmDelete
       ? `<span class="propDelConfirm">${esc(T("prop.acc.deleteConfirm"))}<button class="btn btn-sm btn-danger" data-action="prop-delete-account" data-id="${esc(acc.id)}">${esc(T("prop.acc.deleteYes"))}</button><button class="btn btn-sm" data-action="prop-cancel-delete">${esc(T("common.cancel"))}</button></span>`
       : `<button class="btn btn-sm propDelBtn" data-action="prop-ask-delete-account">${ICONS.trash} ${esc(T("prop.acc.delete"))}</button>`}</div>`;
+  if (m.linkageBack) body = `<button type="button" class="btn btn-sm propLinkageBack" data-action="prop-linkage-back">← ${esc(T("prop.linkage.backToList"))}</button>` + body;
   body += `<div class="propAccNums propDetailNums">
     <div><span>${esc(T("prop.stat.spent"))}</span><b>${propUsd(s.spent)}</b></div>
     <div><span>${esc(T("prop.stat.received"))}</span><b>${propUsd(s.received)}</b></div>
@@ -1501,7 +1520,7 @@ document.addEventListener("click", async (e) => {
   /* ---------- 弹窗开关 ---------- */
   else if (a === "prop-dismiss-overlay") { if (e.target === el && !(m && m.busy)) propCloseModal(); }
   else if (a === "prop-close-modal") { if (!(m && m.busy)) propCloseModal(); }
-  else if (a === "prop-modal-back") { propModal = m && m.back ? m.back : null; propRenderModal(); }
+  else if (a === "prop-modal-back") { propModal = m && m.back ? m.back : null; propRenderModal(); if (propModal?.linkageBack) document.querySelector('[data-action="prop-linkage-back"]')?.focus({ preventScroll: true }); }
   else if (a === "prop-new-account") { propModal = { type: "account", draft: propNewAccountDraft(null) }; propRenderModal(); }
   else if (a === "prop-buy-plan") { propModal = { type: "account", draft: propNewAccountDraft(id) }; propRenderModal(); }
   else if (a === "prop-save-account") { await propSaveNewAccount(); }
@@ -1517,14 +1536,14 @@ document.addEventListener("click", async (e) => {
   else if (a === "prop-add-reset-rules") { const p = propDraftPlan(m.draft); m.draft.rules = propRuleTexts(p); propRenderModal(); }
   else if (a === "prop-open-detail") { propModal = { type: "detail", id }; propRenderModal(); }
   else if (a === "prop-open-entry") {
-    propModal = { type: "entry", accountId: id, back: m && m.type === "detail" ? { type: "detail", id } : null,
+    propModal = { type: "entry", accountId: id, back: m && m.type === "detail" ? propLinkageDetailBack(m, id) : null,
       draft: { kind: el.dataset.kind || "other", amount: "", day: todayStr(), pending: false, note: "" } };
     propRenderModal();
   }
   else if (a === "prop-edit-entry") {
     const en = propEntries.find((x) => x.id === id);
     if (!en) return;
-    propModal = { type: "entry", accountId: en.account_id, back: m && m.type === "detail" ? { type: "detail", id: en.account_id } : null,
+    propModal = { type: "entry", accountId: en.account_id, back: m && m.type === "detail" ? propLinkageDetailBack(m, en.account_id) : null,
       draft: { id: en.id, kind: en.kind, amount: propMoney(en.amount), day: en.day, pending: !!en.pending, note: en.note || "" } };
     propRenderModal();
   }
@@ -1544,7 +1563,7 @@ document.addEventListener("click", async (e) => {
     // 添加账号时选了「激活费现在一起付」的，激活那一步已经记过了，不再带出来
     const paidUpfront = feeKey === "activation" && snap.activationUpfront;
     const fee = feeKey && !paidUpfront && typeof snap[feeKey] === "number" ? snap[feeKey] : "";
-    propModal = { type: "status", accountId: id, step, to: el.dataset.to, back: { type: "detail", id }, draft: { day: todayStr(), fee } };
+    propModal = { type: "status", accountId: id, step, to: el.dataset.to, back: propLinkageDetailBack(m, id), draft: { day: todayStr(), fee } };
     propRenderModal();
   }
   else if (a === "prop-save-status") { await propSaveStatus(); }
@@ -1575,7 +1594,7 @@ document.addEventListener("click", async (e) => {
     const acc = propAccounts.find((x) => x.id === id);
     if (!acc) return;
     propCardMenu = null;
-    propModal = { type: "balance", accountId: id, back: m && m.type === "detail" ? { type: "detail", id } : null,
+    propModal = { type: "balance", accountId: id, back: m && m.type === "detail" ? propLinkageDetailBack(m, id) : null,
       draft: { balance: acc.balance === null || acc.balance === undefined ? "" : propMoney(acc.balance), day: todayStr() } };
     propRenderModal(); render();
   }

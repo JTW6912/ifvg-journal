@@ -103,6 +103,10 @@ let propCatalogInfo = null;           // 最近一次导入 { imported_at, summa
 let propAccounts = [];
 let propEntries = [];
 let propError = null;
+// 仅概览财务面板的本次查看范围，不落库、不影响月度图或账号当前阶段。
+let propOverviewRange = { preset: "all", from: null, to: null };
+let propOverviewOwner = null;
+let propOverviewPicker = null;        // 选日草稿；确认前不改已应用范围
 let propYear = new Date().getFullYear();
 let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
 let propYearTouched = false;          // 用户自己翻过年份：之后不再自动跳到有数据的年份

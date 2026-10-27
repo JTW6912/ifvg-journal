@@ -493,6 +493,7 @@ function renderSecondaryModals(force) {
   const root = document.getElementById("secondaryModalRoot");
   if (!root) return;
   const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : (propModal ? "prop" : null))))))));
+  if (want) propOverviewCleanup(); // Let existing editing dialogs own focus and Escape.
   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
   secondaryModalState = want;
   if (want === "profile") root.innerHTML = profileModalHtml();
@@ -570,6 +571,7 @@ function patchAppShell(regions) {
   });
 }
 function render() {
+  propOverviewBeforeRender();
   const app = document.getElementById("app");
 
   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
@@ -681,5 +683,6 @@ function render() {
   renderReviewEditor();
   renderExportCenter();
   renderAcctPop();
+  propOverviewAfterRender();
 }
 
