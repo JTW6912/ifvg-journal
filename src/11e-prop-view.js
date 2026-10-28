@@ -202,16 +202,19 @@ function renderPropMonths(accounts, entries, range = null) {
     ? `<b class="pos">${esc(T("prop.mo.paidBack"))}</b><span>${esc(T("prop.mo.netProfit", { v: propUsd(all.net) }))}</span>`
     : `<b>${esc(T("prop.mo.backPct", { p: Math.round(pct * 100) }))}</b><span>${esc(T("prop.mo.toGo", { v: propUsd(all.spent - all.received) }))}</span>`;
   const bounded = range && range.preset !== "all";
-  let html = `<div class="calendarPanel propPanel${range ? " propLinkedMonths" : ""}">
+  const modern = currentLayout() === "modern";
+  const lineMask = modern ? propMonthsLineMask(months, propYear, range, todayStr()) : [];
+  const hasCash = months.some((m, i) => lineMask[i] && (m.spent !== 0 || m.received !== 0));
+  let html = `<div class="calendarPanel propPanel${range ? " propLinkedMonths" : ""}${modern ? " propMonths" + (propMonthLines ? " propMonthsLinesOn" : "") : ""}"${modern ? ` id="propMonthsPanel" data-period="${propYear}-${propMonth}"` : ""}>
     <div class="propPanelHead"><div><div class="sectionLabel propLabel">${esc(T("prop.month.title"))}</div>${bounded ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear))}</small>` : ""}</div>
-      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1" ${bounded && propYear <= Number(range.from.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.previousYear"))}">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1" ${bounded && propYear >= Number(range.to.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.nextYear"))}">›</button></div></div>
+      <div class="propYearNav">${modern ? propMonthsControls() : ""}<button class="tinyBtn" data-action="prop-year" data-d="-1" ${bounded && propYear <= Number(range.from.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.previousYear"))}">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1" ${bounded && propYear >= Number(range.to.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.nextYear"))}">›</button></div></div>
     <div class="propMo">
-      <div class="propMoChart">${months.map((m, i) => `<button class="propMoCol ${propMonth === i + 1 ? "on" : ""} ${m.n ? "" : "empty"}" data-action="prop-month" data-m="${i + 1}"
-          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}" ${bounded && !propLinkageMonthAllowed(range, propYear, i + 1) ? "disabled" : ""}>
+      ${modern ? `<div class="propMonthsScroll">` : ""}<div class="propMoChart"${modern ? ` id="propMonthsChart" data-has-cash="${hasCash}"` : ""}>${months.map((m, i) => `<button class="propMoCol ${propMonth === i + 1 ? "on" : ""} ${m.n ? "" : "empty"}" data-action="prop-month" data-m="${i + 1}"
+          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}" ${bounded && !propLinkageMonthAllowed(range, propYear, i + 1) ? "disabled" : ""}${modern ? ` data-line-point="${lineMask[i]}" aria-pressed="${propMonth === i + 1}" aria-label="${esc(new Date(propYear, i, 1).toLocaleString(localeTag(), { month: "long", year: "numeric" }) + " · " + T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}"` : ""}>
         <span class="propMoNet ${m.n ? propTone(m.net) : ""}">${m.n ? propUsdShort(m.net, true) : ""}</span>
         <span class="propMoBars"><span class="up"><i style="height:${Math.round((m.received / max) * 100)}%"></i></span><span class="down${range && m.spent < 0 ? " propMoRefund" : ""}"><i style="height:${Math.round(((range ? Math.abs(m.spent) : m.spent) / max) * 100)}%"></i></span></span>
-        <span class="propMoLabel">${esc(new Date(2000, i, 1).toLocaleString(localeTag(), { month: "short" }))}</span></button>`).join("")}</div>
-      <div class="propMoSum">
+        <span class="propMoLabel">${esc(new Date(2000, i, 1).toLocaleString(localeTag(), { month: "short" }))}</span></button>`).join("")}</div>${modern ? "</div>" : ""}
+      ${modern ? `<div class="propMoSum">${renderPropMonthsSummary(year, all, range)}</div>` : `<div class="propMoSum">
         <div class="propMiniLabel">${esc(T(bounded ? "prop.linkage.yearSlice" : "prop.mo.yearSum", { y: propYear }))}</div>
         <div class="propMoSumRow"><span>${esc(T("prop.month.spent"))}</span><b>${propUsd(year.spent)}</b></div>
         <div class="propMoSumRow"><span>${esc(T("prop.month.received"))}</span><b>${propUsd(year.received)}</b></div>
@@ -219,7 +222,7 @@ function renderPropMonths(accounts, entries, range = null) {
         ${pct === null ? "" : `<div class="propMoBack"><div class="propMoBackHead">${back}</div>
           <div class="propMoBackBar"><i style="width:${Math.round(Math.min(1, pct) * 100)}%"></i></div>
           <small>${esc(T(range ? "prop.linkage.backHint" : "prop.mo.backHint"))}</small></div>`}
-      </div>
+      </div>`}
     </div>`;
   if (range && months.some(m => m.spent < 0)) html += `<p class="propLinkedRefundHint">${esc(T("prop.linkage.refundBars"))}</p>`;
   html += renderPropMonthDetail(accounts, entries, range);
@@ -231,7 +234,7 @@ function renderPropMonthDetail(accounts, entries, range = null) {
   const list = entries.filter((e) => propEntryMonth(e) === key);
   const m = propMonthly(list, propYear)[propMonth - 1];
   const title = new Date(propYear, propMonth - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" });
-  let html = `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
+  let html = currentLayout() === "modern" ? `<div class="propMonthDetail">${renderPropMonthsHeading(title, m, range)}` : `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
     <span>${esc(T("prop.month.spent"))} <b>${propUsd(m.spent)}</b></span><span>${esc(T("prop.month.received"))} <b>${propUsd(m.received)}</b></span>
     <span>${esc(T("prop.month.net"))} <b class="${propTone(m.net)}">${propUsd(m.net, true)}</b></span></div>`;
   if (!list.length) return html + `<div class="propMuted">${esc(T("prop.month.empty"))}</div></div>`;
@@ -254,7 +257,7 @@ function renderPropMonthDetail(accounts, entries, range = null) {
       const firm = (g.acc.firm_id && propFindFirm(g.acc.firm_id)) || { name: g.acc.firm_name || "?" };
       const one = g.items.length === 1;
       const head = `${propFirmLogo(firm, true)}<span class="propLedName"><b>${esc(one ? propAccountTitle(g.items[0].acc) : g.base)}</b>${one ? "" : `<em>× ${g.items.length}</em>`}</span>
-        <span class="propLedKind propLedKind-${esc(g.kind)}">${PROP_KIND_ICON[g.kind] || "•"} ${esc(T("prop.kind." + g.kind))}${g.pending ? " · " + esc(T("prop.entry.pending")) : ""}</span>
+        <span class="propLedKind propLedKind-${esc(g.kind)}">${currentLayout() === "modern" ? propMonthsIcon(g.kind) : PROP_KIND_ICON[g.kind] || "•"} ${esc(T("prop.kind." + g.kind))}${g.pending ? " · " + esc(T("prop.entry.pending")) : ""}</span>
         <span class="propLedAmt ${g.pending ? "propMuted" : propTone(sum)}">${propUsd(sum, true)}</span>`;
       if (one) html += `<button class="propLedRow" data-action="prop-open-detail" data-id="${esc(g.items[0].e.account_id)}">${head}</button>`;
       else html += `<details class="propLedRow propLedGroup"><summary>${head}</summary><div class="propLedSub">${g.items.map(({ e, acc }) =>

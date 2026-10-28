@@ -15,6 +15,14 @@ function propOverviewIcon(name) {
 function propOverviewHelp(field, label) {
   return `<button type="button" class="propOverviewHelp" data-prop-overview-tip="${field}" aria-label="${esc(T("prop.overview.helpLabel", { label }))}">${propOverviewIcon("info")}</button>`;
 }
+const PROP_OVERVIEW_HELP_SELECTOR = "[data-prop-overview-tip], [data-prop-month-tip]";
+function propOverviewHelpField(button) {
+  return button?.dataset?.propOverviewTip || (button?.dataset?.propMonthTip === "recovery" ? "recovery" : null);
+}
+function propOverviewHelpButton(field) {
+  if (field === "recovery") return document.getElementById("propMonthRecoveryHelp");
+  return ["net", "spent", "received", "roi", "trend", "accounts"].includes(field) ? document.querySelector(`[data-prop-overview-tip="${field}"]`) : null;
+}
 function propOverviewLabel(key, field) {
   const text = T(key);
   return `<span>${esc(text)}</span>${field ? propOverviewHelp(field, text) : ""}`;
@@ -105,17 +113,19 @@ function propOverviewCleanup() {
 }
 function propOverviewBeforeRender() {
   const focus = document.activeElement;
-  propOverviewUI.restore = propOverviewPicker || focus?.id === "propOverviewRangeTrigger" ? "range" : focus?.dataset?.propOverviewTip || null;
+  propOverviewUI.restore = propOverviewPicker || focus?.id === "propOverviewRangeTrigger" ? "range" : propOverviewHelpField(focus);
   propOverviewCleanup();
   const owner = session?.user?.id ? JSON.stringify([session.user.id, viewingUserId || ""]) : null;
   if (owner !== propOverviewOwner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
   propOverviewOwner = owner;
   propLinkageBeforeRender();
+  propMonthsBeforeRender(owner);
 }
 function propOverviewAfterRender() {
+  propMonthsAfterRender();
   const restore = propOverviewUI.restore; propOverviewUI.restore = null;
   if (!restore || !propOverviewCanInteract()) return;
-  const button = restore === "range" ? document.getElementById("propOverviewRangeTrigger") : document.querySelector(`[data-prop-overview-tip="${restore}"]`);
+  const button = restore === "range" ? document.getElementById("propOverviewRangeTrigger") : propOverviewHelpButton(restore);
   // Returning focus must not reopen a tooltip cancelled by repaint.
   propOverviewUI.dismissed = button; button?.focus({ preventScroll: true });
   // Suppress only the synchronous focus event, not the next deliberate hover.
@@ -209,7 +219,7 @@ function propOverviewKeydown(e) {
     return false;
   }
   const p = propOverviewPicker, b = e.target.closest?.('[data-action="prop-overview-day"]');
-  if (!p || !b || e.altKey || e.ctrlKey || e.metaKey) return false;
+  if (!p || !b || e.altKey || e.ctrlKey || e.metaKey) return propMonthsKeydown(e);
   const day = b.dataset.day, shift = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
   let next = null;
   if (e.key in shift) next = propOverviewShiftDay(day, shift[e.key]);
@@ -223,14 +233,16 @@ function propOverviewKeydown(e) {
   propOverviewRenderPicker(next); return true;
 }
 
-/* Six field labels share one noninteractive tooltip with hover/focus/tap support. */
+/* Overview fields and monthly recovery share one safe hover/focus/tap tooltip. */
 function propOverviewShowHelp(button, pinned = false) {
   if (!propOverviewCanInteract() || !button?.isConnected || propOverviewUI.dismissed === button) return;
-  const field = button.dataset.propOverviewTip;
-  if (!["net", "spent", "received", "roi", "trend", "accounts"].includes(field)) return;
+  const field = propOverviewHelpField(button);
+  if (!["net", "spent", "received", "roi", "trend", "accounts", "recovery"].includes(field)) return;
+  const text = field === "recovery" ? button.dataset.propMonthHelpText : T("prop.overview.help." + field);
+  if (typeof text !== "string" || !text) return;
   propOverviewClosePicker(false); propOverviewHideHelp();
-  const tip = document.createElement("div"); tip.id = "propOverviewTooltip"; tip.className = "propOverviewTooltip"; tip.setAttribute("role", "tooltip");
-  tip.textContent = T("prop.overview.help." + field); document.body.appendChild(tip);
+  const tip = document.createElement("div"); tip.id = "propOverviewTooltip"; tip.className = "propOverviewTooltip" + (field === "recovery" ? " propMonthsRecoveryTip" : ""); tip.setAttribute("role", "tooltip");
+  tip.textContent = text; document.body.appendChild(tip);
   const ui = propOverviewUI; ui.tip = tip; ui.active = button; ui.pinned = pinned;
   button.setAttribute("aria-describedby", tip.id); button.classList.add("is-showing");
   propOverviewPosition(tip, button, true);
@@ -258,9 +270,9 @@ document.addEventListener("click", e => {
       else { p.start = day; p.end = null; p.hover = null; p.focus = day; p.choosingEnd = true; p.preset = "custom"; propOverviewHighlight(); }
     }
   }
-  let help = e.target.closest?.("[data-prop-overview-tip]");
+  let help = e.target.closest?.(PROP_OVERVIEW_HELP_SELECTOR);
   if (help) {
-    if (userMenuOpen) { const field = help.dataset.propOverviewTip; userMenuOpen = false; render(); help = document.querySelector(`[data-prop-overview-tip="${field}"]`); }
+    if (userMenuOpen) { const field = propOverviewHelpField(help); userMenuOpen = false; render(); help = propOverviewHelpButton(field); }
     const ui = propOverviewUI;
     if (ui.active === help && ui.pinned) propOverviewHideHelp(true);
     else { ui.dismissed = null; propOverviewShowHelp(help, true); }
@@ -269,7 +281,7 @@ document.addEventListener("click", e => {
 document.addEventListener("pointerover", e => {
   const ui = propOverviewUI, tip = e.target.closest?.(".propOverviewTooltip");
   if (tip) { ui.overTip = true; clearTimeout(ui.closeTimer); return; }
-  const button = e.target.closest?.("[data-prop-overview-tip]");
+  const button = e.target.closest?.(PROP_OVERVIEW_HELP_SELECTOR);
   if (button && e.pointerType !== "touch" && !button.contains(e.relatedTarget)) {
     ui.hovered = button; clearTimeout(ui.closeTimer);
     if (ui.active !== button && ui.dismissed !== button) { clearTimeout(ui.openTimer); ui.pending = button; ui.openTimer = setTimeout(() => { if (ui.hovered === button) propOverviewShowHelp(button); }, 180); }
@@ -278,7 +290,7 @@ document.addEventListener("pointerover", e => {
   if (day && !day.disabled && propOverviewPicker?.choosingEnd) { propOverviewPicker.hover = day.dataset.day; propOverviewHighlight(); }
 });
 document.addEventListener("pointerout", e => {
-  const ui = propOverviewUI, button = e.target.closest?.("[data-prop-overview-tip]");
+  const ui = propOverviewUI, button = e.target.closest?.(PROP_OVERVIEW_HELP_SELECTOR);
   if (button && !button.contains(e.relatedTarget)) {
     if (ui.hovered === button) ui.hovered = null;
     if (ui.dismissed === button) ui.dismissed = null;
@@ -290,7 +302,7 @@ document.addEventListener("pointerout", e => {
   if (months && !months.contains(e.relatedTarget) && propOverviewPicker?.choosingEnd) { propOverviewPicker.hover = null; propOverviewHighlight(); }
 });
 document.addEventListener("focusin", e => {
-  const b = e.target.closest?.("[data-prop-overview-tip]");
+  const b = e.target.closest?.(PROP_OVERVIEW_HELP_SELECTOR);
   if (b && b.matches(":focus-visible")) propOverviewShowHelp(b);
   if (propOverviewPicker && !propOverviewUI.panel?.contains(e.target) && e.target.id !== "propOverviewRangeTrigger") propOverviewClosePicker(false);
 });

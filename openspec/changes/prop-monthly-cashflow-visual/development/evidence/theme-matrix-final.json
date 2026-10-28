@@ -1,0 +1,45 @@
+[
+  {
+    "width": 375,
+    "cases": 56,
+    "failures": []
+  },
+  {
+    "width": 640,
+    "cases": 56,
+    "failures": []
+  },
+  {
+    "width": 768,
+    "cases": 56,
+    "failures": []
+  },
+  {
+    "width": 1600,
+    "cases": 56,
+    "failures": []
+  },
+  {
+    "customPositive": "rgb(124, 58, 237)",
+    "customNegative": "rgb(14, 165, 233)",
+    "blocked": []
+  },
+  {
+    "errors": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    }
+  }
+]

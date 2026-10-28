@@ -1,0 +1,17 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46055/",
+  "result": "{\"on\":true,\"series\":[\"received\",\"invested\"],\"points\":[{\"month\":1,\"series\":\"received\",\"error\":0},{\"month\":2,\"series\":\"received\",\"error\":0},{\"month\":3,\"series\":\"received\",\"error\":0},{\"month\":4,\"series\":\"received\",\"error\":0},{\"month\":5,\"series\":\"received\",\"error\":0},{\"month\":6,\"series\":\"received\",\"error\":0},{\"month\":7,\"series\":\"received\",\"error\":0},{\"month\":8,\"series\":\"received\",\"error\":0},{\"month\":9,\"series\":\"received\",\"error\":0},{\"month\":10,\"series\":\"received\",\"error\":0},{\"month\":1,\"series\":\"invested\",\"error\":0},{\"month\":2,\"series\":\"invested\",\"error\":0},{\"month\":3,\"series\":\"invested\",\"error\":0},{\"month\":4,\"series\":\"invested\",\"error\":0},{\"month\":5,\"series\":\"invested\",\"error\":0},{\"month\":6,\"series\":\"invested\",\"error\":0},{\"month\":7,\"series\":\"invested\",\"error\":0},{\"month\":8,\"series\":\"invested\",\"error\":0},{\"month\":9,\"series\":\"invested\",\"error\":0},{\"month\":10,\"series\":\"invested\",\"error\":0}],\"maxError\":0,\"groupOpen\":true,\"focus\":\"propMonthLinesToggle\",\"blocked\":[]}"
+}

@@ -1,0 +1,17 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46055/",
+  "result": "{\"defaultOff\":true,\"overlayCount\":0,\"months\":12,\"amounts\":[\"$760\",\"$2,480\",\"+$1,720\"],\"recovery\":\"276%\",\"bodyOverflow\":false,\"blocked\":[],\"remote\":[]}"
+}

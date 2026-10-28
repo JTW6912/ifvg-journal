@@ -1,0 +1,80 @@
+[
+  {
+    "label": "native Tab opens mobile recovery help inside viewport",
+    "ok": true,
+    "focus": "propMonthRecoveryHelp",
+    "tip": {
+      "left": 15.84375,
+      "right": 335.84375,
+      "top": 241.765625,
+      "bottom": 417.765625
+    },
+    "target": [
+      44,
+      44
+    ]
+  },
+  {
+    "label": "click reopens after Escape",
+    "ok": true,
+    "text": "Received ÷ net investment × 100%. Uses the reporting range above, not necessarily just the displayed year. Refunds reduce investment; pending payouts are excluded. The percentage can exceed 100%; the bar fills up to 100%.\nRange: 2026-01-01 – 2026-10-31\nNet investment $3,410 · Received $9,410 · Net cash flow +$6,000"
+  },
+  {
+    "label": "second click dismisses",
+    "ok": true
+  },
+  {
+    "label": "refund line follows actual upward negative-investment bar",
+    "ok": true,
+    "spent": "−$260"
+  },
+  {
+    "label": "empty has no invented line or recovery ratio",
+    "ok": true,
+    "amounts": [
+      "$0",
+      "$0",
+      "$0"
+    ]
+  },
+  {
+    "label": "large values remain present without document overflow",
+    "ok": true,
+    "amounts": [
+      {
+        "text": "$760,000,000",
+        "width": 90,
+        "scroll": 90
+      },
+      {
+        "text": "$2,480,000,000",
+        "width": 79,
+        "scroll": 79
+      },
+      {
+        "text": "+$1,720,000,000",
+        "width": 89,
+        "scroll": 89
+      }
+    ],
+    "overflow": false
+  },
+  {
+    "errors": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    }
+  }
+]
