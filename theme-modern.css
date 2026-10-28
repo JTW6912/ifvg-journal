@@ -939,3 +939,81 @@
   [data-layout="modern"] .propMonthsMetricsLong .propMonthsMetric>b{text-align:right;}
   [data-layout="modern"] .propMonthsDate h3{font-size:15px;}
 }
+
+/* Modern company comparison. Local table overflow keeps full financial values. */
+[data-layout="modern"] .propCompany{padding:22px;min-width:0;}
+[data-layout="modern"] .propCompany [hidden]{display:none!important;}
+[data-layout="modern"] .propCompanyIcon{display:inline-block;width:16px;height:16px;flex-shrink:0;vertical-align:middle;}
+[data-layout="modern"] .propCompanyHead{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+[data-layout="modern"] .propCompanyTitle{display:flex;gap:10px;align-items:center;}
+[data-layout="modern"] .propCompanyTitle h2{font:650 16px/1.4 var(--fontUI);margin:0;color:var(--text);}
+[data-layout="modern"] .propCompanyTitle>.propCompanyIcon{width:19px;height:19px;color:var(--muted);}
+[data-layout="modern"] .propCompanyTotal{font:500 12px/1 var(--fontUI);color:var(--muted);background:var(--surface2);padding:5px 7px;border-radius:6px;min-width:24px;text-align:center;}
+[data-layout="modern"] .propCompanyTools{display:flex;align-items:center;gap:16px;flex-wrap:wrap;max-width:100%;}
+[data-layout="modern"] .propCompanyPeriod{display:flex;align-items:center;gap:6px;font:400 12px var(--fontUI);color:var(--muted);}
+[data-layout="modern"] .propCompanyPeriod svg{width:14px;height:14px;flex-shrink:0;}
+[data-layout="modern"] .propCompanySort{display:flex;align-items:center;gap:6px;min-height:34px;padding:0 8px;border:1px solid var(--border);border-radius:6px;color:var(--muted);background:var(--surface);}
+[data-layout="modern"] .propCompanySort>.propCompanyIcon{width:14px;height:14px;}
+[data-layout="modern"] .propCompanySort select{width:auto;border:0;background:transparent;color:var(--text);font:500 12px var(--fontUI);padding:7px 1px;max-width:160px;cursor:pointer;touch-action:manipulation;}
+[data-layout="modern"] .propCompanySort option{background:var(--surface);color:var(--text);}
+[data-layout="modern"] .propCompanySort select:disabled{cursor:default;opacity:.5;}
+[data-layout="modern"] .propCompany :is(button,select,.propCompanyScroll):focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+[data-layout="modern"] .propCompanyScroll{width:100%;overflow:auto;overscroll-behavior-x:contain;scrollbar-width:thin;position:relative;}
+[data-layout="modern"] .propCompanyTable{width:100%;min-width:920px;border-collapse:separate;border-spacing:0;table-layout:auto;font:400 14px var(--fontUI);}
+[data-layout="modern"] .propCompanyTable thead th{padding:8px;color:var(--muted);font-size:12px;font-weight:500;text-align:right;vertical-align:middle;border-bottom:1px solid var(--border);height:48px;background:var(--surface);}
+[data-layout="modern"] .propCompanyTable thead th:first-child{text-align:left;padding-left:0;}
+[data-layout="modern"] .propCompanyColumn{display:inline-flex;justify-content:flex-end;align-items:center;gap:4px;line-height:1.5;}
+[data-layout="modern"] .propCompanyColumn>span{white-space:nowrap;}
+[data-layout="modern"] .propCompanyTable tbody tr{transition:background-color 120ms ease;}
+[data-layout="modern"] :where(.propCompanyTable tbody tr:hover){background:var(--surface2);}
+[data-layout="modern"] .propCompanyTable tbody :is(td,th){padding:14px 8px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:right;color:var(--text);font-weight:400;}
+[data-layout="modern"] .propCompanyTable tbody tr:last-child :is(td,th){border-bottom:0;}
+[data-layout="modern"] .propCompanyTable tbody th{padding-left:0;text-align:left;width:24%;min-width:200px;}
+[data-layout="modern"] .propCompanyIdentity{display:flex;align-items:center;gap:10px;min-width:0;max-width:280px;}
+[data-layout="modern"] .propCompanyMark{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;border-radius:8px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;}
+[data-layout="modern"] .propCompanyMark img{width:100%;height:100%;object-fit:contain;}
+[data-layout="modern"] .propCompanyInitials{font-weight:650;font-size:12px;color:var(--muted);}
+[data-layout="modern"] .propCompanyName{font-size:14px;font-weight:550;line-height:1.4;overflow-wrap:anywhere;min-width:0;}
+[data-layout="modern"] .propCompanyCount{display:inline-block;min-width:32px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:500;line-height:1;color:var(--text);font-variant-numeric:tabular-nums;}
+[data-layout="modern"] .propCompanyValue{font:500 15px/1.4 var(--fontUI);font-variant-numeric:tabular-nums;white-space:nowrap;}
+[data-layout="modern"] .propCompanyValue[data-tone="pos"]{color:var(--pnlPos);}
+[data-layout="modern"] .propCompanyValue[data-tone="neg"]{color:var(--pnlNeg);}
+[data-layout="modern"] .propCompanyNet .propCompanyValue{font-size:18px;font-weight:650;}
+[data-layout="modern"] .propCompanyROI .propCompanyValue{font-size:14px;}
+[data-layout="modern"] .propCompanyPass{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+[data-layout="modern"] .propCompanyPassTrack{height:4px;width:62px;background:var(--surface2);border-radius:99px;overflow:hidden;}
+[data-layout="modern"] .propCompanyPassTrack i{display:block;height:100%;background:var(--muted);border-radius:99px;}
+[data-layout="modern"] .propCompanyNetTrack{position:relative;width:144px;height:9px;margin:8px 0 0 auto;}
+[data-layout="modern"] .propCompanyNetTrack:before{content:"";position:absolute;left:50%;top:0;height:9px;width:1px;background:var(--muted);}
+[data-layout="modern"] .propCompanyNetTrack i{position:absolute;height:5px;top:2px;border-radius:2px;max-width:50%;}
+[data-layout="modern"] .propCompanyNetTrack i[data-tone="pos"]{left:50%;background:var(--pnlPos);}
+[data-layout="modern"] .propCompanyNetTrack i[data-tone="neg"]{right:50%;background:var(--pnlNeg);}
+[data-layout="modern"] .propCompanyScrollHint{display:none;font-size:12px;color:var(--muted);margin:14px 0 0;}
+[data-layout="modern"] .propCompanyTip{white-space:pre-line;}
+@media(max-width:640px){
+  [data-layout="modern"] .propCompany{padding:18px;}
+  [data-layout="modern"] .propCompanyHead{gap:12px;margin-bottom:12px;}
+  [data-layout="modern"] .propCompanyTools{width:100%;justify-content:space-between;gap:10px;}
+  [data-layout="modern"] .propCompanySort{min-height:44px;}
+  [data-layout="modern"] .propCompanySort select{min-height:42px;}
+  [data-layout="modern"] .propCompanyPeriod{font-size:11px;max-width:100%;overflow-wrap:anywhere;}
+  [data-layout="modern"] .propCompanyTable{min-width:840px;}
+  [data-layout="modern"] .propCompanyTable thead th{font-size:12px;height:56px;padding:4px;}
+  [data-layout="modern"] .propCompanyColumn{gap:0;flex-direction:column;align-items:flex-end;}
+  [data-layout="modern"] .propCompany .propOverviewHelp{width:44px;height:44px;}
+  [data-layout="modern"] .propCompanyTable :is(tbody th,thead th:first-child){position:sticky;left:0;z-index:2;background:var(--surface);padding-right:8px;min-width:150px;max-width:150px;width:150px;}
+  [data-layout="modern"] :where(.propCompanyTable tbody tr:hover th){background:var(--surface2);}
+  [data-layout="modern"] .propCompanyTable thead th:first-child{z-index:3;}
+  [data-layout="modern"] .propCompanyMark{width:26px;height:26px;}
+  [data-layout="modern"] .propCompanyIdentity{gap:8px;width:138px;}
+  [data-layout="modern"] .propCompanyName{font-size:13px;}
+  [data-layout="modern"] .propCompanyTable tbody :is(td,th){padding-top:12px;padding-bottom:12px;}
+  [data-layout="modern"] .propCompanyValue{font-size:14px;}
+  [data-layout="modern"] .propCompanyNet .propCompanyValue{font-size:16px;}
+  [data-layout="modern"] .propCompanyROI .propCompanyValue{font-size:13px;}
+  [data-layout="modern"] .propCompanyNetTrack{width:128px;}
+  [data-layout="modern"] .propCompanyScrollHint{display:block;}
+}
+@media(prefers-reduced-motion:reduce){
+  [data-layout="modern"] .propCompanyTable tbody tr{transition:none;}
+}

@@ -1,7 +1,7 @@
 # Requirements: approved company-summary implementation
 
 ## Feature Summary
-Implement the reviewed `company-comparison` variant in the modern Prop overview on `prop-test`. The owner explicitly said “我觉得可以，开始吧” after the preview was presented. This supersedes the earlier design-only restriction for this change, but does not authorize commits, pushes, deployment or real-ledger testing. The prototype remains a design reference, not production code or implementation evidence.
+Implement the reviewed `company-comparison` variant in the modern Prop overview on `prop-test`. The owner explicitly said “我觉得可以，开始吧” after the preview was presented. This supersedes the earlier design-only restriction for this change. Subsequent owner instructions authorized the local documentation baseline, a user-operated connected-page review and the local implementation commit (see Unresolved Gaps); pushes, deployment and real-ledger automated tests remain unauthorized. The prototype remains a design reference, not production code or implementation evidence.
 
 ## Users & Actors
 Owners comparing their own scoped Prop companies. Use already-authorized account/entry caches and existing public directory/logo assets. All automated verification uses synthetic accounts/events/amounts, never the owner's screenshot data or credentials.
@@ -17,7 +17,7 @@ Owners comparing their own scoped Prop companies. Use already-authorized account
 - R8: Lifecycle and security remain local: no new backend/data request, write, renewal, API/schema/RLS/dependency/framework change; no leaked stale identity state. Escape priority and dirty/busy form protection remain intact. Escape interpolated text/attributes, validate numeric geometry/sort keys and safe logo sources; no user-supplied executable markup.
 
 ## Out of Scope
-Supabase access or business tests, account writes/renewals, catalog edits, new admin data access, migrations, libraries, global restyling, production `app.js` edits, preview controls/shell contrast patches, unrelated historical verification records, commits/push/deploy without further authorization. Company rows are informational; no new drilldown.
+Unrequested Supabase access or automated business tests, agent-initiated account writes/renewals, catalog edits, new admin data access, migrations, libraries, global restyling, production `app.js` edits, preview controls/shell contrast patches, unrelated historical verification records, commits/push/deploy without further authorization. Company rows are informational; no new drilldown.
 
 ## UI Design Impact
 Current IFVG shell/tokens remain authoritative. Apply the approved `company-comparison` preview (shadcn Base Table-inspired restrained separators/hover) only inside modern company summary. No font/framework migration or global `--accent` overrides. Logo is identity and charts are meaningful comparisons.
@@ -35,4 +35,4 @@ Create CMP-PROP-COMPANY-COMPARE and a local scale/sort view-model seam; reuse ex
 Theme support: light-dark, seven palettes, existing toggle and P&L settings. Gold uses no palette attribute. Production zh/en and existing account/local/browser precedence with en fallback. Prototype controls are review-only; no new in-panel theme/locale picker. Respect reduced motion and existing state-selector precedence.
 
 ## Unresolved Gaps
-No product decision remains for the reviewed variant. Development still requires the native entry gate. The owner subsequently replied “允许”, authorizing the requested 10-file local documentation/tasks baseline only; no implementation commit, push or deploy is authorized. This is not implementation acceptance or permission to bypass gates.
+No product decision remains for the reviewed variant; native development entry passed at documentation baseline 727962c. The owner separately authorized connecting the local app for personal review, then said “可以，我已审核通过，请帮我提交吧”. This records human approval and permission for the local implementation commit only, not push/deployment or real-ledger automated testing. Native acceptance/handoff and Verification V2 receipts remain separate; no gate is bypassed or marked passed by this statement.

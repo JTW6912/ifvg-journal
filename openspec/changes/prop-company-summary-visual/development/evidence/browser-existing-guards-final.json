@@ -1,0 +1,43 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 8328671723827742000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46305/",
+  "result": {
+    "blocked": [],
+    "containerHasNoVerticalOverflow": true,
+    "correctedAssertion": "invalid dates use existing financialUnavailable notice and suppress lower panels, not amount-error banner",
+    "errorBannerPreserved": true,
+    "inactiveEarlyReturn": true,
+    "invalidFinanceGuard": true,
+    "loadingEarlyReturn": true,
+    "sharedHelp": [
+      {
+        "aria": true,
+        "selector": "[data-prop-overview-tip=net]",
+        "text": "所选时间范围内的已到账出金，减去投入（已扣除退款）。"
+      },
+      {
+        "aria": true,
+        "selector": "#propMonthRecoveryHelp",
+        "text": "到账 ÷ 净投入 × 100%。按上方所选范围计算，不一定只看当前年份；退款冲减投入，待到账出金不计入。百分比可以超过 100%，进度条最多填满。\n范围：全部时间\n净投入 $4,540 · 到账 $5,550 · 净收支 +$1,010"
+      },
+      {
+        "aria": true,
+        "selector": "#propCompanyHelp-net",
+        "text": "净收益 = 到账 − 净投入。\n横条以 0 为中点：左侧为负值，右侧为正值；当前展示的所有公司使用同一美元刻度。\n只比较当前范围内的金额，不表示走势或推荐排行。"
+      }
+    ],
+    "verticalScrollCleans": true
+  }
+}

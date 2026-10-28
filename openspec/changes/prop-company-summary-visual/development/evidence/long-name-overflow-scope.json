@@ -1,0 +1,22 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 8328671723827742000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46305/",
+  "result": {
+    "before": 457,
+    "overflowOutsideCompany": [],
+    "panelUnclipped": true,
+    "withoutCompany": 457
+  }
+}

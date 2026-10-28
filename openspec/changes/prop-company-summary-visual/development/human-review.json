@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "reviewer_kind": "human",
+  "recorded_by": "assistant",
+  "reviewer": "project owner (user confirmation)",
+  "recorded_at": "2026-10-28T13:37:13.855212+00:00",
+  "user_statement": "可以，我已审核通过，请帮我提交吧",
+  "approval": "approved",
+  "approved_scope": "Current company-summary implementation after connected-page review, with owner human approval and local prop-test implementation commit. No push/deployment or real-data automated testing.",
+  "baseline_commit": "727962ccc873fc7c842895a11a1f51f5698f5b0f",
+  "reviewed_files": [
+    {
+      "path": "src/03-state.js",
+      "sha256": "ce05c1ad7430a55580eaafbdd0879cd47ac101b9f7cabc308e6fc608b7aaabc8"
+    },
+    {
+      "path": "src/11e-prop-view.js",
+      "sha256": "3599657a9be491680b9c1d6ccabfa74267a0b59c6d27128d9aeacf8f13b06400"
+    },
+    {
+      "path": "src/11g-prop-overview.js",
+      "sha256": "5f9054579f859992ac7744080b954823fcb1897d515430e2593326c854227a8a"
+    },
+    {
+      "path": "src/11j-prop-firms.js",
+      "sha256": "1593cfc4bb808650c337e1193cb6ce727150a82a9af4592337477913ab08e487"
+    },
+    {
+      "path": "theme-modern.css",
+      "sha256": "24780a152d69a605e4aec3cfc52ef7fef3692889ca6535397223b2333537a1fa"
+    },
+    {
+      "path": "i18n.js",
+      "sha256": "880e0a901fa02dbf567bcac100beb498088ccaa121758d228e8674365ebbb19d"
+    },
+    {
+      "path": "test/prop-firms.test.js",
+      "sha256": "940f7b1f7392f399b4af476346c2671c051ef831f7b2e587f35ac6fe9fe986d6"
+    }
+  ],
+  "connected_preview_resource_hashes_match": true,
+  "limits": [
+    "Records the human decision, not a scout or implementing-assistant independent verdict.",
+    "Does not claim the owner personally executed all automated assertions.",
+    "Formal native acceptance/handoff and Verification V2 remain separate; no passed receipt is fabricated."
+  ]
+}

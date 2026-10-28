@@ -1,0 +1,81 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 8328671723827742000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46305/",
+  "result": {
+    "method": "DOM change events; spent tested separately through native select",
+    "results": [
+      {
+        "blocked": [],
+        "descending": true,
+        "focus": "propCompanySort",
+        "groupOpen": true,
+        "key": "received",
+        "linesOn": true,
+        "sameContents": true,
+        "sameData": true,
+        "sort": "received",
+        "values": [
+          2950,
+          1450,
+          800,
+          350,
+          0,
+          0
+        ],
+        "writes": []
+      },
+      {
+        "blocked": [],
+        "descending": true,
+        "focus": "propCompanySort",
+        "groupOpen": true,
+        "key": "roi",
+        "linesOn": true,
+        "sameContents": true,
+        "sameData": true,
+        "sort": "roi",
+        "values": [
+          375.8064516129032,
+          113.23529411764706,
+          21.21212121212121,
+          -56.25,
+          -100,
+          -100
+        ],
+        "writes": []
+      },
+      {
+        "blocked": [],
+        "descending": true,
+        "focus": "propCompanySort",
+        "groupOpen": true,
+        "key": "net",
+        "linesOn": true,
+        "sameContents": true,
+        "sameData": true,
+        "sort": "net",
+        "values": [
+          2330,
+          770,
+          140,
+          -450,
+          -860,
+          -920
+        ],
+        "writes": []
+      }
+    ]
+  }
+}

@@ -15,11 +15,12 @@ function propOverviewIcon(name) {
 function propOverviewHelp(field, label) {
   return `<button type="button" class="propOverviewHelp" data-prop-overview-tip="${field}" aria-label="${esc(T("prop.overview.helpLabel", { label }))}">${propOverviewIcon("info")}</button>`;
 }
-const PROP_OVERVIEW_HELP_SELECTOR = "[data-prop-overview-tip], [data-prop-month-tip]";
+const PROP_OVERVIEW_HELP_SELECTOR = "[data-prop-overview-tip], [data-prop-month-tip], [data-prop-company-tip]";
 function propOverviewHelpField(button) {
-  return button?.dataset?.propOverviewTip || (button?.dataset?.propMonthTip === "recovery" ? "recovery" : null);
+  return button?.dataset?.propOverviewTip || (button?.dataset?.propMonthTip === "recovery" ? "recovery" : propCompanyHelpField(button));
 }
 function propOverviewHelpButton(field) {
+  if (typeof field === "string" && field.startsWith("company-")) return propCompanyHelpButton(field);
   if (field === "recovery") return document.getElementById("propMonthRecoveryHelp");
   return ["net", "spent", "received", "roi", "trend", "accounts"].includes(field) ? document.querySelector(`[data-prop-overview-tip="${field}"]`) : null;
 }
@@ -120,14 +121,17 @@ function propOverviewBeforeRender() {
   propOverviewOwner = owner;
   propLinkageBeforeRender();
   propMonthsBeforeRender(owner);
+  propCompanyBeforeRender(owner);
 }
 function propOverviewAfterRender() {
   propMonthsAfterRender();
+  propCompanyAfterRender();
   const restore = propOverviewUI.restore; propOverviewUI.restore = null;
   if (!restore || !propOverviewCanInteract()) return;
   const button = restore === "range" ? document.getElementById("propOverviewRangeTrigger") : propOverviewHelpButton(restore);
   // Returning focus must not reopen a tooltip cancelled by repaint.
   propOverviewUI.dismissed = button; button?.focus({ preventScroll: true });
+  propCompanyRevealHelp(button);
   // Suppress only the synchronous focus event, not the next deliberate hover.
   if (propOverviewUI.dismissed === button) propOverviewUI.dismissed = null;
 }
@@ -233,15 +237,17 @@ function propOverviewKeydown(e) {
   propOverviewRenderPicker(next); return true;
 }
 
-/* Overview fields and monthly recovery share one safe hover/focus/tap tooltip. */
+/* Overview, monthly recovery and company fields share one safe tooltip. */
 function propOverviewShowHelp(button, pinned = false) {
   if (!propOverviewCanInteract() || !button?.isConnected || propOverviewUI.dismissed === button) return;
   const field = propOverviewHelpField(button);
-  if (!["net", "spent", "received", "roi", "trend", "accounts", "recovery"].includes(field)) return;
-  const text = field === "recovery" ? button.dataset.propMonthHelpText : T("prop.overview.help." + field);
+  const companyText = propCompanyHelpText(field);
+  if (!companyText && !["net", "spent", "received", "roi", "trend", "accounts", "recovery"].includes(field)) return;
+  if (!propCompanyHelpVisible(button)) return;
+  const text = companyText || (field === "recovery" ? button.dataset.propMonthHelpText : T("prop.overview.help." + field));
   if (typeof text !== "string" || !text) return;
   propOverviewClosePicker(false); propOverviewHideHelp();
-  const tip = document.createElement("div"); tip.id = "propOverviewTooltip"; tip.className = "propOverviewTooltip" + (field === "recovery" ? " propMonthsRecoveryTip" : ""); tip.setAttribute("role", "tooltip");
+  const tip = document.createElement("div"); tip.id = "propOverviewTooltip"; tip.className = "propOverviewTooltip" + (field === "recovery" ? " propMonthsRecoveryTip" : companyText ? " propCompanyTip" : ""); tip.setAttribute("role", "tooltip");
   tip.textContent = text; document.body.appendChild(tip);
   const ui = propOverviewUI; ui.tip = tip; ui.active = button; ui.pinned = pinned;
   button.setAttribute("aria-describedby", tip.id); button.classList.add("is-showing");
@@ -303,7 +309,7 @@ document.addEventListener("pointerout", e => {
 });
 document.addEventListener("focusin", e => {
   const b = e.target.closest?.(PROP_OVERVIEW_HELP_SELECTOR);
-  if (b && b.matches(":focus-visible")) propOverviewShowHelp(b);
+  if (b && b.matches(":focus-visible")) { propCompanyRevealHelp(b); propOverviewShowHelp(b); }
   if (propOverviewPicker && !propOverviewUI.panel?.contains(e.target) && e.target.id !== "propOverviewRangeTrigger") propOverviewClosePicker(false);
 });
 document.addEventListener("focusout", e => {
@@ -323,7 +329,7 @@ function propOverviewReposition() {
   const anchor = ui.active || document.getElementById("propOverviewRangeTrigger");
   if (!anchor?.isConnected) { propOverviewCleanup(); return; }
   const r = anchor.getBoundingClientRect();
-  if (r.bottom < 0 || r.top > window.innerHeight) { propOverviewCleanup(); return; }
+  if (r.bottom < 0 || r.top > window.innerHeight || !propCompanyHelpVisible(anchor)) { propOverviewCleanup(); return; }
   propOverviewPosition(ui.panel || ui.tip, anchor, !!ui.tip);
 }
 window.addEventListener("resize", () => {

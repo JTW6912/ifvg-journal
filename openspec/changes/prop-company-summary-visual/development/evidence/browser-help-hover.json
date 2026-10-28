@@ -1,0 +1,41 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 8328671723827742000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46305/",
+  "result": {
+    "anchor": {
+      "bottom": 455.75,
+      "height": 22,
+      "left": 1235.3125,
+      "right": 1257.3125,
+      "top": 433.75,
+      "width": 22,
+      "x": 1235.3125,
+      "y": 433.75
+    },
+    "aria": true,
+    "inside": true,
+    "text": "净收益 = 到账 − 净投入。\n横条以 0 为中点：左侧为负值，右侧为正值；当前展示的所有公司使用同一美元刻度。\n只比较当前范围内的金额，不表示走势或推荐排行。",
+    "tooltip": {
+      "bottom": 425.25,
+      "height": 117.5,
+      "left": 1086.3125,
+      "right": 1406.3125,
+      "top": 307.75,
+      "width": 320,
+      "x": 1086.3125,
+      "y": 307.75
+    }
+  }
+}

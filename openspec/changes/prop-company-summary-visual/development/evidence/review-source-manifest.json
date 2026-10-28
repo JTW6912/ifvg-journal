@@ -1,0 +1,14 @@
+{
+  "head": "727962ccc873fc7c842895a11a1f51f5698f5b0f",
+  "uncommitted": true,
+  "recorded_at": "2026-10-28T12:08:23.790976+00:00",
+  "files": {
+    "src/03-state.js": "ce05c1ad7430a55580eaafbdd0879cd47ac101b9f7cabc308e6fc608b7aaabc8",
+    "src/11e-prop-view.js": "3599657a9be491680b9c1d6ccabfa74267a0b59c6d27128d9aeacf8f13b06400",
+    "src/11g-prop-overview.js": "5f9054579f859992ac7744080b954823fcb1897d515430e2593326c854227a8a",
+    "src/11j-prop-firms.js": "1593cfc4bb808650c337e1193cb6ce727150a82a9af4592337477913ab08e487",
+    "theme-modern.css": "24780a152d69a605e4aec3cfc52ef7fef3692889ca6535397223b2333537a1fa",
+    "i18n.js": "880e0a901fa02dbf567bcac100beb498088ccaa121758d228e8674365ebbb19d",
+    "test/prop-firms.test.js": "940f7b1f7392f399b4af476346c2671c051ef831f7b2e587f35ac6fe9fe986d6"
+  }
+}

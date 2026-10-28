@@ -281,6 +281,7 @@ function renderPropByFirm(accounts, entries, range = null, allEntries = entries)
     const ids = new Set(accs.map((a) => a.id));
     return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: range ? propLinkageReport(accs, allEntries, range, todayStr()).summary : propFunnel(accs, entries) };
   }).sort((a, b) => b.s.net - a.s.net);
+  if (currentLayout() === "modern") return renderPropCompanyTable(rows, accounts, range);
   return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div>${range ? `<small class="propLinkedPeriod">${esc(propOverviewRangeText(range))}</small>` : ""}</div>
     <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T(range ? "prop.linkage.currentCount" : "prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T(range && range.preset !== "all" ? "prop.overview.spentRange" : "prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
     ${rows.map((r) => `<tr><td>${esc(r.name)}</td><td class="num">${r.n}</td><td class="num">${r.f.passRate === null ? "—" : r.f.passRate.toFixed(0) + "%"}</td><td class="num">${propUsd(r.s.spent)}</td><td class="num">${propUsd(r.s.received)}</td><td class="num ${propTone(r.s.net)}">${propUsd(r.s.net, true)}</td>
