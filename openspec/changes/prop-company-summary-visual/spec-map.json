@@ -1,0 +1,13 @@
+{
+ "touched_specs":["ui-design","system-architecture","frontend-backend-data-flow","component-architecture"],
+ "ui_rules":["Approved company-comparison table only in modern Prop overview; source-backed tokens/type","Seven fields, logo identity, symmetric shared-scale net bars, field i and mobile fixed company column","Classic and prior panels unchanged; no prototype shell contrast fixes or preview controls"],
+ "architecture_modules":["src/11j-prop-firms.js planned local view/model/controller","src/11e-prop-view.js renderPropByFirm dispatch seam","src/03-state.js ephemeral sort","src/11g-prop-overview.js shared safe help/lifecycle","theme-modern.css and i18n.js"],
+ "api_contracts":["No API change or added request; reuse propSum/propLinkageReport/formatters"],
+ "database_entities":["Existing cached prop_accounts/prop_entries/prop_firms only; no schema or backend access"],
+ "permissions":["Owner data remains owner-only; no new admin access or real-data testing"],
+ "operational_constraints":["Explicit design/development approval recorded; production edits require native entry","Local tasks baseline requires separate commit authorization; no push/deploy","Synthetic offline actual-source verification; preserve prior changes and formal limitations"],
+ "data_flows":["FLOW-PROP-COMPANY-SUMMARY","FLOW-PROP-COMPANY-SORT","FLOW-PROP-HELP"],
+ "theme_modes":["light-dark","seven-palettes","custom-pnl-colors","theme-toggle:existing","prototype-theme-toggle:true"],
+ "locale_policy":["i18n:enabled","locales:zh,en","default-locale:en","existing-user-browser-precedence","prototype-locale-switch:true"],
+ "unresolved_gaps":[]
+}

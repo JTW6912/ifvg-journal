@@ -1,0 +1,26 @@
+{
+  "status":"approved",
+  "prototype_code":"required_present",
+  "prototype_type":"ui-html",
+  "approved_variant":"company-comparison",
+  "promotion":"requires_development_gate",
+  "blocked_reasons":[],
+  "approval":{
+    "source":"Explicit owner reply after the final preview was presented",
+    "user_statement":"我觉得可以，开始吧",
+    "scope":"Implement the reviewed modern company table including seven metrics, logo/fallback, shared-scale net bars, pass tracks, field help, local sort and mobile fixed-column table on prop-test after native entry.",
+    "exclusions":["Only the separately requested 10-file documentation baseline local commit is authorized; no implementation commit/push/deploy","No real Supabase testing or account writes","No production acceptance or formal verification approval","No prototype shell contrast patches, review controls or fixtures in production"]
+  },
+  "baseline_commit_approval":{"source":"Explicit owner response to the 10-file local documentation/tasks baseline request","user_statement":"允许","recorded_at":"2026-10-28T07:47:55Z","push":false,"implementation_commit":false},
+  "git_branch":"prop-test",
+  "observed_product_head":"c91489b2b28c12f6d7fd47abba90ce2a585c2239",
+  "entry":"artifact/index.html",
+  "source_manifest":"evidence/source-check.json",
+  "verifier":"verifier-report.json",
+  "source_hashes":{
+    "artifact/index.html":"6d6edcf9b8c3d3ddefbe4d07ddf04f1e95e568319fa2c3e7b40b10e9919f8627",
+    "artifact/styles.css":"58b24b57f5460b02050a8915b1be87708264e7ed72ffbdaca3a795e90b6ee6e3",
+    "artifact/company.js":"30d786e6dcc101463681d1d7ff20e3b3d61778abcbb3c02dc4f0d32fec8841cd",
+    "artifact/assets/company-data.js":"77d2ad1b8545d0b8762a3037bbe616a5a3c489ba4ac7aaab4e2d7c13e3b69899"
+  }
+}
