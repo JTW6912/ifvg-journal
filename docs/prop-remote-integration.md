@@ -49,7 +49,7 @@
 
 ## 实际部署前的执行顺序
 
-**本轮没有连接线上库，也没有执行线上迁移、推送或部署。**
+**合并提交 `c3d4a4a` 完成时尚未连接线上库、执行迁移或推送；后续获授权的执行结果见文末。**
 
 1. 明确目标 Supabase 项目/环境、备份与执行者。先运行只读检查：
    `supabase/checks/prop_merge_readiness.sql`
@@ -87,3 +87,19 @@ PGLITE_MODULE=/tmp/ifvg-pg-validation/node_modules/@electric-sql/pglite node tes
 - 远端 OpenSpec 审核记录按原提交保留，不改写冻结断言/批准记录，也不把旧哈希的证据宣称为本次合并已通过正式 SpecNav Verification V2。
 - 远端 monthly handoff 引用的 `prototype/design-contract.md` 不在已获取的 Git 树中；没有伪造或补写该历史批准资料。
 - 品牌参考素材仍只在 ignored dev 目录，不作为核实过的正式品牌资产发布。
+
+## 后续授权执行：2026-10-29
+
+用户明确确认先执行缺失迁移、再推送 `prop-test`，并要求复用此前提供的数据库连接。使用 Session Pooler、证书校验开启；凭据仅在进程内恢复使用，不写进仓库或输出日志。
+
+- 线上 PostgreSQL 17.6；元数据检查确认 `admin_trade_counts()` 已是带 `is_admin()` 过滤的 SECURITY DEFINER，正文与仓库一致（仅 CRLF 差异），因此没有重跑统计迁移。
+- 既有统计 RPC 仍有 anon EXECUTE 权限，但管理员过滤保留；本次没有改写它的定义或 ACL。隔离测试中的匿名拒绝结论不能当作这一既有线上对象的结果。
+- 仅执行 `20261028000000_prop_option_icons.sql`，2026-10-29 17:59:26 UTC 提交成功。脚本 SHA-256：`1709b4f19c3aa78567840bfde68f3cf8e6cb8e9a07e9a0a611bfbb5a0356a44e`。
+- 把迁移放在事务中，在提交前核验新对象和权限；提交后以新建的只读连接再次确认新表、3 个 RPC 与仓库定义一致。新 RPC 均为 SECURITY INVOKER，authenticated 可执行、anon 不可执行；新表开启 RLS、anon 无表权限。
+- 六张个人表的 owner-only 策略、购买日 NOT NULL、既有 is_admin / admin_trade_counts / prop_import_catalog 定义均未改变。没有读取或修改个人业务记录，没有导入/覆盖公司目录或示例图标。
+- 线上没有 `supabase_migrations.schema_migrations`；按项目既有直接 SQL 执行方式核验真实对象，没有擅自初始化迁移历史。
+- Session Pooler 未采用启动参数中的 read-only 设置，因此改用连接建立后的显式 SET；就绪检查本身也在 READ ONLY 事务内执行。首次连接期间执行的也仅是元数据 SELECT，没有业务读写。
+
+推送前再次拉取时发现 `5c00375`（漏斗列表显示公司 Logo）。正常合并保留该提交，不强推、不改 master。合并后的 **326 项单元测试、37 文件构建、语法及本次差异检查通过**；离线合成场景核验列表 3 行/3 个 Logo、1440px 与 320px 显示、Escape 关闭和零写入。
+
+以上记录证明迁移与推送前检查；远端提交与 Vercel 部署成功须以推送后的服务端回执为准。未使用真实账号做线上业务试写。
