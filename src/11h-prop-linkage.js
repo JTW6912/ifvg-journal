@@ -54,7 +54,7 @@ function propLinkageListContent(m) {
       const source = edge ? edge.from : m.key;
       const derivedPass = row.passSource === "funded" || row.nextPassSource === "funded";
       const passNote = derivedPass ? `<small>${esc(T("prop.linkage.derivedPass"))}</small>` : "";
-      return `<button type="button" class="propLinkageAccount" data-action="prop-linkage-detail" data-id="${esc(row.id)}"><span class="propOverviewIcon">${propLinkageIcon("funded")}</span><span class="propLinkageAccountText"><strong>${esc(propAccountTitle(a))}</strong><small>${esc([a.firm_name, a.group_name].filter(Boolean).join(" · "))}</small><span>${propStatusPill(a.status)}<small>${esc(propLinkageStageLabel(source))} · ${esc(row.day)}</small>${edge ? `<small>${esc(propLinkageStageLabel(edge.to))} · ${esc(row.next || T("prop.linkage.notRecorded"))}</small>` : ""}${passNote}</span></span>${propLinkageIcon("arrow")}</button>`;
+      return `<button type="button" class="propLinkageAccount" data-action="prop-linkage-detail" data-id="${esc(row.id)}">${propHistoryLogo(a)}<span class="propLinkageAccountText"><strong>${esc(propAccountTitle(a))}</strong><small>${esc([a.firm_name, a.group_name].filter(Boolean).join(" · "))}</small><span>${propStatusPill(a.status)}<small>${esc(propLinkageStageLabel(source))} · ${esc(row.day)}</small>${edge ? `<small>${esc(propLinkageStageLabel(edge.to))} · ${esc(row.next || T("prop.linkage.notRecorded"))}</small>` : ""}${passNote}</span></span>${propLinkageIcon("arrow")}</button>`;
     }).join("") : `<div class="emptyState">${esc(T("prop.linkage.empty"))}</div>`}</div>`;
   return { title: esc(title), body, count: rows.length };
 }

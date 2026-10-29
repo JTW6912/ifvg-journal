@@ -1,0 +1,63 @@
+{
+  "formal_acceptance": false,
+  "uncommitted": true,
+  "head": "13f4eed5b5b3ea33cf4cfcf6954530d53bb30af2",
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "log": "d6-delivery-tests.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "bundle"
+      ],
+      "exit_code": 0,
+      "log": "d6-delivery-bundle.log"
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "app.js"
+      ],
+      "exit_code": 0,
+      "log": "d6-delivery-syntax-app.log"
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "i18n.js"
+      ],
+      "exit_code": 0,
+      "log": "d6-delivery-syntax-i18n.log"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "log": "d6-delivery-diff.log"
+    }
+  ],
+  "source_sha256": {
+    "src/11h-prop-linkage.js": "fa7a4e491efd0fdb98869e24fec5f7caf316bfc24a356db15489a1eef135d1a4",
+    "test/prop-linkage-logos.test.js": "13a2807f021d1b171ba5677bc5aa90755d305fda809d58769b2c0a8c5754a565"
+  },
+  "recorded_at": "2026-10-29T15:26:24.032983+00:00",
+  "checks_rerun_for_delivery": true,
+  "reviewed_preview_bundle_matches": true,
+  "tests": {
+    "total": 216,
+    "passed": 216,
+    "failed": 0
+  }
+}

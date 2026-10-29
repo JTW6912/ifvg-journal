@@ -16,6 +16,7 @@
     "test/prop-history-ui.test.js",
     "test/prop-stage-semantics.test.js",
     "test/prop-linkage.test.js",
+    "test/prop-linkage-logos.test.js",
     "dev/prop-history-check",
     "openspec/changes/prop-stage-history-repair"
   ],
