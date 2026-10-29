@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-stage-history-repair",
+  "stage": "development",
+  "allowed_roots": [
+    "src/03-state.js",
+    "src/11d-prop-data.js",
+    "src/11e-prop-view.js",
+    "src/11g-prop-overview.js",
+    "src/11h-prop-linkage.js",
+    "src/11k-prop-history-data.js",
+    "src/11l-prop-history-view.js",
+    "theme-modern.css",
+    "i18n.js",
+    "test/prop-history.test.js",
+    "test/prop-history-ui.test.js",
+    "dev/prop-history-check",
+    "openspec/changes/prop-stage-history-repair"
+  ],
+  "denied_roots": [
+    ".git", "node_modules", "supabase", "config.js", "src/01-config.js",
+    "src/07-data-layer.js", "src/07b-accounts.js", "src/11f-prop-admin.js",
+    "src/11i-prop-months.js", "src/11j-prop-firms.js", "src/14-main-render.js",
+    "src/15-events.js", "src/16-init.js", "style.css", "palettes.css",
+    "package.json", "package-lock.json", "index.html",
+    "openspec/changes/prop-overview-range-panel", "openspec/changes/prop-overview-linkage",
+    "openspec/changes/prop-monthly-cashflow-visual", "openspec/changes/prop-company-summary-visual"
+  ],
+  "requires_review_on": [
+    "src/03-state.js", "src/11d-prop-data.js", "src/11e-prop-view.js",
+    "src/11g-prop-overview.js", "src/11h-prop-linkage.js"
+  ],
+  "allowed_operations": {"create": true, "modify": true, "delete": false, "rename": false},
+  "prototype_sources": ["openspec/changes/prop-stage-history-repair/prototype/artifact/index.html"],
+  "expires_when": "verification_started"
+}
