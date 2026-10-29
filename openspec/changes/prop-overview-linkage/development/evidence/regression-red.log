@@ -1,0 +1,195 @@
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 61.320216
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 18.089536
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 18.415942
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 16.794005
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 12.420726
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 15.637275
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 14.960113
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 14.606829
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 13.43927
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 51.354839
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 17.847099
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 12 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 13.73451
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 13 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 14.782215
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 14 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 10.106257
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 15 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 13.618046
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+not ok 16 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 11.842976
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:192:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /role="dialog"/. Input:
+    
+    '<div class="overlay propDrawerOverlay" data-action="prop-dismiss-overlay">\n' +
+      '    <div class="modal propModal propDrawer anim" style="max-width:640px;">\n' +
+      '      <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">Demo <span class="propSt propSt-funded">资金账号</span></div><button class="iconBtn" data-action="prop-close-modal"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>\n' +
+      '      <div class="modalBody"><button type="button" class="btn btn-sm propLinkageBack" data-action="prop-linkage-back">← 返回账号名单</button><div class="propDrawerSub"><span>Demo · # A</span>\n' +
+      '    <button class="btn btn-sm propDelBtn" data-action="prop-ask-delete-account"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg> 删除账号</button></div><div class="propAccNums propDetailNums">\n' +
+      '    <div><span>累计投入</span><b>$100</b></div>\n' +
+      '    <div><span>出金到账</span><b>$500</b></div>\n' +
+      '    <div><span>待到账</span><b>$0</b></div>\n' +
+      '    <div><span>净收益</span><b class="pos">+$400</b></div>\n' +
+      '    <div><span>ROI</span><b class="pos">+400.0%</b></div></div><div class="propActions">\n' +
+      '      <button class="btn btn-primary btn-sm" data-action="prop-open-entry" data-id="a1" data-kind="payout"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> 记出金</button>\n' +
+      '      <button class="btn btn-sm" data-action="prop-open-status" data-id="a1" data-step="blow" data-to="blown">爆仓</button><button class="btn btn-sm" data-action="prop-open-status" data-id="a1" data-step="close" data-to="closed">结束</button>\n' +
+      '      <button class="btn btn-sm" data-action="prop-open-balance" data-id="a1">记余额</button>\n' +
+      '    </div><button class="propBalAdd" data-action="prop-open-balance" data-id="a1">＋ 记余额</button><div class="propMiniLabel">状态时间线</div><div class="propTimeline propTimelineEdit"><div><input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="2026-10-12" data-prop-event="0" data-id="a1" title="点日期就能改；第一步就是购买日期"><span class="propSt propSt-passed">已通过·待激活</span></div><span class="propEvArrow">›</span><div><input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="2026-10-20" data-prop-event="1" data-id="a1" title="点日期就能改；第一步就是购买日期"><span class="propSt propSt-funded">资金账号</span></div></div><div class="propMiniLabel">收支明细</div><div class="tableScroll" style="margin-bottom:14px;"><table class="adminTable propTable"><thead><tr><th>日期</th><th>类型</th><th class="num">金额</th><th>备注</th><th></th></tr></thead><tbody>\n' +
+      '    <tr><td>2026-10-26</td><td>出金</td><td class="num pos">+$500</td><td class="propNoteCell"></td>\n' +
+      '      <td class="propRowActs">\n' +
+      '        <button class="tinyBtn propAct" data-action="prop-edit-entry" data-id=""><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>\n' +
+      '        <button class="tinyBtn propAct neg" data-action="prop-delete-entry" data-id="">确定删除</button></td></tr><tr><td>2026-10-01</td><td>购买</td><td class="num neg">−$100</td><td class="propNoteCell"></td>\n' +
+      '      <td class="propRowActs">\n' +
+      '        <button class="tinyBtn propAct" data-action="prop-edit-entry" data-id=""><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>\n' +
+      '        <button class="tinyBtn propAct neg" data-action="prop-delete-entry" data-id="">确定删除</button></td></tr>\n' +
+      '    </tbody></table></div><div class="propInfoBox"><div class="propMiniLabel">账号信息</div>\n' +
+      '    <div class="propRow"><div class="field"><div class="fieldLabel">昵称</div><input class="input" data-prop-field="nickname" value="" maxlength="60" data-prop-rerender /></div>\n' +
+      '    <div class="field"><div class="fieldLabel">分组</div><input class="input" data-prop-field="group_name" value="A" maxlength="40" list="propGroupList" data-prop-rerender /></div></div>\n' +
+      '    <datalist id="propGroupList"><option value="A"></datalist>\n' +
+      '    <div class="propRow"><div class="field"><div class="fieldLabel">公司名</div><input class="input" data-prop-field="firm_name" value="Demo" maxlength="60" data-prop-rerender /></div>\n' +
+      '    <div class="field"><div class="fieldLabel">计划名</div><input class="input" data-prop-field="plan_name" value="" maxlength="60" data-prop-rerender /></div></div>\n' +
+      '    <div class="propRow"><div class="field"><div class="fieldLabel">账户规模</div><input class="input" data-prop-field="size" value="" type="number" min="0" step="1000" data-prop-rerender /></div>\n' +
+      '    <div class="field"><div class="fieldLabel">购买日期</div><input class="input" data-prop-field="bought_on" value="2026-10-01" type="date" min="1990-01-01" max="2099-12-31" data-prop-rerender /><div class="propHint">改了会连同购买那笔账、时间线第一步一起改</div></div></div>\n' +
+      '    <div class="propRow"><div class="field"><div class="fieldLabel">收费方式</div><select class="input" data-prop-field="billing" data-prop-rerender><option value="one_time" >一次性</option><option value="monthly" >按月</option></select></div>\n' +
+      '    <div class="field"><div class="fieldLabel">当前状态</div><select class="input" data-prop-field="status" data-prop-rerender><option value="eval" >考核中</option><option value="passed" >已通过·待激活</option><option value="funded" selected>资金账号</option><option value="failed" >考核失败</option><option value="blown" >已爆仓</option><option value="closed" >已结束</option></select><div class="propHint">只用来改正记错的状态；正常流程用上面的按钮</div></div></div><div class="field"><div class="fieldLabel">备注</div><textarea class="input" data-prop-field="note" data-prop-rerender rows="2" maxlength="500"></textarea></div><div class="propEditFoot"><span class="propMuted">改完点保存</span><span style="flex:1"></span>\n' +
+      '    \n' +
+      '    <button class="btn btn-primary btn-sm" data-action="prop-save-edit" disabled>保存</button></div></div></div>\n' +
+      '      \n' +
+      '    </div></div>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    <div class="overlay propDrawerOverlay" data-action="prop-dismiss-overlay">
+        <div class="modal propModal propDrawer anim" style="max-width:640px;">
+          <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">Demo <span class="propSt propSt-funded">资金账号</span></div><button class="iconBtn" data-action="prop-close-modal"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+          <div class="modalBody"><button type="button" class="btn btn-sm propLinkageBack" data-action="prop-linkage-back">← 返回账号名单</button><div class="propDrawerSub"><span>Demo · # A</span>
+        <button class="btn btn-sm propDelBtn" data-action="prop-ask-delete-account"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg> 删除账号</button></div><div class="propAccNums propDetailNums">
+        <div><span>累计投入</span><b>$100</b></div>
+        <div><span>出金到账</span><b>$500</b></div>
+        <div><span>待到账</span><b>$0</b></div>
+        <div><span>净收益</span><b class="pos">+$400</b></div>
+        <div><span>ROI</span><b class="pos">+400.0%</b></div></div><div class="propActions">
+          <button class="btn btn-primary btn-sm" data-action="prop-open-entry" data-id="a1" data-kind="payout"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> 记出金</button>
+          <button class="btn btn-sm" data-action="prop-open-status" data-id="a1" data-step="blow" data-to="blown">爆仓</button><button class="btn btn-sm" data-action="prop-open-status" data-id="a1" data-step="close" data-to="closed">结束</button>
+          <button class="btn btn-sm" data-action="prop-open-balance" data-id="a1">记余额</button>
+        </div><button class="propBalAdd" data-action="prop-open-balance" data-id="a1">＋ 记余额</button><div class="propMiniLabel">状态时间线</div><div class="propTimeline propTimelineEdit"><div><input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="2026-10-12" data-prop-event="0" data-id="a1" title="点日期就能改；第一步就是购买日期"><span class="propSt propSt-passed">已通过·待激活</span></div><span class="propEvArrow">›</span><div><input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="2026-10-20" data-prop-event="1" data-id="a1" title="点日期就能改；第一步就是购买日期"><span class="propSt propSt-funded">资金账号</span></div></div><div class="propMiniLabel">收支明细</div><div class="tableScroll" style="margin-bottom:14px;"><table class="adminTable propTable"><thead><tr><th>日期</th><th>类型</th><th class="num">金额</th><th>备注</th><th></th></tr></thead><tbody>
+        <tr><td>2026-10-26</td><td>出金</td><td class="num pos">+$500</td><td class="propNoteCell"></td>
+          <td class="propRowActs">
+            <button class="tinyBtn propAct" data-action="prop-edit-entry" data-id=""><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+            <button class="tinyBtn propAct neg" data-action="prop-delete-entry" data-id="">确定删除</button></td></tr><tr><td>2026-10-01</td><td>购买</td><td class="num neg">−$100</td><td class="propNoteCell"></td>
+          <td class="propRowActs">
+            <button class="tinyBtn propAct" data-action="prop-edit-entry" data-id=""><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>
+            <button class="tinyBtn propAct neg" data-action="prop-delete-entry" data-id="">确定删除</button></td></tr>
+        </tbody></table></div><div class="propInfoBox"><div class="propMiniLabel">账号信息</div>
+        <div class="propRow"><div class="field"><div class="fieldLabel">昵称</div><input class="input" data-prop-field="nickname" value="" maxlength="60" data-prop-rerender /></div>
+        <div class="field"><div class="fieldLabel">分组</div><input class="input" data-prop-field="group_name" value="A" maxlength="40" list="propGroupList" data-prop-rerender /></div></div>
+        <datalist id="propGroupList"><option value="A"></datalist>
+        <div class="propRow"><div class="field"><div class="fieldLabel">公司名</div><input class="input" data-prop-field="firm_name" value="Demo" maxlength="60" data-prop-rerender /></div>
+        <div class="field"><div class="fieldLabel">计划名</div><input class="input" data-prop-field="plan_name" value="" maxlength="60" data-prop-rerender /></div></div>
+        <div class="propRow"><div class="field"><div class="fieldLabel">账户规模</div><input class="input" data-prop-field="size" value="" type="number" min="0" step="1000" data-prop-rerender /></div>
+        <div class="field"><div class="fieldLabel">购买日期</div><input class="input" data-prop-field="bought_on" value="2026-10-01" type="date" min="1990-01-01" max="2099-12-31" data-prop-rerender /><div class="propHint">改了会连同购买那笔账、时间线第一步一起改</div></div></div>
+        <div class="propRow"><div class="field"><div class="fieldLabel">收费方式</div><select class="input" data-prop-field="billing" data-prop-rerender><option value="one_time" >一次性</option><option value="monthly" >按月</option></select></div>
+        <div class="field"><div class="fieldLabel">当前状态</div><select class="input" data-prop-field="status" data-prop-rerender><option value="eval" >考核中</option><option value="passed" >已通过·待激活</option><option value="funded" selected>资金账号</option><option value="failed" >考核失败</option><option value="blown" >已爆仓</option><option value="closed" >已结束</option></select><div class="propHint">只用来改正记错的状态；正常流程用上面的按钮</div></div></div><div class="field"><div class="fieldLabel">备注</div><textarea class="input" data-prop-field="note" data-prop-rerender rows="2" maxlength="500"></textarea></div><div class="propEditFoot"><span class="propMuted">改完点保存</span><span style="flex:1"></span>
+        
+        <button class="btn btn-primary btn-sm" data-action="prop-save-edit" disabled>保存</button></div></div></div>
+          
+        </div></div>
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:196:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 15
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 423.096051

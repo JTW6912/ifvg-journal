@@ -1,0 +1,12 @@
+{
+  "task_id":"001-prop-overview",
+  "task_items":["1.1","1.2","1.3","1.4"],
+  "goal":"Users can read accurate scoped financial outcomes, choose a date range and inspect field explanations in the approved modern Prop layout without changing their ledger.",
+  "must_read":["AGENTS.md","PROJECT_HANDOFF.md","openspec/specs/ui-design/design.md","openspec/specs/system-architecture/design.md","openspec/specs/frontend-backend-data-flow/design.md","openspec/specs/component-architecture/design.md","openspec/changes/prop-overview-range-panel/spec-map.json","openspec/changes/prop-overview-range-panel/component-impact-map.json","openspec/changes/prop-overview-range-panel/prototype/decision.json","openspec/changes/prop-overview-range-panel/prototype/artifact/index.html","openspec/changes/prop-overview-range-panel/development/tasks/001-prop-overview/brief.md","openspec/changes/prop-overview-range-panel/requirements.md","openspec/changes/prop-overview-range-panel/acceptance.md","openspec/changes/prop-overview-range-panel/prototype/handoff.md","src/11d-prop-data.js","src/11e-prop-view.js"],
+  "allowed_files":["src/03-state.js","src/11d-prop-data.js","src/11e-prop-view.js","src/11g-prop-overview.js","src/14-main-render.js","src/15-events.js","theme-modern.css","i18n.js","test/prop-overview.test.js","dev/prop-overview-check"],
+  "test_paths":["test/prop-overview.test.js","dev/prop-overview-check"],
+  "non_goals":["No remote operations or live business testing","No changes to classic markup, lower overview panels, catalog or account forms","No framework migration or business-code commit/push"],
+  "expected_evidence":["Focused failing tests before implementation and passing tests afterward","Full npm test and bundle/syntax output","Offline real-source browser checks with synthetic data","Independent specification and quality reviews"],
+  "unsafe_assumptions":["The prototype contains fixture-only date bounds and per-day iteration; neither belongs in production","Region repaint may replace focused triggers","An empty range is not a failed load; negative investment must not be clamped to zero"],
+  "stop_condition":"Stop if entry is not approved, edits exceed scope, accounting meaning changes, or validation would require live data."
+}

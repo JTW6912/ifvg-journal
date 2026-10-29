@@ -1,0 +1,62 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=2",
+  "result": {
+    "model": {
+      "conversions": [
+        {
+          "d": 10,
+          "ids": [
+            "SIM-001",
+            "SIM-002",
+            "SIM-003"
+          ],
+          "n": 3
+        },
+        {
+          "d": 8,
+          "ids": [
+            "SIM-001",
+            "SIM-002",
+            "SIM-011",
+            "SIM-012"
+          ],
+          "n": 4
+        },
+        {
+          "d": 6,
+          "ids": [
+            "SIM-001",
+            "SIM-011",
+            "SIM-016"
+          ],
+          "n": 3
+        }
+      ],
+      "firm": "",
+      "group": "",
+      "stages": {
+        "bought": 10,
+        "funded": 6,
+        "paid": 4,
+        "passed": 8
+      },
+      "status": "all",
+      "view": "overview"
+    },
+    "rows": 3,
+    "sheet": "买入 → 通过考核"
+  }
+}

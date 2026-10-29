@@ -1,0 +1,827 @@
+# command: npm test
+# exit_status: 0
+# duration_ms: 484
+
+## stdout
+
+> ifvg-journal@1.0.0 test
+> node --test "test/*.test.js"
+
+TAP version 13
+# Subtest: resultBucket：partial 算赢，三种 BE 各占一桶，大小写和空白不敏感
+ok 1 - resultBucket：partial 算赢，三种 BE 各占一桶，大小写和空白不敏感
+  ---
+  duration_ms: 1.228566
+  type: 'test'
+  ...
+# Subtest: computeStats：胜率分母只算 W/L，SQ 把 BE 转赢转输算进去
+ok 2 - computeStats：胜率分母只算 W/L，SQ 把 BE 转赢转输算进去
+  ---
+  duration_ms: 0.97497
+  type: 'test'
+  ...
+# Subtest: profitFactorOf：正 R 之和 ÷ |负 R 之和|，没有亏损时是 ∞，没填 R 的不计入样本
+ok 3 - profitFactorOf：正 R 之和 ÷ |负 R 之和|，没有亏损时是 ∞，没填 R 的不计入样本
+  ---
+  duration_ms: 0.269568
+  type: 'test'
+  ...
+# Subtest: maxDrawdownR：按日期累加成资金曲线，取峰到谷的最大跌幅；没填日期的排最后
+ok 4 - maxDrawdownR：按日期累加成资金曲线，取峰到谷的最大跌幅；没填日期的排最后
+  ---
+  duration_ms: 0.441663
+  type: 'test'
+  ...
+# Subtest: twoSidedP：几个已知分位点
+ok 5 - twoSidedP：几个已知分位点
+  ---
+  duration_ms: 0.341546
+  type: 'test'
+  ...
+# Subtest: twoProportionZ / welchT：方向正确，退化输入返回 null
+ok 6 - twoProportionZ / welchT：方向正确，退化输入返回 null
+  ---
+  duration_ms: 0.393879
+  type: 'test'
+  ...
+# Subtest: markFdrSignificant：Benjamini–Hochberg，只给过线的行打 strong
+ok 7 - markFdrSignificant：Benjamini–Hochberg，只给过线的行打 strong
+  ---
+  duration_ms: 0.965163
+  type: 'test'
+  ...
+# Subtest: breakdownRowStats：n 含 BE，胜率分母只算 W/L
+ok 8 - breakdownRowStats：n 含 BE，胜率分母只算 W/L
+  ---
+  duration_ms: 0.411683
+  type: 'test'
+  ...
+# {
+#   code: 'PGRST204',
+#   message: "Could not find the 'day_date' column of 'journal_reviews'"
+# }
+# Subtest: 超过 1000 行也能拿全（这是修复前会被静默截断的场景）
+ok 9 - 超过 1000 行也能拿全（这是修复前会被静默截断的场景）
+  ---
+  duration_ms: 3.025059
+  type: 'test'
+  ...
+# Subtest: 恰好 1000 行：不多发一个空请求
+ok 10 - 恰好 1000 行：不多发一个空请求
+  ---
+  duration_ms: 0.724791
+  type: 'test'
+  ...
+# Subtest: 服务端把 Max rows 调小（比页大小还小）：靠 count 继续翻，不会拿到第一页就停
+ok 11 - 服务端把 Max rows 调小（比页大小还小）：靠 count 继续翻，不会拿到第一页就停
+  ---
+  duration_ms: 0.433986
+  type: 'test'
+  ...
+# Subtest: 空表 / 小表
+ok 12 - 空表 / 小表
+  ---
+  duration_ms: 0.366141
+  type: 'test'
+  ...
+# Subtest: 没带回 count 时退回「这页不满就停」，也能拿全
+ok 13 - 没带回 count 时退回「这页不满就停」，也能拿全
+  ---
+  duration_ms: 0.334259
+  type: 'test'
+  ...
+# Subtest: 中途某一页报错：整体返回 error，不能把已经拿到的半截数据当成全部
+ok 14 - 中途某一页报错：整体返回 error，不能把已经拿到的半截数据当成全部
+  ---
+  duration_ms: 0.719801
+  type: 'test'
+  ...
+# Subtest: 每一页都用全新的 query（builder 不能复用）
+ok 15 - 每一页都用全新的 query（builder 不能复用）
+  ---
+  duration_ms: 0.387935
+  type: 'test'
+  ...
+# Subtest: isSchemaOutdatedError：缺表 / 缺列算「库过期」，权限、网络这类错误不算
+ok 16 - isSchemaOutdatedError：缺表 / 缺列算「库过期」，权限、网络这类错误不算
+  ---
+  duration_ms: 0.171791
+  type: 'test'
+  ...
+# Subtest: noteDbError：只有库过期错误才会点亮 dbOutdated
+ok 17 - noteDbError：只有库过期错误才会点亮 dbOutdated
+  ---
+  duration_ms: 8.19409
+  type: 'test'
+  ...
+# Subtest: 保存复盘：缺列时不再摘列重存，直接报「库过期」，本地列表不变
+ok 18 - 保存复盘：缺列时不再摘列重存，直接报「库过期」，本地列表不变
+  ---
+  duration_ms: 8.647211
+  type: 'test'
+  ...
+# Subtest: CRC32 跟标准值一致（zip 校验靠它）
+ok 19 - CRC32 跟标准值一致（zip 校验靠它）
+  ---
+  duration_ms: 25.691961
+  type: 'test'
+  ...
+# Subtest: Excel 日期 / 时间换算：1900 日期系统，时间是一天里的小数
+ok 20 - Excel 日期 / 时间换算：1900 日期系统，时间是一天里的小数
+  ---
+  duration_ms: 7.302478
+  type: 'test'
+  ...
+# Subtest: 单元格 XML：文本转义、剥掉 Excel 不认的控制字符、数字不加引号
+ok 21 - 单元格 XML：文本转义、剥掉 Excel 不认的控制字符、数字不加引号
+  ---
+  duration_ms: 10.116175
+  type: 'test'
+  ...
+# Subtest: 工作表名：去掉非法字符、截到 31 个字、重名加序号
+ok 22 - 工作表名：去掉非法字符、截到 31 个字、重名加序号
+  ---
+  duration_ms: 10.18421
+  type: 'test'
+  ...
+# Subtest: 文件名：去掉路径里不能有的字符；重名自动加序号
+ok 23 - 文件名：去掉路径里不能有的字符；重名自动加序号
+  ---
+  duration_ms: 6.736009
+  type: 'test'
+  ...
+# Subtest: 正文里的引用换成文字：交易带截图链接、页面写名字、上色变加粗、找不到的明说
+ok 24 - 正文里的引用换成文字：交易带截图链接、页面写名字、上色变加粗、找不到的明说
+  ---
+  duration_ms: 7.569812
+  type: 'test'
+  ...
+# Subtest: zip：文件头签名、UTF-8 文件名标记、内容原样、结尾目录记对了文件数
+ok 25 - zip：文件头签名、UTF-8 文件名标记、内容原样、结尾目录记对了文件数
+  ---
+  duration_ms: 6.239111
+  type: 'test'
+  ...
+# Subtest: 空筛选、没填值的条件：匹配全部
+ok 26 - 空筛选、没填值的条件：匹配全部
+  ---
+  duration_ms: 1.201143
+  type: 'test'
+  ...
+# Subtest: 顶层元素之间隐式 AND；单选值之间是 OR；negate 取反
+ok 27 - 顶层元素之间隐式 AND；单选值之间是 OR；negate 取反
+  ---
+  duration_ms: 0.297749
+  type: 'test'
+  ...
+# Subtest: multiselect：or 命中任一，and 要全含
+ok 28 - multiselect：or 命中任一，and 要全含
+  ---
+  duration_ms: 0.254084
+  type: 'test'
+  ...
+# Subtest: 数字字段是数值区间，不是字符串包含；单边区间成立
+ok 29 - 数字字段是数值区间，不是字符串包含；单边区间成立
+  ---
+  duration_ms: 0.147549
+  type: 'test'
+  ...
+# Subtest: 日期区间是闭区间
+ok 30 - 日期区间是闭区间
+  ---
+  duration_ms: 0.093456
+  type: 'test'
+  ...
+# Subtest: 分组：or / and / 非
+ok 31 - 分组：or / and / 非
+  ---
+  duration_ms: 0.175941
+  type: 'test'
+  ...
+# Subtest: 空分组必须中性，而且要忽略 negate（刚点出来的空分组不能把页面清空）
+ok 32 - 空分组必须中性，而且要忽略 negate（刚点出来的空分组不能把页面清空）
+  ---
+  duration_ms: 0.167802
+  type: 'test'
+  ...
+# Subtest: 路径寻址：能找到嵌套节点，指不到就返回 null
+ok 33 - 路径寻址：能找到嵌套节点，指不到就返回 null
+  ---
+  duration_ms: 0.283196
+  type: 'test'
+  ...
+# Subtest: 正文里的 HTML 一律被转义
+ok 34 - 正文里的 HTML 一律被转义
+  ---
+  duration_ms: 1.377712
+  type: 'test'
+  ...
+# Subtest: javascript: 链接不会变成 <a href>
+ok 35 - javascript: 链接不会变成 <a href>
+  ---
+  duration_ms: 0.52779
+  type: 'test'
+  ...
+# Subtest: http(s) 链接和图片正常渲染
+ok 36 - http(s) 链接和图片正常渲染
+  ---
+  duration_ms: 0.682121
+  type: 'test'
+  ...
+# Subtest: TradingView 快照页链接被翻译成图片地址
+ok 37 - TradingView 快照页链接被翻译成图片地址
+  ---
+  duration_ms: 0.213595
+  type: 'test'
+  ...
+# Subtest: 标题 / 列表 / 表格 / 代码块的基本结构
+ok 38 - 标题 / 列表 / 表格 / 代码块的基本结构
+  ---
+  duration_ms: 0.66616
+  type: 'test'
+  ...
+# Subtest: mdPlainExcerpt：去掉标记，超长截断加省略号，转义的星号保留
+ok 39 - mdPlainExcerpt：去掉标记，超长截断加省略号，转义的星号保留
+  ---
+  duration_ms: 1.308057
+  type: 'test'
+  ...
+# Subtest: extractTradeRefs：抽出 [[trade:id]]，去重，保持出现顺序
+ok 40 - extractTradeRefs：抽出 [[trade:id]]，去重，保持出现顺序
+  ---
+  duration_ms: 0.948747
+  type: 'test'
+  ...
+# Subtest: 截图字段：一行一个链接，老的单链接照旧
+ok 41 - 截图字段：一行一个链接，老的单链接照旧
+  ---
+  duration_ms: 0.332122
+  type: 'test'
+  ...
+# { message: 'denied' }
+# { message: 'nope' }
+# Subtest: 新交易：追加到末尾，_created_at 用服务端返回的值，并且只重绘、不重新拉库
+ok 42 - 新交易：追加到末尾，_created_at 用服务端返回的值，并且只重绘、不重新拉库
+  ---
+  duration_ms: 21.770122
+  type: 'test'
+  ...
+# Subtest: 改老交易：原位替换，顺序不变
+ok 43 - 改老交易：原位替换，顺序不变
+  ---
+  duration_ms: 6.247936
+  type: 'test'
+  ...
+# Subtest: 保存失败：弹窗提示，本地数据原样不动，不重绘
+ok 44 - 保存失败：弹窗提示，本地数据原样不动，不重绘
+  ---
+  duration_ms: 11.066231
+  type: 'test'
+  ...
+# Subtest: 保存途中用户切了回测/实盘：这一笔不能混进另一批
+ok 45 - 保存途中用户切了回测/实盘：这一笔不能混进另一批
+  ---
+  duration_ms: 8.967159
+  type: 'test'
+  ...
+# Subtest: 只读查看别人数据时不能写
+ok 46 - 只读查看别人数据时不能写
+  ---
+  duration_ms: 5.892586
+  type: 'test'
+  ...
+# Subtest: 删除成功：本地摘掉那一笔并重绘
+ok 47 - 删除成功：本地摘掉那一笔并重绘
+  ---
+  duration_ms: 7.150095
+  type: 'test'
+  ...
+# Subtest: 删除失败：不能在界面上假装删掉了，而是从库里重新拉一次回到真实状态
+ok 48 - 删除失败：不能在界面上假装删掉了，而是从库里重新拉一次回到真实状态
+  ---
+  duration_ms: 6.00283
+  type: 'test'
+  ...
+# Subtest: 归属选项：系统后面紧跟它的衍生策略，标签写成「系统 › 策略」
+ok 49 - 归属选项：系统后面紧跟它的衍生策略，标签写成「系统 › 策略」
+  ---
+  duration_ms: 24.981401
+  type: 'test'
+  ...
+# Subtest: 指向已删除页面的 __pb 按未归类读，__none 是确认过的「不属于任何模型」
+ok 50 - 指向已删除页面的 __pb 按未归类读，__none 是确认过的「不属于任何模型」
+  ---
+  duration_ms: 9.396821
+  type: 'test'
+  ...
+# Subtest: 系统页算上衍生策略的交易，策略页只算自己
+ok 51 - 系统页算上衍生策略的交易，策略页只算自己
+  ---
+  duration_ms: 8.445322
+  type: 'test'
+  ...
+# Subtest: 模型库成绩默认把所有交易都算进去（做没做都算）；执行情况按 taken 的值分组，没填的排最后
+ok 52 - 模型库成绩默认把所有交易都算进去（做没做都算）；执行情况按 taken 的值分组，没填的排最后
+  ---
+  duration_ms: 8.782713
+  type: 'test'
+  ...
+# Subtest: 往错题里加交易：放进「涉及的交易」那一节，紧贴着上一条列表项
+ok 53 - 往错题里加交易：放进「涉及的交易」那一节，紧贴着上一条列表项
+  ---
+  duration_ms: 6.969484
+  type: 'test'
+  ...
+# Subtest: 往错题里加交易：那一节还空着 / 根本没有那一节
+ok 54 - 往错题里加交易：那一节还空着 / 根本没有那一节
+  ---
+  duration_ms: 14.917647
+  type: 'test'
+  ...
+# Subtest: 从错题里拿掉交易：只删它那一行列表项；正文别处还提到时如实报告
+ok 55 - 从错题里拿掉交易：只删它那一行列表项；正文别处还提到时如实报告
+  ---
+  duration_ms: 7.190008
+  type: 'test'
+  ...
+# Subtest: 便利贴上那句话：优先「如何规避」，两种语言的标题都认
+ok 56 - 便利贴上那句话：优先「如何规避」，两种语言的标题都认
+  ---
+  duration_ms: 6.476208
+  type: 'test'
+  ...
+# Subtest: 改已关联交易那一行的那句话：只改胶囊后面，别的行不动；没有那一行就原样返回
+ok 57 - 改已关联交易那一行的那句话：只改胶囊后面，别的行不动；没有那一行就原样返回
+  ---
+  duration_ms: 7.099231
+  type: 'test'
+  ...
+# Subtest: 错题候选：策略自己的、它所属系统的、通用的，各归各的
+ok 58 - 错题候选：策略自己的、它所属系统的、通用的，各归各的
+  ---
+  duration_ms: 5.317692
+  type: 'test'
+  ...
+# Subtest: 归类建议：先看同一个模型标签以前归到哪，没有就按名字匹配
+ok 59 - 归类建议：先看同一个模型标签以前归到哪，没有就按名字匹配
+  ---
+  duration_ms: 5.26301
+  type: 'test'
+  ...
+# Subtest: 模型库归属是一个虚拟 select 字段：筛选能按策略筛，没建页面时不出现
+ok 60 - 模型库归属是一个虚拟 select 字段：筛选能按策略筛，没建页面时不出现
+  ---
+  duration_ms: 11.195757
+  type: 'test'
+  ...
+# Subtest: [[page:id]] 渲染成页面胶囊；找不到的标红，不静默消失；摘要里换成标题
+ok 61 - [[page:id]] 渲染成页面胶囊；找不到的标红，不静默消失；摘要里换成标题
+  ---
+  duration_ms: 7.813042
+  type: 'test'
+  ...
+# Subtest: 待验证跟错题一样是笔记：交易归不进去，按归属分候选，两种笔记互不混
+ok 62 - 待验证跟错题一样是笔记：交易归不进去，按归属分候选，两种笔记互不混
+  ---
+  duration_ms: 5.311405
+  type: 'test'
+  ...
+# Subtest: 待验证的状态：认不出的一律按观察中；status 只在待验证上写
+ok 63 - 待验证的状态：认不出的一律按观察中；status 只在待验证上写
+  ---
+  duration_ms: 5.649895
+  type: 'test'
+  ...
+# Subtest: 已否定的待验证照样当候选（继续验证），只是排到最后；有分支的问题不挪
+ok 64 - 已否定的待验证照样当候选（继续验证），只是排到最后；有分支的问题不挪
+  ---
+  duration_ms: 5.666539
+  type: 'test'
+  ...
+# Subtest: 待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」
+ok 65 - 待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」
+  ---
+  duration_ms: 7.575991
+  type: 'test'
+  ...
+# Subtest: 标签不是能归交易的页面，也不算笔记；指向已删除标签的 id 读的时候忽略
+ok 66 - 标签不是能归交易的页面，也不算笔记；指向已删除标签的 id 读的时候忽略
+  ---
+  duration_ms: 12.363341
+  type: 'test'
+  ...
+# Subtest: 有 vs 没有：「没有」是标签所在那一页（系统含衍生策略）里没打标签的，通用标签跟全部交易比
+ok 67 - 有 vs 没有：「没有」是标签所在那一页（系统含衍生策略）里没打标签的，通用标签跟全部交易比
+  ---
+  duration_ms: 5.434372
+  type: 'test'
+  ...
+# Subtest: 打 / 摘标签：顺手清掉失效的 id，摘空了整个键删掉
+ok 68 - 打 / 摘标签：顺手清掉失效的 id，摘空了整个键删掉
+  ---
+  duration_ms: 5.232684
+  type: 'test'
+  ...
+# Subtest: 模型库标签做成多选虚拟字段：选项带归属，取值是这笔打的标签
+ok 69 - 模型库标签做成多选虚拟字段：选项带归属，取值是这笔打的标签
+  ---
+  duration_ms: 5.975909
+  type: 'test'
+  ...
+# Subtest: 归类时的发现：写进页面「归类时的发现」一节，带日期和交易胶囊；没有这一节就在文末补
+ok 70 - 归类时的发现：写进页面「归类时的发现」一节，带日期和交易胶囊；没有这一节就在文末补
+  ---
+  duration_ms: 5.759532
+  type: 'test'
+  ...
+# Subtest: 归类记录：存在交易上，筛选按包含、记录页搜索都找得到
+ok 71 - 归类记录：存在交易上，筛选按包含、记录页搜索都找得到
+  ---
+  duration_ms: 5.501337
+  type: 'test'
+  ...
+# Subtest: 模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里
+ok 72 - 模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里
+  ---
+  duration_ms: 7.732726
+  type: 'test'
+  ...
+# Subtest: 错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的标题和级别不动；中英文模板都认
+ok 73 - 错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的标题和级别不动；中英文模板都认
+  ---
+  duration_ms: 5.283418
+  type: 'test'
+  ...
+# Subtest: 关联按类型认：待验证只有支持 / 反驳，错题只有关联；类型不对的值读的时候忽略
+ok 74 - 关联按类型认：待验证只有支持 / 反驳，错题只有关联；类型不对的值读的时候忽略
+  ---
+  duration_ms: 5.44734
+  type: 'test'
+  ...
+# Subtest: 点关联按钮的顺序：待验证 无 → 支持 → 反驳 → 无，错题 无 ⇄ 关联，标签没有
+ok 75 - 点关联按钮的顺序：待验证 无 → 支持 → 反驳 → 无，错题 无 ⇄ 关联，标签没有
+  ---
+  duration_ms: 5.359324
+  type: 'test'
+  ...
+# Subtest: 改标记返回新表、不动原来的；两样都清空了整个条目删掉
+ok 76 - 改标记返回新表、不动原来的；两样都清空了整个条目删掉
+  ---
+  duration_ms: 5.534606
+  type: 'test'
+  ...
+# Subtest: 关联交易分组：新组从 0 开始、各组独立；第一组就是原来的 ev；删组连带清掉那组的标记
+ok 77 - 关联交易分组：新组从 0 开始、各组独立；第一组就是原来的 ev；删组连带清掉那组的标记
+  ---
+  duration_ms: 8.252488
+  type: 'test'
+  ...
+# Subtest: 可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出
+ok 78 - 可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出
+  ---
+  duration_ms: 31.797929
+  type: 'test'
+  ...
+# Subtest: 数据范围：没设条件什么都不影响；设了之后列表、模型库、未归类数都只看范围内的
+ok 79 - 数据范围：没设条件什么都不影响；设了之后列表、模型库、未归类数都只看范围内的
+  ---
+  duration_ms: 10.123726
+  type: 'test'
+  ...
+# Subtest: 「暂时看全部」：范围还在，只是先不生效
+ok 80 - 「暂时看全部」：范围还在，只是先不生效
+  ---
+  duration_ms: 4.806569
+  type: 'test'
+  ...
+# Subtest: 新交易自动填值：只认平铺的「选择字段 是 一个值」，分组 / 取反 / 多个值都不猜
+ok 81 - 新交易自动填值：只认平铺的「选择字段 是 一个值」，分组 / 取反 / 多个值都不猜
+  ---
+  duration_ms: 33.201483
+  type: 'test'
+  ...
+# Subtest: 分支：两层封顶，种类要一致；指向分支 / 不存在的 branch_of 按顶层读
+ok 82 - 分支：两层封顶，种类要一致；指向分支 / 不存在的 branch_of 按顶层读
+  ---
+  duration_ms: 5.132025
+  type: 'test'
+  ...
+# Subtest: 问题的交易：全部（去重）和还没分到分支的
+ok 83 - 问题的交易：全部（去重）和还没分到分支的
+  ---
+  duration_ms: 5.118911
+  type: 'test'
+  ...
+# Subtest: 重排：只动被拖的那一张，排到目标前 / 后，没变的行不写
+ok 84 - 重排：只动被拖的那一张，排到目标前 / 后，没变的行不写
+  ---
+  duration_ms: 4.936991
+  type: 'test'
+  ...
+# Subtest: 合并正文：交易行连同那句话搬过去，剩下的正文单开一节、标题降一级，空模板不搬
+ok 85 - 合并正文：交易行连同那句话搬过去，剩下的正文单开一节、标题降一级，空模板不搬
+  ---
+  duration_ms: 6.008851
+  type: 'test'
+  ...
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 86 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 35.031243
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 87 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 8.479382
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 88 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 8.42744
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 89 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 7.524052
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 90 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 5.635919
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 91 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 7.510775
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 92 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 6.551592
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 93 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 6.993104
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 94 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 5.536017
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 95 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 21.554451
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 96 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 6.171679
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 97 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 6.177097
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 98 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 7.688939
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 99 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 5.375155
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 100 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 8.031691
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 101 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 7.16413
+  type: 'test'
+  ...
+# Subtest: stale linkage sheets clear their rendered DOM before authentication early returns
+ok 102 - stale linkage sheets clear their rendered DOM before authentication early returns
+  ---
+  duration_ms: 5.814969
+  type: 'test'
+  ...
+# Subtest: blown status or history discloses missing funding dates without inventing stage events
+ok 103 - blown status or history discloses missing funding dates without inventing stage events
+  ---
+  duration_ms: 6.692842
+  type: 'test'
+  ...
+# Subtest: nested entry, status and balance saves retain list origin without changing persistence
+ok 104 - nested entry, status and balance saves retain list origin without changing persistence
+  ---
+  duration_ms: 5.906765
+  type: 'test'
+  ...
+# Subtest: linked Back preserves its click through input blur without intercepting other actions
+ok 105 - linked Back preserves its click through input blur without intercepting other actions
+  ---
+  duration_ms: 11.76976
+  type: 'test'
+  ...
+# Subtest: overview dates validate calendar days without local-time rollover
+ok 106 - overview dates validate calendar days without local-time rollover
+  ---
+  duration_ms: 22.197509
+  type: 'test'
+  ...
+# Subtest: overview presets include today and use full prior calendar month
+ok 107 - overview presets include today and use full prior calendar month
+  ---
+  duration_ms: 8.081141
+  type: 'test'
+  ...
+# Subtest: overview uses inclusive dates, refunds and only received payouts
+ok 108 - overview uses inclusive dates, refunds and only received payouts
+  ---
+  duration_ms: 12.941417
+  type: 'test'
+  ...
+# Subtest: overview daily steps are sorted, merged and exact to a cent
+ok 109 - overview daily steps are sorted, merged and exact to a cent
+  ---
+  duration_ms: 7.183503
+  type: 'test'
+  ...
+# Subtest: overview does not mutate the actual VM input objects
+ok 110 - overview does not mutate the actual VM input objects
+  ---
+  duration_ms: 5.835467
+  type: 'test'
+  ...
+# Subtest: overview refunds can make investment negative, never fake ROI or clamp totals
+ok 111 - overview refunds can make investment negative, never fake ROI or clamp totals
+  ---
+  duration_ms: 6.998627
+  type: 'test'
+  ...
+# Subtest: overview empty and pending-only ranges have no fabricated trend
+ok 112 - overview empty and pending-only ranges have no fabricated trend
+  ---
+  duration_ms: 5.803629
+  type: 'test'
+  ...
+# Subtest: overview invalid financial dates cannot silently become a zero range
+ok 113 - overview invalid financial dates cannot silently become a zero range
+  ---
+  duration_ms: 6.826692
+  type: 'test'
+  ...
+# Subtest: overview all-time includes full loaded history and sparse long intervals
+ok 114 - overview all-time includes full loaded history and sparse long intervals
+  ---
+  duration_ms: 5.56735
+  type: 'test'
+  ...
+# Subtest: overview malformed amounts never turn into a zero balance
+ok 115 - overview malformed amounts never turn into a zero balance
+  ---
+  duration_ms: 7.518259
+  type: 'test'
+  ...
+# Subtest: overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+ok 116 - overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+  ---
+  duration_ms: 5.389045
+  type: 'test'
+  ...
+# Subtest: classic metric strip remains byte-for-byte identical in both languages
+ok 117 - classic metric strip remains byte-for-byte identical in both languages
+  ---
+  duration_ms: 21.499732
+  type: 'test'
+  ...
+# Subtest: overview lifecycle resets identity/page/layout range and removes portals without touching forms
+ok 118 - overview lifecycle resets identity/page/layout range and removes portals without touching forms
+  ---
+  duration_ms: 5.902841
+  type: 'test'
+  ...
+# Subtest: overview keyboard only consumes active overlays and preserves applied range on Escape
+ok 119 - overview keyboard only consumes active overlays and preserves applied range on Escape
+  ---
+  duration_ms: 5.506974
+  type: 'test'
+  ...
+# Subtest: restored help focus suppresses reopening once, not the next hover
+ok 120 - restored help focus suppresses reopening once, not the next hover
+  ---
+  duration_ms: 9.388497
+  type: 'test'
+  ...
+# Subtest: modern renders a unified summary and six field-local explanations
+ok 121 - modern renders a unified summary and six field-local explanations
+  ---
+  duration_ms: 13.17583
+  type: 'test'
+  ...
+# Subtest: 口径：退款冲减投入，待到账的出金不算回报
+ok 122 - 口径：退款冲减投入，待到账的出金不算回报
+  ---
+  duration_ms: 25.11039
+  type: 'test'
+  ...
+# Subtest: 按月：按付款 / 到账那天归月，待到账的不算
+ok 123 - 按月：按付款 / 到账那天归月，待到账的不算
+  ---
+  duration_ms: 8.877602
+  type: 'test'
+  ...
+# Subtest: 漏斗：重置前那次失败也算进通过率的分母
+ok 124 - 漏斗：重置前那次失败也算进通过率的分母
+  ---
+  duration_ms: 8.223178
+  type: 'test'
+  ...
+# Subtest: 月付：按购买日逐月记，31 号买的小月记在月底；水位之前的不补
+ok 125 - 月付：按购买日逐月记，31 号买的小月记在月底；水位之前的不补
+  ---
+  duration_ms: 8.201292
+  type: 'test'
+  ...
+# Subtest: 目录校验：规则值只能是数字 / none / null，计划要挂在已有公司下
+ok 126 - 目录校验：规则值只能是数字 / none / null，计划要挂在已有公司下
+  ---
+  duration_ms: 7.306732
+  type: 'test'
+  ...
+# Subtest: 目录对比：字段顺序不同不算改动
+ok 127 - 目录对比：字段顺序不同不算改动
+  ---
+  duration_ms: 7.542067
+  type: 'test'
+  ...
+# Subtest: 添加账号：同系列同规模里按可选项挑计划，must 那一维必须对上
+ok 128 - 添加账号：同系列同规模里按可选项挑计划，must 那一维必须对上
+  ---
+  duration_ms: 6.081715
+  type: 'test'
+  ...
+# Subtest: 添加账号：规则输入框三种取值，改过的规则能认出来、套进快照不动原计划
+ok 129 - 添加账号：规则输入框三种取值，改过的规则能认出来、套进快照不动原计划
+  ---
+  duration_ms: 7.831489
+  type: 'test'
+  ...
+# Subtest: 余额：考核进度、静态 / 追踪回撤的爆仓线
+ok 130 - 余额：考核进度、静态 / 追踪回撤的爆仓线
+  ---
+  duration_ms: 5.513497
+  type: 'test'
+  ...
+# Subtest: 折叠状态按「级别 + 文字 + 第几个」存，重名标题能区分
+ok 131 - 折叠状态按「级别 + 文字 + 第几个」存，重名标题能区分
+  ---
+  duration_ms: 1.134267
+  type: 'test'
+  ...
+# Subtest: 前面插了内容、位置全变，照样认得出是哪几节
+ok 132 - 前面插了内容、位置全变，照样认得出是哪几节
+  ---
+  duration_ms: 0.218043
+  type: 'test'
+  ...
+# Subtest: 标题改了字、删了，或者存的东西格式不对，直接忽略
+ok 133 - 标题改了字、删了，或者存的东西格式不对，直接忽略
+  ---
+  duration_ms: 0.222331
+  type: 'test'
+  ...
+1..133
+# tests 133
+# suites 0
+# pass 133
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 390.458273
+
+
+## stderr
+(empty)

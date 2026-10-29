@@ -1,0 +1,52 @@
+[
+  {
+    "label": "year bound focus fallback",
+    "ok": true,
+    "year": 2026,
+    "month": 3,
+    "focusMonth": "3"
+  },
+  {
+    "label": "native keyboard month action",
+    "ok": true,
+    "month": 2,
+    "focusMonth": "2"
+  },
+  {
+    "label": "partial range totals and line retention",
+    "ok": true,
+    "amounts": [
+      "$342",
+      "$2,480",
+      "+$2,138"
+    ],
+    "dates": "10/18 – 10/26"
+  },
+  {
+    "label": "overview exit removes observers/frame/state",
+    "ok": true,
+    "blocked": []
+  },
+  {
+    "label": "fresh page off and network isolated",
+    "ok": true
+  },
+  {
+    "errors": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    }
+  }
+]

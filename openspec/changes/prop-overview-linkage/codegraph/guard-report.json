@@ -1,0 +1,99 @@
+{
+  "schema": "specnav.codegraph.guard_report.v1",
+  "generated_at": "2026-10-27T13:32:46.312Z",
+  "active_change": "prop-overview-linkage",
+  "stage": "development",
+  "ok": true,
+  "status": {
+    "policy": {
+      "enabled": true,
+      "profile": "bootstrap",
+      "mode": "observe",
+      "stage": "development",
+      "required_for_stage": false,
+      "disabled_reason": null
+    },
+    "execution_surface": "mcp",
+    "cli": {
+      "available": true,
+      "version": "1.5.0",
+      "path": "/root/.nvm/versions/node/v22.19.0/bin/codegraph",
+      "unsupported": false,
+      "error": null
+    },
+    "mcp": {
+      "configured": false,
+      "visible_in_current_session": true,
+      "restart_required": false,
+      "config_files": []
+    },
+    "index": {
+      "initialized": false,
+      "projectPath": "/root/ifvg-journal",
+      "indexPath": null,
+      "lastIndexed": null,
+      "fileCount": 0,
+      "nodeCount": 0,
+      "edgeCount": 0,
+      "pendingChanges": {
+        "added": 0,
+        "modified": 0,
+        "removed": 0
+      },
+      "reindexRecommended": false,
+      "worktreeMismatch": null
+    }
+  },
+  "decision": {
+    "schema": "specnav.codegraph.decision.v1",
+    "stage": "development",
+    "profile": "bootstrap",
+    "effective_mode": "observe",
+    "required_for_stage": false,
+    "execution_surface": "mcp",
+    "result": "warn",
+    "blockers": [],
+    "warnings": [
+      "codegraph:not-indexed"
+    ],
+    "explanation": "CodeGraph policy has advisory warnings for development."
+  },
+  "evidence_index": {
+    "schema": "specnav.codegraph.evidence_index.v1",
+    "generated_at": "2026-10-27T13:32:46.311Z",
+    "active_change": "prop-overview-linkage",
+    "source_raw": "openspec/changes/prop-overview-linkage/codegraph/evidence.jsonl",
+    "by_claim": {},
+    "by_stage": {},
+    "blockers": [],
+    "raw_exists": false,
+    "record_count": 0
+  },
+  "claims_report": {
+    "schema": "specnav.codegraph.claims_report.v1",
+    "generated_at": "2026-10-27T13:32:46.312Z",
+    "active_change": "prop-overview-linkage",
+    "claims_file": "openspec/changes/prop-overview-linkage/codegraph/claims-map.json",
+    "evidence_index": "openspec/changes/prop-overview-linkage/codegraph/evidence-index.json",
+    "claims_count": 1,
+    "verified_claims": [],
+    "unverified_claims": [
+      "development:task-001-prop-linkage"
+    ],
+    "blockers": [],
+    "warnings": [
+      "codegraph:claim-unverified:development:task-001-prop-linkage"
+    ]
+  },
+  "drift": {
+    "schema": "specnav.codegraph.drift.v1",
+    "active_change": "prop-overview-linkage",
+    "drift": [],
+    "blockers": []
+  },
+  "blockers": [],
+  "warnings": [
+    "codegraph:not-indexed",
+    "codegraph:claim-unverified:development:task-001-prop-linkage"
+  ]
+}

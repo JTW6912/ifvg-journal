@@ -1,0 +1,13 @@
+{
+ "touched_specs":["ui-design","system-architecture","frontend-backend-data-flow","component-architecture"],
+ "ui_rules":["approved continuous horizontal funnel; illustrative narrowing","field-local explanations and existing date control","classic unchanged"],
+ "architecture_modules":["Prop pure domain","Prop modern linkage view","My Accounts predicate","secondary-modal lifecycle"],
+ "api_contracts":["no new API calls; reuse loaded owner cache"],
+ "database_entities":["prop_accounts: bought_on,status,events","prop_entries: account_id,kind,day,amount,pending"],
+ "permissions":["owner data only; no new admin privilege"],
+ "operational_constraints":["offline synthetic validation only","no business-source commit, push, deployment or real-account test","preserve preceding frozen acceptance"],
+ "data_flows":["FLOW-PROP-SCOPE","FLOW-PROP-OVERVIEW","FLOW-PROP-PROGRESS","FLOW-PROP-DRILLDOWN","FLOW-PROP-CURRENT-NAV"],
+ "theme_modes":["light-dark","theme-toggle:existing","seven palettes and custom P&L"],
+ "locale_policy":["i18n:enabled","locales:zh,en","default-locale:en"],
+ "unresolved_gaps":[]
+}

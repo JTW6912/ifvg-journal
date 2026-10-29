@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 96.120505
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 23.317954
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 20.57537
+  type: 'test'
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 19.014373
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 15.513921
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 16.762173
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 15.851739
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 17.425969
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 14.379882
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 59.415154
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 17.260175
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 12 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 17.600781
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 13 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 22.544854
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 14 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 15.410217
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 15 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 21.377853
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 16 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 16.929388
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 551.029693

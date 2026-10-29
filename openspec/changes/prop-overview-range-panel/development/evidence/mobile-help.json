@@ -1,0 +1,25 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45649/?rev=2",
+  "result": {
+    "inside": true,
+    "target": [
+      44,
+      44
+    ],
+    "text": "进行中包含考核中、待激活和资金账号。显示当前状态，不随日期范围回放。",
+    "visible": true
+  }
+}

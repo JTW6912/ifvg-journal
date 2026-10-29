@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-stage-history-repair",
+  "required": true,
+  "status": "offline_contract_verified",
+  "production_schema_change": false,
+  "migrations": [{"file": "history-update-contract.sql", "type": "offline-temporary-contract", "environment": "local PostgreSQL 16 Unix socket only", "deploy": false}],
+  "rollback": ["ROLLBACK; temporary tables are session-local and disappear on connection close"],
+  "rollback_strategy": "Transaction rollback and session-local temporary tables; no persistent schema or application rows touched.",
+  "verification": {
+    "commands": ["runuser -u postgres -- psql -X -h /var/run/postgresql -p 5432 -d postgres -v ON_ERROR_STOP=1 < history-update-contract.sql"],
+    "evidence": ["openspec/changes/prop-stage-history-repair/development/evidence/delivery-sql-contract.log"]
+  },
+  "notes": ["Required for the new conditional DML contract, not a production migration. No live RLS/PostgREST certification. Never execute using the real Supabase connection."]
+}

@@ -1,0 +1,24 @@
+/* Field help: shadcn Tooltip semantics, using the existing theme token bridge. */
+.field-label{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.roi-label.field-label{gap:2px;white-space:nowrap}
+:where(.field-info){display:inline-flex;align-items:center;justify-content:center;flex:none;width:24px;height:24px;min-height:24px;padding:0;border:0;border-radius:var(--ui-radius-sm);background:transparent;color:var(--ui-muted-foreground);cursor:help;vertical-align:middle;transition:color var(--ui-duration) var(--ui-ease)}
+.field-info svg{width:16px;height:16px;stroke-width:1.65;pointer-events:none}
+:where(.field-info:hover,.field-info.is-showing){color:var(--ui-foreground)}
+.field-info:focus-visible{outline:1px solid var(--ui-ring);outline-offset:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-ring) 40%,transparent)}
+.zone-heading>.field-info{margin-inline-start:-4px}
+.metric-tooltip{position:fixed;z-index:150;width:max-content;max-width:min(288px,calc(100vw - 24px));padding:8px 12px;border-radius:var(--ui-radius-md);background:var(--ui-foreground);color:var(--ui-background);box-shadow:var(--ui-popover-shadow);font:13px/1.6 var(--fontUI);text-align:left;overflow-wrap:anywhere;pointer-events:auto;isolation:isolate}
+.metric-tooltip::after{content:"";position:absolute;left:var(--tip-arrow-x,50%);width:8px;height:8px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:1px;z-index:-1}
+.metric-tooltip[data-side="top"]::after{bottom:-4px}
+.metric-tooltip[data-side="bottom"]::after{top:-4px}
+/* Bridge the small anchor gap, so moving onto the text does not dismiss it. */
+.metric-tooltip::before{content:"";position:absolute;inset-inline:0;height:10px}
+.metric-tooltip[data-side="top"]::before{bottom:-10px}
+.metric-tooltip[data-side="bottom"]::before{top:-10px}
+@media(any-pointer:coarse),(max-width:640px){
+  .field-info{width:44px;height:44px;min-height:44px;cursor:pointer}
+  .field-label{gap:0}
+  .roi-label.field-label{gap:0}
+  .zone-heading>.field-info{margin-inline-start:-8px}
+  .header-tools{justify-content:flex-end}
+}
+@media(prefers-reduced-motion:reduce){.field-info{transition:none}}

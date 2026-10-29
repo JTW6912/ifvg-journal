@@ -1,0 +1,1475 @@
+[
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/stage-list.json",
+    "step": 3,
+    "command": "(()=>{const rows=[...document.querySelectorAll('.propLinkageAccount')];if(rows.length!==8)throw Error('expected 8 stage accounts');return {rows:rows.length,dates:rows.map(e=>e.innerText),focus:document.activeElement.dataset.action,dialog:!!document.querySelector('[role=dialog]'),blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "dates": [
+        "Demo account 01\nDemo Firm A · Group A\n资金账号\n通过考核 · 2026-10-12",
+        "Demo account 02\nDemo Firm A · Group A\n资金账号\n通过考核 · 2026-10-12",
+        "Demo account 03\nDemo Firm A · Group A\n已通过·待激活\n通过考核 · 2026-10-12",
+        "Demo account 11\nDemo Firm B · Group B\n资金账号\n通过考核 · 2026-10-12",
+        "Demo account 12\nDemo Firm B · Group B\n资金账号\n通过考核 · 2026-10-12",
+        "Demo account 13\nDemo Firm B · Group B\n已通过·待激活\n通过考核 · 2026-10-12",
+        "Demo account 14\nDemo Firm B · Group B\n已通过·待激活\n通过考核 · 2026-10-12",
+        "Demo account 15\nDemo Firm B · Group B\n已通过·待激活\n通过考核 · 2026-10-12"
+      ],
+      "dialog": true,
+      "focus": "prop-close-modal",
+      "rows": 8
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/detail-return-focus.json",
+    "step": 2,
+    "command": "demo.linkage()",
+    "success": true,
+    "value": null
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/detail-return-focus.json",
+    "step": 9,
+    "command": "(()=>{const d=document.querySelector('.propModal');if(d.getAttribute('role')!=='dialog')throw Error('detail role');const controls=[...d.querySelectorAll('button,input,select,textarea,a[href],summary,[tabindex]')].filter(e=>e.tabIndex>=0&&!e.matches(':disabled')&&e.getClientRects().length);controls[0].focus();return {dialog:d.getAttribute('aria-label'),type:propModal.type,controls:controls.length,focus:document.activeElement.dataset.action}})()",
+    "success": true,
+    "value": {
+      "controls": 23,
+      "dialog": "账号详情",
+      "focus": "prop-close-modal",
+      "type": "detail"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/detail-return-focus.json",
+    "step": 12,
+    "command": "({wrapToLast:document.activeElement.dataset.propField||document.activeElement.dataset.action,inside:!!document.activeElement.closest('.propModal')})",
+    "success": true,
+    "value": {
+      "inside": true,
+      "wrapToLast": "note"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/detail-return-focus.json",
+    "step": 16,
+    "command": "(()=>{if(document.querySelectorAll('.propLinkageAccount').length!==8)throw Error('back count');return {rows:8,focus:document.activeElement.dataset.id,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "focus": "link-1",
+      "rows": 8
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/detail-return-focus.json",
+    "step": 19,
+    "command": "(()=>{if(propModal!==null||document.activeElement.id!=='propProgressStage-passed')throw Error('close focus');return {closed:true,focus:document.activeElement.id,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "closed": true,
+      "focus": "propProgressStage-passed"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/conversion-partitions.json",
+    "step": 5,
+    "command": "(()=>{const n=document.querySelectorAll('.propLinkageAccount').length;if(n!==3)throw Error('converted expected3');return {converted:n,ratio:document.querySelector('.propLinkageSubtitle').textContent}})()",
+    "success": true,
+    "value": {
+      "converted": 3,
+      "ratio": "2026.10.01 – 2026.10.31 · 30% · 3/10 个账号"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/conversion-partitions.json",
+    "step": 9,
+    "command": "(()=>{const n=document.querySelectorAll('.propLinkageAccount').length;if(n!==7)throw Error('unconverted expected7');return {unconverted:n,tab:document.activeElement.id}})()",
+    "success": true,
+    "value": {
+      "tab": "propLinkageTab-unconverted",
+      "unconverted": 7
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/conversion-partitions.json",
+    "step": 13,
+    "command": "(()=>{if(document.querySelectorAll('.propLinkageAccount').length!==3)throw Error('arrow partition');return {rows:3,selected:document.activeElement.id}})()",
+    "success": true,
+    "value": {
+      "rows": 3,
+      "selected": "propLinkageTab-converted"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/conversion-partitions.json",
+    "step": 16,
+    "command": "({closed:propModal===null,focus:document.activeElement.id,blocked:offlineCalls})",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "closed": true,
+      "focus": "propProgressEdge-0"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/date-reverse-cancel.json",
+    "step": 8,
+    "command": "(()=>{const stages=[...document.querySelectorAll('.propProgressValue strong')].map(e=>Number(e.textContent));const net=Number(document.querySelector('.propOverviewValue').dataset.netCents);if(JSON.stringify(stages)!=='[10,8,0,0]'||net!==-100000)throw Error('range did not link');return {range:propOverviewRange,stages,net,month:propMonth,year:propYear,yearNav:[...document.querySelectorAll('[data-action=prop-year]')].map(e=>e.disabled),disabledMonths:document.querySelectorAll('[data-action=prop-month]:disabled').length,company:document.querySelector('.propTable')?.innerText}})()",
+    "success": true,
+    "value": {
+      "company": "公司\t当前账号数\t通过率\t区间投入\t出金到账\t净收益\tROI\nDemo Firm B\t8\t100%\t$0\t$0\t$0\t—\nDemo Firm A\t10\t75%\t$1,000\t$0\t−$1,000\t-100.0%",
+      "disabledMonths": 11,
+      "month": 10,
+      "net": -100000,
+      "range": {
+        "from": "2026-10-01",
+        "preset": "custom",
+        "to": "2026-10-13"
+      },
+      "stages": [
+        10,
+        8,
+        0,
+        0
+      ],
+      "year": 2026,
+      "yearNav": [
+        true,
+        true
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/date-reverse-cancel.json",
+    "step": 15,
+    "command": "(()=>{if(propOverviewRange.to!=='2026-10-13'||document.querySelector('.propOverviewPicker'))throw Error('cancel changed range');return {range:propOverviewRange,net:document.querySelector('.propOverviewValue').dataset.netCents,focus:document.activeElement.id,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "focus": "propOverviewRangeTrigger",
+      "net": "-100000",
+      "range": {
+        "from": "2026-10-01",
+        "preset": "custom",
+        "to": "2026-10-13"
+      }
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/current-navigation.json",
+    "step": 8,
+    "command": "(()=>{if(propView!=='accounts'||propStatusFilter!=='funded'||propFirmFilter!=='Demo Firm A'||propGroupFilter!=='Group A')throw Error('exact filter scope');return {view:propView,status:propStatusFilter,firm:propFirmFilter,group:propGroupFilter,chip:document.querySelector('#propExactStatus')?.innerText,accounts:propScoped().accounts.filter(a=>propAccountMatchesStatus(a,propStatusFilter)).map(a=>({id:a.id,status:a.status,bought_on:a.bought_on})),range:propOverviewRange,focus:document.activeElement.id,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "accounts": [
+        {
+          "bought_on": "2026-10-01",
+          "id": "link-1",
+          "status": "funded"
+        },
+        {
+          "bought_on": "2026-10-01",
+          "id": "link-2",
+          "status": "funded"
+        }
+      ],
+      "blocked": [],
+      "chip": "资金账号 · 2 ×",
+      "firm": "Demo Firm A",
+      "focus": "propExactStatus",
+      "group": "Group A",
+      "range": {
+        "from": null,
+        "preset": "all",
+        "to": null
+      },
+      "status": "funded",
+      "view": "accounts"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/current-navigation.json",
+    "step": 12,
+    "command": "(()=>{if(propStatusFilter!=='all'||document.querySelector('#propExactStatus'))throw Error('clear precise filter');return {status:propStatusFilter,firm:propFirmFilter,group:propGroupFilter,count:propScoped().accounts.length}})()",
+    "success": true,
+    "value": {
+      "count": 10,
+      "firm": "Demo Firm A",
+      "group": "Group A",
+      "status": "all"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/mobile-layout.json",
+    "step": 2,
+    "command": "demo.linkage();demo.appearance('sky','dark','en');document.querySelector('.propProgress').scrollIntoView()",
+    "success": true,
+    "value": {
+      "interrupted": false
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/mobile-layout.json",
+    "step": 5,
+    "command": "(()=>{const s=document.querySelector('.propProgressScroll');const b=document.querySelector('.propProgressStage');const r=b.getBoundingClientRect();if(document.documentElement.scrollWidth>innerWidth+1)throw Error('page overflow');if(s.scrollWidth<=s.clientWidth)throw Error('missing local scroll');return {viewport:[innerWidth,innerHeight],bodyWidth:document.documentElement.scrollWidth,scroll:[s.clientWidth,s.scrollWidth,s.scrollLeft],stage:[r.width,r.height],locale:lang,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "bodyWidth": 390,
+      "locale": "en",
+      "scroll": [
+        360,
+        832,
+        0
+      ],
+      "stage": [
+        191,
+        288
+      ],
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/mobile-scroll-sheet.json",
+    "step": 2,
+    "command": "(()=>{const s=document.querySelector('.propProgressScroll'),r=document.querySelector('#propProgressStage-paid').getBoundingClientRect();if(s.scrollLeft<400||r.right>innerWidth)throw Error('mobile end not visible');return {scrollLeft:s.scrollLeft,paidBounds:{left:r.left,right:r.right},viewport:innerWidth}})()",
+    "success": true,
+    "value": {
+      "paidBounds": {
+        "left": 168,
+        "right": 359
+      },
+      "scrollLeft": 472,
+      "viewport": 390
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/mobile-scroll-sheet.json",
+    "step": 6,
+    "command": "(()=>{const r=document.querySelector('.propLinkageModal').getBoundingClientRect();if(document.querySelectorAll('.propLinkageAccount').length!==4||r.right>innerWidth+1||r.left<0)throw Error('mobile sheet');return {rows:4,sheet:{left:r.left,right:r.right,width:r.width,height:r.height},closeTarget:document.querySelector('.propLinkageModal .iconBtn').getBoundingClientRect().width,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "closeTarget": 44,
+      "rows": 4,
+      "sheet": {
+        "height": 844,
+        "left": 0,
+        "right": 390,
+        "width": 390
+      }
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/unsaved-forms.json",
+    "step": 2,
+    "command": "demo.linkage();document.querySelector('.propProgress').scrollIntoView()",
+    "success": true,
+    "value": {
+      "interrupted": false
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/unsaved-forms.json",
+    "step": 10,
+    "command": "document.querySelector('[data-action=prop-linkage-back]').scrollIntoView()",
+    "success": true,
+    "value": {
+      "interrupted": false
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/unsaved-forms.json",
+    "step": 15,
+    "command": "(()=>{if(propModal.type!=='detail'||propModal.draft.nickname!=='Synthetic unsaved name'||!propModal.error)throw Error('dirty back not protected');return {type:propModal.type,draft:propModal.draft.nickname,error:propModal.error,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "draft": "Synthetic unsaved name",
+      "error": "请先保存或撤销账号信息的更改，再返回名单。",
+      "type": "detail"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/unsaved-forms.json",
+    "step": 18,
+    "command": "document.querySelector('[data-action=prop-new-account]').scrollIntoView()",
+    "success": true,
+    "value": {
+      "interrupted": false
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/unsaved-forms.json",
+    "step": 25,
+    "command": "(()=>{const before=propModal,element=document.querySelector('.propModal');propLinkageOpen('stage','passed','propProgressStage-passed');propLinkageCurrent('funded');propLinkageBeforeRender();render();if(propModal!==before||propModal.draft.nickname!=='Synthetic purchase draft'||document.querySelector('.propModal')!==element)throw Error('unrelated form lost');return {sameModal:true,sameDOM:true,draft:propModal.draft.nickname,blocked:offlineCalls}})()",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "draft": "Synthetic purchase draft",
+      "sameDOM": true,
+      "sameModal": true
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/final-browser-diagnostics.json",
+    "step": 6,
+    "command": "({net:document.querySelector('.propOverviewValue').dataset.netCents,stages:[...document.querySelectorAll('.propProgressValue strong')].map(e=>e.textContent),blocked:offlineCalls,remoteResources:performance.getEntriesByType('resource').filter(r=>new URL(r.name).origin!==location.origin).map(r=>r.name)})",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "net": "100000",
+      "remoteResources": [],
+      "stages": [
+        "10",
+        "8",
+        "6",
+        "4"
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/browser-lifecycle-boundaries.json",
+    "case": "lifecycle-and-escaping",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "results": [
+        {
+          "closed": true,
+          "mutation": "propFirmFilter='missing'"
+        },
+        {
+          "closed": true,
+          "mutation": "propGroupFilter='missing'"
+        },
+        {
+          "closed": true,
+          "mutation": "propOverviewRange={preset:'custom',from:'2020-01-01',to:'2020-01-02'}"
+        },
+        {
+          "closed": true,
+          "mutation": "session={user:{id:'new-owner'}}"
+        },
+        {
+          "closed": true,
+          "mutation": "propView='accounts'"
+        },
+        {
+          "closed": true,
+          "mutation": "tab='analysis'"
+        },
+        {
+          "closed": true,
+          "mutation": "document.documentElement.dataset.layout='classic'"
+        },
+        {
+          "closed": true,
+          "mutation": "authLoading=true"
+        },
+        {
+          "closed": true,
+          "mutation": "session=null"
+        },
+        {
+          "closed": true,
+          "mutation": "currentProfile.active=false"
+        },
+        {
+          "xssEscaped": "<img src=x onerror=\"window.linkageXss=1\">"
+        }
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/browser-lifecycle-boundaries.json",
+    "case": "boundaries-and-colors",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "customPnl": "rgb(176, 74, 199)",
+      "results": [
+        {
+          "lower": true,
+          "name": "empty",
+          "pageWidth": 375,
+          "refundBars": 0,
+          "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+        },
+        {
+          "lower": true,
+          "name": "negative",
+          "pageWidth": 375,
+          "refundBars": 0,
+          "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+        },
+        {
+          "lower": true,
+          "name": "refund",
+          "pageWidth": 375,
+          "refundBars": 1,
+          "refundHint": "净退款以向上的纹理条展示。",
+          "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+        },
+        {
+          "lower": true,
+          "name": "large",
+          "pageWidth": 375,
+          "refundBars": 0,
+          "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+        },
+        {
+          "lower": false,
+          "name": "invalid",
+          "pageWidth": 375,
+          "refundBars": 0,
+          "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+        }
+      ],
+      "stageIcon": "rgb(39, 39, 42)"
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/theme-locale-matrix.json",
+    "case": "theme-locale-1440",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "results": [
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "gold",
+          "scrollWidth": 1114,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "gold",
+          "scrollWidth": 1114,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "gold",
+          "scrollWidth": 1114,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "gold",
+          "scrollWidth": 1114,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sky",
+          "scrollWidth": 1114,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sky",
+          "scrollWidth": 1114,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sky",
+          "scrollWidth": 1114,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sky",
+          "scrollWidth": 1114,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "violet",
+          "scrollWidth": 1114,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "violet",
+          "scrollWidth": 1114,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "violet",
+          "scrollWidth": 1114,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "violet",
+          "scrollWidth": 1114,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "rose",
+          "scrollWidth": 1114,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "rose",
+          "scrollWidth": 1114,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "rose",
+          "scrollWidth": 1114,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "rose",
+          "scrollWidth": 1114,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sunset",
+          "scrollWidth": 1114,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sunset",
+          "scrollWidth": 1114,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sunset",
+          "scrollWidth": 1114,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "sunset",
+          "scrollWidth": 1114,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "ocean",
+          "scrollWidth": 1114,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "ocean",
+          "scrollWidth": 1114,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "ocean",
+          "scrollWidth": 1114,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "ocean",
+          "scrollWidth": 1114,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "graphite",
+          "scrollWidth": 1114,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "graphite",
+          "scrollWidth": 1114,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "graphite",
+          "scrollWidth": 1114,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 1440
+        },
+        {
+          "clientWidth": 1114,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 1440,
+          "palette": "graphite",
+          "scrollWidth": 1114,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 1440
+        }
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/theme-locale-matrix.json",
+    "case": "theme-locale-390",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "results": [
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 390
+        },
+        {
+          "clientWidth": 360,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 390,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 390
+        }
+      ]
+    }
+  },
+  {
+    "source": "openspec/changes/prop-overview-linkage/development/evidence/theme-locale-matrix.json",
+    "case": "theme-locale-375",
+    "success": true,
+    "value": {
+      "blocked": [],
+      "results": [
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.979529 0.967529 0.948941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(33, 29, 22)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.113647 0.126588 0.131922)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "gold",
+          "scrollWidth": 832,
+          "text": "rgb(232, 230, 223)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.950118 0.969412 0.994824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(16, 35, 63)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.0763922 0.138745 0.236941)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sky",
+          "scrollWidth": 832,
+          "text": "rgb(229, 237, 249)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.967294 0.956941 0.994118)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(30, 22, 56)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.122431 0.0992157 0.214824)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "violet",
+          "scrollWidth": 832,
+          "text": "rgb(236, 232, 250)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.990353 0.954824 0.971059)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(58, 22, 40)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.18902 0.0961569 0.143216)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "rose",
+          "scrollWidth": 832,
+          "text": "rgb(248, 233, 240)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.993176 0.963059 0.946353)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(46, 27, 12)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.174275 0.117255 0.0733333)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "sunset",
+          "scrollWidth": 832,
+          "text": "rgb(246, 236, 226)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.942588 0.973412 0.976706)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(13, 42, 48)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.0619608 0.161333 0.186745)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "ocean",
+          "scrollWidth": 832,
+          "text": "rgb(226, 243, 245)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.949176 0.949176 0.949882)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(24, 24, 27)",
+          "theme": "light",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "zh",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 375
+        },
+        {
+          "clientWidth": 345,
+          "fill": "color(srgb 0.134824 0.134824 0.142431)",
+          "locale": "en",
+          "missingKeys": false,
+          "pageWidth": 375,
+          "palette": "graphite",
+          "scrollWidth": 832,
+          "text": "rgb(237, 237, 239)",
+          "theme": "dark",
+          "viewport": 375
+        }
+      ]
+    }
+  }
+]

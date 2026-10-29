@@ -1,0 +1,11 @@
+{
+  "schema": "specnav.codegraph.evidence_index.v1",
+  "generated_at": "2026-10-27T07:40:35.454Z",
+  "active_change": "prop-overview-range-panel",
+  "source_raw": "openspec/changes/prop-overview-range-panel/codegraph/evidence.jsonl",
+  "by_claim": {},
+  "by_stage": {},
+  "blockers": [],
+  "raw_exists": false,
+  "record_count": 0
+}

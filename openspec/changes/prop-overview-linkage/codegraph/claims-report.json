@@ -1,0 +1,16 @@
+{
+  "schema": "specnav.codegraph.claims_report.v1",
+  "generated_at": "2026-10-27T13:32:46.312Z",
+  "active_change": "prop-overview-linkage",
+  "claims_file": "openspec/changes/prop-overview-linkage/codegraph/claims-map.json",
+  "evidence_index": "openspec/changes/prop-overview-linkage/codegraph/evidence-index.json",
+  "claims_count": 1,
+  "verified_claims": [],
+  "unverified_claims": [
+    "development:task-001-prop-linkage"
+  ],
+  "blockers": [],
+  "warnings": [
+    "codegraph:claim-unverified:development:task-001-prop-linkage"
+  ]
+}

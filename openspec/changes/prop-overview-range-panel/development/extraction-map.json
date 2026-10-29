@@ -1,0 +1,10 @@
+{
+  "schema_version":1,
+  "component_rules":["Keep accounting/date derivation pure in the Prop domain","Build the panel and overlay behavior as named components within one focused Prop module","Use a single shared tooltip controller for all six fields"],
+  "reuse":["propScoped","propSum","propMoney","propUsd","propPct","T","esc","localeTag","render/patchAppShell"],
+  "extractions":[
+    {"from":"range filtering and curve calculation","to":"pure Prop range snapshot","reason":"same selected entries and exact final net"},
+    {"from":"preset and calendar dates","to":"shared date-only helpers","reason":"one validation and arithmetic model"},
+    {"from":"six per-field explanations","to":"one field-help control","reason":"one positioning, focus and dismissal lifecycle"}
+  ]
+}

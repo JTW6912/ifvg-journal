@@ -1,0 +1,191 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=3",
+  "result": {
+    "allPassed": true,
+    "combinations": 28,
+    "results": [
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "gold",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "gold",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "sky",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "sky",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "violet",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "violet",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "rose",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "rose",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "sunset",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "sunset",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "ocean",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "ocean",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "graphite",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "graphite",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "gold",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "gold",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "sky",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "sky",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "violet",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "violet",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "rose",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "rose",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "sunset",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "sunset",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "ocean",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "ocean",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "overflow": false,
+        "palette": "graphite",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "overflow": false,
+        "palette": "graphite",
+        "theme": "dark"
+      }
+    ],
+    "width": 1280
+  }
+}

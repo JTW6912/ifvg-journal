@@ -1,0 +1,28 @@
+{
+  "ok": false,
+  "status": "blocked",
+  "host": "codex",
+  "action": "validate",
+  "exit_status": 2,
+  "signal": null,
+  "result": {
+    "ok": false,
+    "status": "blocked",
+    "blockers": [
+      {
+        "id": "verification-production:reviewer-required",
+        "artifact": "--reviewer-id",
+        "detail": null
+      }
+    ],
+    "fallback_used": false
+  },
+  "blocker_ids": [
+    "verification-production:reviewer-required"
+  ],
+  "artifact_paths": [
+    "--reviewer-id"
+  ],
+  "next_skills": [],
+  "fallback_used": false
+}

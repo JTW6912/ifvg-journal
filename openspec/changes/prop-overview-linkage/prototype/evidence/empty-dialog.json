@@ -1,0 +1,43 @@
+[
+  {
+    "command": "open",
+    "ok": true,
+    "text": "Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "text": "Snapshot: 58 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "set",
+    "ok": true,
+    "text": "set completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "text": "select completed"
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "text": "Snapshot: 57 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "click",
+    "ok": true,
+    "text": "click → Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "text": "Snapshot: 57 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"open\":false,\"title\":\"\",\"content\":\"\",\"stages\":{\"bought\":0,\"passed\":0,\"funded\":0,\"paid\":0}}",
+    "text": "Eval result: {\"open\":false,\"title\":\"\",\"content\":\"\",\"stages\":{\"bought\":0,\"passed\":0,\"funded\":0,\"paid\":0}}"
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "schema": "specnav.codegraph.claims.v1",
+  "generated_at": "2026-10-27T08:34:36.202Z",
+  "active_change": "prop-overview-linkage",
+  "claims": [
+    {
+      "id": "development:task-001-prop-linkage",
+      "kind": "development-task",
+      "stage": "development",
+      "task_id": "001-prop-linkage",
+      "text": "Implement one user-visible flow from UI entry through state, API/data boundary,",
+      "required": true,
+      "source": "specnav-codegraph-plan",
+      "source_paths": [
+        "openspec/changes/prop-overview-linkage/development/tasks/001-prop-linkage/brief.md",
+        "openspec/changes/prop-overview-linkage/development/tasks/001-prop-linkage/context.json"
+      ],
+      "expected_evidence": [
+        "Focused tests or command output",
+        "Task report",
+        "Spec review",
+        "Quality review"
+      ],
+      "allowed_files": [
+        "src"
+      ],
+      "query_ids": [
+        "development:task-001-prop-linkage:evidence"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "touched_specs": [
+    "ui-design",
+    "system-architecture",
+    "frontend-backend-data-flow",
+    "component-architecture"
+  ],
+  "ui_rules": [
+    "Existing modern funnel/drawer; revised compact heading data-check badge instead of a full-width notice; pending/all searchable list with public company logo/fallback; horizontal rounded date/status timeline; draft/diff/explicit save protections unchanged"
+  ],
+  "architecture_modules": [
+    "Pure Prop diagnosis and immutable patch helpers",
+    "Shared explicit/implicit pass evidence: evaluation-only funding-derived dates, explicit-event priority, instant exclusion and same-day attempts",
+    "Focused history drawer/editor controller",
+    "Narrow owner history-only mutation",
+    "Legacy first-event positional seam compatibility"
+  ],
+  "api_contracts": [
+    "Read only cached data during inspection",
+    "Update existing own account bought_on/events/update metadata only with stale-snapshot compare and read-back; no full-row upsert or cross-table write"
+  ],
+  "database_entities": [
+    "prop_accounts.bought_on",
+    "prop_accounts.events",
+    "nullable prop_accounts.updated_at as compare evidence",
+    "status/renewal/balance/plan fields preserved",
+    "all prop_entries preserved"
+  ],
+  "permissions": [
+    "Owner RLS; no admin private-data access",
+    "Read-only or changed owner disables save"
+  ],
+  "operational_constraints": [
+    "Prototype is synthetic/in-memory/no network",
+    "No fabricated or persisted inferred dates, auto-sort/dedupe, generated fees or bulk repair; D5 derives a statistical pass only from an already recorded valid funded date",
+    "No production edit/commit/push/real-data test before separate gates",
+    "Existing unsupported root data is not replaced silently"
+  ],
+  "data_flows": [
+    "FLOW-PROP-HISTORY-INSPECT: scoped caches to per-account reasons, all history not financial date",
+    "FLOW-PROP-PASS-EVIDENCE: full original history to explicit pass dates or evaluation-only funded-derived pass dates; diagnostic/report/list/company consumers share the same read-only rule",
+    "FLOW-PROP-HISTORY-DRAFT: separate purchase date/events with draft removal/restore",
+    "FLOW-PROP-HISTORY-SAVE: difference acknowledgement, narrow conditional owner save, conflict/error retention and verified cache/statistics update"
+  ],
+  "theme_modes": [
+    "light-dark",
+    "seven-existing-palettes",
+    "theme-toggle:existing",
+    "prototype-review-controls-only"
+  ],
+  "locale_policy": [
+    "i18n:enabled",
+    "locales:zh,en",
+    "default-locale:en",
+    "existing-account-local-browser-precedence"
+  ],
+  "unresolved_gaps": []
+}

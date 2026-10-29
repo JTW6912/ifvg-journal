@@ -1,0 +1,109 @@
+{
+  "checked_at": "2026-10-29T12:03:16.169531+00:00",
+  "baseline_head": "78305afd99d8dd5211d1aa22e7cff843564fd152",
+  "branch": "prop-test",
+  "formal_acceptance": false,
+  "source_sha256": {
+    "src/11d-prop-data.js": "542eed03f8ef9f0f89b3644e6dbc993ed4147677cd3235e76ccb95d5fdaf471c",
+    "src/11e-prop-view.js": "5132c229817c6f76323acb20391e1bba078b3e69f1a5dc4a0208e7c33f9381db",
+    "src/11g-prop-overview.js": "40f7bb91226b4e86d736fcf2feca5ade3981787ffd9de7c991b3a96058bef813",
+    "src/11h-prop-linkage.js": "9fd2cf564219722dfeaaef5c92adeb1b2f5f4a8055401fb328de7ad70702dce9",
+    "src/11k-prop-history-data.js": "8ab02e59915013c2e7cc24c738e0b0c26f366c880172d15779c857ed28a64604",
+    "src/11l-prop-history-view.js": "3ff7b29d6455b7dc609558807e4afd6d8c13b7197332a27e050e65d55ae4833b",
+    "i18n.js": "b002f572467585da0d8cb4ea8ad37a762988749f0cb647be5e4ce5e3e79c62da",
+    "theme-modern.css": "e4323ba1686b6b89fcf5350ea8dbd49dd285b5b5573d5e3029cd126b56145b1b",
+    "test/prop-history.test.js": "1693b70a28e2b5843646385b2439ffe102c42a8b084e91849bb01b7239863c33",
+    "test/prop-history-ui.test.js": "8e7e52cc2533f10c140105a128c2da73819274fe5c71d4813d8dcec13c2e5e4f",
+    "test/prop-stage-semantics.test.js": "fd3669001e3d9a207b162f358155fcbcffad813d3c89e1e54b050be6c7e46eec",
+    "test/prop-linkage.test.js": "57acdde49cc7745cf24f5bfa2fbe4264ab3cf5b6c61baea4e3ed2c16ecc423df"
+  },
+  "commands": [
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "log": "delivery-tests.log"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "bundle"
+      ],
+      "exit_code": 0,
+      "log": "delivery-bundle.log"
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "app.js"
+      ],
+      "exit_code": 0,
+      "log": "delivery-syntax-app.log"
+    },
+    {
+      "command": [
+        "node",
+        "--check",
+        "i18n.js"
+      ],
+      "exit_code": 0,
+      "log": "delivery-syntax-i18n.log"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "src/11d-prop-data.js",
+        "src/11e-prop-view.js",
+        "src/11g-prop-overview.js",
+        "src/11h-prop-linkage.js",
+        "src/11k-prop-history-data.js",
+        "src/11l-prop-history-view.js",
+        "i18n.js",
+        "theme-modern.css",
+        "test/prop-history.test.js",
+        "test/prop-history-ui.test.js",
+        "test/prop-stage-semantics.test.js",
+        "test/prop-linkage.test.js",
+        "openspec/changes/prop-stage-history-repair"
+      ],
+      "exit_code": 0,
+      "log": "delivery-diff-check.log"
+    },
+    {
+      "command": [
+        "runuser",
+        "-u",
+        "postgres",
+        "--",
+        "psql",
+        "-X",
+        "-h",
+        "/var/run/postgresql",
+        "-p",
+        "5432",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1"
+      ],
+      "input": "development/migrations/history-update-contract.sql",
+      "environment": "explicit local Unix socket; sanitized environment; temporary synthetic tables; ROLLBACK",
+      "exit_code": 0,
+      "log": "delivery-sql-contract.log"
+    }
+  ],
+  "test_summary": {
+    "tests": 212,
+    "pass": 212,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  }
+}

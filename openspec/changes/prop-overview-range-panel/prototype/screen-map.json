@@ -1,0 +1,12 @@
+{
+  "screens":[{
+    "id":"prop-overview","label":"Prop financial overview in the existing IFVG shell",
+    "requirements":["requirements.md#In Scope"],"acceptance":["acceptance.md"],"components":["component-impact-map.json"],
+    "visual_evidence":["visual-inventory.json#project_shell"],"data_flows":["FLOW-PROP-SCOPE","FLOW-PROP-OVERVIEW","FLOW-PROP-HELP","FLOW-APPEARANCE"],
+    "theme_modes":["light","dark"],"locales":["zh","en"],
+    "implementation_files":["src/11d-prop-data.js","src/11e-prop-view.js","src/11g-prop-overview.js","theme-modern.css","i18n.js"]
+  }],
+  "variants":["approved-panel"],
+  "states":["populated","empty","error","disabled"],
+  "not_applicable":{"loading":"no asynchronous range filtering; existing app bootstrap unchanged","permission":"owner-only read-only summary introduces no new privileged action"}
+}

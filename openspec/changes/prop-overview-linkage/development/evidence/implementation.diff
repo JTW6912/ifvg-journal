@@ -1,0 +1,943 @@
+--- before/src/11d-prop-data.js
++++ after/src/11d-prop-data.js
+@@ -371,6 +371,83 @@
+     income: percent(refundMode ? sum.received : Math.max(0, sum.net)) };
+ }
+ 
++/* ---------- 总览联动：财务范围与实际发生的进展；不改经典 propFunnel ---------- */
++const PROP_LINKAGE_STAGES = ["bought", "passed", "funded", "paid"];
++function propLinkageIncludes(day, range) {
++  return !!range && propOverviewDay(day) !== null && (range.preset === "all" || (day >= range.from && day <= range.to));
++}
++function propLinkageMonthAllowed(range, year, month) {
++  const first = propOverviewMonthStart(year * 12 + month - 1);
++  return !!first && (!range || range.preset === "all" || (first.slice(0, 7) >= range.from.slice(0, 7) && first.slice(0, 7) <= range.to.slice(0, 7)));
++}
++function propLinkageMonth(range, year, month) {
++  if (!range || range.preset === "all") return { year, month };
++  const index = Math.max(propOverviewMonthIndex(range.from), Math.min(propOverviewMonthIndex(range.to), year * 12 + month - 1));
++  return { year: Math.floor(index / 12), month: index % 12 + 1 };
++}
++function propAccountMatchesStatus(account, filter) {
++  if (filter === "all") return true;
++  if (filter === "active") return propIsActive(account);
++  if (filter === "ended") return !propIsActive(account);
++  return PROP_STATUSES.includes(filter) && account.status === filter;
++}
++/* Rows own IDs/dates, not persistent account copies. Both counts and drill-downs
++   consume these same rows. A known missing event is disclosed, never dated from
++   current status or a later stage. Direct/instant funding does not invent a pass. */
++function propLinkageReport(accounts, entries, choice, today) {
++  const range = propOverviewResolveRange(choice, today);
++  const unique = [...new Map(accounts.filter(a => a && a.id).map(a => [a.id, a])).values()];
++  const ids = new Set(unique.map(a => a.id));
++  const ownedEntries = entries.filter(e => e && ids.has(e.account_id));
++  const finance = propOverviewSnapshot(ownedEntries, choice, today);
++  const selected = range?.preset === "all" ? ownedEntries.slice() : ownedEntries.filter(e => propLinkageIncludes(e.day, range));
++  const byAccount = new Map(unique.map(a => [a.id, []]));
++  ownedEntries.forEach(e => byAccount.get(e.account_id).push(e));
++  const stages = Object.fromEntries(PROP_LINKAGE_STAGES.map(k => [k, []]));
++  const histories = new Map(), incomplete = new Set();
++  let fails = 0;
++  for (const a of unique) {
++    const dates = { bought: [], passed: [], funded: [], paid: [] };
++    const add = (key, day) => {
++      if (propOverviewDay(day) === null) incomplete.add(a.id);
++      else dates[key].push(day);
++    };
++    add("bought", a.bought_on);
++    const events = Array.isArray(a.events) ? a.events : [];
++    for (const ev of events) {
++      if (!ev || !["passed", "funded", "failed"].includes(ev.to)) continue;
++      if (ev.to === "failed") {
++        if (propOverviewDay(ev.day) === null) incomplete.add(a.id);
++        else if (propLinkageIncludes(ev.day, range)) fails++;
++      } else add(ev.to, ev.day);
++    }
++    for (const e of byAccount.get(a.id)) {
++      if (e.kind === "payout" && !e.pending && Number(e.amount) > 0 && Number.isFinite(Number(e.amount))) add("paid", e.day);
++    }
++    const instant = a.plan_snapshot?.type === "instant";
++    const knownFunded = ["funded", "blown"].includes(a.status) || dates.funded.length || dates.paid.length || events.some(ev => ev?.to === "blown");
++    if ((a.status === "passed" || (!instant && knownFunded)) && !dates.passed.length) incomplete.add(a.id);
++    if (knownFunded && !dates.funded.length) incomplete.add(a.id);
++    if (a.status === "failed" && !events.some(ev => ev?.to === "failed" && propOverviewDay(ev.day) !== null)) incomplete.add(a.id);
++    for (const key of PROP_LINKAGE_STAGES) {
++      dates[key] = [...new Set(dates[key])].sort();
++      const day = dates[key].find(d => propLinkageIncludes(d, range));
++      if (day) stages[key].push({ id: a.id, day });
++    }
++    histories.set(a.id, dates);
++  }
++  const edges = PROP_LINKAGE_STAGES.slice(0, -1).map((from, i) => {
++    const to = PROP_LINKAGE_STAGES[i + 1];
++    const rows = stages[from].map(row => ({ ...row, next: histories.get(row.id)[to].find(day => day >= row.day && (range.preset === "all" || day <= range.to)) || null }));
++    const converted = rows.filter(row => row.next), unconverted = rows.filter(row => !row.next);
++    return { from, to, rows, converted, unconverted, rate: rows.length ? converted.length / rows.length * 100 : null };
++  });
++  const passed = stages.passed.length, decided = passed + fails;
++  return { range, finance, entries: selected, stages, edges, incompleteIds: [...incomplete],
++    summary: { passed, fails, decided, passRate: decided ? passed / decided * 100 : null,
++      costPerFunded: stages.funded.length && finance.available ? propMoney(finance.sum.spent / stages.funded.length) : null } };
++}
++
+ /* ---------- 月付订阅 ----------
+    续费中的月付账号，每到购买日的同一天记一笔月费（31 号买的，小月记在月底）。
+    renewed_through 是「已经记到哪天」的水位：删掉自动记的那笔不会被补回来，关掉续费再打开也不会补记中间那段 */
+--- before/src/11e-prop-view.js
++++ after/src/11e-prop-view.js
+@@ -146,18 +146,28 @@
+ function renderPropOverview() {
+   if (!propAccounts.length) return propEmpty("prop.empty.accounts");
+   const { accounts, entries } = propScoped();
+-  const s = propSum(entries);
++  const modern = currentLayout() === "modern";
++  const report = modern ? propLinkageReport(accounts, entries, propOverviewRange, todayStr()) : null;
++  const s = modern ? report.finance.sum : propSum(entries);
+   let html = propFilterChips();
+-  html += currentLayout() === "modern" ? renderPropOverviewPanel(accounts, entries) : `<div class="statRow propStats">
++  html += modern ? renderPropOverviewPanel(accounts, entries, report.finance) : `<div class="statRow propStats">
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.spent"))}</div><div class="statValue">${propUsd(s.spent)}</div><div class="statSub">${esc(T("prop.stat.spentSub"))}${s.refund ? " · " + esc(T("prop.stat.refunded", { v: propUsd(s.refund) })) : ""}</div></div>
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.received"))}</div><div class="statValue">${propUsd(s.received)}</div><div class="statSub">${s.pending ? esc(T("prop.stat.pendingSub", { v: propUsd(s.pending) })) : esc(T("prop.stat.receivedSub"))}</div></div>
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.net"))}</div><div class="statValue ${propTone(s.net)}">${propUsd(s.net, true)}</div><div class="statSub">${esc(T("prop.stat.netSub"))}</div></div>
+     <div class="statBox"><div class="statLabel">ROI</div><div class="statValue ${propTone(s.roi || 0)}">${propPct(s.roi)}</div><div class="statSub">${esc(T("prop.stat.roiSub"))}</div></div>
+     <div class="statBox"><div class="statLabel">${esc(T("prop.stat.accounts"))}</div><div class="statValue">${accounts.filter(propIsActive).length}<span class="propStatOf"> / ${accounts.length}</span></div><div class="statSub">${esc(T("prop.stat.accountsSub"))}</div></div>
+   </div>`;
+-  html += renderPropFunnel(accounts, entries);
+-  html += renderPropMonths(accounts, entries);
+-  html += renderPropByFirm(accounts, entries);
++  if (modern) {
++    html += renderPropProgress(report);
++    if (report.finance.available && !report.finance.trendUnavailable) {
++      html += renderPropMonths(accounts, report.entries, report.range);
++      html += renderPropByFirm(accounts, report.entries, report.range, entries);
++    } else html += `<div class="notice error" role="status">${esc(T("prop.linkage.financialUnavailable"))}</div>`;
++  } else {
++    html += renderPropFunnel(accounts, entries);
++    html += renderPropMonths(accounts, entries);
++    html += renderPropByFirm(accounts, entries);
++  }
+   return html;
+ }
+ function renderPropFunnel(accounts, entries) {
+@@ -175,14 +185,15 @@
+ /* ---------- 每月收支 ----------
+    上面：12 个月的柱子（到账向上绿、投入向下红，顶上标净收支），右边全年汇总 + 回本进度（按全部时间算）。
+    下面：选中月份的流水，按天分组的卡片；同一天同一批买的号（同公司同计划同规模、同类型）合成一条，点开看每个号 */
+-function renderPropMonths(accounts, entries) {
++function renderPropMonths(accounts, entries, range = null) {
+   // 今年还没有数据（比如只补录了去年的号）：自动跳到最近一个有数据的年份；用户自己翻过年份就不再跳
+-  if (!propYearTouched && entries.length && !propMonthly(entries, propYear).some((m) => m.n)) {
++  if ((!range || range.preset === "all") && !propYearTouched && entries.length && !propMonthly(entries, propYear).some((m) => m.n)) {
+     const latest = entries.map((e) => Number(String(e.day || "").slice(0, 4))).filter((y) => y > 2000).sort((a, b) => b - a)[0];
+     if (latest) { propYear = latest; propMonth = Number((entries.filter((e) => String(e.day).startsWith(latest + "-")).map((e) => e.day).sort().pop() || "").slice(5, 7)) || 1; }
+   }
++  if (range) ({ year: propYear, month: propMonth } = propLinkageMonth(range, propYear, propMonth));
+   const months = propMonthly(entries, propYear);
+-  const max = Math.max(1, ...months.map((m) => Math.max(m.spent, m.received)));
++  const max = Math.max(1, ...months.map((m) => Math.max(range ? Math.abs(m.spent) : m.spent, m.received)));
+   const year = months.reduce((a, m) => ({ spent: a.spent + m.spent, received: a.received + m.received, n: a.n + m.n }), { spent: 0, received: 0, n: 0 });
+   year.net = propMoney(year.received - year.spent);
+   const all = propSum(entries);
+@@ -190,35 +201,37 @@
+   const back = pct === null ? "" : pct >= 1
+     ? `<b class="pos">${esc(T("prop.mo.paidBack"))}</b><span>${esc(T("prop.mo.netProfit", { v: propUsd(all.net) }))}</span>`
+     : `<b>${esc(T("prop.mo.backPct", { p: Math.round(pct * 100) }))}</b><span>${esc(T("prop.mo.toGo", { v: propUsd(all.spent - all.received) }))}</span>`;
+-  let html = `<div class="calendarPanel propPanel">
+-    <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.month.title"))}</div>
+-      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>
++  const bounded = range && range.preset !== "all";
++  let html = `<div class="calendarPanel propPanel${range ? " propLinkedMonths" : ""}">
++    <div class="propPanelHead"><div><div class="sectionLabel propLabel">${esc(T("prop.month.title"))}</div>${bounded ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear))}</small>` : ""}</div>
++      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1" ${bounded && propYear <= Number(range.from.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.previousYear"))}">‹</button><div class="monthYear">${propYear}</div><button class="tinyBtn" data-action="prop-year" data-d="1" ${bounded && propYear >= Number(range.to.slice(0, 4)) ? "disabled" : ""} aria-label="${esc(T("prop.linkage.nextYear"))}">›</button></div></div>
+     <div class="propMo">
+       <div class="propMoChart">${months.map((m, i) => `<button class="propMoCol ${propMonth === i + 1 ? "on" : ""} ${m.n ? "" : "empty"}" data-action="prop-month" data-m="${i + 1}"
+-          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}">
++          title="${esc(T("prop.mo.tip", { s: propUsd(m.spent), r: propUsd(m.received) }))}" ${bounded && !propLinkageMonthAllowed(range, propYear, i + 1) ? "disabled" : ""}>
+         <span class="propMoNet ${m.n ? propTone(m.net) : ""}">${m.n ? propUsdShort(m.net, true) : ""}</span>
+-        <span class="propMoBars"><span class="up"><i style="height:${Math.round((m.received / max) * 100)}%"></i></span><span class="down"><i style="height:${Math.round((m.spent / max) * 100)}%"></i></span></span>
++        <span class="propMoBars"><span class="up"><i style="height:${Math.round((m.received / max) * 100)}%"></i></span><span class="down${range && m.spent < 0 ? " propMoRefund" : ""}"><i style="height:${Math.round(((range ? Math.abs(m.spent) : m.spent) / max) * 100)}%"></i></span></span>
+         <span class="propMoLabel">${esc(new Date(2000, i, 1).toLocaleString(localeTag(), { month: "short" }))}</span></button>`).join("")}</div>
+       <div class="propMoSum">
+-        <div class="propMiniLabel">${esc(T("prop.mo.yearSum", { y: propYear }))}</div>
++        <div class="propMiniLabel">${esc(T(bounded ? "prop.linkage.yearSlice" : "prop.mo.yearSum", { y: propYear }))}</div>
+         <div class="propMoSumRow"><span>${esc(T("prop.month.spent"))}</span><b>${propUsd(year.spent)}</b></div>
+         <div class="propMoSumRow"><span>${esc(T("prop.month.received"))}</span><b>${propUsd(year.received)}</b></div>
+         <div class="propMoSumRow big"><span>${esc(T("prop.month.net"))}</span><b class="${propTone(year.net)}">${propUsd(year.net, true)}</b></div>
+         ${pct === null ? "" : `<div class="propMoBack"><div class="propMoBackHead">${back}</div>
+           <div class="propMoBackBar"><i style="width:${Math.round(Math.min(1, pct) * 100)}%"></i></div>
+-          <small>${esc(T("prop.mo.backHint"))}</small></div>`}
++          <small>${esc(T(range ? "prop.linkage.backHint" : "prop.mo.backHint"))}</small></div>`}
+       </div>
+     </div>`;
+-  html += renderPropMonthDetail(accounts, entries);
++  if (range && months.some(m => m.spent < 0)) html += `<p class="propLinkedRefundHint">${esc(T("prop.linkage.refundBars"))}</p>`;
++  html += renderPropMonthDetail(accounts, entries, range);
+   return html + `</div>`;
+ }
+ const PROP_KIND_ICON = { purchase: "🛒", monthly: "↻", reset: "⟲", activation: "⚡", payout: "↑", refund: "↩", other: "•" };
+-function renderPropMonthDetail(accounts, entries) {
++function renderPropMonthDetail(accounts, entries, range = null) {
+   const key = propYear + "-" + String(propMonth).padStart(2, "0");
+   const list = entries.filter((e) => propEntryMonth(e) === key);
+   const m = propMonthly(list, propYear)[propMonth - 1];
+   const title = new Date(propYear, propMonth - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" });
+-  let html = `<div class="propMonthDetail"><div class="propMonthHead"><b>${esc(title)}</b>
++  let html = `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
+     <span>${esc(T("prop.month.spent"))} <b>${propUsd(m.spent)}</b></span><span>${esc(T("prop.month.received"))} <b>${propUsd(m.received)}</b></span>
+     <span>${esc(T("prop.month.net"))} <b class="${propTone(m.net)}">${propUsd(m.net, true)}</b></span></div>`;
+   if (!list.length) return html + `<div class="propMuted">${esc(T("prop.month.empty"))}</div></div>`;
+@@ -257,18 +270,18 @@
+   const v = propMoney(e.amount) * (income ? 1 : -1);
+   return `<td class="num ${e.pending ? "propMuted" : propTone(v)}">${propUsd(v, true)}</td>`;
+ }
+-function renderPropByFirm(accounts, entries) {
++function renderPropByFirm(accounts, entries, range = null, allEntries = entries) {
+   const firms = [...new Set(accounts.map((a) => a.firm_name || "—"))];
+   if (firms.length < 2 && !propFirmFilter) return "";
+   const rows = firms.map((name) => {
+     const accs = accounts.filter((a) => (a.firm_name || "—") === name);
+     const ids = new Set(accs.map((a) => a.id));
+-    return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: propFunnel(accs, entries) };
++    return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: range ? propLinkageReport(accs, allEntries, range, todayStr()).summary : propFunnel(accs, entries) };
+   }).sort((a, b) => b.s.net - a.s.net);
+-  return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div></div>
+-    <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T("prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T("prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
++  return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div>${range ? `<small class="propLinkedPeriod">${esc(propOverviewRangeText(range))}</small>` : ""}</div>
++    <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T(range ? "prop.linkage.currentCount" : "prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T(range && range.preset !== "all" ? "prop.overview.spentRange" : "prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
+     ${rows.map((r) => `<tr><td>${esc(r.name)}</td><td class="num">${r.n}</td><td class="num">${r.f.passRate === null ? "—" : r.f.passRate.toFixed(0) + "%"}</td><td class="num">${propUsd(r.s.spent)}</td><td class="num">${propUsd(r.s.received)}</td><td class="num ${propTone(r.s.net)}">${propUsd(r.s.net, true)}</td>
+-      ${r.open && !r.s.received ? `<td class="num propMuted">${esc(T("prop.acc.inProgress"))}</td>` : `<td class="num ${propTone(r.s.roi || 0)}">${propPct(r.s.roi)}</td>`}</tr>`).join("")}
++      ${!range && r.open && !r.s.received ? `<td class="num propMuted">${esc(T("prop.acc.inProgress"))}</td>` : `<td class="num ${propTone(r.s.roi || 0)}">${propPct(r.s.roi)}</td>`}</tr>`).join("")}
+     </tbody></table></div></div>`;
+ }
+ 
+@@ -281,9 +294,12 @@
+   if (!propAccounts.length) return propEmpty("prop.empty.accounts");
+   const { accounts } = propScoped();
+   const counts = { active: accounts.filter(propIsActive).length, ended: accounts.filter((a) => !propIsActive(a)).length, all: accounts.length };
+-  const list = accounts.filter((a) => propStatusFilter === "all" || (propStatusFilter === "active") === propIsActive(a));
++  // Exact statuses are modern navigation filters; classic keeps its aggregate controls.
++  const exact = currentLayout() === "modern" && PROP_STATUSES.includes(propStatusFilter);
++  const statusFilter = exact || ["active", "ended", "all"].includes(propStatusFilter) ? propStatusFilter : "active";
++  const list = accounts.filter(a => propAccountMatchesStatus(a, statusFilter));
+   let html = `<div class="propFilters propAccFilters"><div class="chipGroup">${["active", "ended", "all"].map((k) =>
+-    `<button class="chip ${propStatusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}</div>
++    `<button class="chip ${statusFilter === k ? "active" : ""}" data-action="prop-status-filter" data-val="${k}">${esc(T("prop.filter." + k))} · ${counts[k]}</button>`).join("")}${exact ? `<button type="button" id="propExactStatus" class="chip active" data-action="prop-status-filter" data-val="all" aria-label="${esc(T("prop.linkage.clearStatus", { status: T("prop.status." + statusFilter) }))}">${esc(T("prop.status." + statusFilter))} · ${list.length} ×</button>` : ""}</div>
+     ${propReadOnly() ? "" : `<button class="btn btn-sm ${propBatch ? "active" : ""}" data-action="prop-batch-toggle">${ICONS.check} ${esc(T(propBatch ? "prop.batch.exit" : "prop.batch.enter"))}</button>`}</div>`;
+   html += propFilterChips();
+   if (!list.length) return html + `<div class="emptyState">${esc(T("prop.empty.filtered"))}</div>`;
+@@ -758,6 +774,7 @@
+   let sel = null;
+   try { sel = act && typeof act.selectionStart === "number" ? [act.selectionStart, act.selectionEnd] : null; } catch (err) {}
+   renderSecondaryModals(true);
++  propLinkageFocusDialog();
+   if (!keep || !propModal || propModal.type !== keep.type || (propModal.id || propModal.accountId || "") !== keep.id) return;
+   const nb = document.querySelector(".propModal .modalBody");
+   if (nb) nb.scrollTop = keep.top;
+@@ -769,10 +786,11 @@
+     }
+   }
+ }
+-function propCloseModal() { propModal = null; propRenderModal(); render(); }
++function propCloseModal() { const origin = propLinkageOrigin(propModal); propModal = null; propRenderModal(); render(); propLinkageReturnFocus(origin); }
+ function propModalHtml() {
+   const m = propModal;
+   if (!m) return "";
++  if (m.type === "overview-list") return propLinkageModalHtml(m);
+   let title = "", body = "", foot = "", wide = false;
+   if (m.type === "account") { ({ title, body, foot } = propAccountForm(m)); wide = 1080; }
+   else if (m.type === "entry") ({ title, body, foot } = propEntryForm(m));
+@@ -785,12 +803,12 @@
+   else if (m.type === "admBatch") { ({ title, body, foot } = propAdmBatchForm(m)); wide = true; }
+   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
+   else if (m.type === "compare") { ({ title, body, foot } = propCompareView()); wide = true; }
+-  const drawer = wide === "drawer";
++  const drawer = wide === "drawer", linked = !!propLinkageOrigin(m);
+   // 抽屉只在第一次打开时滑进来，里面改东西重画时不再动
+   if (drawer) setTimeout(() => { if (propModal === m) m.shown = true; }, 0);
+   return `<div class="overlay ${drawer ? "propDrawerOverlay" : ""}" data-action="prop-dismiss-overlay">
+-    <div class="modal propModal ${drawer ? "propDrawer" + (m.shown ? "" : " anim") : ""}" style="max-width:${drawer ? 640 : typeof wide === "number" ? wide : wide ? 860 : 480}px;">
+-      <div class="modalHead"><div class="display" style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal">${ICONS.x}</button></div>
++    <div class="modal propModal ${drawer ? "propDrawer" + (m.shown ? "" : " anim") : ""}"${linked ? ` role="dialog" aria-modal="true" ${m.type === "detail" ? `aria-label="${esc(T("prop.linkage.details"))}"` : 'aria-labelledby="propLinkageDialogTitle"'}` : ""} style="max-width:${drawer ? 640 : typeof wide === "number" ? wide : wide ? 860 : 480}px;">
++      <div class="modalHead"><div class="display"${linked ? ' id="propLinkageDialogTitle"' : ""} style="font-size:16px;font-weight:600;">${title}</div><button class="iconBtn" data-action="prop-close-modal"${linked ? ` aria-label="${esc(T("common.close"))}"` : ""}>${ICONS.x}</button></div>
+       <div class="modalBody">${m.error ? `<div class="notice error" style="margin-bottom:12px;">${ICONS.alert}<span>${esc(m.error)}</span></div>` : ""}${body}</div>
+       ${foot ? `<div class="modalFoot">${foot}</div>` : ""}
+     </div></div>`;
+@@ -1178,6 +1196,7 @@
+     ${ro ? "" : m.confirmDelete
+       ? `<span class="propDelConfirm">${esc(T("prop.acc.deleteConfirm"))}<button class="btn btn-sm btn-danger" data-action="prop-delete-account" data-id="${esc(acc.id)}">${esc(T("prop.acc.deleteYes"))}</button><button class="btn btn-sm" data-action="prop-cancel-delete">${esc(T("common.cancel"))}</button></span>`
+       : `<button class="btn btn-sm propDelBtn" data-action="prop-ask-delete-account">${ICONS.trash} ${esc(T("prop.acc.delete"))}</button>`}</div>`;
++  if (m.linkageBack) body = `<button type="button" class="btn btn-sm propLinkageBack" data-action="prop-linkage-back">← ${esc(T("prop.linkage.backToList"))}</button>` + body;
+   body += `<div class="propAccNums propDetailNums">
+     <div><span>${esc(T("prop.stat.spent"))}</span><b>${propUsd(s.spent)}</b></div>
+     <div><span>${esc(T("prop.stat.received"))}</span><b>${propUsd(s.received)}</b></div>
+@@ -1501,7 +1520,7 @@
+   /* ---------- 弹窗开关 ---------- */
+   else if (a === "prop-dismiss-overlay") { if (e.target === el && !(m && m.busy)) propCloseModal(); }
+   else if (a === "prop-close-modal") { if (!(m && m.busy)) propCloseModal(); }
+-  else if (a === "prop-modal-back") { propModal = m && m.back ? m.back : null; propRenderModal(); }
++  else if (a === "prop-modal-back") { propModal = m && m.back ? m.back : null; propRenderModal(); if (propModal?.linkageBack) document.querySelector('[data-action="prop-linkage-back"]')?.focus({ preventScroll: true }); }
+   else if (a === "prop-new-account") { propModal = { type: "account", draft: propNewAccountDraft(null) }; propRenderModal(); }
+   else if (a === "prop-buy-plan") { propModal = { type: "account", draft: propNewAccountDraft(id) }; propRenderModal(); }
+   else if (a === "prop-save-account") { await propSaveNewAccount(); }
+@@ -1517,14 +1536,14 @@
+   else if (a === "prop-add-reset-rules") { const p = propDraftPlan(m.draft); m.draft.rules = propRuleTexts(p); propRenderModal(); }
+   else if (a === "prop-open-detail") { propModal = { type: "detail", id }; propRenderModal(); }
+   else if (a === "prop-open-entry") {
+-    propModal = { type: "entry", accountId: id, back: m && m.type === "detail" ? { type: "detail", id } : null,
++    propModal = { type: "entry", accountId: id, back: m && m.type === "detail" ? propLinkageDetailBack(m, id) : null,
+       draft: { kind: el.dataset.kind || "other", amount: "", day: todayStr(), pending: false, note: "" } };
+     propRenderModal();
+   }
+   else if (a === "prop-edit-entry") {
+     const en = propEntries.find((x) => x.id === id);
+     if (!en) return;
+-    propModal = { type: "entry", accountId: en.account_id, back: m && m.type === "detail" ? { type: "detail", id: en.account_id } : null,
++    propModal = { type: "entry", accountId: en.account_id, back: m && m.type === "detail" ? propLinkageDetailBack(m, en.account_id) : null,
+       draft: { id: en.id, kind: en.kind, amount: propMoney(en.amount), day: en.day, pending: !!en.pending, note: en.note || "" } };
+     propRenderModal();
+   }
+@@ -1544,7 +1563,7 @@
+     // 添加账号时选了「激活费现在一起付」的，激活那一步已经记过了，不再带出来
+     const paidUpfront = feeKey === "activation" && snap.activationUpfront;
+     const fee = feeKey && !paidUpfront && typeof snap[feeKey] === "number" ? snap[feeKey] : "";
+-    propModal = { type: "status", accountId: id, step, to: el.dataset.to, back: { type: "detail", id }, draft: { day: todayStr(), fee } };
++    propModal = { type: "status", accountId: id, step, to: el.dataset.to, back: propLinkageDetailBack(m, id), draft: { day: todayStr(), fee } };
+     propRenderModal();
+   }
+   else if (a === "prop-save-status") { await propSaveStatus(); }
+@@ -1575,7 +1594,7 @@
+     const acc = propAccounts.find((x) => x.id === id);
+     if (!acc) return;
+     propCardMenu = null;
+-    propModal = { type: "balance", accountId: id, back: m && m.type === "detail" ? { type: "detail", id } : null,
++    propModal = { type: "balance", accountId: id, back: m && m.type === "detail" ? propLinkageDetailBack(m, id) : null,
+       draft: { balance: acc.balance === null || acc.balance === undefined ? "" : propMoney(acc.balance), day: todayStr() } };
+     propRenderModal(); render();
+   }
+--- before/src/11g-prop-overview.js
++++ after/src/11g-prop-overview.js
+@@ -46,8 +46,7 @@
+     <circle cx="194" cy="${f(y(sum.net))}" r="2.5" class="propOverviewDot"/>
+     </svg><div class="propOverviewDates"><span>${esc(from.slice(5).replace("-", "."))}</span><span>${esc(to.slice(5).replace("-", "."))}</span></div>`;
+ }
+-function renderPropOverviewPanel(accounts, entries) {
+-  const snapshot = propOverviewSnapshot(entries, propOverviewRange, todayStr());
++function renderPropOverviewPanel(accounts, entries, snapshot = propOverviewSnapshot(entries, propOverviewRange, todayStr())) {
+   const all = snapshot.range?.preset === "all", s = snapshot.sum;
+   const tone = !s || !s.net ? "neutral" : s.net > 0 ? "positive" : "negative";
+   const netKey = "prop.overview." + (all ? "netAll" : "netRange");
+@@ -76,7 +75,7 @@
+       ${bars?.refundMode ? `<p class="propOverviewRefundNote">${esc(T("prop.overview.refundBars"))}</p>` : ""}
+     </section><section class="propOverviewZone propOverviewAccounts"><h3><span class="propOverviewIcon">${propOverviewIcon("accounts")}</span>${propOverviewLabel("prop.overview.accounts", "accounts")}</h3>
+       <div class="propOverviewAccountSummary"><div><div class="propOverviewAccountCount"><strong>${accounts.filter(propIsActive).length}</strong><span>${esc(T("prop.overview.accountUnit"))}</span></div><span>${esc(T("prop.filter.active"))}</span></div>
+-        <dl>${stages.map(([status, label]) => `<div><dt>${esc(T(label))}</dt><dd>${accounts.filter(a => a.status === status).length}</dd></div>`).join("")}</dl></div>
++        <div class="propOverviewStages">${stages.map(([status, label]) => `<button type="button" class="propOverviewStatusLink" data-action="prop-linkage-current" data-status="${status}" aria-label="${esc(T("prop.view.accounts") + " · " + T(label))}"><span>${esc(T(label))}</span><b>${accounts.filter(a => a.status === status).length}</b>${propLinkageIcon("arrow")}</button>`).join("")}</div></div>
+       <div class="propOverviewAccountTotal"><span>${esc(T("prop.overview.totalAccounts"))}</span><strong>${accounts.length}</strong></div>
+     </section></div></section>`;
+ }
+@@ -111,6 +110,7 @@
+   const owner = session?.user?.id ? JSON.stringify([session.user.id, viewingUserId || ""]) : null;
+   if (owner !== propOverviewOwner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
+   propOverviewOwner = owner;
++  propLinkageBeforeRender();
+ }
+ function propOverviewAfterRender() {
+   const restore = propOverviewUI.restore; propOverviewUI.restore = null;
+--- before/src/11h-prop-linkage.js
++++ after/src/11h-prop-linkage.js
+@@ -0,0 +1,166 @@
++/* Modern overview linkage: presentation and local drill-down only.
++   Pure period/cohort calculations live in 11d. Existing propModal owns the sheet. */
++function propLinkageIcon(key) {
++  const paths = {
++    bought: '<rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18m-6 5h3"/>',
++    passed: '<path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7z"/><path d="m8 12 3 3 5-6"/>',
++    funded: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6 16c0-3 6-3 6 0m3-7h3m-3 4h3"/>',
++    paid: '<circle cx="12" cy="12" r="9"/><path d="M15 8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10v12"/>',
++    arrow: '<path d="M5 12h14m-5-5 5 5-5 5"/>',
++    funnel: '<path d="M3 4h18M6 9h12M9 14h6M11 19h2"/>',
++  };
++  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[key] || paths.arrow}</svg>`;
++}
++function propLinkageStageLabel(key) { return T("prop.linkage.stage." + key); }
++function propLinkageRate(rate) { return rate === null ? "—" : Math.round(rate) + "%"; }
++function propLinkageSlice(range, year, month) {
++  if (!range || range.preset === "all") return "";
++  const first = String(year).padStart(4, "0") + "-" + String(month || 1).padStart(2, "0") + "-01";
++  const next = propOverviewMonthStart(year * 12 + (month || 12));
++  const last = next ? propOverviewShiftDay(next, -1) : "9999-12-31";
++  return `${range.from > first ? range.from : first} – ${range.to < last ? range.to : last}`;
++}
++function propLinkageWarning(report) {
++  return report.incompleteIds.length ? `<p class="propProgressNotice" role="status">${esc(T("prop.linkage.incomplete", { n: report.incompleteIds.length }))}</p>` : "";
++}
++function renderPropProgress(report) {
++  const f = report.summary, edges = [2, 20, 38, 56, 74];
++  return `<section class="propProgress" aria-label="${esc(T("prop.funnel.title"))}">
++    <header class="propProgressHead"><div><span class="propOverviewIcon">${propLinkageIcon("funnel")}</span><div><h2>${esc(T("prop.funnel.title"))}</h2><p>${esc(T("prop.linkage.inspect"))}</p></div></div><span class="propProgressRange">${esc(propOverviewRangeText(report.range))}</span></header>
++    ${propLinkageWarning(report)}
++    <div class="propProgressScroll" role="region" tabindex="0" aria-label="${esc(T("prop.linkage.scroll"))}" aria-describedby="propProgressShape"><div class="propProgressTrack">
++      ${PROP_LINKAGE_STAGES.map((key, i) => {
++        const rows = report.stages[key], edge = report.edges[i];
++        return `<div class="propProgressStep"><button type="button" id="propProgressStage-${key}" class="propProgressStage" data-action="prop-linkage-stage" data-stage="${key}" aria-label="${esc(propLinkageStageLabel(key) + " · " + T("prop.linkage.count", { n: rows.length }))}" style="--stage-tint:${6+i*5}%">
++          <span class="propProgressCaption">${propLinkageIcon(key)}${esc(propLinkageStageLabel(key))}</span><span class="propProgressShape"><svg viewBox="0 0 300 240" preserveAspectRatio="none" aria-hidden="true"><polygon points="2,${edges[i]} 298,${edges[i+1]} 298,${240-edges[i+1]} 2,${240-edges[i]}" vector-effect="non-scaling-stroke"/></svg><span class="propProgressValue"><span><strong>${rows.length}</strong> ${esc(T("prop.linkage.unit"))}</span><small>${esc(T("prop.linkage.viewAccounts"))} ↗</small></span></span></button>
++          ${edge ? `<button type="button" id="propProgressEdge-${i}" class="propProgressEdge" data-action="prop-linkage-edge" data-edge="${i}" ${edge.rows.length ? "" : "disabled"} aria-label="${esc(propLinkageStageLabel(edge.from) + " → " + propLinkageStageLabel(edge.to) + " · " + propLinkageRate(edge.rate) + " · " + edge.converted.length + "/" + edge.rows.length)}"><span><strong>${propLinkageRate(edge.rate)}</strong>${propLinkageIcon("arrow")}</span><small>${edge.converted.length} / ${edge.rows.length}</small></button>` : ""}</div>`;
++      }).join("")}</div></div>
++    <p class="propProgressDescription" id="propProgressShape"><span>${esc(T("prop.linkage.shape"))}</span><span class="propProgressSwipe">${esc(T("prop.linkage.swipe"))}</span></p>
++    <div class="propProgressSummary"><div><span>${esc(T("prop.funnel.passRate"))}</span><strong>${propLinkageRate(f.passRate)}</strong><small>${esc(T("prop.funnel.passRateSub", { n: f.decided }))}</small><small>${esc(T("prop.linkage.attempts"))}</small></div><div><span>${esc(T("prop.funnel.costPerFunded"))}</span><strong>${propUsd(f.costPerFunded)}</strong><small>${esc(T(report.range?.preset === "all" ? "prop.funnel.costPerFundedSub" : "prop.linkage.costBasis"))}</small></div></div>
++  </section>`;
++}
++function propLinkageListContent(m) {
++  const { accounts, entries } = propScoped(), report = propLinkageReport(accounts, entries, m.range, todayStr());
++  const edge = m.kind === "edge" ? report.edges[Number(m.key)] : null;
++  const partition = m.partition === "unconverted" ? "unconverted" : "converted";
++  const rows = edge ? edge[partition] : report.stages[m.key] || [];
++  const title = edge ? `${propLinkageStageLabel(edge.from)} → ${propLinkageStageLabel(edge.to)}` : propLinkageStageLabel(m.key);
++  const accountMap = new Map(accounts.map(a => [a.id, a]));
++  const body = `<p class="propLinkageSubtitle">${esc(propOverviewRangeText(m.range))}${edge ? " · " + esc(T("prop.linkage.ratio", { n: edge.converted.length, d: edge.rows.length, p: propLinkageRate(edge.rate) })) : ""}</p>
++    <p class="propLinkageSubtitle">${esc(T(edge ? "prop.linkage.cutoff" : "prop.linkage.stageBasis"))}</p>${propLinkageWarning(report)}
++    ${edge ? `<div class="propLinkageTabs" role="tablist" aria-label="${esc(T("prop.linkage.conversion"))}">${["converted", "unconverted"].map(k => `<button type="button" id="propLinkageTab-${k}" role="tab" aria-controls="propLinkageRows" aria-selected="${partition === k}" tabindex="${partition === k ? 0 : -1}" data-action="prop-linkage-partition" data-partition="${k}">${esc(T("prop.linkage." + k))} · ${edge[k].length}</button>`).join("")}</div>` : ""}
++    <div id="propLinkageRows" ${edge ? `role="tabpanel" aria-labelledby="propLinkageTab-${partition}"` : ""}>
++    ${rows.length ? rows.map(row => {
++      const a = accountMap.get(row.id);
++      const source = edge ? edge.from : m.key;
++      return `<button type="button" class="propLinkageAccount" data-action="prop-linkage-detail" data-id="${esc(row.id)}"><span class="propOverviewIcon">${propLinkageIcon("funded")}</span><span class="propLinkageAccountText"><strong>${esc(propAccountTitle(a))}</strong><small>${esc([a.firm_name, a.group_name].filter(Boolean).join(" · "))}</small><span>${propStatusPill(a.status)}<small>${esc(propLinkageStageLabel(source))} · ${esc(row.day)}</small>${edge ? `<small>${esc(propLinkageStageLabel(edge.to))} · ${esc(row.next || T("prop.linkage.notRecorded"))}</small>` : ""}</span></span>${propLinkageIcon("arrow")}</button>`;
++    }).join("") : `<div class="emptyState">${esc(T("prop.linkage.empty"))}</div>`}</div>`;
++  return { title: esc(title), body, count: rows.length };
++}
++function propLinkageModalHtml(m) {
++  const c = propLinkageListContent(m);
++  return `<div class="overlay propDrawerOverlay" data-action="prop-dismiss-overlay"><div class="modal propModal propDrawer propLinkageModal" role="dialog" aria-modal="true" aria-labelledby="propLinkageTitle" tabindex="-1" style="max-width:640px;">
++    <div class="modalHead"><h2 id="propLinkageTitle">${c.title}</h2><button type="button" class="iconBtn" data-action="prop-close-modal" aria-label="${esc(T("common.close"))}">${ICONS.x}</button></div>
++    <div class="modalBody">${c.body}</div><div class="modalFoot"><span>${esc(T("prop.linkage.count", { n: c.count }))}</span><button type="button" class="btn" data-action="prop-close-modal">${esc(T("common.close"))}</button></div></div></div>`;
++}
++function propLinkageContext() {
++  return JSON.stringify([session?.user?.id || null, viewingUserId || "", propFirmFilter, propGroupFilter, propOverviewResolveRange(propOverviewRange, todayStr())]);
++}
++function propLinkageOrigin(m) { return m?.type === "overview-list" ? m : m?.linkageBack || m?.back?.linkageBack || null; }
++function propLinkageDetailBack(m, id) {
++  const detail = m?.type === "detail" ? m : m?.back;
++  return { type: "detail", id, ...(detail?.type === "detail" && detail.id === id && detail.linkageBack ? { linkageBack: detail.linkageBack } : {}) };
++}
++function propLinkageBeforeRender() {
++  const origin = propLinkageOrigin(propModal);
++  if (origin && (origin.context !== propLinkageContext() || !session || authLoading || currentProfile?.active === false || tab !== "prop" || propView !== "overview" || currentLayout() !== "modern")) {
++    propModal = null;
++    // render() may return early during authentication. Clear the owned sheet now;
++    // the normal non-forced modal seam preserves any other already-open form.
++    renderSecondaryModals();
++  }
++}
++function propLinkageReturnFocus(origin) {
++  if (!origin || origin.context !== propLinkageContext() || !propOverviewCanInteract()) return;
++  document.getElementById(origin.triggerId)?.focus({ preventScroll: true });
++}
++function propLinkageFocusDialog() {
++  if (!propLinkageOrigin(propModal)) return;
++  const modal = document.querySelector('.propModal[role="dialog"]');
++  if (modal && !modal.contains(document.activeElement)) modal.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
++}
++function propLinkageFocusList(partition, accountId) {
++  const modal = document.querySelector(".propLinkageModal");
++  const row = accountId && modal ? [...modal.querySelectorAll('[data-action="prop-linkage-detail"]')].find(b => b.dataset.id === accountId) : null;
++  (row || (partition ? document.getElementById("propLinkageTab-" + partition) : modal?.querySelector('[data-action="prop-close-modal"]')))?.focus({ preventScroll: true });
++}
++function propLinkageOpen(kind, key, triggerId) {
++  if (!propOverviewCanInteract()) return;
++  if (kind === "stage" ? !PROP_LINKAGE_STAGES.includes(key) : kind !== "edge" || ![0, 1, 2].includes(Number(key))) return;
++  const range = propOverviewResolveRange(propOverviewRange, todayStr());
++  if (!range) return;
++  propOverviewCleanup();
++  propModal = { type: "overview-list", kind, key, partition: "converted", context: propLinkageContext(), triggerId,
++    range: range.preset === "all" ? range : { ...range, preset: "custom" } };
++  propRenderModal(); propLinkageFocusList();
++}
++function propLinkageCurrent(status) {
++  if (!PROP_ACTIVE.includes(status) || !propOverviewCanInteract()) return;
++  propBatch = false; propSelected = []; propCardMenu = null;
++  propStatusFilter = status; propView = "accounts";
++  render(); document.getElementById("propExactStatus")?.focus({ preventScroll: true });
++}
++function propLinkagePartition(partition) {
++  if (propModal?.type !== "overview-list" || propModal.kind !== "edge" || !["converted", "unconverted"].includes(partition)) return;
++  propModal.partition = partition; propRenderModal(); propLinkageFocusList(partition);
++}
++function propLinkageOpenDetail(id) {
++  const m = propModal;
++  if (m?.type !== "overview-list" || m.context !== propLinkageContext()) return;
++  const { accounts, entries } = propScoped(), report = propLinkageReport(accounts, entries, m.range, todayStr());
++  const rows = m.kind === "edge" ? report.edges[Number(m.key)]?.[m.partition] : report.stages[m.key];
++  if (!rows?.some(row => row.id === id)) return;
++  m.returnAccountId = id;
++  propModal = { type: "detail", id, linkageBack: m };
++  propRenderModal(); document.querySelector('[data-action="prop-linkage-back"]')?.focus({ preventScroll: true });
++}
++function propLinkageBack() {
++  const m = propModal, origin = propLinkageOrigin(m);
++  if (!origin || m.type !== "detail" || m.busy) return;
++  const a = propAccounts.find(a => a.id === m.id);
++  if (a && m.draft && propDetailDirty(a, m.draft)) { m.error = T("prop.linkage.unsaved"); propRenderModal(); return; }
++  if (origin.context !== propLinkageContext()) { propCloseModal(); return; }
++  propModal = origin; propRenderModal(); propLinkageFocusList(origin.kind === "edge" ? origin.partition : null, origin.returnAccountId);
++}
++// A watched input redraws its modal on blur. Preserve Back through pointerdown
++// so its click can check the already-synced draft instead of being swallowed.
++function propLinkagePointerDown(e) {
++  if (e.button === 0 && propModal?.linkageBack && e.target.closest?.('[data-action="prop-linkage-back"]')) e.preventDefault();
++}
++document.addEventListener("pointerdown", propLinkagePointerDown);
++document.addEventListener("click", e => {
++  const b = e.target.closest?.("[data-action]");
++  if (!b || b.disabled) return;
++  const a = b.dataset.action;
++  if (a === "prop-linkage-stage") propLinkageOpen("stage", b.dataset.stage, b.id);
++  else if (a === "prop-linkage-edge") propLinkageOpen("edge", Number(b.dataset.edge), b.id);
++  else if (a === "prop-linkage-current") propLinkageCurrent(b.dataset.status);
++  else if (a === "prop-linkage-partition") propLinkagePartition(b.dataset.partition);
++  else if (a === "prop-linkage-detail") propLinkageOpenDetail(b.dataset.id);
++  else if (a === "prop-linkage-back") propLinkageBack();
++});
++document.addEventListener("keydown", e => {
++  if (e.isComposing || !propLinkageOrigin(propModal)) return;
++  const modal = document.querySelector('.propModal[role="dialog"]');
++  if (!modal) return;
++  const tabButton = e.target.closest?.('[data-action="prop-linkage-partition"]');
++  if (tabButton && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
++    e.preventDefault(); propLinkagePartition(e.key === "Home" ? "converted" : e.key === "End" ? "unconverted" : propModal.partition === "converted" ? "unconverted" : "converted");
++  } else if (e.key === "Tab") {
++    const controls = [...modal.querySelectorAll('button,input,select,textarea,a[href],summary,[tabindex]')].filter(el => el.tabIndex >= 0 && !el.matches(':disabled') && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
++    const first = controls[0], last = controls[controls.length - 1];
++    if (e.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { e.preventDefault(); last?.focus(); }
++    else if (!e.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) { e.preventDefault(); first?.focus(); }
++  }
++  // Escape remains owned by the existing global Prop modal handler.
++});
+--- before/theme-modern.css
++++ after/theme-modern.css
+@@ -732,10 +732,12 @@
+ [data-layout="modern"] .propOverviewAccountCount{display:flex;align-items:baseline;gap:6px;margin-bottom:4px;}
+ [data-layout="modern"] .propOverviewAccountCount strong{font-size:52px;font-weight:600;line-height:1.2;}
+ [data-layout="modern"] .propOverviewAccountCount span{color:var(--muted);}
+-[data-layout="modern"] .propOverviewAccountSummary dl{margin:0;padding-left:20px;border-left:1px solid var(--ui-border);display:flex;flex-direction:column;gap:8px;}
+-[data-layout="modern"] .propOverviewAccountSummary dl div{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+-[data-layout="modern"] .propOverviewAccountSummary dt{color:var(--muted);font-size:13px;}
+-[data-layout="modern"] .propOverviewAccountSummary dd{margin:0;min-width:28px;padding:1px 6px;box-sizing:border-box;border-radius:6px;background:var(--surface2);font-size:14px;font-weight:600;text-align:center;}
++[data-layout="modern"] .propOverviewStages{margin:0;padding-left:16px;border-left:1px solid var(--ui-border);display:flex;flex-direction:column;gap:4px;}
++:where([data-layout="modern"]) :where(.propOverviewStatusLink){display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:6px;padding:5px 3px;min-height:32px;font:inherit;color:var(--text);text-align:left;cursor:pointer;}
++:where([data-layout="modern"]) :where(.propOverviewStatusLink:hover){background:var(--surface2);}
++[data-layout="modern"] .propOverviewStatusLink>span{flex:1;color:var(--muted);font-size:13px;}
++[data-layout="modern"] .propOverviewStatusLink>b{min-width:28px;padding:1px 6px;box-sizing:border-box;border-radius:6px;background:var(--surface2);font-size:14px;font-weight:600;text-align:center;}
++[data-layout="modern"] .propOverviewStatusLink>svg{width:12px;height:12px;flex:none;color:var(--muted);}
+ [data-layout="modern"] .propOverviewAccountTotal{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding-top:16px;margin-top:auto;color:var(--muted);font-size:13px;}
+ [data-layout="modern"] .propOverviewAccountSummary+.propOverviewAccountTotal{margin-top:52px;}
+ [data-layout="modern"] .propOverviewAccountTotal strong{color:var(--text);font-size:20px;}
+@@ -797,4 +799,77 @@
+   [data-layout="modern"] .propOverviewCalendarNav button{width:44px;height:44px;}
+   [data-layout="modern"] .propOverviewDateCell{height:44px;margin:2px 0;}
+   [data-layout="modern"] .propOverviewDateCell button{width:44px;height:44px;}
+-}
++  [data-layout="modern"] .propOverviewStatusLink{min-height:44px;}
++}
++
++/* Approved horizontal account progression — modern only, illustrative geometry. */
++[data-layout="modern"] .propProgress{border:1px solid var(--border);border-radius:14px;background:var(--surface);margin-bottom:20px;overflow:hidden;color:var(--text);font-family:var(--fontUI);font-variant-numeric:tabular-nums;}
++[data-layout="modern"] .propProgressHead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:20px 24px;border-bottom:1px solid var(--border);}
++[data-layout="modern"] .propProgressHead>div{display:flex;align-items:center;gap:10px;}
++[data-layout="modern"] .propProgressHead h2{font-size:16px;font-weight:600;margin:0;}
++[data-layout="modern"] .propProgressHead p{font-size:12px;color:var(--muted);margin:3px 0 0;}
++[data-layout="modern"] .propProgressRange{font-size:12px;padding:4px 9px;border-radius:6px;background:var(--surface2);overflow-wrap:anywhere;}
++[data-layout="modern"] .propProgressScroll{padding:18px 24px 8px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;}
++[data-layout="modern"] .propProgressTrack{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:800px;}
++[data-layout="modern"] .propProgressStep{position:relative;min-width:0;}
++:where([data-layout="modern"]) :where(.propProgressStage){display:block;width:100%;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);font:inherit;cursor:pointer;text-align:center;}
++[data-layout="modern"] .propProgressCaption{height:36px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:500;}
++[data-layout="modern"] .propProgressCaption svg{width:18px;height:18px;color:var(--accent);}
++[data-layout="modern"] .propProgressShape{display:block;position:relative;height:240px;margin-top:12px;}
++[data-layout="modern"] .propProgressShape>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
++[data-layout="modern"] .propProgressShape polygon{fill:color-mix(in srgb,var(--accent) var(--stage-tint),var(--surface));stroke:color-mix(in srgb,var(--accent) 28%,var(--border));stroke-width:1;stroke-linejoin:round;}
++:where([data-layout="modern"]) :where(.propProgressStage:hover) polygon{fill:color-mix(in srgb,var(--accent) calc(var(--stage-tint) + 6%),var(--surface));}
++[data-layout="modern"] .propProgressValue{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);font-size:12px;}
++[data-layout="modern"] .propProgressValue strong{font-size:48px;line-height:1.1;font-weight:600;letter-spacing:-1.5px;}
++[data-layout="modern"] .propProgressValue small{display:block;margin-top:9px;font-size:12px;}
++:where([data-layout="modern"]) :where(.propProgressEdge){position:absolute;z-index:2;top:168px;left:calc(100% + 6px);transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;min-width:78px;min-height:58px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;box-shadow:0 2px 5px rgb(0 0 0 / .04);}
++:where([data-layout="modern"]) :where(.propProgressEdge:hover){border-color:var(--accent);background:var(--surface2);}
++[data-layout="modern"] .propProgressEdge>span{display:flex;align-items:center;gap:6px;}
++[data-layout="modern"] .propProgressEdge strong{font-size:16px;font-weight:600;}
++[data-layout="modern"] .propProgressEdge svg{width:14px;height:14px;color:var(--muted);}
++[data-layout="modern"] .propProgressEdge small{font-size:11px;color:var(--muted);}
++[data-layout="modern"] .propProgressEdge:disabled{opacity:.5;cursor:default;}
++[data-layout="modern"] .propProgressDescription{display:flex;justify-content:space-between;gap:8px;margin:4px 24px 18px;font-size:12px;line-height:1.6;color:var(--muted);}
++[data-layout="modern"] .propProgressSwipe{display:none;}
++[data-layout="modern"] .propProgressSummary{display:grid;grid-template-columns:1fr 1.5fr;gap:24px;padding:18px 24px;border-top:1px solid var(--border);background:color-mix(in srgb,var(--surface2) 30%,var(--surface));}
++[data-layout="modern"] .propProgressSummary>div{display:flex;flex-wrap:wrap;align-items:baseline;align-content:center;gap:6px 10px;min-width:0;}
++[data-layout="modern"] .propProgressSummary span{font-size:14px;color:var(--muted);}
++[data-layout="modern"] .propProgressSummary strong{font-size:24px;font-weight:600;line-height:1.2;max-width:100%;overflow-wrap:anywhere;}
++[data-layout="modern"] .propProgressSummary small{font-size:12px;line-height:1.6;color:var(--muted);}
++[data-layout="modern"] .propProgressNotice{margin:12px 24px;font-size:12px;line-height:1.6;color:var(--muted);padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);}
++[data-layout="modern"] .propLinkageModal{font-family:var(--fontUI);color:var(--text);}
++[data-layout="modern"] .propLinkageModal h2{font-size:18px;font-weight:600;margin:0;}
++[data-layout="modern"] .propLinkageSubtitle{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 12px;}
++[data-layout="modern"] .propLinkageTabs{display:flex;gap:4px;padding:4px;background:var(--surface2);border-radius:8px;margin-bottom:16px;}
++:where([data-layout="modern"]) :where(.propLinkageTabs button){border:0;background:transparent;border-radius:6px;padding:8px 10px;min-height:36px;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;}
++[data-layout="modern"] .propLinkageTabs button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgb(0 0 0 / .08);}
++:where([data-layout="modern"]) :where(.propLinkageAccount){display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:8px;padding:14px 12px;margin-bottom:8px;width:100%;background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;}
++:where([data-layout="modern"]) :where(.propLinkageAccount:hover){background:var(--surface2);}
++[data-layout="modern"] .propLinkageAccountText{flex:1;min-width:0;overflow-wrap:anywhere;}
++[data-layout="modern"] .propLinkageAccountText>strong{display:block;font-size:14px;font-weight:500;}
++[data-layout="modern"] .propLinkageAccountText>small{display:block;font-size:12px;color:var(--muted);margin-top:3px;}
++[data-layout="modern"] .propLinkageAccountText>span{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:7px;}
++[data-layout="modern"] .propLinkageAccountText>span>small{font-size:11px;padding:3px 7px;border-radius:5px;background:var(--surface2);color:var(--muted);}
++[data-layout="modern"] .propLinkageAccount>svg{width:16px;height:16px;flex:none;color:var(--muted);}
++[data-layout="modern"] .propLinkageModal .modalFoot{justify-content:space-between;font-size:12px;color:var(--muted);}
++[data-layout="modern"] .propLinkageBack{margin-bottom:14px;}
++[data-layout="modern"] .propLinkedPeriod{display:block;font-size:12px;color:var(--muted);line-height:1.6;}
++[data-layout="modern"] .propLinkedRefundHint{font-size:12px;color:var(--muted);margin:8px 0 0;}
++[data-layout="modern"] .propLinkedMonths .propMoCol:disabled{opacity:.3;cursor:default;}
++[data-layout="modern"] .propLinkedMonths .propMoRefund i{transform:translate(-7px,-100%);width:8px;background:repeating-linear-gradient(125deg,var(--pnlPos) 0 2px,var(--pnlPosSoft) 2px 4px);border-radius:4px 4px 1px 1px;}
++[data-layout="modern"] .propLinkedMonths .up:has(+.propMoRefund) i{transform:translateX(6px);}
++:where([data-layout="modern"]) :where(.propProgress button,.propLinkageModal button,.propOverviewStatusLink,.propLinkageBack):focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
++[data-layout="modern"] .propProgressScroll:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;}
++@media(max-width:1100px){[data-layout="modern"] .propProgressSummary small{flex-basis:100%;}}
++@media(max-width:640px){
++  [data-layout="modern"] .propProgressHead{padding:16px;}
++  [data-layout="modern"] .propProgressScroll{padding:14px 16px 10px;}
++  [data-layout="modern"] .propProgressValue strong{font-size:42px;}
++  [data-layout="modern"] .propProgressDescription{flex-direction:column;margin:8px 16px 16px;}
++  [data-layout="modern"] .propProgressSwipe{display:block;color:var(--text);}
++  [data-layout="modern"] .propProgressSummary{grid-template-columns:1fr;gap:18px;padding:18px 16px;}
++  [data-layout="modern"] .propLinkageTabs button{min-height:44px;}
++  [data-layout="modern"] .propLinkageBack{min-height:44px;}
++  [data-layout="modern"] .propLinkageModal .iconBtn{width:44px;height:44px;}
++  [data-layout="modern"] .propLinkageAccount{padding:12px 10px;gap:8px;}
++}
+--- before/i18n.js
++++ after/i18n.js
+@@ -1296,7 +1296,7 @@
+     "prop.overview.amountRange": "金额超出可精确计算范围。",
+     "prop.overview.trendDescription": "{from}至{to}，从0按日累计，净收益{net}。",
+     "prop.overview.cashDescription": "同一刻度：投入{spent}，到账{received}，净收益{net}。",
+-    "prop.overview.rangeLabel": "资金概览统计日期范围",
++    "prop.overview.rangeLabel": "Prop 总览统计日期范围",
+     "prop.overview.rangeChoose": "选择日期范围",
+     "prop.overview.range.custom": "自定义",
+     "prop.overview.range.all": "全部时间",
+@@ -1310,6 +1310,39 @@
+     "prop.overview.nextMonth": "下一个月",
+     "prop.overview.monthDates": "{month}的日期",
+     "prop.overview.weekdays": "日,一,二,三,四,五,六",
++    "prop.linkage.stage.bought": "买入",
++    "prop.linkage.stage.passed": "通过考核",
++    "prop.linkage.stage.funded": "资金账号",
++    "prop.linkage.stage.paid": "出金到账",
++    "prop.linkage.inspect": "阶段数量与转化率都可以点击查看账号",
++    "prop.linkage.count": "{n} 个账号",
++    "prop.linkage.unit": "个账号",
++    "prop.linkage.viewAccounts": "查看账号",
++    "prop.linkage.scroll": "从左向右的账号漏斗，可横向滚动",
++    "prop.linkage.swipe": "横向滑动查看全部阶段 →",
++    "prop.linkage.shape": "形状表示阶段递进，不代表数量比例；转化率按同批账号计算。",
++    "prop.linkage.incomplete": "{n} 个账号缺少有效的购买或阶段日期。仅列出有日期的进展，不推算缺失历史；转化率与通过率基于已记录信息。",
++    "prop.linkage.attempts": "所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。",
++    "prop.linkage.costBasis": "区间投入（已扣退款）÷ 区间内获得的资金账号数",
++    "prop.linkage.conversion": "同批账号转化",
++    "prop.linkage.converted": "已转化",
++    "prop.linkage.unconverted": "期内未记录转化",
++    "prop.linkage.cutoff": "跟踪起点阶段的同一批账号，仅计起点日期至所选区间结束日之间记录的转化。",
++    "prop.linkage.stageBasis": "仅列出所选范围内发生该进展的账号；每个账号计一次。",
++    "prop.linkage.ratio": "{p} · {n}/{d} 个账号",
++    "prop.linkage.notRecorded": "期内未记录",
++    "prop.linkage.empty": "这个范围内没有对应账号",
++    "prop.linkage.backToList": "返回账号名单",
++    "prop.linkage.unsaved": "请先保存或撤销账号信息的更改，再返回名单。",
++    "prop.linkage.clearStatus": "当前筛选：{status}；点击查看全部状态",
++    "prop.linkage.currentCount": "当前账号数",
++    "prop.linkage.yearSlice": "{y} 年 · 所选范围内",
++    "prop.linkage.previousYear": "上一年",
++    "prop.linkage.nextYear": "下一年",
++    "prop.linkage.backHint": "回本进度按上方所选范围内的投入与到账计算。",
++    "prop.linkage.refundBars": "净退款以向上的纹理条展示。",
++    "prop.linkage.financialUnavailable": "收支数据暂不能按日期完整计算，月度与公司汇总暂不展示，请检查上方提示。",
++    "prop.linkage.details": "账号详情",
+     "prop.funnel.title": "账号漏斗",
+     "prop.funnel.bought": "买过",
+     "prop.funnel.passed": "通过考核",
+@@ -3033,7 +3066,7 @@
+     "prop.overview.amountRange": "Amounts exceed the supported precision.",
+     "prop.overview.trendDescription": "{from} to {to}: daily cash flow from zero, ending at {net}.",
+     "prop.overview.cashDescription": "Same scale: invested {spent}, received {received}, net return {net}.",
+-    "prop.overview.rangeLabel": "Financial overview date range",
++    "prop.overview.rangeLabel": "Prop overview reporting range",
+     "prop.overview.rangeChoose": "Choose date range",
+     "prop.overview.range.custom": "Custom",
+     "prop.overview.range.all": "All time",
+@@ -3047,6 +3080,39 @@
+     "prop.overview.nextMonth": "Next month",
+     "prop.overview.monthDates": "Days in {month}",
+     "prop.overview.weekdays": "Su,Mo,Tu,We,Th,Fr,Sa",
++    "prop.linkage.stage.bought": "Purchased",
++    "prop.linkage.stage.passed": "Passed",
++    "prop.linkage.stage.funded": "Funded",
++    "prop.linkage.stage.paid": "Paid out",
++    "prop.linkage.inspect": "Select a stage or conversion rate to inspect its accounts",
++    "prop.linkage.count": "{n} accounts",
++    "prop.linkage.unit": "accounts",
++    "prop.linkage.viewAccounts": "View accounts",
++    "prop.linkage.scroll": "Left-to-right account funnel; scroll horizontally",
++    "prop.linkage.swipe": "Swipe to see all stages →",
++    "prop.linkage.shape": "Shapes show progression, not count ratios. Rates track the same starting cohort.",
++    "prop.linkage.incomplete": "{n} accounts lack valid purchase or stage dates. Only dated progress is listed; missing history is not inferred. Rates use recorded information.",
++    "prop.linkage.attempts": "Passed accounts plus each failed attempt in the range; instant/direct funding without a recorded pass is excluded.",
++    "prop.linkage.costBasis": "Period investment, less refunds, ÷ accounts funded in the period",
++    "prop.linkage.conversion": "Same-cohort conversion",
++    "prop.linkage.converted": "Converted",
++    "prop.linkage.unconverted": "No conversion recorded in range",
++    "prop.linkage.cutoff": "Track the same starting cohort, counting recorded conversions from each starting date through the selected range end.",
++    "prop.linkage.stageBasis": "Accounts with this stage event in the selected range; each account counts once.",
++    "prop.linkage.ratio": "{p} · {n}/{d} accounts",
++    "prop.linkage.notRecorded": "Not recorded in range",
++    "prop.linkage.empty": "No matching accounts in this range",
++    "prop.linkage.backToList": "Back to account list",
++    "prop.linkage.unsaved": "Save or revert the account information changes before returning to the list.",
++    "prop.linkage.clearStatus": "Current filter: {status}; select to show all statuses",
++    "prop.linkage.currentCount": "Current accounts",
++    "prop.linkage.yearSlice": "{y} · Within selected range",
++    "prop.linkage.previousYear": "Previous year",
++    "prop.linkage.nextYear": "Next year",
++    "prop.linkage.backHint": "Recovery progress uses investment and payouts within the selected range above.",
++    "prop.linkage.refundBars": "Net refunds use an upward hatched bar.",
++    "prop.linkage.financialUnavailable": "Dated cash-flow totals are unavailable. Monthly and firm summaries are hidden; see the notice above.",
++    "prop.linkage.details": "Account details",
+     "prop.funnel.title": "Account funnel",
+     "prop.funnel.bought": "Bought",
+     "prop.funnel.passed": "Passed",
+--- before/test/prop-linkage.test.js
++++ after/test/prop-linkage.test.js
+@@ -0,0 +1,227 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { makeContext, ENGINE_FILES } = require('./load');
++const TODAY = '2026-10-31';
++const RANGE = { preset: 'custom', from: '2026-10-01', to: TODAY };
++const account = (id, bought_on = '2026-10-01', events = [], status = 'eval') => ({ id, bought_on, events, status, firm_name: 'Demo', group_name: 'A' });
++const event = (to, day) => ({ to, day });
++const entry = (account_id, kind, amount, day, pending = false) => ({ account_id, kind, amount, day, pending });
++function setup() {
++  const ctx = makeContext(ENGINE_FILES); ctx.set('lang', 'zh');
++  const call = (name, ...args) => { ctx.sandbox.__args = JSON.parse(JSON.stringify(args)); return JSON.parse(JSON.stringify(ctx.run(`${name}(...__args)`))); };
++  return { ctx, call };
++}
++function fixture() {
++  const accounts = Array.from({ length: 18 }, (_, i) => account('a' + (i + 1), i < 10 ? '2026-10-01' : '2026-09-01'));
++  [1, 2, 3, 11, 12, 13, 14, 15].forEach(n => accounts[n - 1].events.push(event('passed', '2026-10-12')));
++  [16, 17, 18].forEach(n => accounts[n - 1].events.push(event('passed', '2026-09-20')));
++  [1, 2, 11, 12, 16, 17].forEach(n => accounts[n - 1].events.push(event('funded', '2026-10-20')));
++  accounts[17].events.push(event('funded', '2026-09-22'));
++  accounts[3].events.push(event('failed', '2026-10-11'));
++  accounts[4].events.push(event('failed', '2026-10-15'), event('eval', '2026-10-16'), event('failed', '2026-10-18'));
++  accounts.forEach(a => { a.status = a.events.at(-1)?.to || 'eval'; });
++  const entries = [1, 11, 16, 18].map(n => entry('a' + n, 'payout', 500, '2026-10-26'));
++  accounts.forEach(a => entries.push(entry(a.id, 'purchase', 100, a.bought_on)));
++  return { accounts, entries };
++}
++const ids = rows => rows.map(r => r.id).sort();
++
++test('linkage stages and conversion lists track different cohorts correctly', () => {
++  const { call } = setup(), f = fixture();
++  const r = call('propLinkageReport', f.accounts, f.entries, RANGE, TODAY);
++  assert.deepEqual(Object.values(r.stages).map(rows => rows.length), [10, 8, 6, 4]);
++  assert.deepEqual(r.edges.map(e => [e.converted.length, e.rows.length, e.rate]), [[3, 10, 30], [4, 8, 50], [3, 6, 50]]);
++  assert.deepEqual(ids(r.edges[0].converted), ['a1', 'a2', 'a3']);
++  for (const e of r.edges) {
++    assert.deepEqual([...ids(e.converted), ...ids(e.unconverted)].sort(), ids(e.rows));
++    assert.equal(new Set([...ids(e.converted), ...ids(e.unconverted)]).size, e.rows.length);
++  }
++  assert.equal(r.summary.decided, 11);
++  assert.equal(r.summary.passRate, 8 / 11 * 100);
++  assert.equal(r.summary.costPerFunded, 166.67);
++});
++
++test('linkage uses inclusive actual dates, unique stages and chronological cutoff', () => {
++  const { call } = setup();
++  const a = account('a', RANGE.from, [event('passed', '2026-09-30'), event('passed', '2026-10-01'), event('passed', '2026-10-02'), event('funded', '2026-11-01')]);
++  const b = account('b', TODAY, [event('passed', '2026-10-30')]);
++  const entries = [entry('a', 'payout', 100, TODAY), entry('a', 'payout', 200, TODAY), entry('b', 'payout', 200, '2026-11-01')];
++  const r = call('propLinkageReport', [a, b], entries, RANGE, TODAY);
++  assert.equal(r.stages.passed.length, 2); assert.equal(r.stages.paid.length, 1);
++  assert.deepEqual(r.edges[0].converted, [{ id: 'a', day: RANGE.from, next: RANGE.from }]);
++  assert.deepEqual(ids(r.edges[0].unconverted), ['b']);
++  assert.equal(r.edges[1].converted.length, 0);
++});
++
++test('linkage ignores pending/zero/negative payouts and foreign-account entries', () => {
++  const { call } = setup();
++  const r = call('propLinkageReport', [account('a')], [entry('a', 'payout', 100, TODAY, true), entry('a', 'payout', 0, TODAY), entry('foreign', 'payout', 999, TODAY)], RANGE, TODAY);
++  assert.equal(r.stages.paid.length, 0); assert.equal(r.finance.sum.received, 0); assert.equal(r.finance.sum.pending, 100);
++  const invalid = call('propLinkageReport', [account('a')], [entry('a', 'payout', -100, TODAY)], RANGE, TODAY);
++  assert.equal(invalid.stages.paid.length, 0); assert.equal(invalid.finance.available, false);
++});
++
++test('linkage retains all-time actual records without faking skipped passes', () => {
++  const { call } = setup();
++  const a = { ...account('instant', '2026-09-01', [event('funded', '2026-09-01')], 'funded'), plan_snapshot: { type: 'instant' } };
++  const b = account('direct', '2026-09-02', [event('funded', '2026-10-01')], 'funded');
++  const r = call('propLinkageReport', [a, b], [], { preset: 'all' }, TODAY);
++  assert.equal(r.stages.bought.length, 2); assert.equal(r.stages.passed.length, 0); assert.equal(r.stages.funded.length, 2);
++  assert.equal(r.summary.passRate, null); assert.equal(r.edges[1].rate, null);
++  assert.ok(r.incompleteIds.includes('direct')); assert.ok(!r.incompleteIds.includes('instant'));
++});
++
++test('linkage discloses invalid and missing history and never uses current status as a dated event', () => {
++  const { call } = setup();
++  const a = account('a', 'invalid', [event('passed', '2026-02-30'), event('funded', TODAY)], 'funded');
++  const b = account('b', RANGE.from, [], 'passed');
++  const r = call('propLinkageReport', [a, b], [], RANGE, TODAY);
++  assert.equal(r.stages.bought.length, 1); assert.equal(r.stages.passed.length, 0); assert.equal(r.stages.funded.length, 1);
++  assert.deepEqual(r.incompleteIds.sort(), ['a', 'b']);
++});
++
++test('linkage auxiliary metrics count interval failed attempts and signed investment', () => {
++  const { call } = setup();
++  const a = account('a', RANGE.from, [event('failed', '2026-09-30'), event('failed', '2026-10-02'), event('failed', '2026-10-03'), event('passed', '2026-10-04'), event('funded', '2026-10-05')], 'funded');
++  const r = call('propLinkageReport', [a], [entry('a', 'purchase', 50, RANGE.from), entry('a', 'refund', 70, TODAY)], RANGE, TODAY);
++  assert.equal(r.summary.fails, 2); assert.equal(r.summary.decided, 3); assert.equal(r.summary.costPerFunded, -20);
++  assert.equal(r.finance.sum.roi, null);
++  const empty = call('propLinkageReport', [a], [], { preset: 'custom', from: '2027-01-01', to: '2027-01-31' }, TODAY);
++  assert.equal(empty.summary.passRate, null); assert.equal(empty.summary.costPerFunded, null);
++  assert.ok(empty.edges.every(e => e.rate === null));
++});
++
++test('linkage model does not mutate frozen inputs', () => {
++  const { ctx } = setup(), f = fixture(); ctx.set('__accounts', f.accounts); ctx.set('__entries', f.entries);
++  assert.equal(ctx.run(`(()=>{const freeze=x=>{Object.values(x).forEach(v=>{if(v&&typeof v==='object')freeze(v)});Object.freeze(x)};freeze(__accounts);freeze(__entries);const before=JSON.stringify([__accounts,__entries]);propLinkageReport(__accounts,__entries,${JSON.stringify(RANGE)},'${TODAY}');return before===JSON.stringify([__accounts,__entries])})()`), true);
++});
++
++test('linkage month bounds clamp old selection into partial cross-year range', () => {
++  const { call } = setup(), r = { preset: 'custom', from: '2025-12-20', to: '2026-01-10' };
++  assert.deepEqual(call('propLinkageMonth', r, 2026, 10), { year: 2026, month: 1 });
++  assert.deepEqual(call('propLinkageMonth', r, 2025, 1), { year: 2025, month: 12 });
++  assert.equal(call('propLinkageMonthAllowed', r, 2025, 11), false);
++  assert.equal(call('propLinkageMonthAllowed', r, 2025, 12), true);
++  assert.equal(call('propLinkageMonthAllowed', r, 2026, 2), false);
++  assert.deepEqual(call('propLinkageMonth', { preset: 'all', from: null, to: null }, 2024, 4), { year: 2024, month: 4 });
++});
++
++test('exact current-status predicate does not confuse active and historical cohorts', () => {
++  const { call } = setup();
++  for (const s of ['eval', 'passed', 'funded', 'failed', 'blown', 'closed']) {
++    const a = account('a', '2020-01-01', [event('funded', '2020-02-01')], s);
++    assert.equal(call('propAccountMatchesStatus', a, 'funded'), s === 'funded');
++    assert.equal(call('propAccountMatchesStatus', a, 'active'), ['eval', 'passed', 'funded'].includes(s));
++    assert.equal(call('propAccountMatchesStatus', a, 'ended'), !['eval', 'passed', 'funded'].includes(s));
++    assert.equal(call('propAccountMatchesStatus', a, 'all'), true);
++    assert.equal(call('propAccountMatchesStatus', a, 'invalid'), false);
++  }
++});
++
++test('modern overview links lower cash flows and dates while classic retains its old funnel', () => {
++  const { ctx } = setup(); const a = account('a', '2025-12-01', [event('passed', '2025-12-22'), event('funded', '2026-01-05')], 'funded');
++  ctx.set('propAccounts', [a]); ctx.set('propEntries', [entry('a', 'purchase', 999, '2025-12-01'), entry('a', 'monthly', 20, '2025-12-21'), entry('a', 'payout', 100, '2026-01-09')]);
++  ctx.sandbox.document.documentElement.dataset.layout = 'modern';
++  ctx.run(`propFirmFilter='Demo';propYear=2026;propMonth=10;propYearTouched=true;propOverviewRange={preset:'custom',from:'2025-12-20',to:'2026-01-10'};`);
++  const html = ctx.run('renderPropOverview()');
++  assert.match(html, /propProgress/); assert.doesNotMatch(html, /\$999/); assert.match(html, /2025-12-20/);
++  assert.equal(ctx.run('propMonth'), 1);
++  delete ctx.sandbox.document.documentElement.dataset.layout;
++  const classic = ctx.run('renderPropOverview()'); assert.match(classic, /class="propFunnel"/); assert.doesNotMatch(classic, /propProgress/);
++});
++
++test('linkage list rendering escapes names and partitions the same model rows', () => {
++  const { ctx } = setup(), f = fixture(); f.accounts[0].nickname = '<img src=x onerror=bad()>';
++  ctx.set('propAccounts', f.accounts); ctx.set('propEntries', f.entries);
++  const result = ctx.run(`propLinkageListContent({type:'overview-list',kind:'edge',key:0,partition:'converted',range:${JSON.stringify(RANGE)}})`);
++  assert.equal((result.body.match(/data-action="prop-linkage-detail"/g) || []).length, 3);
++  assert.match(result.body, /&lt;img/); assert.doesNotMatch(result.body, /<img src=x/);
++  assert.match(result.body, /2026-10-12/);
++});
++
++test('invalid ranges and dates stay explicit and do not fabricate financial totals', () => {
++  const { call } = setup(), f = fixture();
++  const invalid = call('propLinkageReport', f.accounts, f.entries, { preset: 'custom', from: 'bad', to: TODAY }, TODAY);
++  assert.equal(invalid.finance.available, false); assert.equal(invalid.finance.reason, 'invalidRange');
++  assert.ok(Object.values(invalid.stages).every(rows => rows.length === 0));
++  assert.ok(invalid.edges.every(e => e.rate === null));
++  f.entries[0].day = 'bad';
++  const r = call('propLinkageReport', f.accounts, f.entries, RANGE, TODAY);
++  assert.equal(r.finance.available, false); assert.ok(r.incompleteIds.includes('a1'));
++  assert.equal(r.stages.paid.length, 3);
++});
++
++test('firm summaries reconcile interval cash flow with the same period pass-rate', () => {
++  const { ctx, call } = setup(), f = fixture();
++  f.accounts.forEach((a,i) => a.firm_name = i < 10 ? 'A' : 'B');
++  const a = call('propLinkageReport', f.accounts.slice(0,10), f.entries, RANGE, TODAY);
++  const b = call('propLinkageReport', f.accounts.slice(10), f.entries, RANGE, TODAY);
++  const all = call('propLinkageReport', f.accounts, f.entries, RANGE, TODAY);
++  for (const key of ['spent','received','net']) assert.equal(a.finance.sum[key] + b.finance.sum[key], all.finance.sum[key]);
++  assert.equal(a.summary.passRate, 50); assert.equal(b.summary.passRate, 100); assert.equal(b.finance.sum.roi, null);
++  ctx.set('__f', f); ctx.set('__r', RANGE);
++  const html = ctx.run('renderPropByFirm(__f.accounts,propLinkageReport(__f.accounts,__f.entries,__r,"2026-10-31").entries,__r,__f.entries)');
++  assert.match(html, /当前账号数/); assert.match(html, /50%/); assert.doesNotMatch(html, /进行中/);
++});
++
++function interactive(ctx) {
++  ctx.sandbox.document.documentElement.dataset.layout = 'modern';
++  ctx.run(`session={user:{id:'test-owner'}};authLoading=false;currentProfile={active:true};tab='prop';propView='overview';propModal=null;render=()=>{};propRenderModal=()=>{};`);
++}
++test('current-state navigation retains company/group, clears batch selection and protects other forms', () => {
++  const { ctx } = setup(); interactive(ctx);
++  ctx.run(`propFirmFilter='A';propGroupFilter='B';propBatch=true;propSelected=['old'];propCardMenu='old';propOverviewRange={preset:'custom',from:'2020-01-01',to:'2020-01-02'};propLinkageCurrent('funded')`);
++  assert.equal(ctx.run('propView'), 'accounts'); assert.equal(ctx.run('propStatusFilter'), 'funded');
++  assert.equal(ctx.run('propFirmFilter'), 'A'); assert.equal(ctx.run('propGroupFilter'), 'B');
++  assert.equal(ctx.run('propBatch'), false); assert.equal(ctx.run('propSelected.length'), 0); assert.equal(ctx.run('propCardMenu'), null);
++  ctx.run(`propView='overview';propModal={type:'account',draft:{nickname:'unsaved'}};propLinkageCurrent('eval');propLinkageOpen('stage','passed','trigger')`);
++  assert.equal(ctx.run('propStatusFilter'), 'funded'); assert.equal(ctx.run('propModal.draft.nickname'), 'unsaved');
++});
++
++test('stale scope/date/identity/layout/page clears only linkage-owned modal state', () => {
++  const { ctx } = setup(); interactive(ctx);
++  for (const mutation of ["propFirmFilter='changed'", "propGroupFilter='changed'", "propOverviewRange={preset:'custom',from:'2020-01-01',to:'2020-01-02'}", "session={user:{id:'other'}}", "propView='accounts'", "tab='analysis'", "document.documentElement.dataset.layout='classic'", "authLoading=true"]) {
++    interactive(ctx);
++    ctx.run(`propFirmFilter='';propGroupFilter='';propOverviewRange={preset:'all'};propModal={type:'overview-list',context:propLinkageContext()};${mutation};propLinkageBeforeRender()`);
++    assert.equal(ctx.run('propModal'), null, mutation);
++  }
++  ctx.run(`propModal={type:'entry',draft:{note:'unchanged'}};propLinkageBeforeRender()`);
++  assert.equal(ctx.run('propModal.draft.note'), 'unchanged');
++});
++
++test('linked detail remains a labelled dialog and back protects an unsaved detail draft', () => {
++  const { ctx } = setup(); interactive(ctx); const f = fixture(); ctx.set('propAccounts', f.accounts); ctx.set('propEntries', f.entries);
++  ctx.run(`propModal={type:'detail',id:'a1',linkageBack:{type:'overview-list',context:propLinkageContext(),kind:'stage',key:'passed',range:${JSON.stringify(RANGE)}}}`);
++  const html = ctx.run('propModalHtml()');
++  assert.match(html, /role="dialog"/); assert.match(html, /aria-modal="true"/); assert.match(html, /aria-label="账号详情"/);
++  ctx.run(`propModal.draft.nickname='Unsaved';propLinkageBack()`);
++  assert.equal(ctx.run('propModal.type'), 'detail'); assert.equal(ctx.run('propModal.draft.nickname'), 'Unsaved');
++  assert.match(ctx.run('propModal.error'), /保存或撤销/);
++});
++
++test('stale linkage sheets clear their rendered DOM before authentication early returns', () => {
++  const { ctx } = setup(); interactive(ctx);
++  assert.equal(ctx.run(`(()=>{let clears=0;renderSecondaryModals=(force)=>{if(force)throw Error('must preserve other forms');clears++};propModal={type:'overview-list',context:propLinkageContext()};authLoading=true;propLinkageBeforeRender();if(propModal!==null)throw Error('stale state');propModal={type:'entry',draft:{note:'keep'}};propLinkageBeforeRender();if(propModal.draft.note!=='keep')throw Error('unrelated draft');return clears})()`), 1);
++});
++
++test('blown status or history discloses missing funding dates without inventing stage events', () => {
++  const { call } = setup();
++  const list = [account('blown', RANGE.from, [], 'blown'), account('ended', RANGE.from, [event('blown', TODAY)], 'closed'), {...account('instant', RANGE.from, [event('funded', RANGE.from)], 'blown'), plan_snapshot:{type:'instant'}}];
++  const r = call('propLinkageReport', list, [], RANGE, TODAY);
++  assert.deepEqual(r.incompleteIds.sort(), ['blown','ended']);
++  assert.deepEqual(ids(r.stages.funded), ['instant']); assert.equal(r.stages.passed.length, 0);
++});
++
++test('nested entry, status and balance saves retain list origin without changing persistence', async () => {
++  const { ctx } = setup(); interactive(ctx); ctx.set('propAccounts', [account('a')]);
++  const result = await ctx.run(`(async()=>{let writes=0;propSaveEntries=async()=>{writes++;return true};propChangeStatus=async()=>{writes++;return true};propSaveAccount=async()=>{writes++;return true};const origin={type:'overview-list',context:propLinkageContext(),triggerId:'source'};for(const [type,save,draft] of [['entry',propSaveEntry,{amount:10,day:'${TODAY}',kind:'other'}],['status',propSaveStatus,{day:'${TODAY}',fee:0}],['balance',propSaveBalance,{balance:50000,day:'${TODAY}'}]]){const detail={type:'detail',id:'a',linkageBack:origin};propModal={type,accountId:'a',to:'passed',draft,back:propLinkageDetailBack(detail,'a')};if(propLinkageOrigin(propModal)!==origin)throw Error('nested origin');await save();if(propModal.type!=='detail'||propModal.linkageBack!==origin)throw Error('lost origin after '+type);const saved=propModal;propLinkageFocusList=()=>{};propLinkageBack();if(propModal!==origin)throw Error('lost list after save '+type);propModal=saved}return writes})()`);
++  assert.equal(result, 3);
++  assert.deepEqual(JSON.parse(ctx.run(`JSON.stringify(propLinkageDetailBack({type:'detail',id:'a'},'a'))`)), {type:'detail',id:'a'});
++  ctx.run(`propModal={type:'entry',draft:{note:'synthetic'},back:propLinkageDetailBack(propModal,'a')};authLoading=true;propLinkageBeforeRender()`);
++  assert.equal(ctx.run('propModal'), null);
++});
++
++test('linked Back preserves its click through input blur without intercepting other actions', () => {
++  const { ctx } = setup();
++  assert.equal(ctx.run(`(()=>{let prevented=0;const e={button:0,target:{closest:()=>({})},preventDefault:()=>prevented++};propModal={type:'detail',linkageBack:{}};propLinkagePointerDown(e);e.button=2;propLinkagePointerDown(e);e.button=0;e.target.closest=()=>null;propLinkagePointerDown(e);propModal={type:'entry'};e.target.closest=()=>({});propLinkagePointerDown(e);return prevented})()`), 1);
++});

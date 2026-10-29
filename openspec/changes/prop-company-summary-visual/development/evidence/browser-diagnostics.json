@@ -1,0 +1,78 @@
+[
+  {
+    "command": [
+      "errors"
+    ],
+    "result": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "console"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "messages": []
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "({url:location.href,blocked:offlineCalls,unexpectedOrigins:performance.getEntriesByType('resource').map(r=>new URL(r.name).origin).filter(o=>o!==location.origin),companyVerticalOverflow:(()=>{const e=document.getElementById('propCompanyScroll');return [e.scrollHeight,e.clientHeight]})()})"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "blocked": [],
+        "companyVerticalOverflow": [
+          474,
+          474
+        ],
+        "unexpectedOrigins": [],
+        "url": "http://127.0.0.1:46305/"
+      }
+    },
+    "success": true
+  }
+]

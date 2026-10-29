@@ -1,0 +1,74 @@
+[
+  {
+    "command": "eval",
+    "result": null
+  },
+  {
+    "command": "eval",
+    "result": {
+      "interrupted": false
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-open-entry']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "blocked": [],
+      "focus": "prop-close-modal",
+      "origin": "passed",
+      "title": "记一笔",
+      "type": "entry"
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-modal-back']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "backVisible": true,
+      "blocked": [],
+      "type": "detail"
+    }
+  },
+  {
+    "command": "eval",
+    "result": {
+      "interrupted": false
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-edit-entry'][data-id='link-buy-0']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "blocked": [],
+      "focus": "prop-close-modal",
+      "origin": "passed",
+      "title": "改这一笔",
+      "type": "entry"
+    }
+  },
+  {
+    "command": "click",
+    "target": "[data-action='prop-modal-back']",
+    "result": true
+  },
+  {
+    "command": "eval",
+    "result": {
+      "backVisible": true,
+      "blocked": [],
+      "type": "detail"
+    }
+  }
+]

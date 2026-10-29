@@ -1,0 +1,83 @@
+{
+  "schema": "specnav.verification.runtime-scope-inspection.v1",
+  "ok": false,
+  "project_root": "/root/ifvg-journal",
+  "config_file": "/root/ifvg-journal/.specnav/config.json",
+  "selected_scope": null,
+  "selection_source": null,
+  "runtime_base": null,
+  "runtime_root": null,
+  "candidates": {
+    "project": {
+      "scope": "project",
+      "runtime_base": "/root/ifvg-journal/.specnav/runtime/verification",
+      "runtime_root": "/root/ifvg-journal/.specnav/runtime/verification/2.0.0-alpha.2",
+      "exists": false
+    },
+    "user": {
+      "scope": "user",
+      "runtime_base": "/root/.specnav/runtime/verification",
+      "runtime_root": "/root/.specnav/runtime/verification/2.0.0-alpha.2",
+      "exists": false
+    }
+  },
+  "blockers": [
+    {
+      "id": "verification-runtime:scope-selection-required",
+      "artifact": "/root/ifvg-journal/.specnav/config.json",
+      "detail": {
+        "project_runtime_detected": false,
+        "user_runtime_detected": false
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "verification-runtime:select-project-scope",
+      "command": "\"node\" \"/root/.pi/agent/git/github.com/zengwenliang416/specnav-codex-plugin/plugins/specnav-verification/scripts/verification-runtime.js\" \"select-scope\" \"--scope\" \"project\" \"--project\" \"/root/ifvg-journal\" \"--json\""
+    },
+    {
+      "id": "verification-runtime:select-user-scope",
+      "command": "\"node\" \"/root/.pi/agent/git/github.com/zengwenliang416/specnav-codex-plugin/plugins/specnav-verification/scripts/verification-runtime.js\" \"select-scope\" \"--scope\" \"user\" \"--project\" \"/root/ifvg-journal\" \"--json\""
+    }
+  ],
+  "fallback_used": false,
+  "machine_components": {
+    "schema": "specnav.verification.machine-components.v1",
+    "packages": [
+      {
+        "name": "@playwright/test",
+        "detected": false,
+        "version": null,
+        "source": null,
+        "usable_as_managed_runtime": false
+      },
+      {
+        "name": "playwright",
+        "detected": false,
+        "version": null,
+        "source": null,
+        "usable_as_managed_runtime": false
+      },
+      {
+        "name": "@midscene/web",
+        "detected": false,
+        "version": null,
+        "source": null,
+        "usable_as_managed_runtime": false
+      }
+    ],
+    "commands": {
+      "ffmpeg": {
+        "detected": true,
+        "usable_as_managed_runtime": false
+      }
+    },
+    "browsers": {
+      "chromium_family": {
+        "detected": false,
+        "usable_as_managed_runtime": false
+      }
+    }
+  }
+}

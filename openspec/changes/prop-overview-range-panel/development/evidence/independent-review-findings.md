@@ -1,0 +1,11 @@
+# Independent read-only findings and outstanding formal acceptance
+
+- Specification scout: job_mvq2ycde_2, terminal completed with partial coverage; no confirmed implementation deviation, no approved/needs-fix verdict. Verified A2/A4/A5/A7/A8 from source and logged results; requested stronger A3/A6/A9 evidence.
+- Quality scout: job_mvq2yvqw_3, terminal completed; found no mandatory code fixes, did not issue an approval verdict. Confirmed separation, single shared financial model and tooltip controller, limited integration, immutable inputs and scoped styling. Asked to confirm propPct(null) and browser evidence.
+- Supplemental scout: job_mvq3m9a7_4, terminal completed with partial coverage; supported six descriptions/aria, redraw cleanup, hover retention, date focus result, null ROI and successful syntax/test commands. No confirmed defect in the focus fix. Requested event-level evidence and geometric coordinates rather than bare result booleans.
+
+Parent checked cited source at propSum/propOverviewSnapshot, renderPropOverview, render/keyboard hooks and propPct (explicit null→em dash). It supplied all-field-help.json, command-results.json and focus-hover-event-trace.json: the latter records actual trusted Tab/focusin/pointerover events, associated help, render closing it without reopening, first deliberate hover reopening it and measured tooltip coordinates within the viewport. Existing mobile-help.json and viewport matrices record touch-target size and mobile-sized layouts; physical touch hardware is not claimed.
+
+The parent found a first-hover suppression issue during additional inspection, corrected only the synchronous focus suppression lifetime in propOverviewAfterRender, added its regression case and re-ran all tests (113/113), bundle, syntax and whitespace checks. Review findings are evidence, not a fabricated independent approval. The task's formal review/acceptance receipts remain pending, and no stage handoff has passed.
+
+The development v2 task-acceptance contract requires a reviewed Git commit/tree and rejects dirty implementation files (owning development-contract.js:2253–2303). Implementation is deliberately uncommitted because the user only authorized the previous docs/tasks baseline commit. A separate authorization is required before making a local implementation checkpoint; nothing is to be pushed or deployed.

@@ -1,0 +1,84 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 8328671723827742000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:46305/",
+  "result": {
+    "active": "propCompanyHelp-roi",
+    "docWidth": 380,
+    "steps": [
+      {
+        "button": {
+          "bottom": 335.84375,
+          "height": 44,
+          "left": 213.59375,
+          "right": 257.59375,
+          "top": 291.84375,
+          "width": 44,
+          "x": 213.59375,
+          "y": 291.84375
+        },
+        "id": "propCompanyHelp-n",
+        "scroll": 0,
+        "sticky": {
+          "bottom": 340.84375,
+          "height": 71,
+          "left": 33,
+          "right": 183,
+          "top": 269.84375,
+          "width": 150,
+          "x": 33,
+          "y": 269.84375
+        },
+        "text": "当前公司、分组范围内的账号记录数，包含已结束账号。\n不按财务日期回放，也不等于进行中的数量。"
+      },
+      {
+        "button": {
+          "bottom": 335.84375,
+          "height": 44,
+          "left": 299,
+          "right": 343,
+          "top": 291.84375,
+          "width": 44,
+          "x": 299,
+          "y": 291.84375
+        },
+        "id": "propCompanyHelp-roi",
+        "scroll": 526,
+        "sticky": {
+          "bottom": 340.84375,
+          "height": 71,
+          "left": 33,
+          "right": 183,
+          "top": 269.84375,
+          "width": 150,
+          "x": 33,
+          "y": 269.84375
+        },
+        "text": "ROI = 净收益 ÷ 净投入 × 100%。\n净投入不大于 0 时显示 —。这不是通过率，也不是到账 ÷ 投入的回收率。",
+        "tooltip": {
+          "bottom": 283.34375,
+          "height": 78.5,
+          "left": 62,
+          "right": 380,
+          "top": 204.84375,
+          "width": 318,
+          "x": 62,
+          "y": 204.84375
+        }
+      }
+    ],
+    "tipInside": true,
+    "viewport": 390
+  }
+}

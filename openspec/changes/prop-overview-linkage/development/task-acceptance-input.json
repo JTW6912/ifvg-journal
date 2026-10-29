@@ -1,0 +1,139 @@
+{
+  "schema": "specnav.task-acceptance-input-set.v1",
+  "tasks": {
+    "001-prop-linkage": {
+      "schema": "specnav.task-acceptance-input.v1",
+      "task_id": "001-prop-linkage",
+      "assertions": {
+        "A1": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/date-reverse-cancel.json",
+            "test/prop-linkage.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A2": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "test/prop-linkage.test.js",
+            "development/evidence/conversion-partitions.json"
+          ],
+          "reused_evidence": []
+        },
+        "A3": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/stage-list.json",
+            "development/evidence/conversion-partitions.json",
+            "development/evidence/detail-return-focus.json",
+            "development/evidence/browser-lifecycle-boundaries.json",
+            "development/evidence/nested-entry-navigation.json",
+            "development/evidence/nested-status-balance-navigation.json"
+          ],
+          "reused_evidence": []
+        },
+        "A4": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/implementation-final-desktop.png",
+            "development/evidence/funnel-mobile-start.png",
+            "development/evidence/mobile-scroll-sheet.json"
+          ],
+          "reused_evidence": []
+        },
+        "A5": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "test/prop-linkage.test.js",
+            "development/evidence/browser-checks.json"
+          ],
+          "reused_evidence": []
+        },
+        "A6": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/current-navigation.json",
+            "test/prop-linkage.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A7": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/unsaved-forms.json",
+            "development/evidence/unchanged-boundaries.json",
+            "development/evidence/final-browser-diagnostics.json",
+            "test/prop-overview.test.js"
+          ],
+          "reused_evidence": []
+        },
+        "A8": {
+          "test_run_ids": [
+            "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+            "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+            "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+            "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+            "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+            "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+          ],
+          "direct_evidence": [
+            "development/evidence/theme-locale-matrix.json",
+            "development/evidence/browser-lifecycle-boundaries.json",
+            "development/tasks/001-prop-linkage/human-review-record.json"
+          ],
+          "reused_evidence": []
+        }
+      }
+    }
+  }
+}

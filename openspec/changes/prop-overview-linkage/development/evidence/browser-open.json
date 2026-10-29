@@ -1,0 +1,18 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "targetId": "B48315CD74E801F36BBCDE6F0A0BD5B3",
+  "title": "Demo的 IFVG Trade Journal",
+  "url": "http://127.0.0.1:45649/"
+}

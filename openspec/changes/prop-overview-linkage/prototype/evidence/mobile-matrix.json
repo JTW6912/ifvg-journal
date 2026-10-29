@@ -1,0 +1,125 @@
+[
+  {
+    "command": "open",
+    "ok": true,
+    "summary": "Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "summary": "Snapshot: 58 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "set",
+    "ok": true,
+    "summary": "set completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"viewport\":[390,844],\"overflow\":false,\"localScroll\":true,\"summary\":\"Exam pass rate\\n73%\\nBased on 11 completed attempts\\nAverage cost per funded account\\n$246.67\\nPeriod investment ÷ accounts funded in the period\"}",
+    "summary": "Eval result: {\"viewport\":[390,844],\"overflow\":false,\"localScroll\":true,\"summary\":\"Exam pass rate\\n73%\\nBased on 11 completed attempts\\nAverage cost per funded account\\n$246…"
+  },
+  {
+    "command": "screenshot",
+    "ok": true,
+    "summary": "Saved image: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/mobile-en-dark.png",
+    "artifacts": {
+      "artifacts": [
+        {
+          "absolutePath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/mobile-en-dark.png",
+          "exists": true,
+          "kind": "image",
+          "mediaType": "image/png",
+          "path": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/mobile-en-dark.png",
+          "requestedPath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/mobile-en-dark.png",
+          "retentionState": "live",
+          "sizeBytes": 115046,
+          "state": "verified",
+          "status": "saved",
+          "storageScope": "explicit-path",
+          "updatedAtMs": 1793089568714.6624
+        }
+      ],
+      "missingCount": 0,
+      "pendingCount": 0,
+      "unverifiedCount": 0,
+      "verified": true,
+      "verifiedCount": 1
+    }
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "[{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"gold\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"sky\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"violet\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"rose\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"sunset\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"ocean\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"graphite\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"gold\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"sky\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"violet\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"rose\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"sunset\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"ocean\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"en\",\"palette\":\"graphite\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"gold\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"sky\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"violet\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"rose\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"sunset\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"ocean\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"zh\",\"palette\":\"graphite\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"gold\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"sky\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"violet\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"rose\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"sunset\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"ocean\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"dark\",\"lang\":\"en\",\"palette\":\"graphite\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}}]",
+    "summary": "Eval result: [{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"gold\",\"overflow\":false,\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4}},{\"theme\":\"light\",\"lang\":\"zh\",\"palette\":\"…"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"model\":{\"view\":\"overview\",\"status\":\"all\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":0,\"fails\":0,\"decided\":0,\"funded\":0,\"spentCents\":0,\"passRate\":null,\"costPerFunded\":null},\"stages\":{\"bought\":0,\"passed\":0,\"funded\":0,\"paid\":0},\"conversions\":[{\"n\":0,\"d\":0,\"ids\":[]},{\"n\":0,\"d\":0,\"ids\":[]},{\"n\":0,\"d\":0,\"ids\":[]}]},\"disabledEdges\":true,\"summary\":\"Exam pass rate\\n—\\nBased on 0 completed attempts\\nAverage cost per funded account\\n—\\nPeriod investment ÷ accounts funded in the period\"}",
+    "summary": "Eval result: {\"model\":{\"view\":\"overview\",\"status\":\"all\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":0,\"fails\":0,\"decided\":0,\"funded\":0,\"spentCents\":0,\"passRate\":null,\"costPerF…"
+  },
+  {
+    "command": "click",
+    "ok": true,
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"rows\":0}",
+    "summary": "Eval result: {\"rows\":0}"
+  },
+  {
+    "command": "press",
+    "ok": true,
+    "summary": "Pressed: Escape"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "summary": "select completed"
+  },
+  {
+    "command": "click",
+    "ok": true,
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"state\":{\"view\":\"accounts\",\"status\":\"passed\",\"firm\":\"Demo Firm A\",\"group\":\"Batch A\",\"summary\":{\"passed\":3,\"fails\":3,\"decided\":6,\"funded\":2,\"spentCents\":124000,\"passRate\":50,\"costPerFunded\":620},\"stages\":{\"bought\":10,\"passed\":3,\"funded\":2,\"paid\":1},\"conversions\":[{\"n\":3,\"d\":10,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]},{\"n\":2,\"d\":3,\"ids\":[\"SIM-001\",\"SIM-002\"]},{\"n\":1,\"d\":2,\"ids\":[\"SIM-001\"]}]},\"rowCount\":1,\"ids\":[\"SIM-003\"]}",
+    "summary": "Eval result: {\"state\":{\"view\":\"accounts\",\"status\":\"passed\",\"firm\":\"Demo Firm A\",\"group\":\"Batch A\",\"summary\":{\"passed\":3,\"fails\":3,\"decided\":6,\"funded\":2,\"spentCents\":124000…"
+  },
+  {
+    "command": "errors",
+    "ok": true,
+    "summary": "Page errors: 0"
+  }
+]

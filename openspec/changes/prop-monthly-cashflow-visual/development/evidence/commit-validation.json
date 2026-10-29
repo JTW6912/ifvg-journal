@@ -1,0 +1,45 @@
+{
+  "recorded_at": "2026-10-28T03:01:39.259Z",
+  "baseline_head": "a7b2def9fc1090f88203fedf6ce76810fe4d161c",
+  "attestation": "agent-observed local command execution",
+  "human_approval": "../human-review.json",
+  "reviewed_source_unchanged": true,
+  "results": [
+    {
+      "command": "node --test test/prop-months.test.js test/prop.test.js test/prop-overview.test.js test/prop-linkage.test.js",
+      "exit_code": 0,
+      "stdout_sha256": "f31c5784e5e24e14742d92ba40164308b33dbeca9044be41f3f8d072cbae5078"
+    },
+    {
+      "command": "npm test",
+      "exit_code": 0,
+      "stdout_sha256": "2f536c4e6ecd67ee1984b1ca1ced8c2cadae480c39e92307621691cd44ad9197",
+      "tests": {
+        "total": 149,
+        "passed": 149,
+        "failed": 0
+      }
+    },
+    {
+      "command": "npm run bundle",
+      "exit_code": 0,
+      "stdout_sha256": "32ddd78379ab613bd061aa3e08e9e3801baf15fa9046a0ada05b22ee3e154dd3"
+    },
+    {
+      "command": "node --check app.js",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "node --check i18n.js",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "limits": "No live-account write tests, native V2 completion, push or deployment are claimed."
+}

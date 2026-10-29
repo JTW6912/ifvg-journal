@@ -1,0 +1,64 @@
+[
+  {
+    "label": "toggle storage isolation",
+    "ok": true,
+    "writes": [],
+    "blocked": []
+  },
+  {
+    "label": "native overview date picker updates monthly scope",
+    "ok": true,
+    "range": {
+      "preset": "thisMonth",
+      "from": "2026-10-01",
+      "to": "2026-10-28"
+    },
+    "amounts": [
+      "$760",
+      "$2,480",
+      "+$1,720"
+    ]
+  },
+  {
+    "label": "company scope removes stale financial geometry",
+    "ok": true,
+    "firm": "Demo Trading",
+    "range": {
+      "preset": "thisMonth",
+      "from": "2026-10-01",
+      "to": "2026-10-28"
+    }
+  },
+  {
+    "label": "loading early-return detaches monthly resources",
+    "ok": true,
+    "loading": true
+  },
+  {
+    "label": "disabled early-return exposes no chart or observer",
+    "ok": true
+  },
+  {
+    "label": "logout clears ephemeral toggle and resources",
+    "ok": true,
+    "blocked": []
+  },
+  {
+    "errors": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    }
+  }
+]

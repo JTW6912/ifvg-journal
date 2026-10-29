@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-company-summary-visual",
+  "assertions": [
+    {"id":"A1","statement":"Seven company fields and all scoped values match existing helpers; stable local sorting preserves values, inputs, date semantics and scale.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A2","statement":"Shared-scale net bars and pass tracks preserve sign, zero, unknown, refund, pending and large-value semantics with finite geometry.","verify_via":"unit","status":"failing","evidence_ref":null},
+    {"id":"A3","statement":"Field help supports pointer, keyboard, touch, Escape and safe ARIA/viewport lifecycle including fixed-column mobile scrolling.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A4","statement":"Actual-source modern theme/locale/responsive table retains complete metrics, logo fallback and P&L semantics without global restyling or preview controls.","verify_via":"sensory","status":"failing","evidence_ref":null},
+    {"id":"A5","statement":"Classic output, section visibility, existing error/empty paths and prior overview/funnel/monthly/ledger behavior are unchanged.","verify_via":"unit","status":"failing","evidence_ref":null},
+    {"id":"A6","statement":"Ephemeral sort and help state reset safely at context boundaries, retain in-view focus/scroll and protect forms with no storage/network/write calls.","verify_via":"e2e","status":"failing","evidence_ref":null},
+    {"id":"A7","statement":"Safe text/logo/geometry boundaries and all offline regression/build/syntax checks pass within scope, without sensitive data or backend/dependency/publication changes.","verify_via":"static","status":"failing","evidence_ref":null}
+  ]
+}

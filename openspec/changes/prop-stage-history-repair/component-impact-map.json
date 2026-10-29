@@ -1,0 +1,53 @@
+{
+  "new_components": [
+    "CMP-PROP-HISTORY-INSPECT: pending/all searchable account list",
+    "CMP-PROP-HISTORY-EDITOR: isolated one-account purchase/history draft",
+    "CMP-PROP-HISTORY-DIFF: additions/edits/removals and explicit confirmation"
+  ],
+  "reused_components": [
+    "Current Prop funnel and drawer shell",
+    "Shared field-help and keyboard/focus patterns",
+    "T/esc/date formatters and validity helpers",
+    "Existing stage/cohort and financial statistics",
+    "Existing propStatusPill visual markup/status tokens (not old immediate-save handlers)",
+    "Safe existing public company logo assets with fallback"
+  ],
+  "extraction_triggers": [
+    "Pure diagnosis/patch/diff helpers separated from DOM/transport",
+    "Extract pass-date evidence once for history diagnostics and dated reports; never duplicate the evaluation/instant or explicit-record precedence rules",
+    "Dedicated history UI rather than embedding all code in 11e",
+    "Legacy first-event coupling must not apply to arbitrary historical events after removal"
+  ],
+  "forbidden_dependencies": [
+    "Repair never calls propChangeStatus/propApplyRenewals/propMoveBoughtOn/propSaveEventDay or full-row upsert",
+    "No write to prop_entries/status/renewal/balance/plan",
+    "No new framework or admin cross-user access",
+    "Prototype never imports real config/auth init"
+  ],
+  "hooks": [
+    "Owner/context-owned draft",
+    "Dirty discard confirmation and busy guards",
+    "Drawer focus containment/return and Escape priority",
+    "Context/identity invalidation without silent save"
+  ],
+  "utilities": [
+    "Per-account missing versus suspected diagnostic reasons",
+    "Real date/type validation and immutable selected-field patch",
+    "Preserve legitimate repeated attempts/unknown unchanged records",
+    "Before/after diff and remaining-issue computation"
+  ],
+  "services": [
+    "Owner-scoped history-only conditional update/read-back using original version/history; null version and missing rows treated explicitly; prototype uses memory-only simulation"
+  ],
+  "required_component_tests": [
+    "Only selected purchase/history fields change; all ledger and unrelated account bytes preserved",
+    "No fabricated/persisted inference or automatic sorting/deduplication; D5 statistical implicit passes use actual funded dates; instant and same-day repeated attempts remain legitimate",
+    "Same-day purchase/failure/pass/funded/blown, eval-to-funded bypass, explicit malformed/valid pass precedence, range/cohort/company consistency, list provenance and zero mutation",
+    "Deleting/editing first historical row never changes purchase/cash by index",
+    "Draft cancel/restore/confirmation/deletion acknowledgement",
+    "Conflict/read-only/busy/error/double-submit without lost draft or partial saved state",
+    "Post-save existing stats and date/company/group context",
+    "Themes/locales/mobile/focus/shared-help compatibility"
+  ],
+  "unresolved_gaps": []
+}

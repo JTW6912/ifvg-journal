@@ -1,0 +1,25 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=6",
+  "result": {
+    "contentWidth": 832,
+    "lastStageInside": true,
+    "pageWidth": 390,
+    "scrollLeft": 472,
+    "scrollerWidth": 360,
+    "summary": "Exam pass rate\n73%\nBased on 11 completed attempts\nAverage cost per funded account\n$246.67\nPeriod investment ÷ accounts funded in the period",
+    "viewport": 390
+  }
+}

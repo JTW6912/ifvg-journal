@@ -1,0 +1,45 @@
+{
+  "recorded_at": "2026-10-28T13:37:14.730072+00:00",
+  "commands": [
+    {
+      "command": "node --test test/prop-firms.test.js",
+      "exit_code": 0,
+      "log": "commit-focused.log",
+      "output_sha256": "fbcc836a1b96a8356c9c6dfff90f69e7e30149d51737ecd24844ecbc0c41082b",
+      "tests": 14
+    },
+    {
+      "command": "npm test",
+      "exit_code": 0,
+      "log": "commit-tests.log",
+      "output_sha256": "64fd7c45a5778393993588c086c04f0e3cd20dde3293e6689d78782977e49cb6",
+      "tests": 163
+    },
+    {
+      "command": "npm run bundle",
+      "exit_code": 0,
+      "log": "commit-bundle.log",
+      "output_sha256": "95328c5397f760b3e8439e5376a7926d2e7e500f977f4ae426b161b0b6b03fde"
+    },
+    {
+      "command": "node --check app.js",
+      "exit_code": 0,
+      "log": "commit-syntax-app.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "node --check i18n.js",
+      "exit_code": 0,
+      "log": "commit-syntax-i18n.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "log": "commit-diff-check.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "attestation": "direct local tool execution; not native SpecNav runner attestation",
+  "scope": "offline synthetic checks only"
+}

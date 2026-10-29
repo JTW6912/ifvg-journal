@@ -1,0 +1,23 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:44899/index.html?v=handoff-layout",
+  "result": {
+    "net": "+$22,000.00",
+    "overflow": false,
+    "overlap": false,
+    "valueClipped": false,
+    "viewport": 1600
+  }
+}

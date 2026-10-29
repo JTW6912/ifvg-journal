@@ -1694,6 +1694,7 @@ document.addEventListener("keydown", (e) => {
 }, true);
 
 document.addEventListener("keydown", (e) => {
+  if (propOverviewKeydown(e)) return;
   if (focusKeyNav(e)) return;
   if (pbTriageKey(e)) return;
   if (e.key !== "Escape") return;

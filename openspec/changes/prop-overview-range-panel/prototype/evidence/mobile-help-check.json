@@ -1,0 +1,27 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:44899/index.html?v=localized-help",
+  "result": {
+    "description": "metricTooltip",
+    "inside": true,
+    "overflow": false,
+    "target": [
+      44,
+      44
+    ],
+    "text": "Received payouts minus investment, with refunds deducted, for the selected range.",
+    "visible": true
+  }
+}

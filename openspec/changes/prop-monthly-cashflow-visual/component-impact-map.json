@@ -1,0 +1,11 @@
+{
+  "new_components":["CMP-PROP-MONTHLY-COMBO: presentation geometry, tooltip and month selection","CMP-PROP-KIND-ICON: coherent thin-line SVG mappings"],
+  "reused_components":["CMP-APP-SHELL","CMP-APPEARANCE","renderPropMonths layout","renderPropMonthDetail ledger grouping","CMP-PROP-HELP tooltip lifecycle and safe text rendering"],
+  "extraction_triggers":["Keep presentation geometry separate from financial aggregation; share icon mappings across kinds"],
+  "forbidden_dependencies":["Supabase/config.js/init runtime in prototype","React/Recharts or new package dependencies","Private snapshots and real screenshot amounts"],
+  "hooks":["Ephemeral monthly overlay state; explicit render/resize/identity cleanup; no business-cache or form-draft mutation"],
+  "utilities":["Formatting and monthly semantics from existing product; integer-cent synthetic fixtures"],
+  "services":["None; isolated local static server only"],
+  "required_component_tests":["Two series match monthly model","Excluded vs empty months","Refund/pending semantics","Month selection updates details","Keyboard, tooltip, themes and responsive bounds"],
+  "unresolved_gaps":[]
+}

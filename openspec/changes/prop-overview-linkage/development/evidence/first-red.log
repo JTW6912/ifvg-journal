@@ -1,0 +1,417 @@
+TAP version 13
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+not ok 1 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 49.026253
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:29:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:31:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+not ok 2 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 13.252432
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:44:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:49:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+not ok 3 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 14.745864
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:56:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:58:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage retains all-time actual records without faking skipped passes
+not ok 4 - linkage retains all-time actual records without faking skipped passes
+  ---
+  duration_ms: 11.359609
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:64:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:68:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+not ok 5 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 9.569787
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:74:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:78:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+not ok 6 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 11.038602
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:83:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:86:13)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+not ok 7 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 10.275705
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:94:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageReport is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:198
+    evalmachine.<anonymous>:1:365
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:96:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+not ok 8 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 10.896151
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:99:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageMonth is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:101:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+not ok 9 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 9.875309
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:109:1'
+  failureType: 'testCodeFailure'
+  error: 'propAccountMatchesStatus is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-linkage.test.js:11:129)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:113:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+not ok 10 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 72.420002
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:121:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /propProgress/. Input:
+    
+    '<div class="propFilters"><div class="chipGroup"><button class="chip active" data-action="prop-group-filter" data-val="">全部分组</button><button class="chip " data-action="prop-group-filter" data-val="A">A</button></div></div><section class="propOverview" aria-label="资金概览" data-tone="positive">\n' +
+      '    <header class="propOverviewHeader"><h2><span class="propOverviewIcon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-3"/><path d="M21 9h-5a3 3 0 000 6h5z"/><circle cx="16" cy="12" r=".6"/></svg></span>资金概览</h2>\n' +
+      '      <div class="propOverviewTools"><button type="button" id="propOverviewRangeTrigger" class="propOverviewButton" data-action="prop-overview-range" aria-haspopup="dialog" aria-expanded="false" aria-label="资金概览统计日期范围: 2025.12.20 – 2026.01.10"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>2025.12.20 – 2026.01.10</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M6 9l6 6 6-6"/></svg></button><span>USD</span></div></header>\n' +
+      '    \n' +
+      '    <div class="propOverviewBody"><section class="propOverviewZone propOverviewNet">\n' +
+      '      <h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10v12"/></svg></span><span>区间净收益</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="net" aria-label="查看区间净收益说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></h3>\n' +
+      '      <div class="propOverviewSpotlight"><div class="propOverviewValue" data-net-cents="8000" aria-label="+$80"><span>+$80</span></div>\n' +
+      '        <div class="propOverviewTrend"><div class="propOverviewCaption"><span>区间走势</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="trend" aria-label="查看区间走势说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><svg class="propOverviewPlot" viewBox="0 0 200 100" preserveAspectRatio="none" role="img" aria-label="2025-12-20至2026-01-10，从0按日累计，净收益+$80。" data-end-cents="8000">\n' +
+      '    <defs><clipPath id="propOverviewAbove"><rect width="200" height="72.00"/></clipPath><clipPath id="propOverviewBelow"><rect y="72.00" width="200" height="28.00"/></clipPath></defs>\n' +
+      '    <path class="propOverviewZero" d="M6,72.00H194"/>\n' +
+      '    <g class="propOverviewTrace" data-tone="positive" clip-path="url(#propOverviewAbove)"><path class="propOverviewArea" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00V72.00H6Z"/><path class="propOverviewLine" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00"/></g><g class="propOverviewTrace" data-tone="negative" clip-path="url(#propOverviewBelow)"><path class="propOverviewArea" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00V72.00H6Z"/><path class="propOverviewLine" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00"/></g>\n' +
+      '    <circle cx="194" cy="8.00" r="2.5" class="propOverviewDot"/>\n' +
+      '    </svg><div class="propOverviewDates"><span>12.20</span><span>01.10</span></div></div></div>\n' +
+      '      <div class="propOverviewROI" data-applicable="true"><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 16 6-6 4 4 8-9m-7 0h7v7"/></svg></span><strong>+400.0%</strong><div class="propOverviewCaption"><span>投资回报率</span> · ROI <button type="button" class="propOverviewHelp" data-prop-overview-tip="roi" aria-label="查看ROI说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div></div>\n' +
+      '    </section><section class="propOverviewZone propOverviewCash"><h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/></svg></span>投入与到账</h3>\n' +
+      '      <div class="propOverviewCashFigure" role="group" aria-label="同一刻度：投入$20，到账$100，净收益+$80。">\n' +
+      '        <div class="propOverviewCashLabel"><div class="propOverviewCaption"><span>区间投入</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="spent" aria-label="查看区间投入说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><strong>$20</strong></div>\n' +
+      '        <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:20%"></i></div>\n' +
+      '        <div class="propOverviewCashLabel"><div class="propOverviewCaption"><span>出金到账</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="received" aria-label="查看出金到账说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><strong>$100</strong></div>\n' +
+      '        <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:20%"></i><i class="propOverviewIncome" style="width:80%"></i></div>\n' +
+      '      </div><div class="propOverviewLegend"><span><i class="propOverviewHatch"></i>覆盖投入</span><span><i class="propOverviewIncome"></i>净收益</span></div>\n' +
+      '      \n' +
+      '    </section><section class="propOverviewZone propOverviewAccounts"><h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6 16c0-3 6-3 6 0m3-7h3m-3 4h3"/></svg></span><span>当前账号状态</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="accounts" aria-label="查看当前账号状态说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></h3>\n' +
+      '      <div class="propOverviewAccountSummary"><div><div class="propOverviewAccountCount"><strong>1</strong><span>个</span></div><span>进行中</span></div>\n' +
+      '        <dl><div><dt>考核中</dt><dd>0</dd></div><div><dt>待激活</dt><dd>0</dd></div><div><dt>资金账号</dt><dd>1</dd></div></dl></div>\n' +
+      '      <div class="propOverviewAccountTotal"><span>全部账号</span><strong>1</strong></div>\n' +
+      '    </section></div></section><div class="calendarPanel propPanel">\n' +
+      '    <div class="propPanelHead"><div class="sectionLabel propLabel">账号漏斗</div></div>\n' +
+      '    <div class="propFunnel"><div class="propStep"><b>1</b><span>买过</span></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>通过考核</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>资金账号</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>出过金</span><small>100%</small></div></div>\n' +
+      '    <div class="propFunnelFoot">\n' +
+      '      <div><span>通过率</span><b>100%</b><small>按 1 次有结果的考核算</small></div>\n' +
+      '      <div><span>平均每个资金账号成本</span><b>$1,019</b><small>全部投入 ÷ 拿到的资金账号数</small></div>\n' +
+      '    </div>\n' +
+      '  </div><div class="calendarPanel propPanel">\n' +
+      '    <div class="propPanelHead"><div class="sectionLabel propLabel">每月收支</div>\n' +
+      '      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">2026</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>\n' +
+      '    <div class="propMo">\n' +
+      '      <div class="propMoChart"><button class="propMoCol  " data-action="prop-month" data-m="1"\n' +
+      '          title="投入 $0 · 到账 $100">\n' +
+      '        <span class="propMoNet pos">+$100</span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:100%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">1月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="2"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">2月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="3"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">3月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="4"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">4月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="5"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">5月</span></button><button class="propMo'... 3702 more characters
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    <div class="propFilters"><div class="chipGroup"><button class="chip active" data-action="prop-group-filter" data-val="">全部分组</button><button class="chip " data-action="prop-group-filter" data-val="A">A</button></div></div><section class="propOverview" aria-label="资金概览" data-tone="positive">
+        <header class="propOverviewHeader"><h2><span class="propOverviewIcon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-3"/><path d="M21 9h-5a3 3 0 000 6h5z"/><circle cx="16" cy="12" r=".6"/></svg></span>资金概览</h2>
+          <div class="propOverviewTools"><button type="button" id="propOverviewRangeTrigger" class="propOverviewButton" data-action="prop-overview-range" aria-haspopup="dialog" aria-expanded="false" aria-label="资金概览统计日期范围: 2025.12.20 – 2026.01.10"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>2025.12.20 – 2026.01.10</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M6 9l6 6 6-6"/></svg></button><span>USD</span></div></header>
+        
+        <div class="propOverviewBody"><section class="propOverviewZone propOverviewNet">
+          <h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10v12"/></svg></span><span>区间净收益</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="net" aria-label="查看区间净收益说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></h3>
+          <div class="propOverviewSpotlight"><div class="propOverviewValue" data-net-cents="8000" aria-label="+$80"><span>+$80</span></div>
+            <div class="propOverviewTrend"><div class="propOverviewCaption"><span>区间走势</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="trend" aria-label="查看区间走势说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><svg class="propOverviewPlot" viewBox="0 0 200 100" preserveAspectRatio="none" role="img" aria-label="2025-12-20至2026-01-10，从0按日累计，净收益+$80。" data-end-cents="8000">
+        <defs><clipPath id="propOverviewAbove"><rect width="200" height="72.00"/></clipPath><clipPath id="propOverviewBelow"><rect y="72.00" width="200" height="28.00"/></clipPath></defs>
+        <path class="propOverviewZero" d="M6,72.00H194"/>
+        <g class="propOverviewTrace" data-tone="positive" clip-path="url(#propOverviewAbove)"><path class="propOverviewArea" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00V72.00H6Z"/><path class="propOverviewLine" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00"/></g><g class="propOverviewTrace" data-tone="negative" clip-path="url(#propOverviewBelow)"><path class="propOverviewArea" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00V72.00H6Z"/><path class="propOverviewLine" d="M6,72.00H23.09V88.00H185.45V8.00H194.00V8.00"/></g>
+        <circle cx="194" cy="8.00" r="2.5" class="propOverviewDot"/>
+        </svg><div class="propOverviewDates"><span>12.20</span><span>01.10</span></div></div></div>
+          <div class="propOverviewROI" data-applicable="true"><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 16 6-6 4 4 8-9m-7 0h7v7"/></svg></span><strong>+400.0%</strong><div class="propOverviewCaption"><span>投资回报率</span> · ROI <button type="button" class="propOverviewHelp" data-prop-overview-tip="roi" aria-label="查看ROI说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div></div>
+        </section><section class="propOverviewZone propOverviewCash"><h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16m-4-4 4 4-4 4M20 17H4m4-4-4 4 4 4"/></svg></span>投入与到账</h3>
+          <div class="propOverviewCashFigure" role="group" aria-label="同一刻度：投入$20，到账$100，净收益+$80。">
+            <div class="propOverviewCashLabel"><div class="propOverviewCaption"><span>区间投入</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="spent" aria-label="查看区间投入说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><strong>$20</strong></div>
+            <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:20%"></i></div>
+            <div class="propOverviewCashLabel"><div class="propOverviewCaption"><span>出金到账</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="received" aria-label="查看出金到账说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></div><strong>$100</strong></div>
+            <div class="propOverviewBar" aria-hidden="true"><i class="propOverviewHatch" style="width:20%"></i><i class="propOverviewIncome" style="width:80%"></i></div>
+          </div><div class="propOverviewLegend"><span><i class="propOverviewHatch"></i>覆盖投入</span><span><i class="propOverviewIncome"></i>净收益</span></div>
+          
+        </section><section class="propOverviewZone propOverviewAccounts"><h3><span class="propOverviewIcon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M6 16c0-3 6-3 6 0m3-7h3m-3 4h3"/></svg></span><span>当前账号状态</span><button type="button" class="propOverviewHelp" data-prop-overview-tip="accounts" aria-label="查看当前账号状态说明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></svg></button></h3>
+          <div class="propOverviewAccountSummary"><div><div class="propOverviewAccountCount"><strong>1</strong><span>个</span></div><span>进行中</span></div>
+            <dl><div><dt>考核中</dt><dd>0</dd></div><div><dt>待激活</dt><dd>0</dd></div><div><dt>资金账号</dt><dd>1</dd></div></dl></div>
+          <div class="propOverviewAccountTotal"><span>全部账号</span><strong>1</strong></div>
+        </section></div></section><div class="calendarPanel propPanel">
+        <div class="propPanelHead"><div class="sectionLabel propLabel">账号漏斗</div></div>
+        <div class="propFunnel"><div class="propStep"><b>1</b><span>买过</span></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>通过考核</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>资金账号</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>出过金</span><small>100%</small></div></div>
+        <div class="propFunnelFoot">
+          <div><span>通过率</span><b>100%</b><small>按 1 次有结果的考核算</small></div>
+          <div><span>平均每个资金账号成本</span><b>$1,019</b><small>全部投入 ÷ 拿到的资金账号数</small></div>
+        </div>
+      </div><div class="calendarPanel propPanel">
+        <div class="propPanelHead"><div class="sectionLabel propLabel">每月收支</div>
+          <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">2026</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>
+        <div class="propMo">
+          <div class="propMoChart"><button class="propMoCol  " data-action="prop-month" data-m="1"
+              title="投入 $0 · 到账 $100">
+            <span class="propMoNet pos">+$100</span>
+            <span class="propMoBars"><span class="up"><i style="height:100%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">1月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="2"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">2月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="3"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">3月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="4"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">4月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="5"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">5月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="6"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">6月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="7"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">7月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="8"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">8月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="9"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">9月</span></button><button class="propMoCol on empty" data-action="prop-month" data-m="10"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">10月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="11"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">11月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="12"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">12月</span></button></div>
+          <div class="propMoSum">
+            <div class="propMiniLabel">2026 全年</div>
+            <div class="propMoSumRow"><span>投入</span><b>$0</b></div>
+            <div class="propMoSumRow"><span>到账</span><b>$100</b></div>
+            <div class="propMoSumRow big"><span>净收支</span><b class="pos">+$100</b></div>
+            <div class="propMoBack"><div class="propMoBackHead"><b>已回本 10%</b><span>还差 $919</span></div>
+              <div class="propMoBackBar"><i style="width:10%"></i></div>
+              <small>按全部时间算：已到账出金 ÷ 总投入</small></div>
+          </div>
+        </div><div class="propMonthDetail"><div class="propMonthHead"><b>2026年10月</b>
+        <span>投入 <b>$0</b></span><span>到账 <b>$0</b></span>
+        <span>净收支 <b class="">$0</b></span></div><div class="propMuted">这个月没有收支。</div></div></div><div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">按公司</div></div>
+        <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>公司</th><th class="num">账号数</th><th class="num">通过率</th><th class="num">累计投入</th><th class="num">出金到账</th><th class="num">净收益</th><th class="num">ROI</th></tr></thead><tbody>
+        <tr><td>Demo</td><td class="num">1</td><td class="num">100%</td><td class="num">$1,019</td><td class="num">$100</td><td class="num neg">−$919</td>
+          <td class="num neg">-90.2%</td></tr>
+        </tbody></table></div></div>
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:127:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+not ok 11 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 8.648318
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-linkage.test.js:133:1'
+  failureType: 'testCodeFailure'
+  error: 'propLinkageListContent is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-linkage.test.js:136:22)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 0
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.079792
+
+EXIT_CODE=1

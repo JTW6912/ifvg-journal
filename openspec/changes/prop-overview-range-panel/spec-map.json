@@ -1,0 +1,13 @@
+{
+  "touched_specs": ["ui-design", "system-architecture", "frontend-backend-data-flow", "component-architecture"],
+  "ui_rules": ["modern-only approved three-zone financial panel", "classic markup unchanged", "field-local help, no centralized explanation menu", "two-month desktop and one-month mobile range picker", "existing CSS theme and pnl tokens"],
+  "architecture_modules": ["Prop pure finance in src/11d-prop-data.js", "Prop overview composition in src/11e-prop-view.js", "new Prop overview UI controller", "shared state and app render lifecycle"],
+  "api_contracts": ["no new request or write; consume existing loaded Prop cache"],
+  "database_entities": ["prop_accounts: read current status from cache", "prop_entries: read day/kind/amount/pending from cache; structure unchanged"],
+  "permissions": ["owner-only private ledger; admin gains no additional access"],
+  "operational_constraints": ["no live business testing", "no push or deploy", "only approved docs/tasks may be committed as the local baseline", "no framework migration"],
+  "data_flows": ["FLOW-PROP-SCOPE", "FLOW-PROP-OVERVIEW", "FLOW-PROP-HELP", "FLOW-APPEARANCE"],
+  "theme_modes": ["light-dark", "theme-toggle:existing", "palettes:gold,sky,violet,rose,sunset,ocean,graphite", "custom-pnl:existing"],
+  "locale_policy": ["i18n:enabled", "locales:zh,en", "default-locale:en", "preserve-browser-and-stored-locale-selection"],
+  "unresolved_gaps": []
+}

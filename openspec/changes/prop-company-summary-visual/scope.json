@@ -1,0 +1,12 @@
+{
+ "schema_version":1,
+ "change_id":"prop-company-summary-visual",
+ "stage":"development",
+ "allowed_roots":["src/03-state.js","src/11e-prop-view.js","src/11g-prop-overview.js","src/11j-prop-firms.js","theme-modern.css","i18n.js","test/prop-firms.test.js","dev/prop-firms-check","openspec/changes/prop-company-summary-visual"],
+ "denied_roots":[".git","node_modules","supabase","config.js","src/01-config.js","src/07-data-layer.js","src/07b-accounts.js","src/11d-prop-data.js","src/11f-prop-admin.js","src/11h-prop-linkage.js","src/11i-prop-months.js","src/14-main-render.js","src/15-events.js","src/16-init.js","style.css","palettes.css","package.json","package-lock.json","index.html","openspec/changes/prop-overview-linkage","openspec/changes/prop-overview-range-panel","openspec/changes/prop-monthly-cashflow-visual"],
+ "requires_review_on":["src/03-state.js","src/11e-prop-view.js","src/11g-prop-overview.js"],
+ "allowed_operations":{"create":true,"modify":true,"delete":false,"rename":false},
+ "prototype_sources":["openspec/changes/prop-company-summary-visual/prototype/artifact/index.html"],
+ "external_repos":[{"root":"../.cache/ifvg-connected-site","include":["public/app.js","public/i18n.js","public/index.html","public/style.css","public/theme-modern.css","public/palettes.css","server.pid","server.log","sync.json"],"reason":"Owner explicitly requested connecting Supabase to view the new company table. Refresh only the existing local public-resource mirror and loopback service; preserve config.js and existing browser login. No repository exposure, secret key, real business tests, commit, push or deployment."}],
+ "expires_when":"verification_started"
+}

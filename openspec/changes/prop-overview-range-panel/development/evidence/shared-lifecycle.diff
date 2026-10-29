@@ -1,0 +1,39 @@
+diff --git a/src/14-main-render.js b/src/14-main-render.js
+index 4ae2331..71ff3e4 100644
+--- a/src/14-main-render.js
++++ b/src/14-main-render.js
+@@ -493,6 +493,7 @@ function renderSecondaryModals(force) {
+   const root = document.getElementById("secondaryModalRoot");
+   if (!root) return;
+   const want = profileModalOpen ? "profile" : (lightboxUrl ? "lightbox" : (tradePreviewId ? "tradepreview" : (dayDetailDate ? "daydetail" : (comboGroupModal ? "combogroup" : (reviewGroupModal ? "reviewgroup" : (pbNameModal ? "pbname" : (dataScopeModalOpen ? "datascope" : (propModal ? "prop" : null))))))));
++  if (want) propOverviewCleanup(); // Let existing editing dialogs own focus and Escape.
+   if (!force && want === secondaryModalState && want !== null) return; // already showing the right thing — don't wipe in-progress typing
+   secondaryModalState = want;
+   if (want === "profile") root.innerHTML = profileModalHtml();
+@@ -570,6 +571,7 @@ function patchAppShell(regions) {
+   });
+ }
+ function render() {
++  propOverviewBeforeRender();
+   const app = document.getElementById("app");
+ 
+   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
+@@ -681,5 +683,6 @@ function render() {
+   renderReviewEditor();
+   renderExportCenter();
+   renderAcctPop();
++  propOverviewAfterRender();
+ }
+ 
+diff --git a/src/15-events.js b/src/15-events.js
+index a652083..c380a54 100644
+--- a/src/15-events.js
++++ b/src/15-events.js
+@@ -1694,6 +1694,7 @@ document.addEventListener("keydown", (e) => {
+ }, true);
+ 
+ document.addEventListener("keydown", (e) => {
++  if (propOverviewKeydown(e)) return;
+   if (focusKeyNav(e)) return;
+   if (pbTriageKey(e)) return;
+   if (e.key !== "Escape") return;

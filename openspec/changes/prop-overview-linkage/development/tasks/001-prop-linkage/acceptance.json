@@ -1,0 +1,482 @@
+{
+  "schema": "specnav.task-acceptance-evidence.v2",
+  "generated_by": "specnav-development/task-acceptance-evidence",
+  "task_id": "001-prop-linkage",
+  "generated_at": "2026-10-27T13:32:46.109Z",
+  "recorded_at": "2026-10-27T13:31:04.302Z",
+  "status": "approved",
+  "reviewed_git_head": "d5cd3c440805c0423346eee67447b755c4a3489a",
+  "reviewed_git_tree": "2ea8419aa4af44f1d8bc96bfdcec59754fbfdfe8",
+  "implementation_scope": {
+    "included_patterns": [
+      "dev/prop-overview-check",
+      "i18n.js",
+      "src/11d-prop-data.js",
+      "src/11e-prop-view.js",
+      "src/11g-prop-overview.js",
+      "src/11h-prop-linkage.js",
+      "test/prop-linkage.test.js",
+      "test/prop-overview.test.js",
+      "theme-modern.css"
+    ],
+    "entries": [
+      {
+        "path": "i18n.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "cc4c1b231d80ea4b46000b8116ad72463acc0f9e"
+      },
+      {
+        "path": "src/11d-prop-data.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "00376cb816b6356be86845832e262c6e28694260"
+      },
+      {
+        "path": "src/11e-prop-view.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "136478fc4f3fe15c894301db9745706ddc64ebdf"
+      },
+      {
+        "path": "src/11g-prop-overview.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "3c4617e214036ddd864cbf193cb834ce1ef9d4b7"
+      },
+      {
+        "path": "src/11h-prop-linkage.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "53de973429c9acc90c6d51566b9ec442203ef0e8"
+      },
+      {
+        "path": "test/prop-linkage.test.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "48b6da069a7e147d42fb26045d49c0f3306979b9"
+      },
+      {
+        "path": "test/prop-overview.test.js",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "e11d6c962fbe289c1d44a7a5ad93b1c05c371053"
+      },
+      {
+        "path": "theme-modern.css",
+        "mode": "100644",
+        "type": "blob",
+        "object_id": "b418747d17e33791a8944cfad946346327b8945f"
+      }
+    ],
+    "sha256": "e7dafb0d6c2e12a69db46375da9268f7b1cb4014104609232d6e1a5fd2152b92"
+  },
+  "artifacts": {
+    "context": {
+      "path": "development/tasks/001-prop-linkage/context.json",
+      "sha256": "21fa1162bdd8dc3eb0ace9a7906f9347054510a1c8d6f3efc6b2eb865543f1a2"
+    },
+    "report": {
+      "path": "development/tasks/001-prop-linkage/report.md",
+      "sha256": "63f375facada832af0ca14cb76defee4b16c00ccc60aefc7e46e2a37481073fc",
+      "status": "DONE"
+    },
+    "spec_review": {
+      "path": "development/tasks/001-prop-linkage/spec-review.md",
+      "sha256": "b652b8c6e08decc9d5cff73279f1a16f23a9ffff7d140faf07f940db6be3b992",
+      "verdict": "approved"
+    },
+    "quality_review": {
+      "path": "development/tasks/001-prop-linkage/quality-review.md",
+      "sha256": "fdfa2fdf9dbf7f9e43d7e64bde1f1d85c402391e4f91f447371baef0f4ab6b09",
+      "verdict": "approved"
+    }
+  },
+  "test_runs": [
+    {
+      "id": "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+      "command": "npm test",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:04.159Z",
+      "validation_receipt_sha256": "705e2d884bf457a0e610af4caa1e8317e3322342d33f3285563145faed1754b8",
+      "evidence_log": {
+        "path": "development/evidence/008-001-prop-linkage.log",
+        "sha256": "336c38915c40032a7ea16850679b268004b0e4e2682db5d5cb504e45ab44e9c7",
+        "size": 30297
+      }
+    },
+    {
+      "id": "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+      "command": "node --check i18n.js",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:04.298Z",
+      "validation_receipt_sha256": "cf4dfeb4d071fdd9b63744419b4a3d32aac7e77fef97e218beb4652b28c9e3a3",
+      "evidence_log": {
+        "path": "development/evidence/011-001-prop-linkage.log",
+        "sha256": "9ba08f57f0b881c271833aee77c611e01c58e31774821e21e0626f2f19e0f23c",
+        "size": 105
+      }
+    },
+    {
+      "id": "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+      "command": "node --check app.js",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:04.278Z",
+      "validation_receipt_sha256": "25f5c80e58b47873c3d004879d856095813555ab70711737b5b9d13a1062a724",
+      "evidence_log": {
+        "path": "development/evidence/010-001-prop-linkage.log",
+        "sha256": "da4db04b2ecdccbbec64f02ab532aa2954a506293d33414d3dce916c853ac2b6",
+        "size": 104
+      }
+    },
+    {
+      "id": "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f",
+      "command": "git diff --check",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:04.302Z",
+      "validation_receipt_sha256": "ca9b6de55f568714decd2bd9ff9365b1425f639d0895d394aa61df60ad3b2baf",
+      "evidence_log": {
+        "path": "development/evidence/012-001-prop-linkage.log",
+        "sha256": "7bfb30d365de4ccd29b10db93687e9991677eabdfda26984467b4c9bb5146e25",
+        "size": 100
+      }
+    },
+    {
+      "id": "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+      "command": "node --test test/prop-linkage.test.js test/prop-overview.test.js",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:03.699Z",
+      "validation_receipt_sha256": "012ccf5321d8888dac037a8768b17b93d772cb9dbe39796334011efbb5c103a5",
+      "evidence_log": {
+        "path": "development/evidence/007-001-prop-linkage.log",
+        "sha256": "c40000318d83535425706071ef45914a22e9f7893cda1f50e51bafe82b782d5b",
+        "size": 8132
+      }
+    },
+    {
+      "id": "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+      "command": "npm run bundle",
+      "assertion_ids": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8"
+      ],
+      "recorded_at": "2026-10-27T13:31:04.248Z",
+      "validation_receipt_sha256": "f5b1dbd504744aa4924bf541c93a88543d0c90cbd95b5293fd23a4db8a116cc4",
+      "evidence_log": {
+        "path": "development/evidence/009-001-prop-linkage.log",
+        "sha256": "fe891ce6fc80751a8cff98305d5d6c63a6e4aaa70d08712f1ed42f2922e07480",
+        "size": 169
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "id": "A1",
+      "parent_id": "A1",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/date-reverse-cancel.json",
+          "sha256": "450a732029854b759b513033cf2d6424caed88999ed4323e833ffea1737e358a",
+          "size": 180483
+        },
+        {
+          "path": "test/prop-linkage.test.js",
+          "sha256": "5ce9b7e3107afa6fc9fdc37bbdbad9d72a51c21b3ea79283838b577bbeb9a925",
+          "size": 17823
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "The modern overview uses one inclusive reporting range for financial totals, month detail and company financial summaries, with honest partial-period labels."
+    },
+    {
+      "id": "A2",
+      "parent_id": "A2",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "test/prop-linkage.test.js",
+          "sha256": "5ce9b7e3107afa6fc9fdc37bbdbad9d72a51c21b3ea79283838b577bbeb9a925",
+          "size": 17823
+        },
+        {
+          "path": "development/evidence/conversion-partitions.json",
+          "sha256": "3da388be39982783f9ed31f1dba8b9451ea8bd6e386d62016bfe1b205d4402c3",
+          "size": 63957
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "Dated unique stage accounts and chronological same-cohort conversion ratios obey inclusive cutoffs without inferring missing event dates."
+    },
+    {
+      "id": "A3",
+      "parent_id": "A3",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/stage-list.json",
+          "sha256": "a19c25b41330a71cc9d2a1a5fa1c2b167536623bbf7ff9a5f49eca7d49388429",
+          "size": 17195
+        },
+        {
+          "path": "development/evidence/conversion-partitions.json",
+          "sha256": "3da388be39982783f9ed31f1dba8b9451ea8bd6e386d62016bfe1b205d4402c3",
+          "size": 63957
+        },
+        {
+          "path": "development/evidence/detail-return-focus.json",
+          "sha256": "1e03aab4ce117de5cfe32c3b91ba63ae26e8cc44c9d523f24d285f03ea0156bf",
+          "size": 71992
+        },
+        {
+          "path": "development/evidence/browser-lifecycle-boundaries.json",
+          "sha256": "f9e8ac5acd1bdbd10325979c2c559a7a154c245e898f390b13e57dd8bdddc4b4",
+          "size": 4524
+        },
+        {
+          "path": "development/evidence/nested-entry-navigation.json",
+          "sha256": "71f03b4bdca785b145c7f3cf29d41b4406d823588af06f26107ea9ebe936e2a6",
+          "size": 1267
+        },
+        {
+          "path": "development/evidence/nested-status-balance-navigation.json",
+          "sha256": "4cb2c302eb3e15d3a2e632538529d5fed231fc63e17bfc963d5468560d22c742",
+          "size": 1262
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "Stage and conversion drill-down rows exactly match their model counts and support account detail, focus, dismissal and stale-context cleanup."
+    },
+    {
+      "id": "A4",
+      "parent_id": "A4",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/implementation-final-desktop.png",
+          "sha256": "5a4c7332805e360bda5a9b0fc637402fe0f425b3798c62be27c3d71e9da96520",
+          "size": 316883
+        },
+        {
+          "path": "development/evidence/funnel-mobile-start.png",
+          "sha256": "882ec209c2ebf3cbf4ad3dbf08b0ddf8f39fe5860b5d404b0eef4502deb62699",
+          "size": 62400
+        },
+        {
+          "path": "development/evidence/mobile-scroll-sheet.json",
+          "sha256": "efab48d75c39753e49610a23c7d36ce02a229faa3e8c39d8b4fc44532b94b148",
+          "size": 29358
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "The approved continuous narrowing horizontal funnel preserves clickable connections and both bottom explanatory summaries, with local mobile scrolling."
+    },
+    {
+      "id": "A5",
+      "parent_id": "A5",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "test/prop-linkage.test.js",
+          "sha256": "5ce9b7e3107afa6fc9fdc37bbdbad9d72a51c21b3ea79283838b577bbeb9a925",
+          "size": 17823
+        },
+        {
+          "path": "development/evidence/browser-checks.json",
+          "sha256": "3e2843f27ae859c848ed339aa66e070adec3c5d1a631583adfdcdad43f190710",
+          "size": 48263
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "Range-attributed pass attempts, average funded-account cost and company pass rates retain explicit and consistent denominators and empty-state semantics."
+    },
+    {
+      "id": "A6",
+      "parent_id": "A6",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/current-navigation.json",
+          "sha256": "8301041eb7536953ae7bfbcccbdac5bf5c312fca6c4c81f016c014a83a740b5b",
+          "size": 46685
+        },
+        {
+          "path": "test/prop-linkage.test.js",
+          "sha256": "5ce9b7e3107afa6fc9fdc37bbdbad9d72a51c21b3ea79283838b577bbeb9a925",
+          "size": 17823
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "Current-state links select exact current account statuses while preserving company and group scope and excluding the reporting date."
+    },
+    {
+      "id": "A7",
+      "parent_id": "A7",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/unsaved-forms.json",
+          "sha256": "5771cefb17ca5ddc853f1826125dc0c889b2623f9f7543535da3198e8a98e46d",
+          "size": 147668
+        },
+        {
+          "path": "development/evidence/unchanged-boundaries.json",
+          "sha256": "abff567b190e8435a128a4eaebad6bed606723b306173d2c5d607dbe3d45e484",
+          "size": 126
+        },
+        {
+          "path": "development/evidence/final-browser-diagnostics.json",
+          "sha256": "2fbab49907797ab99e40c49926604dd838f7816dfe5274d8d1b8b186296f4104",
+          "size": 4070
+        },
+        {
+          "path": "test/prop-overview.test.js",
+          "sha256": "6c79c18bb01be32d1d68df5170f3e9130ddec57ef91f3b0c02d3bc01abed2695",
+          "size": 12038
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "Overview interactions perform no additional remote operations or mutations and preserve existing forms, panel controls, classic output and unrelated paths."
+    },
+    {
+      "id": "A8",
+      "parent_id": "A8",
+      "status": "passing",
+      "test_run_ids": [
+        "receipt-b0c9d2df891b9d9e512494507a09f62479d9dfd6a6c0ce6fbe83600a344d4d9e",
+        "receipt-5552a660adcd1e418d9149f9d930531482deaa7cd9f3be6453269443f5a15da6",
+        "receipt-e5e357737f2528e9051c40ad1fae15fd1ab82a0bc8f8ee8156b99ac178f604b3",
+        "receipt-966d0ae0e651ddb64924bab17d8e6f2233803093839579999010dbe94c8cf54f",
+        "receipt-8aa5817d5053edbec7a3e32fe67ef5b1ded5ee81de4b626608b53b3341b7bd77",
+        "receipt-998303df18331a551bc389b2bded2468a2bae771589aa17bb19ec81fe1a8336f"
+      ],
+      "direct_evidence": [
+        {
+          "path": "development/evidence/theme-locale-matrix.json",
+          "sha256": "ff49bee43343fe09dbf8798bf9b69996dc005158c99e65a7d91206270ba75be5",
+          "size": 43454
+        },
+        {
+          "path": "development/evidence/browser-lifecycle-boundaries.json",
+          "sha256": "f9e8ac5acd1bdbd10325979c2c559a7a154c245e898f390b13e57dd8bdddc4b4",
+          "size": 4524
+        },
+        {
+          "path": "development/tasks/001-prop-linkage/human-review-record.json",
+          "sha256": "1df12a4e551c98a0a12bd8802f5f4ec9a537cabd6ec83f117615359a64e066a3",
+          "size": 941
+        }
+      ],
+      "reused_evidence": [],
+      "claim": "The localized native implementation passes offline build, syntax, accessibility, theme and responsive-layout checks with independent review."
+    }
+  ],
+  "fallback_used": false
+}

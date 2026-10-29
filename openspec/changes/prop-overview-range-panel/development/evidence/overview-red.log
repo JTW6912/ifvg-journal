@@ -1,0 +1,425 @@
+TAP version 13
+# Subtest: overview dates validate calendar days without local-time rollover
+not ok 1 - overview dates validate calendar days without local-time rollover
+  ---
+  duration_ms: 19.662465
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:19:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewDay is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:21:16)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: overview presets include today and use full prior calendar month
+not ok 2 - overview presets include today and use full prior calendar month
+  ---
+  duration_ms: 6.169554
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:31:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewResolveRange is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:33:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview uses inclusive dates, refunds and only received payouts
+not ok 3 - overview uses inclusive dates, refunds and only received payouts
+  ---
+  duration_ms: 6.890942
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:42:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:45:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview daily steps are sorted, merged and exact to a cent
+not ok 4 - overview daily steps are sorted, merged and exact to a cent
+  ---
+  duration_ms: 6.395308
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:54:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:58:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview refunds can make investment negative, never fake ROI or clamp totals
+not ok 5 - overview refunds can make investment negative, never fake ROI or clamp totals
+  ---
+  duration_ms: 5.109426
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:65:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:67:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview empty and pending-only ranges have no fabricated trend
+not ok 6 - overview empty and pending-only ranges have no fabricated trend
+  ---
+  duration_ms: 5.464714
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:79:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:82:20)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview invalid financial dates cannot silently become a zero range
+not ok 7 - overview invalid financial dates cannot silently become a zero range
+  ---
+  duration_ms: 6.475587
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:90:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:93:15)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview all-time includes full loaded history and sparse long intervals
+not ok 8 - overview all-time includes full loaded history and sparse long intervals
+  ---
+  duration_ms: 5.817485
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:102:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:105:15)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+not ok 9 - overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+  ---
+  duration_ms: 7.107899
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:114:1'
+  failureType: 'testCodeFailure'
+  error: 'propOverviewSnapshot is not defined'
+  code: 'ERR_TEST_FAILURE'
+  name: 'ReferenceError'
+  stack: |-
+    evalmachine.<anonymous>:1:1
+    Script.runInContext (node:vm:149:12)
+    Object.runInContext (node:vm:301:6)
+    Object.run (/root/ifvg-journal/test/load.js:32:23)
+    call (/root/ifvg-journal/test/prop-overview.test.js:13:42)
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:116:18)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+  ...
+# Subtest: classic metric strip remains byte-for-byte identical in both languages
+ok 10 - classic metric strip remains byte-for-byte identical in both languages
+  ---
+  duration_ms: 28.894318
+  type: 'test'
+  ...
+# Subtest: modern renders a unified summary and six field-local explanations
+not ok 11 - modern renders a unified summary and six field-local explanations
+  ---
+  duration_ms: 8.923045
+  type: 'test'
+  location: '/root/ifvg-journal/test/prop-overview.test.js:145:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /class="propOverview/. Input:
+    
+    '<div class="propFilters"><div class="chipGroup"><button class="chip active" data-action="prop-firm-filter" data-val="">全部公司</button><button class="chip " data-action="prop-firm-filter" data-val="Demo A">Demo A</button><button class="chip " data-action="prop-firm-filter" data-val="Demo B">Demo B</button></div></div><div class="statRow propStats">\n' +
+      '    <div class="statBox"><div class="statLabel">累计投入</div><div class="statValue">$120</div><div class="statSub">购买、月费、重置、激活等 · 已扣退款 $20</div></div>\n' +
+      '    <div class="statBox"><div class="statLabel">出金到账</div><div class="statValue">$400</div><div class="statSub">另有 $50 待到账</div></div>\n' +
+      '    <div class="statBox"><div class="statLabel">净收益</div><div class="statValue pos">+$280</div><div class="statSub">到账 − 投入</div></div>\n' +
+      '    <div class="statBox"><div class="statLabel">ROI</div><div class="statValue pos">+233.3%</div><div class="statSub">净收益 ÷ 投入</div></div>\n' +
+      '    <div class="statBox"><div class="statLabel">进行中的账号</div><div class="statValue">2<span class="propStatOf"> / 2</span></div><div class="statSub">考核中、待激活、资金账号 / 全部</div></div>\n' +
+      '  </div><div class="calendarPanel propPanel">\n' +
+      '    <div class="propPanelHead"><div class="sectionLabel propLabel">账号漏斗</div></div>\n' +
+      '    <div class="propFunnel"><div class="propStep"><b>2</b><span>买过</span></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>通过考核</span><small>50%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>资金账号</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>出过金</span><small>100%</small></div></div>\n' +
+      '    <div class="propFunnelFoot">\n' +
+      '      <div><span>通过率</span><b>100%</b><small>按 1 次有结果的考核算</small></div>\n' +
+      '      <div><span>平均每个资金账号成本</span><b>$120</b><small>全部投入 ÷ 拿到的资金账号数</small></div>\n' +
+      '    </div>\n' +
+      '  </div><div class="calendarPanel propPanel">\n' +
+      '    <div class="propPanelHead"><div class="sectionLabel propLabel">每月收支</div>\n' +
+      '      <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">2026</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>\n' +
+      '    <div class="propMo">\n' +
+      '      <div class="propMoChart"><button class="propMoCol  empty" data-action="prop-month" data-m="1"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">1月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="2"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">2月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="3"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">3月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="4"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">4月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="5"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">5月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="6"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">6月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="7"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">7月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="8"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">8月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="9"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">9月</span></button><button class="propMoCol on " data-action="prop-month" data-m="10"\n' +
+      '          title="投入 $120 · 到账 $400">\n' +
+      '        <span class="propMoNet pos">+$280</span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:100%"></i></span><span class="down"><i style="height:30%"></i></span></span>\n' +
+      '        <span class="propMoLabel">10月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="11"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">11月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="12"\n' +
+      '          title="投入 $0 · 到账 $0">\n' +
+      '        <span class="propMoNet "></span>\n' +
+      '        <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>\n' +
+      '        <span class="propMoLabel">12月</span></button></div>\n' +
+      '      <div class="propMoSum">\n' +
+      '        <div class="propMiniLabel">2026 全年</div>\n' +
+      '        <div class="propMoSumRow"><span>投入</span><b>$120</b></div>\n' +
+      '        <div class="propMoSumRow"><span>到账</span><b>$400</b></div>\n' +
+      '        <div class="propMoSumRow big"><span>净收支</span><b class="pos">+$280</b></div>\n' +
+      '        <div class="propMoBack"><div class="propMoBackHead"><b class="pos">已回本</b><span>净赚 $280</span></div>\n' +
+      '          <div class="propMoBackBar"><i style="width:100%"></i></div>\n' +
+      '          <small>按全部时间算：已到账出金 ÷ 总投入</small></div>\n' +
+      '      </div>\n' +
+      '    </div><div class="propMonthDetail"><div class="propMonthHead"><b>2026年10月</b>\n' +
+      '    <span>投入 <b>$120</b></span><span>到账 <b>$400</b></span>\n' +
+      '    <span>净收支 <b class="pos">+$280</b></span></div><div class="propLedDay"><div class="propLedDate"><b>21</b><span>周三</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>\n' +
+      '        <span class="propLedKind propLedKind-payout">↑ 出金 · 待到账</span>\n' +
+      '        <span class="propLedAmt propMuted">+$50</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>20</b><span>周二</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>\n' +
+      '        <span class="propLedKind propLedKind-payout">↑ 出金</span>\n' +
+      '        <span class="propLedAmt pos">+$400</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>4</b><span>周日</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="a"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo A</b></span>\n' +
+      '        <span class="propLedKind propLedKind-refund">↩ 退款</span>\n' +
+      '        <span class="propLedAmt pos">+$20</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>3</b><span>周六</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>\n' +
+      '        <span class="propLedKind propLedKind-purchase">🛒 购买</span>\n' +
+      '        <span class="propLedAmt neg">−$40</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>2</b><span>周五</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="a"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo A</b></span>\n' +
+      '        <span class="propLedKind propLedKind-purchase">🛒 购买</span>\n' +
+      '        <span class="propLedAmt neg">−$100</span></button></div></div></div></div><div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">按公司</div></div>\n' +
+      '    <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>公司</th><th class="num">账号数</th><th class="num">通过率</th><th class="num">累计投入</th><th class="num">出金到账</th><th class="num">净收益</th><th class="num">ROI</th></tr></thead><tbody>\n' +
+      '    <tr><td>Demo B</td><td class="num">1</td><td class="num">100%</td><td class="num">$40</td><td class="num">$400</td><td class="num pos">+$360</td>\n' +
+      '      <td class="num pos">+900.0%</td></tr><tr><td>Demo A</td><td class="num">1</td><td class="num">—</td><td class="num">$80</td><td class="num">$0</td><td class="num neg">−$80</td>\n' +
+      '      <td class="num propMuted">进行中</td></tr>\n' +
+      '    </tbody></table></div></div>'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    <div class="propFilters"><div class="chipGroup"><button class="chip active" data-action="prop-firm-filter" data-val="">全部公司</button><button class="chip " data-action="prop-firm-filter" data-val="Demo A">Demo A</button><button class="chip " data-action="prop-firm-filter" data-val="Demo B">Demo B</button></div></div><div class="statRow propStats">
+        <div class="statBox"><div class="statLabel">累计投入</div><div class="statValue">$120</div><div class="statSub">购买、月费、重置、激活等 · 已扣退款 $20</div></div>
+        <div class="statBox"><div class="statLabel">出金到账</div><div class="statValue">$400</div><div class="statSub">另有 $50 待到账</div></div>
+        <div class="statBox"><div class="statLabel">净收益</div><div class="statValue pos">+$280</div><div class="statSub">到账 − 投入</div></div>
+        <div class="statBox"><div class="statLabel">ROI</div><div class="statValue pos">+233.3%</div><div class="statSub">净收益 ÷ 投入</div></div>
+        <div class="statBox"><div class="statLabel">进行中的账号</div><div class="statValue">2<span class="propStatOf"> / 2</span></div><div class="statSub">考核中、待激活、资金账号 / 全部</div></div>
+      </div><div class="calendarPanel propPanel">
+        <div class="propPanelHead"><div class="sectionLabel propLabel">账号漏斗</div></div>
+        <div class="propFunnel"><div class="propStep"><b>2</b><span>买过</span></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>通过考核</span><small>50%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>资金账号</span><small>100%</small></div><div class="propStepArrow">›</div><div class="propStep"><b>1</b><span>出过金</span><small>100%</small></div></div>
+        <div class="propFunnelFoot">
+          <div><span>通过率</span><b>100%</b><small>按 1 次有结果的考核算</small></div>
+          <div><span>平均每个资金账号成本</span><b>$120</b><small>全部投入 ÷ 拿到的资金账号数</small></div>
+        </div>
+      </div><div class="calendarPanel propPanel">
+        <div class="propPanelHead"><div class="sectionLabel propLabel">每月收支</div>
+          <div class="propYearNav"><button class="tinyBtn" data-action="prop-year" data-d="-1">‹</button><div class="monthYear">2026</div><button class="tinyBtn" data-action="prop-year" data-d="1">›</button></div></div>
+        <div class="propMo">
+          <div class="propMoChart"><button class="propMoCol  empty" data-action="prop-month" data-m="1"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">1月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="2"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">2月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="3"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">3月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="4"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">4月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="5"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">5月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="6"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">6月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="7"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">7月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="8"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">8月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="9"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">9月</span></button><button class="propMoCol on " data-action="prop-month" data-m="10"
+              title="投入 $120 · 到账 $400">
+            <span class="propMoNet pos">+$280</span>
+            <span class="propMoBars"><span class="up"><i style="height:100%"></i></span><span class="down"><i style="height:30%"></i></span></span>
+            <span class="propMoLabel">10月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="11"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">11月</span></button><button class="propMoCol  empty" data-action="prop-month" data-m="12"
+              title="投入 $0 · 到账 $0">
+            <span class="propMoNet "></span>
+            <span class="propMoBars"><span class="up"><i style="height:0%"></i></span><span class="down"><i style="height:0%"></i></span></span>
+            <span class="propMoLabel">12月</span></button></div>
+          <div class="propMoSum">
+            <div class="propMiniLabel">2026 全年</div>
+            <div class="propMoSumRow"><span>投入</span><b>$120</b></div>
+            <div class="propMoSumRow"><span>到账</span><b>$400</b></div>
+            <div class="propMoSumRow big"><span>净收支</span><b class="pos">+$280</b></div>
+            <div class="propMoBack"><div class="propMoBackHead"><b class="pos">已回本</b><span>净赚 $280</span></div>
+              <div class="propMoBackBar"><i style="width:100%"></i></div>
+              <small>按全部时间算：已到账出金 ÷ 总投入</small></div>
+          </div>
+        </div><div class="propMonthDetail"><div class="propMonthHead"><b>2026年10月</b>
+        <span>投入 <b>$120</b></span><span>到账 <b>$400</b></span>
+        <span>净收支 <b class="pos">+$280</b></span></div><div class="propLedDay"><div class="propLedDate"><b>21</b><span>周三</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>
+            <span class="propLedKind propLedKind-payout">↑ 出金 · 待到账</span>
+            <span class="propLedAmt propMuted">+$50</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>20</b><span>周二</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>
+            <span class="propLedKind propLedKind-payout">↑ 出金</span>
+            <span class="propLedAmt pos">+$400</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>4</b><span>周日</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="a"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo A</b></span>
+            <span class="propLedKind propLedKind-refund">↩ 退款</span>
+            <span class="propLedAmt pos">+$20</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>3</b><span>周六</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="b"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo B</b></span>
+            <span class="propLedKind propLedKind-purchase">🛒 购买</span>
+            <span class="propLedAmt neg">−$40</span></button></div></div><div class="propLedDay"><div class="propLedDate"><b>2</b><span>周五</span></div><div class="propLedItems"><button class="propLedRow" data-action="prop-open-detail" data-id="a"><span class="propLogo propLogoSm">DE</span><span class="propLedName"><b>Demo A</b></span>
+            <span class="propLedKind propLedKind-purchase">🛒 购买</span>
+            <span class="propLedAmt neg">−$100</span></button></div></div></div></div><div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">按公司</div></div>
+        <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>公司</th><th class="num">账号数</th><th class="num">通过率</th><th class="num">累计投入</th><th class="num">出金到账</th><th class="num">净收益</th><th class="num">ROI</th></tr></thead><tbody>
+        <tr><td>Demo B</td><td class="num">1</td><td class="num">100%</td><td class="num">$40</td><td class="num">$400</td><td class="num pos">+$360</td>
+          <td class="num pos">+900.0%</td></tr><tr><td>Demo A</td><td class="num">1</td><td class="num">—</td><td class="num">$80</td><td class="num">$0</td><td class="num neg">−$80</td>
+          <td class="num propMuted">进行中</td></tr>
+        </tbody></table></div></div>
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (/root/ifvg-journal/test/prop-overview.test.js:150:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 1
+# fail 10
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.659513

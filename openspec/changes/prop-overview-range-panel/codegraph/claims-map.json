@@ -1,0 +1,41 @@
+{
+  "schema": "specnav.codegraph.claims.v1",
+  "generated_at": "2026-10-26T17:43:24.317Z",
+  "active_change": "prop-overview-range-panel",
+  "claims": [
+    {
+      "id": "development:task-001-prop-overview",
+      "kind": "development-task",
+      "stage": "development",
+      "task_id": "001-prop-overview",
+      "text": "从现代Prop总览入口，经本地日期选择、纯流水派生、主面板与字段解释，到可验证的显示结果。完整拥有tasks.md的1.1、1.2、1.3、1.4，不拆删或重编号基线任务。",
+      "required": true,
+      "source": "specnav-codegraph-plan",
+      "source_paths": [
+        "openspec/changes/prop-overview-range-panel/development/tasks/001-prop-overview/brief.md",
+        "openspec/changes/prop-overview-range-panel/development/tasks/001-prop-overview/context.json"
+      ],
+      "expected_evidence": [
+        "Focused failing tests before implementation and passing tests afterward",
+        "Full npm test and bundle/syntax output",
+        "Offline real-source browser checks with synthetic data",
+        "Independent specification and quality reviews"
+      ],
+      "allowed_files": [
+        "src/03-state.js",
+        "src/11d-prop-data.js",
+        "src/11e-prop-view.js",
+        "src/11g-prop-overview.js",
+        "src/14-main-render.js",
+        "src/15-events.js",
+        "theme-modern.css",
+        "i18n.js",
+        "test/prop-overview.test.js",
+        "dev/prop-overview-check"
+      ],
+      "query_ids": [
+        "development:task-001-prop-overview:evidence"
+      ]
+    }
+  ]
+}

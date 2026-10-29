@@ -1,0 +1,47 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45649/",
+  "result": {
+    "blockedCalls": [],
+    "lifecycle": "passed",
+    "presets": [
+      {
+        "net": 220,
+        "preset": "all",
+        "roi": 110
+      },
+      {
+        "net": 120,
+        "preset": "last7",
+        "roi": null
+      },
+      {
+        "net": 320,
+        "preset": "last30",
+        "roi": 320
+      },
+      {
+        "net": 320,
+        "preset": "thisMonth",
+        "roi": 320
+      },
+      {
+        "net": -100,
+        "preset": "lastMonth",
+        "roi": -100
+      }
+    ]
+  }
+}

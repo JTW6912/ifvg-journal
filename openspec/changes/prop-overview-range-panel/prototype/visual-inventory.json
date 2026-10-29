@@ -1,0 +1,34 @@
+{
+  "schema":"specnav.prototype.visualInventory.v1",
+  "version":"1",
+  "discovery_status":"complete",
+  "source_project":"IFVG Journal",
+  "evidence":{
+    "screenshots":["openspec/changes/prop-overview-range-panel/prototype/evidence/desktop-en.png"],
+    "routes":["src/14-main-render.js#render","src/11e-prop-view.js#renderProp"],
+    "design_specs":["openspec/specs/ui-design/design.md","dev/ui-prototypes/prop-overview/design-contract.md"],
+    "component_sources":["index.html","style.css","theme-modern.css","palettes.css","i18n.js","src/14-main-render.js","dev/ui-prototypes/prop-overview/editorial.html"],
+    "codegraph_claims":[]
+  },
+  "project_shell":{
+    "source":"Actual render() header/navigation and renderProp() tab strip generated in an isolated VM with synthetic identity; no production initialization.",
+    "required_elements":["IFVG Journal brand and modern sidebar","Prop page title and existing header actions","Overview / My accounts / Company plans tab strip","record purchase entry","financial content region"],
+    "omitted_elements":["unrelated tab content","admin controls: synthetic fixture is an ordinary owner","lower overview charts: outside the approved replacement region"],
+    "theme_policy":"Existing theme CSS, light/dark and seven palettes; preview controls are not production controls.",
+    "i18n_policy":"Chinese and English; existing shell strings come from real T(), component review copy has an isolated locale adapter."
+  },
+  "business_surface":{
+    "screens":["prop-overview"],
+    "fields":["net return","ROI","cumulative cash-flow curve","investment","received payouts","current account stages"],
+    "actions":["select date range","view field help","switch preview theme and locale"],
+    "states":["populated","empty","error","disabled"]
+  },
+  "verification_matrix":{
+    "viewports":["desktop","mobile"],
+    "theme_modes":["light","dark"],
+    "locales":["zh","en"],
+    "states":["populated","empty","error","disabled"]
+  },
+  "unsupported_capabilities":["loading: summary filtering is synchronous; existing whole-app auth loading is unchanged","permission: no new privileged interaction; existing authentication and disabled-account screens are outside this component prototype"],
+  "privacy":"Only synthetic amounts and identities may be placed in this artifact. The private approved preview is a visual reference, not a data source."
+}

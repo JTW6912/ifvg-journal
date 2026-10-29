@@ -1,0 +1,41 @@
+[
+  {
+    "label": "on preserves native expanded group",
+    "ok": true,
+    "groupOpen": true,
+    "series": 2
+  },
+  {
+    "label": "off removes overlay only",
+    "ok": true,
+    "groupOpen": true
+  },
+  {
+    "label": "recovery hover and aria",
+    "ok": true,
+    "text": "到账 ÷ 净投入 × 100%。按上方所选范围计算，不一定只看当前年份；退款冲减投入，待到账出金不计入。百分比可以超过 100%，进度条最多填满。\n范围：2026-01-01 – 2026-10-31\n净投入 $3,410 · 到账 $9,410 · 净收支 +$6,000"
+  },
+  {
+    "label": "Escape clears tooltip",
+    "ok": true,
+    "blocked": []
+  },
+  {
+    "errors": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    }
+  }
+]

@@ -1,0 +1,501 @@
+[
+  {
+    "command": [
+      "eval",
+      "({modal:propModal,can:propOverviewCanInteract(),blocked:offlineCalls,focus:document.activeElement.id})"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "blocked": [],
+        "can": true,
+        "focus": "",
+        "modal": null
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:45649/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "errors"
+    ],
+    "result": {
+      "errors": [],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "click",
+      "#propProgressStage-passed"
+    ],
+    "result": {
+      "clicked": "#propProgressStage-passed",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "snapshot",
+      "-i"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "refs": {
+        "e1313": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e1314": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e1315": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e1316": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e1317": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e1318": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e1319": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e1320": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e1321": {
+          "name": "设置",
+          "role": "button"
+        },
+        "e1322": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e1323": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e1324": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e1325": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e1326": {
+          "name": "全部公司",
+          "role": "button"
+        },
+        "e1327": {
+          "name": "Demo Firm A",
+          "role": "button"
+        },
+        "e1328": {
+          "name": "Demo Firm B",
+          "role": "button"
+        },
+        "e1329": {
+          "name": "全部分组",
+          "role": "button"
+        },
+        "e1330": {
+          "name": "Group A",
+          "role": "button"
+        },
+        "e1331": {
+          "name": "Group B",
+          "role": "button"
+        },
+        "e1332": {
+          "name": "资金概览",
+          "role": "region"
+        },
+        "e1333": {
+          "name": "账号漏斗",
+          "role": "region"
+        },
+        "e1334": {
+          "name": "上一年",
+          "role": "button"
+        },
+        "e1335": {
+          "name": "下一年",
+          "role": "button"
+        },
+        "e1336": {
+          "name": "1月",
+          "role": "button"
+        },
+        "e1337": {
+          "name": "2月",
+          "role": "button"
+        },
+        "e1338": {
+          "name": "3月",
+          "role": "button"
+        },
+        "e1339": {
+          "name": "4月",
+          "role": "button"
+        },
+        "e1340": {
+          "name": "5月",
+          "role": "button"
+        },
+        "e1341": {
+          "name": "6月",
+          "role": "button"
+        },
+        "e1342": {
+          "name": "7月",
+          "role": "button"
+        },
+        "e1343": {
+          "name": "8月",
+          "role": "button"
+        },
+        "e1344": {
+          "name": "9月",
+          "role": "button"
+        },
+        "e1345": {
+          "name": "+$1K 10月",
+          "role": "button"
+        },
+        "e1346": {
+          "name": "11月",
+          "role": "button"
+        },
+        "e1347": {
+          "name": "12月",
+          "role": "button"
+        },
+        "e1348": {
+          "name": "DE Demo account 01 ↑ 出金 +$500",
+          "role": "button"
+        },
+        "e1349": {
+          "name": "DE Demo account 08 ↑ 出金 · 待到账 +$777",
+          "role": "button"
+        },
+        "e1350": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e1351": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e1352": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e1353": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e1354": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e1355": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e1356": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e1357": {
+          "name": "资金概览",
+          "role": "heading"
+        },
+        "e1358": {
+          "name": "Prop 总览统计日期范围: 2026.10.01 – 2026.10.31",
+          "role": "button"
+        },
+        "e1359": {
+          "name": "区间净收益 查看区间净收益说明",
+          "role": "heading"
+        },
+        "e1360": {
+          "name": "查看区间走势说明",
+          "role": "button"
+        },
+        "e1361": {
+          "name": "查看ROI说明",
+          "role": "button"
+        },
+        "e1362": {
+          "name": "投入与到账",
+          "role": "heading"
+        },
+        "e1363": {
+          "name": "当前账号状态 查看当前账号状态说明",
+          "role": "heading"
+        },
+        "e1364": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e1365": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e1366": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e1367": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e1368": {
+          "name": "Demo Firm B",
+          "role": "cell"
+        },
+        "e1369": {
+          "name": "8",
+          "role": "cell"
+        },
+        "e1370": {
+          "name": "100%",
+          "role": "cell"
+        },
+        "e1371": {
+          "name": "$0",
+          "role": "cell"
+        },
+        "e1372": {
+          "name": "$1,500",
+          "role": "cell"
+        },
+        "e1373": {
+          "name": "+$1,500",
+          "role": "cell"
+        },
+        "e1374": {
+          "name": "—",
+          "role": "cell"
+        },
+        "e1375": {
+          "name": "Demo Firm A",
+          "role": "cell"
+        },
+        "e1376": {
+          "name": "10",
+          "role": "cell"
+        },
+        "e1377": {
+          "name": "50%",
+          "role": "cell"
+        },
+        "e1378": {
+          "name": "$1,000",
+          "role": "cell"
+        },
+        "e1379": {
+          "name": "$500",
+          "role": "cell"
+        },
+        "e1380": {
+          "name": "−$500",
+          "role": "cell"
+        },
+        "e1381": {
+          "name": "-50.0%",
+          "role": "cell"
+        },
+        "e1382": {
+          "name": "查看区间净收益说明",
+          "role": "button"
+        },
+        "e1383": {
+          "name": "查看区间投入说明",
+          "role": "button"
+        },
+        "e1384": {
+          "name": "查看出金到账说明",
+          "role": "button"
+        },
+        "e1385": {
+          "name": "查看当前账号状态说明",
+          "role": "button"
+        },
+        "e1386": {
+          "name": "买入 · 10 个账号",
+          "role": "button"
+        },
+        "e1387": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e1388": {
+          "name": "通过考核 · 8 个账号",
+          "role": "button"
+        },
+        "e1389": {
+          "name": "通过考核 → 资金账号 · 50% · 4/8",
+          "role": "button"
+        },
+        "e1390": {
+          "name": "资金账号 · 6 个账号",
+          "role": "button"
+        },
+        "e1391": {
+          "name": "资金账号 → 出金到账 · 50% · 3/6",
+          "role": "button"
+        },
+        "e1392": {
+          "name": "出金到账 · 4 个账号",
+          "role": "button"
+        },
+        "e1393": {
+          "name": "公司",
+          "role": "columnheader"
+        },
+        "e1394": {
+          "name": "当前账号数",
+          "role": "columnheader"
+        },
+        "e1395": {
+          "name": "通过率",
+          "role": "columnheader"
+        },
+        "e1396": {
+          "name": "区间投入",
+          "role": "columnheader"
+        },
+        "e1397": {
+          "name": "出金到账",
+          "role": "columnheader"
+        },
+        "e1398": {
+          "name": "净收益",
+          "role": "columnheader"
+        },
+        "e1399": {
+          "name": "ROI",
+          "role": "columnheader"
+        }
+      },
+      "removedRefs": [],
+      "snapshot": "- button \"回测\" [ref=e1350]\n- button \"实盘\" [ref=e1351]\n- button \"切换主题\" [ref=e1352]\n- button \"导出\" [ref=e1353]\n- button \"新建交易\" [ref=e1354]\n- button \"账号\" [ref=e1356]\n- button \"IFVG Journal Demo\" [ref=e1313]\n- button \"记录\" [ref=e1314]\n- button \"分析\" [ref=e1315]\n- button \"月度\" [ref=e1316]\n- button \"复盘\" [ref=e1317]\n- button \"模型库\" [ref=e1318]\n- button \"Prop 账户\" [ref=e1319]\n- button \"更新日志\" [ref=e1320]\n- button \"设置\" [ref=e1321]\n- button \"总览\" [ref=e1322]\n- button \"我的账号\" [ref=e1323]\n- button \"公司计划\" [ref=e1324]\n- button \"记录购买\" [ref=e1325]\n- button \"全部公司\" [ref=e1326]\n- button \"Demo Firm A\" [ref=e1327]\n- button \"Demo Firm B\" [ref=e1328]\n- button \"全部分组\" [ref=e1329]\n- button \"Group A\" [ref=e1330]\n- button \"Group B\" [ref=e1331]\n- region \"资金概览\" [ref=e1332]\n  - heading \"资金概览\" [level=2, ref=e1357]\n  - button \"Prop 总览统计日期范围: 2026.10.01 – 2026.10.31\" [expanded=false, ref=e1358]\n  - heading \"区间净收益 查看区间净收益说明\" [level=3, ref=e1359]\n    - button \"查看区间净收益说明\" [ref=e1382]\n  - button \"查看区间走势说明\" [ref=e1360]\n  - button \"查看ROI说明\" [ref=e1361]\n  - heading \"投入与到账\" [level=3, ref=e1362]\n  - button \"查看区间投入说明\" [ref=e1383]\n  - button \"查看出金到账说明\" [ref=e1384]\n  - heading \"当前账号状态 查看当前账号状态说明\" [level=3, ref=e1363]\n    - button \"查看当前账号状态说明\" [ref=e1385]\n  - button \"我的账号 · 考核中\" [ref=e1364]\n  - button \"我的账号 · 待激活\" [ref=e1365]\n  - button \"我的账号 · 资金账号\" [ref=e1366]\n- region \"账号漏斗\" [ref=e1333]\n  - heading \"账号漏斗\" [level=2, ref=e1367]\n  - region \"从左向右的账号漏斗，可横向滚动\" [ref=e1355] focusable [tabindex]\n    - button \"买入 · 10 个账号\" [ref=e1386]\n    - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e1387]\n    - button \"通过考核 · 8 个账号\" [ref=e1388]\n    - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e1389]\n    - button \"资金账号 · 6 个账号\" [ref=e1390]\n    - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e1391]\n    - button \"出金到账 · 4 个账号\" [ref=e1392]\n- button \"上一年\" [disabled, ref=e1334]\n- button \"下一年\" [disabled, ref=e1335]\n- button \"1月\" [disabled, ref=e1336]\n- button \"2月\" [disabled, ref=e1337]\n- button \"3月\" [disabled, ref=e1338]\n- button \"4月\" [disabled, ref=e1339]\n- button \"5月\" [disabled, ref=e1340]\n- button \"6月\" [disabled, ref=e1341]\n- button \"7月\" [disabled, ref=e1342]\n- button \"8月\" [disabled, ref=e1343]\n- button \"9月\" [disabled, ref=e1344]\n- button \"+$1K 10月\" [ref=e1345]\n- button \"11月\" [disabled, ref=e1346]\n- button \"12月\" [disabled, ref=e1347]\n- button \"DE Demo account 01 ↑ 出金 +$500\" [ref=e1348]\n- button \"DE Demo account 08 ↑ 出金 · 待到账 +$777\" [ref=e1349]\n- columnheader \"公司\" [ref=e1393]\n- columnheader \"当前账号数\" [ref=e1394]\n- columnheader \"通过率\" [ref=e1395]\n- columnheader \"区间投入\" [ref=e1396]\n- columnheader \"出金到账\" [ref=e1397]\n- columnheader \"净收益\" [ref=e1398]\n- columnheader \"ROI\" [ref=e1399]\n- cell \"Demo Firm B\" [ref=e1368]\n- cell \"8\" [ref=e1369]\n- cell \"100%\" [ref=e1370]\n- cell \"$0\" [ref=e1371]\n- cell \"$1,500\" [ref=e1372]\n- cell \"+$1,500\" [ref=e1373]\n- cell \"—\" [ref=e1374]\n- cell \"Demo Firm A\" [ref=e1375]\n- cell \"10\" [ref=e1376]\n- cell \"50%\" [ref=e1377]\n- cell \"$1,000\" [ref=e1378]\n- cell \"$500\" [ref=e1379]\n- cell \"−$500\" [ref=e1380]\n- cell \"-50.0%\" [ref=e1381]"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "({type:propModal?.type,rows:document.querySelectorAll('.propLinkageAccount').length,blocked:offlineCalls})"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 9552204660865800000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45649/",
+      "result": {
+        "blocked": [],
+        "rows": 0
+      }
+    },
+    "success": true
+  }
+]

@@ -1,0 +1,668 @@
+[
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "n",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 213.59375,
+          "right": 257.59375,
+          "top": 187.84375,
+          "width": 44,
+          "x": 213.59375,
+          "y": 187.84375
+        },
+        "scroll": 0,
+        "text": "当前公司、分组范围内的账号记录数，包含已结束账号。\n不按财务日期回放，也不等于进行中的数量。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 78.5,
+          "left": 16,
+          "right": 310,
+          "top": 100.84375,
+          "width": 294,
+          "x": 16,
+          "y": 100.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "pass",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 186.5,
+          "right": 230.5,
+          "top": 187.84375,
+          "width": 44,
+          "x": 186.5,
+          "y": 187.84375
+        },
+        "scroll": 145,
+        "text": "所选区间内的通过账号数 ÷（通过账号数 + 失败考核次数）。\n按已记录的事件日期统计；每次失败均计入，不从重置记录推算未记录的失败。未有结果不计入，分母为 0 时显示 —。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 117.5,
+          "left": 16,
+          "right": 310,
+          "top": 61.84375,
+          "width": 294,
+          "x": 16,
+          "y": 61.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "spent",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 229.171875,
+          "right": 273.171875,
+          "top": 187.84375,
+          "width": 44,
+          "x": 229.171875,
+          "y": 187.84375
+        },
+        "scroll": 187,
+        "text": "所选区间内的费用合计减退款，即净投入。\n退款冲减投入，净投入可能为负；这不是账号余额。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 78.5,
+          "left": 18,
+          "right": 310,
+          "top": 100.84375,
+          "width": 292,
+          "x": 18,
+          "y": 100.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "received",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 186.984375,
+          "right": 230.984375,
+          "top": 187.84375,
+          "width": 44,
+          "x": 186.984375,
+          "y": 187.84375
+        },
+        "scroll": 318,
+        "text": "只统计所选区间内已到账的出金。\n待到账出金不计入；退款用于冲减投入，不混入到账。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 78.5,
+          "left": 16,
+          "right": 310,
+          "top": 100.84375,
+          "width": 294,
+          "x": 16,
+          "y": 100.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "net",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 186.65625,
+          "right": 230.65625,
+          "top": 187.84375,
+          "width": 44,
+          "x": 186.65625,
+          "y": 187.84375
+        },
+        "scroll": 536,
+        "text": "净收益 = 到账 − 净投入。\n横条以 0 为中点：左侧为负值，右侧为正值；当前展示的所有公司使用同一美元刻度。\n只比较当前范围内的金额，不表示走势或推荐排行。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 117.5,
+          "left": 16,
+          "right": 310,
+          "top": 61.84375,
+          "width": 294,
+          "x": 16,
+          "y": 61.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Tab"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Tab"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "checkCompanyKey()"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "clip": {
+          "left": 183,
+          "right": 277
+        },
+        "field": "roi",
+        "rect": {
+          "bottom": 231.84375,
+          "height": 44,
+          "left": 229,
+          "right": 273,
+          "top": 187.84375,
+          "width": 44,
+          "x": 229,
+          "y": 187.84375
+        },
+        "scroll": 596,
+        "text": "ROI = 净收益 ÷ 净投入 × 100%。\n净投入不大于 0 时显示 —。这不是通过率，也不是到账 ÷ 投入的回收率。",
+        "tooltip": {
+          "bottom": 179.34375,
+          "height": 78.5,
+          "left": 18,
+          "right": 310,
+          "top": 100.84375,
+          "width": 292,
+          "x": 18,
+          "y": 100.84375
+        }
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Escape"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Escape"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "({fields:allKeySteps.map(s=>s.field),noTooltip:!document.getElementById('propOverviewTooltip'),noDescriptions:![...document.querySelectorAll('[data-prop-company-tip]')].some(b=>b.hasAttribute('aria-describedby'))})"
+    ],
+    "error": null,
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "fields": [
+          "n",
+          "pass",
+          "spent",
+          "received",
+          "net",
+          "roi"
+        ],
+        "noDescriptions": true,
+        "noTooltip": true
+      }
+    },
+    "success": true
+  }
+]

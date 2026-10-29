@@ -1,0 +1,11 @@
+{
+ "new_components":["CMP-PROP-PROGRESS: dated stage/cohort pure model","CMP-PROP-LINKAGE: funnel and drill-down renderer/controller"],
+ "reused_components":["propScoped","propSum","propOverviewResolveRange/Day/Snapshot","propUsd/propPct/T/esc","propModal/detail lifecycle","existing month detail","current-state filter"],
+ "extraction_triggers":["one range membership helper","one progress model for display and list IDs","separate pure calculations from DOM and network"],
+ "forbidden_dependencies":["no remote calls in selectors or views","no fixture/user data or preview controls in production","no framework migration","no mutation of legacy propFunnel"],
+ "hooks":["overview range application","secondary-modal close/back/key lifecycle","identity/page/layout cleanup"],
+ "utilities":["date membership","chronological cohort joins","range month bounds"],
+ "services":["reuse existing loaded cache; no new service"],
+ "required_component_tests":["cohorts/boundaries/missing dates","pass attempts and funding cost","exact current status scope","drill-down row equality and escaping","focus/cancel/forms/classic/theme regressions"],
+ "unresolved_gaps":[]
+}

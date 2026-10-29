@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-overview-linkage",
+  "assertions": [
+    {
+      "id": "A1",
+      "statement": "The modern overview uses one inclusive reporting range for financial totals, month detail and company financial summaries, with honest partial-period labels.",
+      "verify_via": "e2e",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A2",
+      "statement": "Dated unique stage accounts and chronological same-cohort conversion ratios obey inclusive cutoffs without inferring missing event dates.",
+      "verify_via": "unit",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A3",
+      "statement": "Stage and conversion drill-down rows exactly match their model counts and support account detail, focus, dismissal and stale-context cleanup.",
+      "verify_via": "e2e",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A4",
+      "statement": "The approved continuous narrowing horizontal funnel preserves clickable connections and both bottom explanatory summaries, with local mobile scrolling.",
+      "verify_via": "sensory",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A5",
+      "statement": "Range-attributed pass attempts, average funded-account cost and company pass rates retain explicit and consistent denominators and empty-state semantics.",
+      "verify_via": "unit",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A6",
+      "statement": "Current-state links select exact current account statuses while preserving company and group scope and excluding the reporting date.",
+      "verify_via": "e2e",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A7",
+      "statement": "Overview interactions perform no additional remote operations or mutations and preserve existing forms, panel controls, classic output and unrelated paths.",
+      "verify_via": "e2e",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    },
+    {
+      "id": "A8",
+      "statement": "The localized native implementation passes offline build, syntax, accessibility, theme and responsive-layout checks with independent review.",
+      "verify_via": "static",
+      "status": "passing",
+      "evidence_ref": "development/tasks/001-prop-linkage/acceptance.json"
+    }
+  ]
+}

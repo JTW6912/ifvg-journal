@@ -1,0 +1,10 @@
+{
+ "schema":"specnav.prototype.manifest.v1","version":"1","type":"ui-html","entry":"artifact/index.html",
+ "mock_strategy":"Approved synthetic funnel prototype copied without product behavior changes; no real data or API","touches_real_data":false,"may_promote":false,
+ "promotion_requirement":"requires verifier-report.json, explicit user approval and development gate",
+ "visual_context":{"required_for_ui_html":true,"inventory":"visual-inventory.json","project_shell_required":true,"generic_shell_allowed":false},
+ "dependencies":["local project CSS tokens and synthetic shell snapshot; no framework runtime"],
+ "referenced_foundation_specs":["ui-design","system-architecture","frontend-backend-data-flow","component-architecture"],
+ "referenced_requirements":["requirements.md","acceptance.md","spec-map.json","component-impact-map.json"],
+ "ui_capabilities":{"theme":{"support":"light-dark","modes":["light","dark"],"toggle_in_prototype":true,"source":"openspec/specs/ui-design/design.md"},"i18n":{"enabled":true,"locales":["zh","en"],"default_locale":"en","locale_switch_in_prototype":true,"source":"openspec/specs/ui-design/design.md"}}
+}

@@ -1,0 +1,11 @@
+{
+  "new_components": ["CMP-PROP-OVERVIEW: modern financial panel", "CMP-PROP-RANGE: local date range controller", "CMP-PROP-HELP: single shared field-tooltip controller"],
+  "reused_components": ["CMP-PROP-SCOPE: propScoped/propFilterChips", "CMP-PROP-FINANCE: propSum", "CMP-APP-SHELL: render/patchAppShell", "CMP-APPEARANCE: theme tokens and T/localeTag", "existing propUsd/propPct/esc/ICONS"],
+  "extraction_triggers": ["financial values and trend must share one filtered dataset", "all six field hints share one tooltip lifecycle", "date presets and calendar share date-only helpers"],
+  "forbidden_dependencies": ["pure range/finance functions must not access DOM/storage/Supabase", "render and hint controllers must not trigger data loads or writes", "modern styles must not affect classic or overwrite global theme variables"],
+  "hooks": ["explicit render/identity cleanup for range popover and hints"],
+  "utilities": ["date-only validation and preset ranges", "range finance and sparse daily cumulative points", "shared range labels and escaped help markup"],
+  "services": ["reuse existing loaded cache; no new service"],
+  "required_component_tests": ["date boundaries, leap years, reverse ranges", "refund/pending/zero and negative investment", "trend endpoint and immutable inputs", "classic HTML regression", "tooltip/range keyboard and portal cleanup", "synthetic offline browser journey and theme/locale responsiveness"],
+  "unresolved_gaps": []
+}

@@ -1,0 +1,131 @@
+[
+  {
+    "case": "lifecycle-and-escaping",
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45739/?demo=linkage",
+      "result": {
+        "blocked": [],
+        "results": [
+          {
+            "closed": true,
+            "mutation": "propFirmFilter='missing'"
+          },
+          {
+            "closed": true,
+            "mutation": "propGroupFilter='missing'"
+          },
+          {
+            "closed": true,
+            "mutation": "propOverviewRange={preset:'custom',from:'2020-01-01',to:'2020-01-02'}"
+          },
+          {
+            "closed": true,
+            "mutation": "session={user:{id:'new-owner'}}"
+          },
+          {
+            "closed": true,
+            "mutation": "propView='accounts'"
+          },
+          {
+            "closed": true,
+            "mutation": "tab='analysis'"
+          },
+          {
+            "closed": true,
+            "mutation": "document.documentElement.dataset.layout='classic'"
+          },
+          {
+            "closed": true,
+            "mutation": "authLoading=true"
+          },
+          {
+            "closed": true,
+            "mutation": "session=null"
+          },
+          {
+            "closed": true,
+            "mutation": "currentProfile.active=false"
+          },
+          {
+            "xssEscaped": "<img src=x onerror=\"window.linkageXss=1\">"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "case": "boundaries-and-colors",
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45739/?demo=linkage",
+      "result": {
+        "blocked": [],
+        "customPnl": "rgb(176, 74, 199)",
+        "results": [
+          {
+            "lower": true,
+            "name": "empty",
+            "pageWidth": 375,
+            "refundBars": 0,
+            "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+          },
+          {
+            "lower": true,
+            "name": "negative",
+            "pageWidth": 375,
+            "refundBars": 0,
+            "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+          },
+          {
+            "lower": true,
+            "name": "refund",
+            "pageWidth": 375,
+            "refundBars": 1,
+            "refundHint": "净退款以向上的纹理条展示。",
+            "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+          },
+          {
+            "lower": true,
+            "name": "large",
+            "pageWidth": 375,
+            "refundBars": 0,
+            "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+          },
+          {
+            "lower": false,
+            "name": "invalid",
+            "pageWidth": 375,
+            "refundBars": 0,
+            "summary": "通过率\n—\n按 0 次有结果的考核算\n所选范围内通过的账号＋每次考核失败；不含未记录通过的免考／直接资金账号。\n平均每个资金账号成本\n—\n全部投入 ÷ 拿到的资金账号数"
+          }
+        ],
+        "stageIcon": "rgb(39, 39, 42)"
+      }
+    }
+  }
+]

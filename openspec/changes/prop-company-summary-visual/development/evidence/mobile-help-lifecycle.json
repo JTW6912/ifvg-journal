@@ -1,0 +1,205 @@
+[
+  {
+    "command": [
+      "eval",
+      "(()=>{window.companyScrollBefore=document.getElementById('propCompanyScroll').scrollLeft;render();return {scroll:document.getElementById('propCompanyScroll').scrollLeft,focus:document.activeElement.id,tooltip:!!document.getElementById('propOverviewTooltip')};})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "focus": "propCompanyHelp-roi",
+        "scroll": 526,
+        "tooltip": false
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "hover",
+      "#propCompanyHelp-roi"
+    ],
+    "result": {
+      "hovered": "#propCompanyHelp-roi",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(async()=>{await new Promise(r=>setTimeout(r,220));const b=document.getElementById('propCompanyHelp-roi'),t=document.getElementById('propOverviewTooltip');if(!t||!propCompanyHelpVisible(b)||companyScrollBefore!==document.getElementById('propCompanyScroll').scrollLeft)throw Error('restore/hover failed');return {restoredFocus:document.activeElement.id,scroll:companyScrollBefore,firstHoverReopens:true,aria:b.getAttribute('aria-describedby'),size:[b.offsetWidth,b.offsetHeight]};})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "aria": "propOverviewTooltip",
+        "firstHoverReopens": true,
+        "restoredFocus": "propCompanyHelp-roi",
+        "scroll": 526,
+        "size": [
+          44,
+          44
+        ]
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "document.getElementById('propCompanyScroll').scrollLeft=0;"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": 0
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(async()=>{await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));if(document.getElementById('propOverviewTooltip')||document.getElementById('propCompanyHelp-roi').hasAttribute('aria-describedby'))throw Error('hidden anchor not cleaned');return {hiddenAnchorCloses:true};})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "hiddenAnchorCloses": true
+      }
+    },
+    "success": true
+  }
+]

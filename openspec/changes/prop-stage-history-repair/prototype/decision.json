@@ -1,0 +1,49 @@
+{
+  "status": "approved",
+  "prototype_code": "required_present",
+  "prototype_type": "ui-html",
+  "approved_variant": "history-repair-drawer",
+  "approved_revision": 2,
+  "promotion": "requires_development_gate",
+  "approved_by": "user",
+  "approved_at": "2026-10-28T19:32:19.477703+00:00",
+  "approval_text": "好的就按照这样吧",
+  "approval_context": "Explicit approval after the revised horizontal timeline, compact heading pending-count entry and company logo preview.",
+  "approval_scope": [
+    "Rev2 visual and interaction direction",
+    "History-only purchase date/events correction with unchanged status/renewal/balance/ledger boundaries",
+    "Proceed to gated development preparation"
+  ],
+  "not_authorized": [
+    "Git commit or push",
+    "Deployment or master merge",
+    "Agent tests/writes against real Supabase ledger data",
+    "Direct prototype-to-production promotion"
+  ],
+  "review_url": "http://127.0.0.1:45433/?rev=2",
+  "source_baseline": "c2e4c5018863618aa8c6e33fecfa23318e3995b5",
+  "approved_files": {
+    "artifact/app.js": "33644a564e0669dda21954e1831a2e047b38b6a903be692afb3404a0591f03a0",
+    "artifact/assets/i18n.js": "880e0a901fa02dbf567bcac100beb498088ccaa121758d228e8674365ebbb19d",
+    "artifact/assets/img/prop/fundednext.webp": "f3bb10a2d914111aa9db7b8be295c6ce070dabe6ab6244140021df545919f147",
+    "artifact/assets/img/prop/lucid.webp": "35673879eb0a7aa01c5457bec63bd5fd97376822929a1327db7c9e483306a17e",
+    "artifact/assets/img/prop/topstep.webp": "2caeee21d7b79182c9900472a14de8514e21820acf29f0b20adee801f7de2cd9",
+    "artifact/assets/img/prop/tpt.svg": "8fa15c83fd191a93df7b8ac21c997ca53b64b02037e735cda6b1d51e3399f6a3",
+    "artifact/assets/img/prop/tradeify.webp": "c3e5c20d2e5e68826dcd9e272faee81e7e052d02410fc57dd617087df256653b",
+    "artifact/assets/palettes.css": "b8224bdaab80c7325258e12b5110998b1660853cc87f95622686b28d08040bb4",
+    "artifact/assets/projection.js": "16c1023db2bfb345b7df78433419eebdf14b74c2b567e7b5a4137af6fed1a344",
+    "artifact/assets/shell.js": "bdf277d1396c6bdddd2c869650ba9f9e32ae26326ed935c45ef26586575b162c",
+    "artifact/assets/style.css": "6c06a086dfee8436832ee01dbf78350f549ea93bab7892d0592a3c2f2b4cfb1f",
+    "artifact/assets/theme-modern.css": "24780a152d69a605e4aec3cfc52ef7fef3692889ca6535397223b2333537a1fa",
+    "artifact/draft-kit.js": "c9d46d5e41dde265fc6096d835cc0ccd7f483126348f5068975e75cd00e35fd9",
+    "artifact/index.html": "3f95177326c057ed9bf5094a5f389f805b74495d42568720edfb6a9edf07ac78",
+    "artifact/matrix-check.js": "5abbd9912ce6dbfd8775e9f6d2abd80b381f3f0b8898b70583fdab66ed9ff583",
+    "artifact/model.js": "a8681a49b741d39b34fdc45c01709e60bbd76edff6c4a9fa46712a1f24f47d05",
+    "artifact/review-config.js": "4bfef0ccbfa9c877e8c44b1f21902bba206d97ac18233f02a909484734030d28",
+    "artifact/sandbox.js": "d08b13f973f6c4dbe1f05104324000fe9134c5353d4f0cb98a1f9acc6a4b2c75",
+    "artifact/styles.css": "b8ea911ca3ab5258e63ebe62701368327faae7087a4774243b8d537690bd29ee"
+  },
+  "verified_source_manifest": "evidence/revision-source-check.json",
+  "verifier_report": "verifier-report.json",
+  "blocked_reasons": []
+}

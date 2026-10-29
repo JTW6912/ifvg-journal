@@ -1,0 +1,11 @@
+{
+  "status":"approved",
+  "prototype_code":"required_present",
+  "prototype_type":"ui-html",
+  "approved_variant":"approved-panel",
+  "promotion":"requires_development_gate",
+  "approved_by":"user",
+  "approval_source":"Explicit conversation approval of the final field-help panel: 可以了我觉得可以开始开发了",
+  "approval_scope":"Previously reviewed financial component and interactions; real-shell/synthetic-data/locale review additions are documented engineering checks, not a claim of a new human screenshot review.",
+  "blocked_reasons":[]
+}

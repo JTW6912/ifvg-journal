@@ -1,0 +1,7 @@
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/app.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/date-range-picker.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/field-tooltips.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/range-preview.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/range-snapshot.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/shell-snapshot.js
+PASS node --check openspec/changes/prop-overview-range-panel/prototype/artifact/assets/theme-preview.js

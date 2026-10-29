@@ -1,0 +1,1138 @@
+[
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "targetId": "00F5E714580A9C964F38D17FC4FFDA04",
+      "title": "Prop 账号漏斗 · shadcn 交互预览",
+      "url": "http://127.0.0.1:45637/"
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "navigation",
+        "command": "open",
+        "nextActionIds": [
+          "inspect-opened-page"
+        ],
+        "observed": true,
+        "summary": "open → navigation → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-opened-page",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Inspect the opened page before choosing interactive refs.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Prop 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "refs": {
+        "e1": {
+          "name": "IFVG Journal Demo",
+          "role": "button"
+        },
+        "e10": {
+          "name": "回测",
+          "role": "button"
+        },
+        "e11": {
+          "name": "实盘",
+          "role": "button"
+        },
+        "e12": {
+          "name": "切换主题",
+          "role": "button"
+        },
+        "e13": {
+          "name": "导出",
+          "role": "button"
+        },
+        "e14": {
+          "name": "新建交易",
+          "role": "button"
+        },
+        "e15": {
+          "name": "总览",
+          "role": "button"
+        },
+        "e16": {
+          "name": "我的账号",
+          "role": "button"
+        },
+        "e17": {
+          "name": "公司计划",
+          "role": "button"
+        },
+        "e18": {
+          "name": "记录购买",
+          "role": "button"
+        },
+        "e19": {
+          "name": "账号",
+          "role": "button"
+        },
+        "e2": {
+          "name": "记录",
+          "role": "button"
+        },
+        "e20": {
+          "name": "配色",
+          "role": "combobox"
+        },
+        "e21": {
+          "name": "模式",
+          "role": "combobox"
+        },
+        "e22": {
+          "name": "语言",
+          "role": "combobox"
+        },
+        "e23": {
+          "name": "样例范围",
+          "role": "combobox"
+        },
+        "e24": {
+          "name": "公司",
+          "role": "combobox"
+        },
+        "e25": {
+          "name": "分组",
+          "role": "combobox"
+        },
+        "e26": {
+          "name": "从左向右的账号漏斗，可横向滚动",
+          "role": "region"
+        },
+        "e27": {
+          "name": "我的账号 · 考核中",
+          "role": "button"
+        },
+        "e28": {
+          "name": "我的账号 · 待激活",
+          "role": "button"
+        },
+        "e29": {
+          "name": "我的账号 · 资金账号",
+          "role": "button"
+        },
+        "e3": {
+          "name": "分析",
+          "role": "button"
+        },
+        "e30": {
+          "name": "账号漏斗",
+          "role": "heading"
+        },
+        "e31": {
+          "name": "当前账号状态",
+          "role": "heading"
+        },
+        "e32": {
+          "name": "石墨",
+          "role": "option"
+        },
+        "e33": {
+          "name": "黑金",
+          "role": "option"
+        },
+        "e34": {
+          "name": "晴空",
+          "role": "option"
+        },
+        "e35": {
+          "name": "紫罗兰",
+          "role": "option"
+        },
+        "e36": {
+          "name": "樱花粉",
+          "role": "option"
+        },
+        "e37": {
+          "name": "落日橙",
+          "role": "option"
+        },
+        "e38": {
+          "name": "深海青",
+          "role": "option"
+        },
+        "e39": {
+          "name": "浅色",
+          "role": "option"
+        },
+        "e4": {
+          "name": "月度",
+          "role": "button"
+        },
+        "e40": {
+          "name": "深色",
+          "role": "option"
+        },
+        "e41": {
+          "name": "中文",
+          "role": "option"
+        },
+        "e42": {
+          "name": "English",
+          "role": "option"
+        },
+        "e43": {
+          "name": "2026.10.01–10.31",
+          "role": "option"
+        },
+        "e44": {
+          "name": "全部时间",
+          "role": "option"
+        },
+        "e45": {
+          "name": "2026.12.01–12.31",
+          "role": "option"
+        },
+        "e46": {
+          "name": "全部公司",
+          "role": "option"
+        },
+        "e47": {
+          "name": "Demo Firm A",
+          "role": "option"
+        },
+        "e48": {
+          "name": "Demo Firm B",
+          "role": "option"
+        },
+        "e49": {
+          "name": "全部分组",
+          "role": "option"
+        },
+        "e5": {
+          "name": "复盘",
+          "role": "button"
+        },
+        "e50": {
+          "name": "Batch A",
+          "role": "option"
+        },
+        "e51": {
+          "name": "Batch B",
+          "role": "option"
+        },
+        "e52": {
+          "name": "买入 · 10 个账号 · 查看账号",
+          "role": "button"
+        },
+        "e53": {
+          "name": "买入 → 通过考核 · 30% · 3/10",
+          "role": "button"
+        },
+        "e54": {
+          "name": "通过考核 · 8 个账号 · 查看账号",
+          "role": "button"
+        },
+        "e55": {
+          "name": "通过考核 → 资金账号 · 50% · 4/8",
+          "role": "button"
+        },
+        "e56": {
+          "name": "资金账号 · 6 个账号 · 查看账号",
+          "role": "button"
+        },
+        "e57": {
+          "name": "资金账号 → 出金到账 · 50% · 3/6",
+          "role": "button"
+        },
+        "e58": {
+          "name": "出金到账 · 4 个账号 · 查看账号",
+          "role": "button"
+        },
+        "e6": {
+          "name": "模型库",
+          "role": "button"
+        },
+        "e7": {
+          "name": "Prop 账户",
+          "role": "button"
+        },
+        "e8": {
+          "name": "更新日志",
+          "role": "button"
+        },
+        "e9": {
+          "name": "设置",
+          "role": "button"
+        }
+      },
+      "removedRefs": [],
+      "snapshot": "- button \"回测\" [disabled, ref=e10]\n- button \"实盘\" [disabled, ref=e11]\n- button \"切换主题\" [ref=e12]\n- button \"导出\" [disabled, ref=e13]\n- button \"新建交易\" [disabled, ref=e14]\n- button \"账号\" [disabled, ref=e19]\n- button \"IFVG Journal Demo\" [disabled, ref=e1]\n- button \"记录\" [disabled, ref=e2]\n- button \"分析\" [disabled, ref=e3]\n- button \"月度\" [disabled, ref=e4]\n- button \"复盘\" [disabled, ref=e5]\n- button \"模型库\" [disabled, ref=e6]\n- button \"Prop 账户\" [disabled, ref=e7]\n- button \"更新日志\" [disabled, ref=e8]\n- button \"设置\" [disabled, ref=e9]\n- button \"总览\" [ref=e15]\n- button \"我的账号\" [ref=e16]\n- button \"公司计划\" [disabled, ref=e17]\n- button \"记录购买\" [disabled, ref=e18]\n- combobox \"配色\" [expanded=false, ref=e20]: 石墨\n  - option \"石墨\" [selected, ref=e32]\n  - option \"黑金\" [ref=e33]\n  - option \"晴空\" [ref=e34]\n  - option \"紫罗兰\" [ref=e35]\n  - option \"樱花粉\" [ref=e36]\n  - option \"落日橙\" [ref=e37]\n  - option \"深海青\" [ref=e38]\n- combobox \"模式\" [expanded=false, ref=e21]: 浅色\n  - option \"浅色\" [selected, ref=e39]\n  - option \"深色\" [ref=e40]\n- combobox \"语言\" [expanded=false, ref=e22]: 中文\n  - option \"中文\" [selected, ref=e41]\n  - option \"English\" [ref=e42]\n- combobox \"样例范围\" [expanded=false, ref=e23]: 2026.10.01–10.31\n  - option \"2026.10.01–10.31\" [selected, ref=e43]\n  - option \"全部时间\" [ref=e44]\n  - option \"2026.12.01–12.31\" [ref=e45]\n- combobox \"公司\" [expanded=false, ref=e24]: 全部公司\n  - option \"全部公司\" [selected, ref=e46]\n  - option \"Demo Firm A\" [ref=e47]\n  - option \"Demo Firm B\" [ref=e48]\n- combobox \"分组\" [expanded=false, ref=e25]: 全部分组\n  - option \"全部分组\" [selected, ref=e49]\n  - option \"Batch A\" [ref=e50]\n  - option \"Batch B\" [ref=e51]\n- heading \"账号漏斗\" [level=2, ref=e30]\n- region \"从左向右的账号漏斗，可横向滚动\" [ref=e26] focusable [tabindex]\n  - button \"买入 · 10 个账号 · 查看账号\" [ref=e52]\n  - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e53]\n  - button \"通过考核 · 8 个账号 · 查看账号\" [ref=e54]\n  - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e55]\n  - button \"资金账号 · 6 个账号 · 查看账号\" [ref=e56]\n  - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e57]\n  - button \"出金到账 · 4 个账号 · 查看账号\" [ref=e58]\n- heading \"当前账号状态\" [level=2, ref=e31]\n- button \"我的账号 · 考核中\" [ref=e27]\n- button \"我的账号 · 待激活\" [ref=e28]\n- button \"我的账号 · 资金账号\" [ref=e29]"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Snapshot: 58 refs on http://127.0.0.1:45637/",
+    "text": "Origin: http://127.0.0.1:45637/\nRefs: 58\n\n- button \"回测\" [disabled, ref=e10]\n- button \"实盘\" [disabled, ref=e11]\n- button \"切换主题\" [ref=e12]\n- button \"导出\" [disabled, ref=e13]\n- button \"新建交易\" [disabled, ref=e14]\n- button \"账号\" [disabled, ref=e19]\n- button \"IFVG Journal Demo\" [disabled, ref=e1]\n- button \"记录\" [disabled, ref=e2]\n- button \"分析\" [disabled, ref=e3]\n- button \"月度\" [disabled, ref=e4]\n- button \"复盘\" [disabled, ref=e5]\n- button \"模型库\" [disabled, ref=e6]\n- button \"Prop 账户\" [disabled, ref=e7]\n- button \"更新日志\" [disabled, ref=e8]\n- button \"设置\" [disabled, ref=e9]\n- button \"总览\" [ref=e15]\n- button \"我的账号\" [ref=e16]\n- button \"公司计划\" [disabled, ref=e17]\n- button \"记录购买\" [disabled, ref=e18]\n- combobox \"配色\" [expanded=false, ref=e20]: 石墨\n  - option \"石墨\" [selected, ref=e32]\n  - option \"黑金\" [ref=e33]\n  - option \"晴空\" [ref=e34]\n  - option \"紫罗兰\" [ref=e35]\n  - option \"樱花粉\" [ref=e36]\n  - option \"落日橙\" [ref=e37]\n  - option \"深海青\" [ref=e38]\n- combobox \"模式\" [expanded=false, ref=e21]: 浅色\n  - option \"浅色\" [selected, ref=e39]\n  - option \"深色\" [ref=e40]\n- combobox \"语言\" [expanded=false, ref=e22]: 中文\n  - option \"中文\" [selected, ref=e41]\n  - option \"English\" [ref=e42]\n- combobox \"样例范围\" [expanded=false, ref=e23]: 2026.10.01–10.31\n  - option \"2026.10.01–10.31\" [selected, ref=e43]\n  - option \"全部时间\" [ref=e44]\n  - option \"2026.12.01–12.31\" [ref=e45]\n- combobox \"公司\" [expanded=false, ref=e24]: 全部公司\n  - option \"全部公司\" [selected, ref=e46]\n  - option \"Demo Firm A\" [ref=e47]\n  - option \"Demo Firm B\" [ref=e48]\n- combobox \"分组\" [expanded=false, ref=e25]: 全部分组\n  - option \"全部分组\" [selected, ref=e49]\n  - option \"Batch A\" [ref=e50]\n  - option \"Batch B\" [ref=e51]\n- heading \"账号漏斗\" [level=2, ref=e30]\n- region \"从左向右的账号漏斗，可横向滚动\" [ref=e26] focusable [tabindex]\n  - button \"买入 · 10 个账号 · 查看账号\" [ref=e52]\n  - button \"买入 → 通过考核 · 30% · 3/10\" [ref=e53]\n  - button \"通过考核 · 8 个账号 · 查看账号\" [ref=e54]\n  - button \"通过考核 → 资金账号 · 50% · 4/8\" [ref=e55]\n  - button \"资金账号 · 6 个账号 · 查看账号\" [ref=e56]\n  - button \"资金账号 → 出金到账 · 50% · 3/6\" [ref=e57]\n  - button \"出金到账 · 4 个账号 · 查看账号\" [ref=e58]\n- heading \"当前账号状态\" [level=2, ref=e31]\n- button \"我的账号 · 考核中\" [ref=e27]\n- button \"我的账号 · 待激活\" [ref=e28]\n- button \"我的账号 · 资金账号\" [ref=e29]"
+  },
+  {
+    "data": {
+      "deviceScaleFactor": 1,
+      "height": 1000,
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "mobile": false,
+      "width": 1600
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "set completed",
+    "text": "{\n  \"deviceScaleFactor\": 1,\n  \"height\": 1000,\n  \"mobile\": false,\n  \"width\": 1600\n}"
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"url\":\"http://127.0.0.1:45637/\",\"shell\":true,\"screen\":true,\"model\":{\"view\":\"overview\",\"status\":\"all\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"decided\":11,\"funded\":6,\"spentCents\":148000,\"passRate\":72.72727272727273,\"costPerFunded\":246.66666666666666},\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4},\"conversions\":[{\"n\":3,\"d\":10,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]},{\"n\":4,\"d\":8,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-011\",\"SIM-012\"]},{\"n\":3,\"d\":6,\"ids\":[\"SIM-001\",\"SIM-011\",\"SIM-016\"]}]},\"pageOverflow\":false,\"summary\":\"通过率\\n73%\\n按 11 次有结果的考核算\\n平均每个资金账号成本\\n$246.67\\n区间投入 ÷ 区间内获得的资金账号数\"}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"url\":\"http://127.0.0.1:45637/\",\"shell\":true,\"screen\":true,\"model\":{\"view\":\"overview\",\"status\":\"all\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"dec…",
+    "text": "{\"url\":\"http://127.0.0.1:45637/\",\"shell\":true,\"screen\":true,\"model\":{\"view\":\"overview\",\"status\":\"all\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"decided\":11,\"funded\":6,\"spentCents\":148000,\"passRate\":72.72727272727273,\"costPerFunded\":246.66666666666666},\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4},\"conversions\":[{\"n\":3,\"d\":10,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]},{\"n\":4,\"d\":8,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-011\",\"SIM-012\"]},{\"n\":3,\"d\":6,\"ids\":[\"SIM-001\",\"SIM-011\",\"SIM-016\"]}]},\"pageOverflow\":false,\"summary\":\"通过率\\n73%\\n按 11 次有结果的考核算\\n平均每个资金账号成本\\n$246.67\\n区间投入 ÷ 区间内获得的资金账号数\"}\n\nOrigin: http://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "path": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png"
+    },
+    "details": {
+      "artifactVerification": {
+        "artifacts": [
+          {
+            "absolutePath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+            "exists": true,
+            "kind": "image",
+            "mediaType": "image/png",
+            "path": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+            "requestedPath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+            "retentionState": "live",
+            "sizeBytes": 174151,
+            "state": "verified",
+            "status": "saved",
+            "storageScope": "explicit-path",
+            "updatedAtMs": 1793089415855.1545
+          }
+        ],
+        "missingCount": 0,
+        "pendingCount": 0,
+        "unverifiedCount": 0,
+        "verified": true,
+        "verifiedCount": 1
+      },
+      "artifacts": [
+        {
+          "absolutePath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+          "artifactType": "image",
+          "command": "screenshot",
+          "cwd": "/root/ifvg-journal",
+          "exists": true,
+          "extension": ".png",
+          "kind": "image",
+          "mediaType": "image/png",
+          "namespace": "",
+          "path": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+          "requestedPath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+          "session": "piab-script-12d4981e-705b-42aa-9503-930d7e670e32",
+          "sizeBytes": 174151,
+          "status": "saved",
+          "subcommand": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+          "updatedAtMs": 1793089415855.1545
+        }
+      ],
+      "pageChangeSummary": {
+        "artifactCount": 1,
+        "changeType": "artifact",
+        "command": "screenshot",
+        "nextActionIds": [
+          "use-saved-artifact"
+        ],
+        "observed": true,
+        "summary": "screenshot → artifact → 1 artifact"
+      },
+      "resultCategory": "success",
+      "successCategory": "artifact-saved"
+    },
+    "nextActions": [
+      {
+        "artifactPath": "/root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+        "id": "use-saved-artifact",
+        "reason": "Use the saved artifact path from the structured result instead of scraping it from text.",
+        "safety": "Verify artifact metadata such as exists/status before treating the file as durable.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "artifact-saved",
+    "summary": "Saved image: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png",
+    "text": "Saved image: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png\nArtifact type: image\nRequested path: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png\nAbsolute path: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/desktop.png\nExists: true\nSize: 170.1 KiB\nSize bytes: 174151\nStatus: saved\nMedia type: image/png\nSession: piab-script-12d4981e-705b-42aa-9503-930d7e670e32\nCWD: /root/ifvg-journal\nMachine data: details.artifacts[0]"
+  },
+  {
+    "data": {
+      "clicked": "[data-stage=\"passed\"]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-stage=\"passed\"]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"title\":\"通过考核 · 8 个账号\",\"rows\":8,\"open\":true}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"title\":\"通过考核 · 8 个账号\",\"rows\":8,\"open\":true}",
+    "text": "{\"title\":\"通过考核 · 8 个账号\",\"rows\":8,\"open\":true}\n\nOrigin: http://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "clicked": "#sheetClose",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: #sheetClose\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "clicked": "[data-edge=\"0\"]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-edge=\"0\"]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"title\":\"买入 → 通过考核\",\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"title\":\"买入 → 通过考核\",\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]}",
+    "text": "{\"title\":\"买入 → 通过考核\",\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]}\n\nOrigin: http://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "clicked": "[data-sheet-tab=\"unconverted\"]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-sheet-tab=\"unconverted\"]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"rows\":7,\"focus\":\"unconverted\"}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"rows\":7,\"focus\":\"unconverted\"}",
+    "text": "{\"rows\":7,\"focus\":\"unconverted\"}\n\nOrigin: http://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "clicked": "[data-account=\"SIM-004\"]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-account=\"SIM-004\"]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"detail\":\"Demo 04 · 50K\",\"back\":true}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"detail\":\"Demo 04 · 50K\",\"back\":true}",
+    "text": "{\"detail\":\"Demo 04 · 50K\",\"back\":true}\n\nOrigin: http://127.0.0.1:45637/"
+  },
+  {
+    "data": {
+      "clicked": "[data-back-list]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-back-list]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Escape"
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "press",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "press → action dispatched → application change unverified"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Pressed: Escape",
+    "text": "Pressed: Escape\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "clicked": "[data-status=\"funded\"]",
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "navigationSummary": {
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/",
+        "urlChanged": false
+      }
+    },
+    "details": {
+      "pageChangeSummary": {
+        "changeType": "mutation",
+        "command": "click",
+        "nextActionIds": [
+          "inspect-after-mutation"
+        ],
+        "observed": false,
+        "summary": "click → action dispatched → Prop 账号漏斗 · shadcn 交互预览 → http://127.0.0.1:45637/ → application change unverified",
+        "title": "Prop 账号漏斗 · shadcn 交互预览",
+        "url": "http://127.0.0.1:45637/"
+      },
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "click → Prop 账号漏斗 · shadcn 交互预览",
+    "text": "Clicked: [data-status=\"funded\"]\n\nCurrent page:\nProp 账号漏斗 · shadcn 交互预览\nhttp://127.0.0.1:45637/\n\nAction dispatched; application change unverified. Verify the expected URL, text, state, or external receipt before relying on it."
+  },
+  {
+    "data": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 10555201366498914000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:45637/",
+      "result": "{\"state\":{\"view\":\"accounts\",\"status\":\"funded\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"decided\":11,\"funded\":6,\"spentCents\":148000,\"passRate\":72.72727272727273,\"costPerFunded\":246.66666666666666},\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4},\"conversions\":[{\"n\":3,\"d\":10,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]},{\"n\":4,\"d\":8,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-011\",\"SIM-012\"]},{\"n\":3,\"d\":6,\"ids\":[\"SIM-001\",\"SIM-011\",\"SIM-016\"]}]},\"rows\":7}"
+    },
+    "details": {
+      "resultCategory": "success",
+      "successCategory": "completed"
+    },
+    "nextActions": [
+      {
+        "id": "inspect-after-mutation",
+        "params": {
+          "args": [
+            "snapshot",
+            "-i"
+          ]
+        },
+        "reason": "Refresh interactive refs after a browser mutation, navigation, scroll, or rerender.",
+        "safety": "Do not reuse prior @refs until a fresh snapshot confirms they still exist.",
+        "tool": "agent_browser"
+      }
+    ],
+    "ok": true,
+    "resultCategory": "success",
+    "successCategory": "completed",
+    "summary": "Eval result: {\"state\":{\"view\":\"accounts\",\"status\":\"funded\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"decided\":11,\"funded\":6,\"spentCents\":148000,\"passRate\":72.72…",
+    "text": "{\"state\":{\"view\":\"accounts\",\"status\":\"funded\",\"firm\":\"\",\"group\":\"\",\"summary\":{\"passed\":8,\"fails\":3,\"decided\":11,\"funded\":6,\"spentCents\":148000,\"passRate\":72.72727272727273,\"costPerFunded\":246.66666666666666},\"stages\":{\"bought\":10,\"passed\":8,\"funded\":6,\"paid\":4},\"conversions\":[{\"n\":3,\"d\":10,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-003\"]},{\"n\":4,\"d\":8,\"ids\":[\"SIM-001\",\"SIM-002\",\"SIM-011\",\"SIM-012\"]},{\"n\":3,\"d\":6,\"ids\":[\"SIM-001\",\"SIM-011\",\"SIM-016\"]}]},\"rows\":7}\n\nOrigin: http://127.0.0.1:45637/"
+  }
+]

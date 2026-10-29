@@ -104,9 +104,17 @@ let propOptionIcons = [];             // 同类同名选项的共享图标配置
 let propFirmEditor = null;            // modern 独立公司编辑页的隔离草稿，不借用 propModal
 let propAccounts = [];
 let propEntries = [];
+let propSessionGeneration = 0;        // 身份切换使旧请求失效，包括退出后重新登录同一个用户
+let propLoadSequence = 0;             // 同一身份的重叠加载只接受最后一次
 let propError = null;
+// 仅概览财务面板的本次查看范围，不落库、不影响月度图或账号当前阶段。
+let propOverviewRange = { preset: "all", from: null, to: null };
+let propOverviewOwner = null;
+let propOverviewPicker = null;        // 选日草稿；确认前不改已应用范围
 let propYear = new Date().getFullYear();
 let propMonth = new Date().getMonth() + 1;   // 总览里点开的是哪个月
+let propMonthLines = false;          // 现代月度图的临时叠线开关，不落库，离开总览或换身份时清理
+let propCompanySort = "net";         // 现代公司对比的本次排序，不落库，离开总览或换身份时清理
 let propYearTouched = false;          // 用户自己翻过年份：之后不再自动跳到有数据的年份
 let propFirmFilter = "";              // 总览 / 我的账号：只看某家公司（按 firm_name）
 let propGroupFilter = "";             // 只看某个分组

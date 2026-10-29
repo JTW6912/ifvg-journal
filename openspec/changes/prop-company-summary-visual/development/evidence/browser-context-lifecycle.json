@@ -1,0 +1,193 @@
+[
+  {
+    "command": [
+      "eval",
+      "propModal.busy=true;"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": true
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "press",
+      "Escape"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "pressed": "Escape"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(()=>{if(propModal!==modalCheck||!propModal.busy)throw Error('native Escape lost busy form');propModal=null;render();return {nativeBusyEscapeProtected:true,closedByHarnessResetOnly:true,blocked:offlineCalls};})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "blocked": [],
+        "closedByHarnessResetOnly": true,
+        "nativeBusyEscapeProtected": true
+      }
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "get",
+      "url"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "url": "http://127.0.0.1:46305/"
+    },
+    "success": true
+  },
+  {
+    "command": [
+      "eval",
+      "(async()=>{demo.reset();propCompanyChangeSort('roi');const retained=[];for(const step of [()=>demo.range('2026-10-01','2026-10-31'),()=>{propGroupFilter='Group A';render()},()=>{propFirmFilter='Topstep';render()},()=>{propFirmFilter='';propGroupFilter='';demo.appearance('sky','dark','en')}]){step();if(propCompanySort!=='roi')throw Error('sort not retained');retained.push({sort:propCompanySort,rows:document.querySelectorAll('.propCompanyTable tbody tr').length});}const cleared=[];for(const mode of ['owner','viewing','tab','view','classic','logout']){demo.reset();propCompanyChangeSort('spent');const old={session,viewingUserId,tab,propView};if(mode==='owner')session={user:{id:'other-synthetic'}};if(mode==='viewing')viewingUserId='synthetic-view-target';if(mode==='tab')tab='grid';if(mode==='view')propView='accounts';if(mode==='classic')applyLayout('classic');if(mode==='logout')session=null;render();if(propCompanySort!=='net'||document.getElementById('propOverviewTooltip'))throw Error('stale state '+mode);cleared.push({mode,sort:propCompanySort});session=old.session;viewingUserId=old.viewingUserId;tab=old.tab;propView=old.propView;applyLayout('modern');render();}demo.reset();return {retained,cleared,blocked:offlineCalls};})()"
+    ],
+    "result": {
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 8328671723827742000
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_attempted"
+      },
+      "origin": "http://127.0.0.1:46305/",
+      "result": {
+        "blocked": [],
+        "cleared": [
+          {
+            "mode": "owner",
+            "sort": "net"
+          },
+          {
+            "mode": "viewing",
+            "sort": "net"
+          },
+          {
+            "mode": "tab",
+            "sort": "net"
+          },
+          {
+            "mode": "view",
+            "sort": "net"
+          },
+          {
+            "mode": "classic",
+            "sort": "net"
+          },
+          {
+            "mode": "logout",
+            "sort": "net"
+          }
+        ],
+        "retained": [
+          {
+            "rows": 6,
+            "sort": "roi"
+          },
+          {
+            "rows": 6,
+            "sort": "roi"
+          },
+          {
+            "rows": 1,
+            "sort": "roi"
+          },
+          {
+            "rows": 6,
+            "sort": "roi"
+          }
+        ]
+      }
+    },
+    "success": true
+  }
+]

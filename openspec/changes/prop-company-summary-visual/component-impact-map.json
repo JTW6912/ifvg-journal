@@ -1,0 +1,11 @@
+{
+ "new_components":["CMP-PROP-COMPANY-COMPARE: modern table/identity/scale/sort in src/11j-prop-firms.js"],
+ "reused_components":["CMP-APP-SHELL unchanged","CMP-APPEARANCE tokens and existing locale controls","renderPropByFirm caller and classic branch","propSum/propLinkageReport/propFunnel and propUsd/propPct/esc/T","Existing public logo assets and safe logo conventions","CMP-PROP-HELP shared overview/monthly tooltip controller"],
+ "extraction_triggers":["Keep company view-model/scale/sort and local controller outside large 11e renderer","Extend one existing tooltip lifecycle instead of copying prototype tooltip","No duplicated accounting rules or general-purpose table framework"],
+ "forbidden_dependencies":["Supabase/config/16-init in offline checks","New network/storage/renewal/writes from table actions","React/Tailwind/Recharts or other dependency installation","Prototype fixtures/review kit/shell patches in production"],
+ "hooks":["Narrow 11g before/after-render hooks for ephemeral sort/focus/scroll cleanup","Shared field-help selector/resolution with safe plain text","Whitelisted local sort change delegation; no competing global Escape handler"],
+ "utilities":["Derived company rows using existing grouping and finance helpers","Finite shared-scale signed geometry and stable null-safe sorting"],
+ "services":["No new service; existing authorized caches only"],
+ "required_component_tests":["Seven-field equivalence and immutable inputs","Stable sort/unknowns/common scale","Classic zh/en and visibility regression","Pending/refund/zero/large-value/logo/name safety","Help focus/Escape/hover/mobile fixed-column bounds","Sort lifecycle and form/monthly preservation","Actual-source theme/locale/responsive and no-side-effect checks"],
+ "unresolved_gaps":[]
+}

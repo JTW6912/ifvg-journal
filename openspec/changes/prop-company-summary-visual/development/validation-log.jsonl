@@ -1,0 +1,8 @@
+{"task_id":"001-prop-company-summary","status":"passed","command":"node --test test/prop-firms.test.js","exit_code":0,"evidence_ref":"development/evidence/focused-final.log","note":"14 focused tests"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"npm test","exit_code":0,"evidence_ref":"development/evidence/tests-final.log","note":"163 tests passed"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"npm run bundle","exit_code":0,"evidence_ref":"development/evidence/bundle-final.log"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"node --check app.js","exit_code":0,"evidence_ref":"development/evidence/syntax-app.log"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"node --check i18n.js","exit_code":0,"evidence_ref":"development/evidence/syntax-i18n.log"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"git diff --check","exit_code":0,"evidence_ref":"development/evidence/diff-check.log"}
+{"task_id":"001-prop-company-summary","status":"passed","command":"agent_browser isolated actual-source DOM/input checks","evidence_ref":"development/tasks/001-prop-company-summary/report.md","note":"224 matrix cases plus targeted native select, hover, keyboard, touch, context and form checks; not formal Verification V2"}
+{"task_id": "001-prop-company-summary", "status": "passed", "command": "Commit-time offline tests/build/syntax/diff", "evidence_ref": "development/evidence/commit-validation.json", "note": "Six commands executed locally, 14 focused/163 full tests pass. Not native runner attestation."}

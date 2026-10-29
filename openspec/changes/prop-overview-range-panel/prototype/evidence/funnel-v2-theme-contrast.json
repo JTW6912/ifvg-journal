@@ -1,0 +1,245 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 15492299439032270000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45791/funnel.html?rev=6",
+  "result": {
+    "combinations": 28,
+    "keyboardOrder": [
+      "bought",
+      "conversion-0",
+      "passed",
+      "conversion-1",
+      "funded",
+      "conversion-2",
+      "paid"
+    ],
+    "results": [
+      {
+        "locale": "zh",
+        "minTextContrast": 6.83,
+        "pageOverflow": false,
+        "palette": "gold",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.83,
+        "pageOverflow": false,
+        "palette": "gold",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.34,
+        "pageOverflow": false,
+        "palette": "sky",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.34,
+        "pageOverflow": false,
+        "palette": "sky",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.56,
+        "pageOverflow": false,
+        "palette": "violet",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.56,
+        "pageOverflow": false,
+        "palette": "violet",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.25,
+        "pageOverflow": false,
+        "palette": "rose",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.25,
+        "pageOverflow": false,
+        "palette": "rose",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.74,
+        "pageOverflow": false,
+        "palette": "sunset",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.74,
+        "pageOverflow": false,
+        "palette": "sunset",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.09,
+        "pageOverflow": false,
+        "palette": "ocean",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.09,
+        "pageOverflow": false,
+        "palette": "ocean",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 5.81,
+        "pageOverflow": false,
+        "palette": "graphite",
+        "theme": "light"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 5.81,
+        "pageOverflow": false,
+        "palette": "graphite",
+        "theme": "light"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 5.99,
+        "pageOverflow": false,
+        "palette": "gold",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 5.99,
+        "pageOverflow": false,
+        "palette": "gold",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.4,
+        "pageOverflow": false,
+        "palette": "sky",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.4,
+        "pageOverflow": false,
+        "palette": "sky",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.78,
+        "pageOverflow": false,
+        "palette": "violet",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.78,
+        "pageOverflow": false,
+        "palette": "violet",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.43,
+        "pageOverflow": false,
+        "palette": "rose",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.43,
+        "pageOverflow": false,
+        "palette": "rose",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 6.26,
+        "pageOverflow": false,
+        "palette": "sunset",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 6.26,
+        "pageOverflow": false,
+        "palette": "sunset",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 5.74,
+        "pageOverflow": false,
+        "palette": "ocean",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 5.74,
+        "pageOverflow": false,
+        "palette": "ocean",
+        "theme": "dark"
+      },
+      {
+        "locale": "zh",
+        "minTextContrast": 4.64,
+        "pageOverflow": false,
+        "palette": "graphite",
+        "theme": "dark"
+      },
+      {
+        "locale": "en",
+        "minTextContrast": 4.64,
+        "pageOverflow": false,
+        "palette": "graphite",
+        "theme": "dark"
+      }
+    ],
+    "shapes": [
+      {
+        "leftHeight": 236,
+        "rightHeight": 200
+      },
+      {
+        "leftHeight": 200,
+        "rightHeight": 164
+      },
+      {
+        "leftHeight": 164,
+        "rightHeight": 128
+      },
+      {
+        "leftHeight": 128,
+        "rightHeight": 92
+      }
+    ],
+    "width": 1280
+  }
+}

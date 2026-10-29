@@ -1,0 +1,24 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 10555201366498914000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:44899/index.html",
+  "result": {
+    "closed": true,
+    "curveEnd": "37000",
+    "net": "37000",
+    "range": "2026.10.19 – 10.26",
+    "received": "$420.00",
+    "spent": "$50.00"
+  }
+}

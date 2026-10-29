@@ -1,0 +1,53 @@
+{
+  "lifecycle": {
+    "effectiveLaunch": {
+      "browserLaunched": true,
+      "engine": "chrome",
+      "launchHash": 9552204660865800000
+    },
+    "launched": false,
+    "relaunchedBrowser": false,
+    "restartedBackground": false,
+    "restoreStatus": "not_configured",
+    "reused": true,
+    "saveStatus": "not_attempted"
+  },
+  "origin": "http://127.0.0.1:45649/",
+  "result": [
+    {
+      "curve": null,
+      "net": "0",
+      "overflow": false,
+      "roi": "—",
+      "state": "empty"
+    },
+    {
+      "curve": "-20000",
+      "net": "-20000",
+      "overflow": false,
+      "roi": "-100.0%",
+      "state": "negative"
+    },
+    {
+      "curve": "15000",
+      "net": "15000",
+      "overflow": false,
+      "roi": "—",
+      "state": "refund"
+    },
+    {
+      "curve": null,
+      "net": "22000",
+      "overflow": false,
+      "roi": "+110.0%",
+      "state": "invalid"
+    },
+    {
+      "curve": "22000000000",
+      "net": "22000000000",
+      "overflow": false,
+      "roi": "+110.0%",
+      "state": "large"
+    }
+  ]
+}

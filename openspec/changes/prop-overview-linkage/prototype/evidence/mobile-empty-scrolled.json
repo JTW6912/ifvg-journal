@@ -1,0 +1,48 @@
+[
+  {
+    "command": "open",
+    "ok": true,
+    "text": "Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "text": "Snapshot: 58 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "set",
+    "ok": true,
+    "text": "set completed"
+  },
+  {
+    "command": "select",
+    "ok": true,
+    "text": "select completed"
+  },
+  {
+    "command": "scroll",
+    "ok": true,
+    "text": "Scrolled page down by 500."
+  },
+  {
+    "command": "snapshot",
+    "ok": true,
+    "text": "Snapshot: 57 refs on http://127.0.0.1:45637/"
+  },
+  {
+    "command": "click",
+    "ok": true,
+    "text": "click → Prop 账号漏斗 · shadcn 交互预览"
+  },
+  {
+    "command": "eval",
+    "ok": true,
+    "result": "{\"open\":true,\"content\":\"这个范围内没有对应账号\",\"scrollY\":500}",
+    "text": "Eval result: {\"open\":true,\"content\":\"这个范围内没有对应账号\",\"scrollY\":500}"
+  },
+  {
+    "command": "screenshot",
+    "ok": true,
+    "text": "Saved image: /root/ifvg-journal/openspec/changes/prop-overview-linkage/prototype/evidence/mobile-empty-list.png"
+  }
+]

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "change_id": "prop-stage-history-repair",
+  "assertions": [
+    {
+      "id": "A1",
+      "statement": "Owner-authorized historical correction changes only the selected own account purchase date/stage history plus update metadata; current status, renewal configuration/watermarks, balances, other account fields and all ledger rows remain unchanged, with no fee/progression operation or inferred date.",
+      "verify_via": "e2e",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A2",
+      "statement": "The funnel inspection drawer defaults to detected pending issues and offers searchable all-account access for the owner, including accounts with no detected issue; switching tabs/searching does not mutate any account or ledger data.",
+      "verify_via": "e2e",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A3",
+      "statement": "Per-account diagnostics distinguish missing facts from suspected mistakes without inventing dates, sorting or deduplicating legitimate attempts; instant-funded exceptions and full-history scope remain clear.",
+      "verify_via": "unit",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A4",
+      "statement": "One-account drafts support separate purchase/history edits, additions/removal/restoration, actual before/after confirmation and removal acknowledgement; unsaved navigation never silently saves or discards.",
+      "verify_via": "e2e",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A5",
+      "statement": "Owner/version/missing-row/permission/error and busy/double-submit paths preserve saved data and draft safety with no silent overwrite or full-row write.",
+      "verify_via": "redteam",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A6",
+      "statement": "Removing or editing a first historical event never interprets array position as purchase identity or shifts purchase/activation cash rows; legacy integration is regression-tested.",
+      "verify_via": "unit",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A7",
+      "statement": "Confirmed history updates existing funnel/cohort/pass/company statistics with truthful remaining issues while current status, cash totals and range/company/group context remain unchanged.",
+      "verify_via": "e2e",
+      "status": "failing",
+      "evidence_ref": null
+    },
+    {
+      "id": "A8",
+      "statement": "The revised isolated flow uses a compact header count entry without a full-width notice, horizontal rounded date/status history, public company logos/fallback, zh/en, seven palettes, light/dark, contained phone scrolling and keyboard/touch access; draft/data safety and explicit state coverage remain unchanged.",
+      "verify_via": "sensory",
+      "status": "failing",
+      "evidence_ref": null
+    }
+  ]
+}

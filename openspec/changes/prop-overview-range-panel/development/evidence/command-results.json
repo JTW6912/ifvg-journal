@@ -1,0 +1,27 @@
+[
+  {
+    "command": "npm test",
+    "exit_code": 0,
+    "log": "tests-final.log"
+  },
+  {
+    "command": "npm run bundle",
+    "exit_code": 0,
+    "log": "bundle.log"
+  },
+  {
+    "command": "node --check app.js",
+    "exit_code": 0,
+    "log": "syntax-app.log"
+  },
+  {
+    "command": "node --check i18n.js",
+    "exit_code": 0,
+    "log": "syntax-i18n.log"
+  },
+  {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "log": "whitespace.log"
+  }
+]
