@@ -7,13 +7,14 @@
    每次保存直接写 prop_firms / prop_plans（RLS 只放管理员写）；计划「核实于」记成当天。
    注意：之后再用「导入目录」整份替换，会覆盖这里手动改过的内容
    ============================================================ */
-function propIsAdmin() { return !!(currentProfile && currentProfile.role === "admin" && !viewingUserId); }
+function propIsAdmin() { return !!(currentProfile && currentProfile.role === "admin" && currentProfile.active !== false && !viewingUserId); }
 function propEditing() { return propEditMode && propIsAdmin(); }
 
 /* ---------- 读写 ---------- */
 function propFirmRow(f) {
   const { id, name, website, logo, ...rest } = f;
-  return { id, name, website: website || "", logo: logo || "", sort_order: Math.max(0, propFirms.findIndex((x) => x.id === id)), data: rest, updated_at: new Date().toISOString() };
+  const index = propFirms.findIndex((x) => x.id === id);
+  return { id, name, website: website || "", logo: logo || "", sort_order: index < 0 ? propFirms.length : index, data: rest, updated_at: new Date().toISOString() };
 }
 function propPlanRow(p) {
   const { id, firm, series, size, status, ...rest } = p;
@@ -22,9 +23,15 @@ function propPlanRow(p) {
     sort_order: i >= 0 ? i : propPlans.length, data: rest, updated_at: new Date().toISOString() };
 }
 async function propAdmSaveFirms(list) {
-  const { error } = await sb.from("prop_firms").upsert(list.map(propFirmRow));
-  if (error) { console.error(error); propError = T("prop.saveFailed", { msg: error.message }); return false; }
-  return true;
+  try {
+    const { error } = await sb.from("prop_firms").upsert(list.map(propFirmRow));
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error(error);
+    propError = T("prop.saveFailed", { msg: error && error.message ? error.message : String(error) });
+    return false;
+  }
 }
 async function propAdmSavePlans(list) {
   const { error } = await sb.from("prop_plans").upsert(list.map(propPlanRow));
@@ -54,7 +61,7 @@ function renderPropBoardAdmin() {
     <div class="propAdmFirms">${firms.map((f, i) => `<div class="propAdmFirm ${f.hidden ? "hidden" : ""}">
       <span class="propRank ${i < 3 ? "top" : ""}">${i + 1}</span>${propFirmLogo(f, true)}
       <div class="propAdmFirmName"><b>${esc(f.name)}</b>${propTierTag(f)}${f.hidden ? `<span class="propTier propTier-meh">${esc(T("prop.adm.hiddenTag"))}</span>` : ""}
-        <small>${esc(f.promo && (f.promo.discount || f.promo.text) ? [f.promo.discount && T("prop.cat.off", { v: f.promo.discount }), f.promo.text].filter(Boolean).join(" · ") : f.review || "")}</small></div>
+        <small>${esc(f.promo && (f.promo.discount || f.promo.text) ? [f.promo.discount && T("prop.cat.off", { v: f.promo.discount }), f.promo.text].filter(Boolean).join(" · ") : propReviewPlainText(f.review))}</small></div>
       <span class="propMuted">${esc(T("prop.cat.planCount", { n: propPlans.filter((p) => p.firm === f.id).length }))}</span>
       <div class="propAdmBtns">
         <button class="tinyBtn" data-action="prop-adm-move" data-id="${esc(f.id)}" data-d="-1" ${i === 0 ? "disabled" : ""} title="${esc(T("prop.adm.up"))}">↑</button>
@@ -80,8 +87,33 @@ async function propAdmMove(id, d) {
 const PROP_TIERS = ["", "good", "fair", "meh", "avoid"];
 function propAdmFirmDraft(f) {
   return { id: f ? f.id : "", name: f ? f.name : "", logo: f ? f.logo || "" : "", website: f ? f.website || "" : "", tier: f ? f.tier || "" : "",
+    magicPolicy: propMagicPolicy(f),
+    recentUpdates: propFirmUpdatesDraft(f),
+    updatesPreviewCount: f?.updatesPreviewCount ?? 1,
+    keySentence: propPresentationClone(f?.keySentence),
+    promoDesign: propPresentationClone(f?.promo),
     review: f ? f.review || "" : "", promoDiscount: f && f.promo ? f.promo.discount || "" : "", promoText: f && f.promo ? f.promo.text || "" : "",
-    platforms: f && Array.isArray(f.platforms) ? f.platforms.join("、") : "", notes: f ? f.notes || "" : "", hidden: !!(f && f.hidden) };
+    platforms: propFirmChoiceDraft(f, "platforms"), payoutMethods: propFirmChoiceDraft(f, "payoutMethods"),
+    kycRequirements: propFirmChoiceDraft(f, "kycRequirements"), paymentMethods: propFirmChoiceDraft(f, "paymentMethods"),
+    notes: f ? f.notes || "" : "", hidden: !!(f && f.hidden) };
+}
+function propAdmFirmValue(m) {
+  const d = m.draft, old = m.isNew ? null : propFindFirm(m.id);
+  const name = String(d.name || "").trim();
+  let id = old ? old.id : propSlug(name);
+  for (let n = 2; !old && propFirms.some((f) => f.id === id); n++) id = propSlug(name) + "-" + n;
+  const promo = { ...(old && old.promo ? old.promo : {}), ...(propPresentationObject(d.promoDesign) ? d.promoDesign : {}), discount: String(d.promoDiscount || "").trim(), text: String(d.promoText || "").trim() };
+  if (!promo.discount) delete promo.discount;
+  if (!promo.text) delete promo.text;
+  return { ...(old || {}), id, name, logo: String(d.logo || "").trim(), website: String(d.website || "").trim(), tier: d.tier || null,
+    magicPolicy: propMagicPolicy(d),
+    ...(d.keySentence !== undefined && (old?.keySentence !== undefined || Object.keys(d.keySentence || {}).length) ? { keySentence: propPresentationClone(d.keySentence) } : {}),
+    recentUpdates: (d.recentUpdates || []).map((u) => ({ ...u, type: PROP_FIRM_UPDATE_TYPES.includes(u.type) ? u.type : "notice", text: u.text.trim() })),
+    updatesPreviewCount: d.updatesPreviewCount ?? 1,
+    review: String(d.review || "").trim(), promo: Object.keys(promo).length ? promo : undefined, notes: String(d.notes || "").trim(), hidden: !!d.hidden,
+    platforms: propFirmChoiceValues(d.platforms), payoutMethods: propFirmChoiceValues(d.payoutMethods),
+    kycRequirements: propFirmChoiceValues(d.kycRequirements), paymentMethods: propFirmChoiceValues(d.paymentMethods),
+    rank: old ? old.rank : propFirms.length + 1 };
 }
 function propAdmFirmForm(m) {
   const d = m.draft;
@@ -89,29 +121,40 @@ function propAdmFirmForm(m) {
       ${propField(T("prop.adm.tier"), propSelect("tier", d.tier, PROP_TIERS.map((t) => [t, t ? T("prop.tier." + t) : T("prop.adm.noTier")])))}</div>
     <div class="propRow">${propField(T("prop.adm.logo"), propInput("logo", d.logo, `placeholder="/img/prop/xxx.webp"`), T("prop.adm.logoHint"))}
       ${propField(T("prop.cat.website"), propInput("website", d.website, `placeholder="https://"`))}</div>
-    ${propField(T("prop.adm.review"), propInput("review", d.review, `maxlength="120"`), T("prop.adm.reviewHint"))}
+    ${propReviewEditorHtml(d.review)}
+    ${propFirmUpdatesEditorHtml(m)}
     <div class="propRow">${propField(T("prop.adm.promoDiscount"), propInput("promoDiscount", d.promoDiscount, `maxlength="12" placeholder="40%"`))}
       ${propField(T("prop.adm.promoText"), propInput("promoText", d.promoText, `maxlength="80"`), T("prop.adm.promoHint"))}</div>
-    ${propField(T("prop.adm.platforms"), propInput("platforms", d.platforms, `placeholder="Tradovate、Rithmic"`))}
-    ${propField(T("prop.adm.notes"), `<textarea class="input" data-prop-field="notes" rows="4">${esc(d.notes)}</textarea>`)}
+    ${propFirmChoicesEditorHtml(m)}
+    <div class="field"><div class="fieldLabel"><label for="propMagicPolicy">${esc(T("prop.magic.label"))}</label></div>
+      <select class="input" id="propMagicPolicy" data-prop-field="magicPolicy" aria-describedby="propMagicPolicyHint">${PROP_MAGIC_POLICIES.map((v) => `<option value="${v}" ${propMagicPolicy(d) === v ? "selected" : ""}>${esc(T("prop.magic." + v))}</option>`).join("")}</select>
+      <div class="propHint" id="propMagicPolicyHint">${esc(T("prop.magic.hint"))}</div></div>
+    <div class="field"><div class="fieldLabel"><label for="propFirmNotesInput">${esc(T("prop.firmInfo.notes"))}</label></div><textarea class="input" id="propFirmNotesInput" data-prop-field="notes" rows="4">${esc(d.notes)}</textarea></div>
     <div class="field">${propCheck("hidden", d.hidden, T("prop.adm.hide"))}<div class="propHint">${esc(T("prop.adm.hideHint"))}</div></div>`;
   return { title: esc(T(m.isNew ? "prop.adm.newFirm" : "prop.adm.editFirm")), body, foot: propFootButtons("prop-adm-save-firm") };
 }
 async function propAdmSaveFirm() {
-  const m = propModal, d = m.draft;
+  const m = propModal;
+  if (!propIsAdmin() || !m || m.type !== "admFirm" || m.busy) return;
+  const d = m.draft;
   const name = String(d.name || "").trim();
   if (!name) { m.error = T("prop.form.needFirm"); propRenderModal(); return; }
+  const choiceErrors = propValidateFirmChoices(d);
+  if (choiceErrors.length) { m.error = choiceErrors[0]; propRenderModal(); return; }
+  const designErrors = propValidatePresentation(propDraftPresentation(d));
+  if (designErrors.length) { m.error = designErrors[0]; propRenderModal(); return; }
+  const updateErrors = propValidateFirmUpdates(d.recentUpdates, d.updatesPreviewCount);
+  if (updateErrors.length) { m.error = updateErrors[0]; m.updatesOpen = true; propRenderModal(); propScrollFirmUpdatesEditor(); return; }
   const old = m.isNew ? null : propFindFirm(m.id);
-  let id = old ? old.id : propSlug(name);
-  for (let n = 2; !old && propFirms.some((f) => f.id === id); n++) id = propSlug(name) + "-" + n;
-  const promo = String(d.promoDiscount || "").trim() || String(d.promoText || "").trim() ? { discount: String(d.promoDiscount || "").trim(), text: String(d.promoText || "").trim() } : undefined;
-  const f = { ...(old || {}), id, name, logo: String(d.logo || "").trim(), website: String(d.website || "").trim(), tier: d.tier || null,
-    review: String(d.review || "").trim(), promo, notes: String(d.notes || "").trim(), hidden: !!d.hidden,
-    platforms: String(d.platforms || "").split(/[、,，]/).map((s) => s.trim()).filter(Boolean), rank: old ? old.rank : propFirms.length + 1 };
+  const f = propAdmFirmValue(m), id = f.id;
   if (!old) propFirms.push(f); else propFirms = propFirms.map((x) => (x.id === id ? f : x));
   m.busy = true; propRenderModal();
   const ok = await propAdmSaveFirms([f]);
-  if (!ok) { m.busy = false; m.error = propError; propRenderModal(); return; }
+  if (!ok) {
+    // 保存失败时恢复目录中的旧公司；新录入的更新仍留在弹窗草稿里，不能显示成已发布。
+    propFirms = old ? propFirms.map((x) => x === f ? old : x) : propFirms.filter((x) => x !== f);
+    m.busy = false; m.error = propError; propRenderModal(); return;
+  }
   propError = null; propModal = null; propRenderModal(); render();
 }
 
@@ -240,6 +283,10 @@ document.addEventListener("click", async (e) => {
   if (!el || !el.dataset.action.startsWith("prop-adm") || !propIsAdmin()) return;
   const a = el.dataset.action, id = el.dataset.id, m = propModal;
   if (a === "prop-adm-toggle") { propEditMode = !propEditMode; render(); }
+  else if (a === "prop-adm-review-format") { propApplyReviewFormat(el.dataset.format); }
+  else if (a === "prop-adm-choice-add") { propAddFirmChoice(el.dataset.field); }
+  else if (a === "prop-adm-update-add") { propAddFirmUpdate(); }
+  else if (a === "prop-adm-update-remove") { propRemoveFirmUpdate(Number(el.dataset.index)); }
   else if (a === "prop-adm-move") { await propAdmMove(id, Number(el.dataset.d)); }
   else if (a === "prop-adm-hide") {
     // 一键隐藏 / 显示：这家公司的排行、所有规模所有计划一起对普通用户隐藏
@@ -252,8 +299,10 @@ document.addEventListener("click", async (e) => {
     else { propFirms = propFirms.map((x) => (x.id === id ? f : x)); render(); }
   }
   else if (a === "prop-adm-firm") {
+    if (currentLayout() === "modern") { propOpenFirmEditor(id, el.dataset.section); return; }
     const f = id ? propFindFirm(id) : null;
-    propModal = { type: "admFirm", id, isNew: !f, draft: propAdmFirmDraft(f) }; propRenderModal();
+    propModal = { type: "admFirm", id, isNew: !f, draft: propAdmFirmDraft(f), updatesOpen: el.dataset.section === "updates" }; propRenderModal();
+    if (propModal.updatesOpen) propScrollFirmUpdatesEditor();
   }
   else if (a === "prop-adm-save-firm") { await propAdmSaveFirm(); }
   else if (a === "prop-adm-plan") {

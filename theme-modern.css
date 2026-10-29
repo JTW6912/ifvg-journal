@@ -669,3 +669,241 @@
 [data-layout="modern"] .propStep{border-radius:14px;}
 [data-layout="modern"] .propAccNums{border-radius:12px;}
 [data-layout="modern"] .propCompareBar{border-radius:16px;}
+
+/* shadcn/ui 原生适配：Card Header / Content / Footer、Badge、outline/ghost Button。
+   参考 https://ui.shadcn.com/docs/components/base/card 与 /badge、/collapsible。
+   不引入 React/Tailwind；颜色继续使用项目主题变量，仅作用于 modern 排行。 */
+[data-layout="modern"] .propRecommendPanel{padding:0;background:transparent;border:0;border-radius:0;box-shadow:none;margin-top:24px;}
+[data-layout="modern"] .propRecommendPanel>.propPanelHead{margin-bottom:16px;gap:14px;}
+[data-layout="modern"] .propRecommendPanel .propLabel{font-size:17px;font-weight:650;letter-spacing:-.3px;}
+[data-layout="modern"] .propRecommendPanel>.propPanelHead>.propMuted{color:var(--muted);font-size:12px;}
+[data-layout="modern"] .propRecommendPanel>.propBoardMore{display:flex;margin:16px auto 0;padding:7px 14px;border-radius:8px;}
+[data-layout="modern"] .propBoardList{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:18px;overflow:visible;padding:0;container-type:inline-size;container-name:prop-board;}
+[data-layout="modern"] .propBoardList::before{content:"";position:absolute;inset:-16px -6px;z-index:-1;pointer-events:none;border-radius:28px;
+  background:radial-gradient(ellipse 65% 420px at 5% 8%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 72%),radial-gradient(ellipse 55% 420px at 100% 42%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 72%);filter:blur(22px);}
+[data-layout="modern"] .propRecommendCard{--propCardSpace:20px;--propGlassRim:rgba(255,255,255,.14);position:relative;isolation:isolate;width:100%;min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:18px;
+  background:var(--surface);color:var(--text);font:inherit;text-align:left;box-shadow:var(--shadowCard),inset 0 1px 0 var(--propGlassRim);
+  transition:box-shadow .18s ease,border-color .18s ease;}
+[data-layout="modern"][data-theme="light"] .propRecommendCard{--propGlassRim:rgba(255,255,255,.9);}
+[data-layout="modern"] .propRecommendTop{display:grid;grid-template-columns:minmax(300px,27%) minmax(0,1fr);align-items:start;gap:28px;padding:22px var(--propCardSpace) 18px;}
+[data-layout="modern"] .propRecommendHeader{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:0;min-width:0;}
+[data-layout="modern"] .propRecommendHeader>.propRecommendCta{margin-left:58px;}
+[data-layout="modern"] .propRecommendIdentity{display:flex;align-items:center;gap:14px;min-width:0;width:100%;}
+[data-layout="modern"] .propRecommendRank{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border:1px solid var(--border);border-radius:11px;
+  background:var(--surface2);color:var(--muted);font-family:var(--fontMono);font-size:17px;font-weight:750;font-variant-numeric:tabular-nums;}
+[data-layout="modern"] .propRecommendRank.top{background:var(--accent);border-color:var(--accent);color:var(--onAccent);}
+/* 前三名只在排名标识上使用金 / 银 / 铜，普通选项标签仍跟随当前主题。 */
+[data-layout="modern"] .propRecommendRank[data-rank="1"]{--propMedalA:#fff3c4;--propMedalB:#ecd180;--propMedalC:#c39330;--propMedalInk:#32230b;--propMedalEdge:#d1aa4c;}
+[data-layout="modern"] .propRecommendRank[data-rank="2"]{--propMedalA:#f5f7fb;--propMedalB:#dce3ec;--propMedalC:#a8b5c7;--propMedalInk:#273244;--propMedalEdge:#a0adbf;}
+[data-layout="modern"] .propRecommendRank[data-rank="3"]{--propMedalA:#fce1cf;--propMedalB:#dfb28e;--propMedalC:#bd875b;--propMedalInk:#392213;--propMedalEdge:#bd875b;}
+[data-layout="modern"] .propRecommendRank:is([data-rank="1"],[data-rank="2"],[data-rank="3"]){background:linear-gradient(135deg,var(--propMedalA),var(--propMedalB) 46%,var(--propMedalC));
+  color:var(--propMedalInk);border-color:var(--propMedalEdge);box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 3px 8px color-mix(in srgb,var(--propMedalEdge) 16%,transparent);}
+[data-layout="modern"] :where(.propRecommendBrand){display:flex;align-items:center;gap:12px;flex:1;min-width:0;border:0;padding:0;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer;border-radius:6px;}
+[data-layout="modern"] :where(.propRecommendBrand):hover strong{color:var(--accent);text-decoration:underline;text-underline-offset:3px;}
+[data-layout="modern"] .propRecommendName{display:flex;flex-direction:column;gap:3px;min-width:0;}
+[data-layout="modern"] .propRecommendNameMeta{display:flex;align-items:center;gap:7px 9px;flex-wrap:wrap;margin-top:3px;}
+[data-layout="modern"] .propRecommendName strong{font-family:var(--fontUI);font-size:23px;font-weight:750;line-height:1.3;letter-spacing:-.4px;overflow-wrap:anywhere;}
+[data-layout="modern"] .propRecommendCount{font-size:12px;line-height:1.5;color:var(--muted);}
+[data-layout="modern"] .propRecommendIdentity .propLogo{width:64px;height:64px;border-radius:14px;background:var(--surface);border-color:var(--border);}
+[data-layout="modern"] :where(.propRecommendIdentity .propTier){flex:none;padding:2px 8px;border:1px solid transparent;border-radius:999px;font-size:11.5px;font-weight:500;line-height:1.45;}
+[data-layout="modern"] .propRecommendIdentity .propTier-good{border-color:color-mix(in srgb,var(--pos) 22%,var(--border));color:color-mix(in srgb,var(--pos) 65%,var(--text));}
+[data-layout="modern"] .propRecommendIdentity .propTier-fair{border-color:color-mix(in srgb,var(--info) 22%,var(--border));color:color-mix(in srgb,var(--info) 65%,var(--text));}
+[data-layout="modern"] .propRecommendIdentity .propTier-avoid{border-color:color-mix(in srgb,var(--neg) 22%,var(--border));color:color-mix(in srgb,var(--neg) 65%,var(--text));}
+[data-layout="modern"] .propRecommendIdentity .propTier-meh{border-color:var(--border);}
+[data-layout="modern"] :where(.propRecommendCta){display:inline-flex;align-items:center;justify-content:center;gap:9px;flex:none;min-height:34px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);color:var(--text);font:500 12px var(--fontUI);cursor:pointer;box-shadow:var(--shadowSm);transition:background .15s,border-color .15s;}
+[data-layout="modern"] :where(.propRecommendCta):hover{background:var(--surface2);border-color:var(--borderLight);}
+[data-layout="modern"] .propRecommendCta svg{width:14px;height:14px;flex:none;color:var(--muted);}
+[data-layout="modern"] .propRecommendContent{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,44%);grid-template-areas:"review deal";gap:24px;padding:0;align-items:start;min-width:0;}
+[data-layout="modern"] .propRecommendReview{min-width:0;container:prop-recommendation / inline-size;}
+[data-layout="modern"] .propRecommendReading{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;width:100%;}
+[data-layout="modern"] .propRecommendReading.hasKey{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);}
+[data-layout="modern"] .propRecommendKeyColumn,[data-layout="modern"] .propRecommendTextColumn{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0;}
+[data-layout="modern"] .propRecommendKeyColumn .propKeySentence{width:100%;margin:0;}
+@container prop-recommendation (max-width:359px){[data-layout="modern"] .propRecommendReading.hasKey{grid-template-columns:minmax(0,1fr);gap:14px;}}
+[data-layout="modern"] .propRecommendCard .propRichText{font-size:13px;}
+[data-layout="modern"] .propRecommendReview{grid-area:review;}
+[data-layout="modern"] .propRecommendDeal{grid-area:deal;}
+[data-layout="modern"] .propRecommendUpdates{grid-area:updates;border-left:1px solid var(--border);padding-left:20px;}
+[data-layout="modern"] .propRecommendUpdates .propFirmUpdatesHead{margin-bottom:9px;}
+[data-layout="modern"] .propRecommendUpdates .propRichText{font-size:12px;line-height:1.65;}
+[data-layout="modern"] .propRecommendUpdates .propFirmUpdateText{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-height:3.3em;}
+[data-layout="modern"] .propRecommendUpdates .propFirmUpdateText p,[data-layout="modern"] .propRecommendUpdates .propFirmUpdateText ul{margin-bottom:0;}
+[data-layout="modern"] .propReviewText{--propPreviewLines:2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:var(--propPreviewLines);overflow:hidden;width:100%;}
+[data-layout="modern"] .propFirmNotesText{--propPreviewLines:3;}
+[data-layout="modern"] .propReviewText.isExpanded{display:block;-webkit-line-clamp:unset;}
+[data-layout="modern"] :where(.propReviewToggle){display:inline-flex;align-items:center;gap:9px;min-height:30px;padding:5px 9px;margin-left:-9px;border:1px solid transparent;border-radius:7px;background:none;color:var(--muted);font:500 12px var(--fontUI);cursor:pointer;transition:background .15s,color .15s;}
+[data-layout="modern"] :where(.propReviewToggle):hover{background:var(--surface2);color:var(--text);}
+[data-layout="modern"] .propReviewToggle::after{content:"";width:5px;height:5px;margin-top:-3px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform .15s;}
+[data-layout="modern"] .propReviewToggle[aria-expanded="true"]::after{transform:rotate(225deg);margin-top:3px;}
+[data-layout="modern"] .propReviewToggle[hidden]{display:none;}
+[data-layout="modern"] .propRecommendLabel{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;line-height:1.5;color:var(--muted);}
+[data-layout="modern"] .propRecommendCard .propRecommendLabel{font-size:12.5px;font-weight:700;color:var(--text);}
+[data-layout="modern"] .propRecommendUpdates .propFirmUpdatesHead h3{font-size:13.5px;font-weight:700;}
+[data-layout="modern"] .propRecommendDeal{display:flex;flex-direction:column;gap:6px;min-width:0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:color-mix(in srgb,var(--surface2) 45%,var(--surface));}
+[data-layout="modern"] .propRecommendDealHead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;}
+[data-layout="modern"] .propRecommendDealHead .propRecommendLabel svg{width:12px;height:12px;}
+[data-layout="modern"] .propRecommendDiscount{font-family:var(--fontUI);font-size:20px;font-weight:650;line-height:1.2;letter-spacing:-.4px;color:var(--text);overflow-wrap:anywhere;}
+[data-layout="modern"] .propRecommendText{font-size:12px;line-height:1.75;overflow-wrap:anywhere;white-space:pre-line;color:var(--text);}
+[data-layout="modern"] .propRecommendText.isEmpty,[data-layout="modern"] .propRecommendDealText{color:var(--muted);}
+[data-layout="modern"] .propRecommendFooter{--propTextBg:color-mix(in srgb,var(--surface2) 30%,var(--surface));display:grid;grid-template-columns:minmax(0,1.8fr) minmax(250px,1fr);grid-template-areas:"facts updates";gap:24px;padding:16px var(--propCardSpace);border-top:1px solid var(--border);background:var(--propTextBg);}
+[data-layout="modern"] .propFirmFacts{min-width:0;container-type:inline-size;}
+[data-layout="modern"] .propRecommendFooter>.propFirmFacts{grid-area:facts;}
+[data-layout="modern"] .propFirmFactsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:0;}
+[data-layout="modern"] .propFirmFact{min-width:0;}
+[data-layout="modern"] .propFirmFact dt{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.5;}
+[data-layout="modern"] .propFirmFact dd{margin:7px 0 0;min-width:0;font-size:12px;line-height:1.75;}
+[data-layout="modern"] .propFirmInfoEmpty{color:var(--muted);font-size:12px;}
+[data-layout="modern"] .propRecommendFooter .propFirmFacts .propRichText{font-size:12px;}
+[data-layout="modern"] .propFirmInfoFull{padding:18px;margin:16px 0;border:1px solid var(--border);border-radius:12px;background:var(--surface2);}
+[data-layout="modern"] .propFirmInfoFull h3{margin:0 0 16px;font-size:15px;}
+[data-layout="modern"] .propFirmInfoFull [data-prop-info-field="notes"]{grid-column:1/-1;}
+[data-layout="modern"] .propRecommendTags{display:flex;flex-wrap:wrap;gap:6px;min-width:0;}
+[data-layout="modern"] .propRecommendTag{max-width:100%;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11px;font-weight:500;line-height:1.4;overflow-wrap:anywhere;}
+[data-layout="modern"] .propRecommendTag.propChoiceTag{font-size:12px;font-weight:600;padding:4px 9px;line-height:1.5;
+  color:color-mix(in srgb,var(--accent) 65%,var(--text));background:var(--accentSoft);border-color:color-mix(in srgb,var(--accent) 25%,var(--border));}
+[data-layout="modern"] :where(.propMagicPolicy){display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:3px 8px;border:1px solid transparent;border-radius:999px;font-size:11px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;
+  background:var(--accentSoft);color:color-mix(in srgb,var(--accent) 65%,var(--text));}
+[data-layout="modern"] .propMagicPolicy::before{content:"";width:5px;height:5px;flex:none;border-radius:50%;background:currentColor;}
+[data-layout="modern"] .propMagicPolicy-unknown{background:var(--surface2);border-color:var(--border);color:var(--muted);}
+[data-layout="modern"] .propMagicPolicy-allowed{background:var(--posSoft);color:color-mix(in srgb,var(--pos) 65%,var(--text));}
+[data-layout="modern"] .propMagicPolicy-prohibited{background:var(--negSoft);color:color-mix(in srgb,var(--neg) 65%,var(--text));}
+[data-layout="modern"] .propRecommendCard :where(button):focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+@container (min-width:681px) and (max-width:1100px){
+  [data-layout="modern"] .propRecommendTop{grid-template-columns:minmax(240px,.85fr) minmax(0,1.15fr);gap:24px;}
+  [data-layout="modern"] .propRecommendContent{grid-template-columns:minmax(0,1fr);grid-template-areas:"review" "deal";gap:12px;}
+  [data-layout="modern"] .propRecommendIdentity .propLogo{width:56px;height:56px;}
+  [data-layout="modern"] .propRecommendRank{width:40px;height:40px;font-size:16px;}
+  [data-layout="modern"] .propRecommendName strong{font-size:21px;}
+  [data-layout="modern"] .propRecommendHeader>.propRecommendCta{margin-left:54px;}
+}
+@container (max-width:1000px){
+  [data-layout="modern"] .propRecommendFooter{grid-template-columns:minmax(0,1fr);grid-template-areas:"facts" "updates";gap:18px;}
+  [data-layout="modern"] .propRecommendUpdates{border-left:0;border-top:1px solid var(--border);padding:14px 0 0;}
+}
+@container (max-width:640px){
+  [data-layout="modern"] .propFirmFactsGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@container (max-width:300px){
+  [data-layout="modern"] .propFirmFactsGrid{grid-template-columns:minmax(0,1fr);}
+}
+@container (max-width:680px){
+  [data-layout="modern"] .propRecommendCard{--propCardSpace:16px;}
+  [data-layout="modern"] .propRecommendTop{grid-template-columns:minmax(0,1fr);gap:16px;padding:18px var(--propCardSpace); }
+  [data-layout="modern"] .propRecommendHeader{gap:12px;padding:0;}
+  [data-layout="modern"] .propRecommendHeader>.propRecommendCta{margin-left:0;}
+  [data-layout="modern"] .propRecommendContent{grid-template-columns:minmax(0,1fr);grid-template-areas:"review" "deal";gap:12px;}
+  [data-layout="modern"] .propRecommendDealHead{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  [data-layout="modern"] .propRecommendDiscount{font-size:21px;}
+  [data-layout="modern"] .propRecommendFooter{align-items:flex-start;gap:12px;}
+}
+@container (max-width:460px){
+  [data-layout="modern"] .propRecommendIdentity{flex-basis:100%;gap:10px;flex-wrap:wrap;}
+  [data-layout="modern"] .propRecommendBrand{flex:1;}
+  [data-layout="modern"] .propRecommendRank{width:34px;height:34px;font-size:14px;}
+  [data-layout="modern"] .propRecommendIdentity .propLogo{width:48px;height:48px;border-radius:11px;}
+  [data-layout="modern"] .propRecommendName strong{font-size:20px;}
+  [data-layout="modern"] .propRecommendCta{width:100%;}
+}
+/* 支持背景模糊时启用磨砂表面；不支持时沿用上面的实色背景。 */
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  [data-layout="modern"] .propRecommendCard{background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 90%,transparent),color-mix(in srgb,var(--surface) 72%,transparent));
+    border-color:color-mix(in srgb,var(--border) 80%,var(--surface));backdrop-filter:blur(16px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.15);}
+  [data-layout="modern"] .propRecommendFooter{background:color-mix(in srgb,var(--surface2) 35%,transparent);}
+  [data-layout="modern"] .propRecommendDeal{background:color-mix(in srgb,var(--surface2) 42%,transparent);}
+  /* 悬停提高表面实度而非变换文字，避免缩放/旋转造成重采样发虚。 */
+  @media(hover:hover), (pointer:none){
+    [data-layout="modern"] :where(.propRecommendCard):hover{background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 97%,transparent),color-mix(in srgb,var(--surface) 92%,transparent));}
+  }
+}
+/* 无主指针的桌面/辅助环境允许真实 :hover；纯粗指针触屏不启用悬停装饰。 */
+@media(hover:hover), (pointer:none){
+  [data-layout="modern"] :where(.propRecommendCard):hover{z-index:2;border-color:color-mix(in srgb,var(--accent) 32%,var(--border));
+    box-shadow:var(--shadowHover),inset 0 1px 0 var(--propGlassRim),0 0 0 1px color-mix(in srgb,var(--accent) 7%,transparent);}
+}
+@media(prefers-reduced-motion:reduce){
+  [data-layout="modern"] .propRecommendCta,[data-layout="modern"] .propReviewToggle,[data-layout="modern"] .propReviewToggle::after{transition:none;}
+  [data-layout="modern"] .propRecommendCard{transition:none;transform:none;}
+}
+
+/* 可配置玻璃内容块：只模糊背板，文字、图标不变形或模糊。嵌套框重置变量，不继承外框配色。 */
+[data-layout="modern"] .propGlassSurface{--propEdge:var(--accent);--propTint:var(--accent);--propBtn:var(--accent);--propBtnInk:var(--bg);--propTintA:7%;--propTintB:18%;
+  border:1px solid color-mix(in srgb,var(--propEdge) 70%,var(--border));border-radius:12px;color:var(--text);
+  background:linear-gradient(125deg,color-mix(in srgb,var(--propTint) var(--propTintA),var(--surface)),color-mix(in srgb,var(--propTint) var(--propTintB),var(--surface)));
+  box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 5%,transparent),0 5px 16px #00000009;filter:none;transform:none;}
+[data-layout="modern"][data-theme="light"] .propGlassSurface{--propTintA:14%;--propTintB:38%;}
+[data-layout="modern"] .propKeySentence{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;margin:4px 0 9px;max-width:100%;font-size:13px;font-weight:650;line-height:1.65;}
+[data-layout="modern"] .propKeySentence>.propInlineIcon{color:var(--propEdge);margin-top:3px;}
+[data-layout="modern"] .propKeySentence>.propRichText{min-width:0;}
+[data-layout="modern"] .propKeySentence .propRichText :is(p,li){font-weight:650;}
+[data-layout="modern"] .propKeySentence p:last-child{margin-bottom:0;}
+[data-layout="modern"] .propInlineIcon{display:inline-flex;width:1.15em;height:1.15em;align-items:center;justify-content:center;vertical-align:-.18em;margin:0 .22em 0 0;flex:none;}
+[data-layout="modern"] .propInlineIcon>svg{width:100%;height:100%;display:block;filter:none;transform:none;}
+[data-layout="modern"] .propCoupon{padding:16px;gap:12px;position:relative;isolation:isolate;overflow:hidden;border-radius:16px;}
+[data-layout="modern"] .propCoupon::after{content:"%";position:absolute;right:5px;bottom:-14px;font-size:90px;font-weight:800;line-height:1;color:var(--propEdge);opacity:.06;z-index:-1;pointer-events:none;}
+[data-layout="modern"] .propCoupon .propRecommendDealHead{gap:8px;}
+[data-layout="modern"] .propCoupon .propRecommendLabel{color:var(--text);font-weight:700;flex-wrap:wrap;}
+[data-layout="modern"] .propCoupon .propRecommendLabel>.propInlineIcon{color:var(--propEdge);font-size:17px;}
+[data-layout="modern"] .propCoupon .propRecommendLabel svg{width:100%;height:100%;}
+[data-layout="modern"] .propCoupon .propRecommendDiscount{font-size:25px;font-weight:800;letter-spacing:-.7px;}
+[data-layout="modern"] .propCouponDescription{font-size:12px;line-height:1.7;color:var(--text);min-width:0;}
+[data-layout="modern"] .propCouponDescription p:last-child{margin-bottom:0;}
+[data-layout="modern"] .propCouponHot{display:inline-flex;padding:3px 8px;border-radius:999px;font:700 10px/1.3 var(--fontUI);background:linear-gradient(135deg,#ff6571,#d31c34);color:#fff;box-shadow:inset 0 1px 0 #ffffff60;}
+[data-layout="modern"] .propCouponActions{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin-top:2px;}
+[data-layout="modern"] .propCoupon :where(.propCouponCode){display:flex;align-items:center;gap:7px;flex:1 0 150px;min-width:0;min-height:38px;padding:6px 9px;border:1px dashed color-mix(in srgb,var(--propEdge) 65%,transparent);border-radius:9px;background:color-mix(in srgb,var(--surface) 90%,transparent);color:var(--text);font:inherit;text-align:left;cursor:pointer;appearance:none;transform:none;}
+[data-layout="modern"] .propCoupon :where(.propCouponCode:hover){background:color-mix(in srgb,var(--surface) 96%,var(--propTint));border-color:var(--propEdge);box-shadow:0 0 0 2px color-mix(in srgb,var(--propEdge) 12%,transparent);}
+[data-layout="modern"] .propCoupon :where(.propCouponCode:active){box-shadow:inset 0 1px 4px #00000012;}
+[data-layout="modern"] .propCouponCode code{min-width:0;overflow-wrap:anywhere;font:650 13px/1.5 var(--fontMono);}
+[data-layout="modern"] .propCouponCopyMark{display:grid;place-items:center;flex:none;width:28px;height:28px;padding:5px;margin-left:auto;color:var(--text);}
+[data-layout="modern"] .propCouponCopyMark svg{width:17px;height:17px;}
+[data-layout="modern"] :where(.propCouponLink){display:inline-flex;align-items:center;justify-content:center;gap:10px;flex:1 0 auto;min-height:38px;padding:8px 12px;border:1px solid color-mix(in srgb,var(--propBtn) 70%,transparent);border-radius:9px;
+  background:var(--propBtn);box-shadow:inset 0 1px 0 #ffffff30,0 4px 12px #00000012;color:var(--propBtnInk);font:650 12px/1.5 var(--fontUI);text-decoration:none;transform:none;}
+[data-layout="modern"] :where(.propCouponLink):hover{box-shadow:inset 0 1px 0 #ffffff60,0 5px 14px #00000022;text-decoration:none;}
+[data-layout="modern"] .propCouponLink span{font-size:18px;}
+[data-layout="modern"] .propFirmCoupon{max-width:600px;margin:18px 0;}
+[data-layout="modern"] .propCallout{display:flex;gap:9px;padding:10px 12px;margin:10px 0;min-width:0;}
+[data-layout="modern"] .propCallout>.propInlineIcon{color:var(--propEdge);margin-top:4px;}
+[data-layout="modern"] .propCallout>.propRichText{min-width:0;}
+[data-layout="modern"] .propCallout p:last-child{margin-bottom:0;}
+[data-layout="modern"] .propUpdateGlass{padding:12px 14px;min-width:0;}
+[data-layout="modern"] .propUpdateGlass .propFirmUpdateMeta{gap:8px 10px;min-height:26px;margin-bottom:8px;}
+[data-layout="modern"] .propUpdateGlass .propFirmUpdateMeta time{color:var(--text);font:650 13px/1.5 var(--fontUI);font-variant-numeric:tabular-nums;letter-spacing:.1px;}
+[data-layout="modern"] .propUpdateGlass .propFirmUpdateType{padding:3px 8px;border-radius:6px;background:var(--surface);color:var(--text);border-color:color-mix(in srgb,var(--propEdge) 30%,var(--border));font-size:12px;font-weight:650;line-height:1.4;}
+[data-layout="modern"] .propFirmUpdatesFull .propUpdateGlass .propFirmUpdateText{padding:0;border:0;background:none;}
+[data-layout="modern"] .propRecommendUpdates .propUpdateGlass .propFirmUpdateText{display:block;-webkit-line-clamp:unset;max-height:11em;overflow:hidden;}
+[data-layout="modern"] .propRecommendUpdates .propUpdateGlass .propFirmUpdateText p{margin:0 0 6px;}
+[data-layout="modern"] .propRecommendUpdates .propUpdateGlass{padding:9px 11px;}
+[data-layout="modern"] .propRecommendUpdates .propCallout{padding:7px 9px;font-size:11.5px;}
+[data-layout="modern"] .propEditorPreview .propUpdateGlass{margin-bottom:14px;}
+[data-layout="modern"] .propEditorPreview .propCoupon{margin-top:16px;padding:14px;}
+[data-layout="modern"] .propEditorPreview .propCoupon .propRecommendDiscount{font-size:22px;}
+[data-layout="modern"] .propEditorPreview .propKeySentence{font-size:12px;}
+[data-layout="modern"] [data-prop-copy-protected]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+[data-layout="modern"] [data-prop-copy-protected] :is(input,textarea,[contenteditable="true"]){-webkit-user-select:text;user-select:text;}
+[data-layout="modern"] .propCoupon :is(a,button):focus-visible{outline:2px solid var(--text);outline-offset:3px;}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  [data-layout="modern"] .propGlassSurface{background:linear-gradient(125deg,color-mix(in srgb,var(--propTint) var(--propTintA),color-mix(in srgb,var(--surface) 88%,transparent)),color-mix(in srgb,var(--propTint) var(--propTintB),color-mix(in srgb,var(--surface) 90%,transparent)));backdrop-filter:blur(12px) saturate(1.08);-webkit-backdrop-filter:blur(12px) saturate(1.08);}
+}
+
+/* 宽屏上下共用四列：公司/平台、关键句/魔法政策、推荐语/出金、优惠/更新。 */
+@container prop-board (min-width:1101px){
+  [data-layout="modern"] .propRecommendCard{--propAlignedColumns:repeat(3,minmax(0,.6fr)) minmax(250px,1fr);--propAlignedGap:18px;}
+  [data-layout="modern"] .propRecommendTop,[data-layout="modern"] .propRecommendFooter{grid-template-columns:var(--propAlignedColumns);gap:var(--propAlignedGap);}
+  [data-layout="modern"] .propRecommendTop{grid-template-areas:"firm key review deal";}
+  [data-layout="modern"] .propRecommendHeader{grid-area:firm;}
+  [data-layout="modern"] .propRecommendContent,[data-layout="modern"] .propRecommendReview,[data-layout="modern"] .propRecommendReading{display:contents;}
+  [data-layout="modern"] .propRecommendReview{container-type:normal;container-name:none;}
+  [data-layout="modern"] .propRecommendKeyColumn{grid-area:key;}
+  [data-layout="modern"] .propRecommendTextColumn{grid-area:review;}
+  [data-layout="modern"] .propRecommendTop:not(:has(.propRecommendKeyColumn)) .propRecommendTextColumn{grid-area:auto;grid-column:2 / 4;grid-row:1;}
+  [data-layout="modern"] .propRecommendFooter{grid-template-areas:"facts facts facts updates";}
+  [data-layout="modern"] .propRecommendFooter .propFirmFactsGrid{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:var(--propAlignedGap);}
+}
+@container prop-board (min-width:1101px) and (max-width:1350px){
+  [data-layout="modern"] .propRecommendIdentity{gap:10px;}
+  [data-layout="modern"] :where(.propRecommendBrand){gap:10px;}
+  [data-layout="modern"] .propRecommendIdentity .propLogo{width:48px;height:48px;border-radius:11px;}
+  [data-layout="modern"] .propRecommendRank{width:34px;height:34px;font-size:14px;}
+  [data-layout="modern"] .propRecommendName strong{font-size:20px;}
+  [data-layout="modern"] .propRecommendHeader>.propRecommendCta{margin-left:44px;}
+}

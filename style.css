@@ -2152,3 +2152,259 @@ button.propLedRow,.propLedRow>summary{display:grid;grid-template-columns:auto mi
   display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative;z-index:1;}
 .propPcTop .propPcAdmEdit:hover{background:var(--accent);color:var(--onAccent);}
 .propPcTop .propPcAdmEdit .icon{width:15px;height:15px;}
+
+/* 推荐语轻量排版与编辑器：仅作用于新组件，经典排行仍使用原来的纯文本布局。 */
+.propRichText{font:13px/1.75 var(--fontBody);color:var(--text);overflow-wrap:anywhere;white-space:normal;min-width:0;}
+.propRichText p,.propRichText ul{margin:0 0 .7em;}
+.propRichText>:last-child{margin-bottom:0;}
+.propRichText ul{padding-left:1.35em;}
+.propRichText li+li{margin-top:.2em;}
+.propRichText li::marker{color:var(--muted);}
+.propRichText strong{font-weight:700;}
+.propRichText mark{background:color-mix(in srgb,#f2c45c 35%,var(--surface));color:var(--text);padding:1px 3px;border-radius:3px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+.propReviewEmpty{color:var(--muted);}
+.propReviewEditor{border:1px solid var(--border);border-radius:var(--r10);padding:14px;background:var(--surface);}
+.propReviewEditorHead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;}
+.propReviewEditorHead .fieldLabel,.propReviewEditorHead .propHint{margin:0;}
+.propReviewEditor .propHint{color:var(--muted);}
+.propReviewToolbar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.propReviewInput{display:block;width:100%;min-height:150px;resize:vertical;line-height:1.7;}
+.propReviewPreview{margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:var(--r8);background:var(--surface2);}
+.propReviewPreviewLabel{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px;}
+.propReviewPreview .propRichText{max-height:240px;overflow:auto;}
+.propFirmRecommendation{padding:16px 18px;margin:12px 0 18px;border:1px solid var(--border);border-radius:var(--r10);background:var(--surface2);}
+.propFirmRecommendation>.propRecommendLabel{display:block;margin-bottom:8px;}
+
+/* 公司专属更新：紧凑摘要与完整时间线共用，不影响网站 changelog。 */
+.propFirmUpdates{min-width:0;}
+.propFirmUpdatesHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.propFirmUpdatesHead h3{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0;font-size:13px;font-weight:600;line-height:1.5;}
+.propUpdateCount{font-size:10.5px;font-weight:500;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:1px 6px;white-space:nowrap;}
+.propUpdatesLink{display:inline-flex;align-items:center;gap:6px;flex:none;min-height:28px;padding:3px 0;border:0;background:none;color:var(--accent);font:500 11.5px var(--fontUI);cursor:pointer;}
+.propUpdatesLink:hover{text-decoration:underline;text-underline-offset:3px;}
+.propFirmUpdatesEmpty{padding:8px 0;color:var(--muted);font-size:12px;line-height:1.7;}
+.propFirmUpdateList{list-style:none;padding:0;margin:0;}
+.propFirmUpdate{position:relative;padding:0 0 15px 17px;}
+.propFirmUpdate::before{content:"";position:absolute;left:0;top:6px;width:7px;height:7px;border-radius:50%;background:var(--borderLight);}
+.propFirmUpdate:first-child::before{background:var(--accent);box-shadow:0 0 0 3px var(--accentSoft);}
+.propFirmUpdate::after{content:"";position:absolute;left:3px;top:18px;bottom:5px;width:1px;background:var(--border);}
+.propFirmUpdate:last-child{padding-bottom:0;}
+.propFirmUpdate:last-child::after{display:none;}
+.propFirmUpdateMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:20px;}
+.propFirmUpdateMeta time{font:500 11px var(--fontMono);font-variant-numeric:tabular-nums;color:var(--muted);}
+.propFirmUpdateType{border:1px solid var(--border);border-radius:4px;padding:0 6px;font-size:10px;line-height:1.7;color:var(--muted);background:var(--surface);}
+.propFirmUpdateText{margin-top:6px;}
+.propFirmUpdatesFull{scroll-margin-top:84px;padding:18px 20px;margin:18px 0 24px;border:1px solid var(--border);border-radius:12px;background:var(--surface);}
+.propFirmUpdatesFull .propFirmUpdatesHead{margin-bottom:18px;}
+.propFirmUpdatesFull .propFirmUpdatesHead h3{font-size:15px;}
+.propFirmUpdatesFull .propFirmUpdate{padding-left:24px;padding-bottom:18px;}
+.propFirmUpdatesFull .propFirmUpdate:last-child{padding-bottom:0;}
+.propFirmUpdatesFull .propFirmUpdateText{padding:11px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);}
+.propFirmUpdatesFull .propFirmUpdateMeta time{font-size:12px;}
+.propUpdatesEditor{border:1px solid var(--border);border-radius:var(--r10);margin:0 0 14px;scroll-margin-top:12px;}
+.propUpdatesEditor>summary{padding:13px 14px;cursor:pointer;font-size:13px;font-weight:600;}
+.propUpdatesEditor>summary .propUpdateCount{margin-left:9px;}
+.propUpdatesEditor[open]>summary{border-bottom:1px solid var(--border);}
+.propUpdatesEditorInner{padding:14px;}
+.propUpdatesEditor .propHint{margin:0 0 12px;color:var(--muted);}
+.propUpdateEditRow{padding:12px;margin-bottom:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);}
+.propUpdateEditRow label{display:block;margin-bottom:6px;font-size:11.5px;font-weight:500;color:var(--muted);}
+.propUpdateEditTop{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:end;margin-bottom:10px;}
+.propUpdateEditRow .input{min-width:0;width:100%;}
+.propUpdateEditRow textarea{display:block;resize:vertical;min-height:84px;line-height:1.65;}
+.propUpdateRemove{min-height:34px;padding:6px;border:0;border-radius:6px;background:transparent;color:color-mix(in srgb,var(--neg) 65%,var(--text));font:500 11.5px var(--fontUI);cursor:pointer;}
+.propUpdateRemove:hover{background:var(--negSoft);}
+@media(max-width:520px){.propUpdateEditTop{grid-template-columns:minmax(0,1fr);}.propUpdateRemove{justify-self:end;}.propFirmUpdatesFull{padding:16px;}}
+
+/* 公司目录多选：复选框保留键盘操作，自定义值只在保存公司时落库。 */
+.propFirmChoicesGrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:0 0 14px;align-items:start;}
+.propFirmChoiceField{min-width:0;margin:0;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r8);}
+.propFirmChoiceField legend{padding:0 5px;font-size:12px;font-weight:600;color:var(--text);}
+.propChoicePicker>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;padding:4px 0;color:var(--text);font-size:12px;list-style:none;}
+.propChoicePicker>summary::-webkit-details-marker{display:none;}
+.propChoicePicker>summary::after{content:"⌄";flex:none;color:var(--muted);}
+.propChoicePicker[open]>summary::after{content:"⌃";}
+.propChoiceSummary{min-width:0;overflow-wrap:anywhere;line-height:1.6;}
+.propChoiceCount{flex:none;font-size:10px;color:var(--muted);white-space:nowrap;}
+.propChoiceOptions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;margin-top:10px;}
+:where(.propChoiceOption){display:flex;align-items:flex-start;gap:7px;min-width:0;padding:7px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:11.5px;line-height:1.5;cursor:pointer;overflow-wrap:anywhere;}
+:where(.propChoiceOption):hover{border-color:var(--borderLight);background:var(--surface2);}
+.propChoiceOption:has(input:checked){border-color:var(--accent);background:var(--accentSoft);}
+.propChoiceOption input{flex:none;width:14px;height:14px;margin:2px 0 0;accent-color:var(--accent);}
+.propChoiceOption:focus-within{outline:2px solid var(--accent);outline-offset:2px;}
+.propChoiceCustom{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
+.propChoiceCustomLabel{display:block;color:var(--muted);font-size:11px;margin-bottom:6px;}
+.propChoiceCustom>div{display:flex;gap:7px;}
+.propChoiceCustom input{min-width:0;flex:1;}
+.propFirmChoiceField .propHint{margin:7px 0 0;color:var(--muted);font-size:10.5px;}
+/* 选项标签统一随当前配色变化，不按选项分配独立颜色。 */
+.propChoiceTag{display:inline-block;max-width:100%;padding:3px 7px;border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));border-radius:6px;
+  color:color-mix(in srgb,var(--accent) 65%,var(--text));background:var(--accentSoft);font-size:11.5px;font-weight:600;line-height:1.5;overflow-wrap:anywhere;}
+@media(max-width:600px){.propFirmChoicesGrid{grid-template-columns:minmax(0,1fr);}}
+
+/* 共享图标只装饰标签，品牌图像不变色、不变形；失效时文字继续可读。 */
+.propOptionIcon{display:inline-flex;vertical-align:-3px;align-items:center;justify-content:center;width:16px;height:16px;flex:0 0 16px;margin-right:5px;line-height:1;}
+.propOptionIcon svg,.propOptionIcon img{display:block;width:100%;height:100%;object-fit:contain;filter:none;}
+.propOptionIcon[hidden]{display:none;}
+.propOptionImage{width:20px;flex-basis:20px;padding:1px;box-sizing:border-box;background:#f7f7f7;border-radius:3px;}
+
+/* 独立公司编辑页。只由modern入口打开；不改变classic的原有目录与弹窗。 */
+.propFirmEditorPage{max-width:1580px;margin:0 auto 40px;color:var(--text);}
+.propEditorTop{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 22px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px #0000000a;}
+.propEditorBack{padding:0;border:0;background:none;color:var(--muted);font:500 12px var(--fontUI);cursor:pointer;}
+.propEditorBack:hover{color:var(--text);}
+.propEditorTop h2{margin:10px 0 0;font:700 23px/1.35 var(--fontUI);letter-spacing:-.5px;}
+.propEditorTop h2 span{font-size:15px;font-weight:500;color:var(--muted);margin-left:14px;overflow-wrap:anywhere;}
+.propEditorSave{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end;}
+.propEditorSave>span{font-size:11px;color:var(--muted);}
+.propEditorTabs{display:flex;gap:7px;margin-bottom:22px;overflow-x:auto;padding:3px 2px 8px;}
+:where(.propEditorTabs .btn){white-space:nowrap;border-color:transparent;background:transparent;color:var(--muted);}
+.propEditorTabs .btn.active{background:var(--accentSoft);border-color:color-mix(in srgb,var(--accent) 40%,var(--border));color:var(--text);}
+.propEditorLayout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start;}
+.propEditorControls{margin:0;padding:26px;border:1px solid var(--border);border-radius:14px;min-width:0;background:var(--surface);}
+.propEditorSection[hidden]{display:none;}
+.propEditorSection h3{font:700 17px/1.4 var(--fontUI);margin:0 0 22px;}
+.propEditorSection .field{display:block;min-width:0;margin-bottom:20px;}
+.propEditorSection .fieldLabel{display:block;font-size:13px;font-weight:650;color:var(--text);margin-bottom:9px;}
+.propEditorSection .input{width:100%;box-sizing:border-box;}
+.propEditorSection textarea{resize:vertical;line-height:1.8;}
+.propEditorSection .propHint{display:block;font-size:11px;line-height:1.7;}
+.propEditorVisibility{padding-top:18px;border-top:1px solid var(--border);}
+.propEditorSectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.propEditorSectionHead h3,.propEditorSectionHead h4{margin:0;}
+.propEditorSectionHead{margin-bottom:16px;}
+.propEditorScope{display:flex;gap:9px;align-items:flex-start;padding:12px 14px;border-radius:9px;background:var(--accentSoft);font-size:12px;line-height:1.7;}
+.propEditorScope svg{width:17px;height:17px;flex:none;margin-top:2px;}
+.propEditorControls .propFirmChoicesGrid{gap:20px;margin-top:22px;}
+.propEditorControls .propFirmChoiceField{padding:14px;}
+.propEditorControls .propFirmChoiceField legend{font-size:14px;font-weight:700;}
+.propEditorControls .propChoiceOptions{grid-template-columns:minmax(0,1fr);max-height:300px;overflow:auto;padding:3px;}
+.propChoiceSearch{margin-top:12px;}
+.propChoiceRow{display:flex;gap:5px;min-width:0;align-items:stretch;}
+.propChoiceRow[hidden]{display:none;}
+.propChoiceRow>.propChoiceOption{flex:1;align-items:center;min-height:42px;}
+.propChoiceRow .propChoiceTag{background:none;border:0;padding:0;}
+.propChoiceIconEdit{flex:none;align-self:center;width:30px;height:32px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;}
+.propChoiceIconEdit:hover{color:var(--text);background:var(--surface2);}
+.propChoiceIconEdit svg{width:14px;height:14px;}
+.propIconManager{padding:18px;margin:18px 0;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--border));border-radius:12px;background:var(--surface2);}
+.propIconManager h4{font-size:14px;overflow-wrap:anywhere;}
+.propIconLibrary{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin:16px 0;}
+:where(.propIconPick){display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:72px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--muted);font:11px var(--fontUI);cursor:pointer;}
+:where(.propIconPick):hover{color:var(--text);border-color:var(--borderLight);}
+.propIconPick.active{color:var(--text);background:var(--accentSoft);border-color:var(--accent);}
+.propIconPick svg{width:23px;height:23px;}
+.propEditorPreview{position:sticky;top:115px;padding:20px;border:1px solid var(--border);border-radius:14px;background:color-mix(in srgb,var(--surface) 85%,transparent);min-width:0;}
+.propEditorPreview summary{cursor:pointer;font-size:13px;font-weight:700;}
+.propEditorPreview .propHint{margin:12px 0;font-size:11px;line-height:1.7;}
+.propEditorPreviewBody{min-width:0;}
+.propEditorPreview #propEditorPreviewBody{max-height:calc(100vh - 280px);overflow:auto;scrollbar-gutter:stable;padding-right:6px;}
+.propEditorPreviewIdentity{display:flex;align-items:center;gap:12px;margin:16px 0;}
+.propEditorPreviewIdentity b{overflow-wrap:anywhere;font-size:17px;}
+.propEditorPreviewReview{font-size:12px;border-bottom:1px solid var(--border);padding-bottom:16px;}
+.propEditorPreview .propFirmFactsGrid{grid-template-columns:minmax(0,1fr);}
+.propEditorPreview .propFirmInfoFull{padding:0;border:0;background:none;}
+.propEditorPreview .propFirmInfoFull>h3{display:none;}
+.propEditorPreview .propFirmFact{padding:12px 0;border-bottom:1px solid var(--border);}
+.propEditorPreview .propFirmFact dt{font-size:12px;font-weight:700;}
+.propEditorPreviewUpdate{padding:10px 0;border-top:1px solid var(--border);font-size:12px;}
+.propEditorPreviewUpdate small{color:var(--muted);}
+.propEditorPreview h3{font-size:13px;margin:20px 0 10px;}
+.propEditorConfirm{padding:20px;margin-bottom:18px;background:var(--surface);border:1px solid var(--accent);border-radius:12px;}
+.propEditorConfirm h3{font-size:15px;margin:0 0 8px;}
+.propEditorConfirm p{font-size:12px;color:var(--muted);}
+.propEditorConfirm>div{display:flex;gap:10px;flex-wrap:wrap;}
+.propFirmEditorPage #propEditorAlert:not(:empty){padding:14px 18px;margin-bottom:16px;color:var(--neg);background:var(--negSoft);border:1px solid color-mix(in srgb,var(--neg) 30%,var(--border));border-radius:10px;font-size:12px;line-height:1.7;}
+.propEditorControls:disabled{opacity:.7;}
+.propFirmEditorPage :where(button,input,select,textarea,summary):focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+.propEditorSection .propUpdatesEditor{border:0;margin:0;}
+.propEditorSection .propUpdatesEditorInner{padding:12px 0;}
+.propEditorSection .propUpdateEditRow{padding:18px;}
+.propEditorSection .propUpdateEditRow label{color:var(--text);font-weight:600;}
+.propEditorSection .propReviewPreview{margin-bottom:24px;}
+.propEditorSection .propReviewToolbar{flex-wrap:wrap;}
+.propEditorSection .propReviewPreview .propRichText{max-height:280px;overflow:auto;}
+.propEditorSection .propReviewInput{min-height:220px;}
+.propEditorSection .propHint:empty{display:none;}
+.propEditorTop button:disabled,.propChoiceIconEdit:disabled{cursor:wait;}
+.propEditorSection .propChoiceCustom>div{flex-wrap:wrap;}
+.propEditorSection .propChoiceCustom input{flex-basis:120px;}
+.propEditorTop,.propIconPick,.propChoiceRow{transform:none;filter:none;}
+.propEditorSection .propChoicePicker>summary{align-items:flex-start;}
+.propEditorSection .propChoiceSummary{font-size:11px;}
+.propEditorSection .propChoiceCount{padding-top:3px;}
+.propEditorControls .propRow{gap:20px;}
+.propEditorControls .propRow>.field{min-width:0;}
+.propEditorSection .propReviewPreviewLabel{color:var(--muted);}
+.propEditorSection .propReviewEditorHead .fieldLabel{margin-bottom:0;}
+.propEditorTop .btn{white-space:nowrap;}
+.propEditorConfirm [data-action="prop-editor-discard"]{color:var(--neg);}
+.propEditorSection .propIconManager .field{margin-bottom:14px;}
+.propEditorSection .propIconManager .propHint{margin-top:8px;}
+.propEditorSection .propChoiceOption input{margin-top:0;}
+.propEditorPreview .propRichText{overflow-wrap:anywhere;}
+.propEditorPreview .propRecommendTags{gap:5px;}
+.propEditorPreview .propFirmFact dd{margin:7px 0 0;}
+.propEditorSection .propUpdateCount{white-space:nowrap;}
+.propEditorSection .propChoiceIconEdit:focus-visible{outline-offset:1px;}
+.propEditorSection .propChoicePicker .input{font-size:12px;}
+.propEditorSection .propChoiceTag{line-height:1.5;}
+.propEditorTop .propEditorSave{max-width:52%;}
+.propEditorTop .propEditorSave>span{overflow-wrap:anywhere;}
+.propEditorSection .propIconLibrary button{padding:8px 4px;}
+.propEditorSection .propIconLibrary span{text-align:center;line-height:1.4;}
+.propEditorSection .propChoiceCustomLabel{font-weight:600;}
+.propEditorSection .propEditorScope+.propHint{color:var(--muted);}
+.propEditorPreview .propLogo{flex:none;}
+[data-layout="modern"] .propEditorPreview .propFirmInfoFull{padding:0;margin:0;border:0;background:none;}
+[data-layout="modern"] .propEditorPreview .propFirmFactsGrid{grid-template-columns:minmax(0,1fr);gap:4px;}
+[data-layout="modern"] .propEditorPreview .propFirmFact dt{font-size:12px;}
+.propEditorControls :is(input,button,textarea,select,summary),.propIconManager,.propChoiceRow{scroll-margin-top:calc(var(--preview-bar-height,0px) + 150px);scroll-margin-bottom:20px;}
+.propEditorFactsPreview.choicesOnly [data-prop-info-field="notes"],.propEditorFactsPreview.notesOnly [data-prop-info-field]:not([data-prop-info-field="notes"]){display:none;}
+.propFirmEditorPage [hidden]{display:none!important;}
+@media(max-width:1180px){.propEditorLayout{grid-template-columns:minmax(0,1fr) 280px;gap:16px;}.propEditorControls{padding:20px;}.propEditorControls .propFirmChoicesGrid{grid-template-columns:minmax(0,1fr);}.propEditorPreview{padding:16px;}}
+@media(max-width:900px){.propEditorLayout{grid-template-columns:minmax(0,1fr);}.propEditorPreview{position:static;grid-row:1;}.propEditorPreview #propEditorPreviewBody{max-height:250px;}.propEditorControls .propFirmChoicesGrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.propEditorTop{gap:12px;padding:14px;}.propEditorTop h2{font-size:20px;}.propEditorTop h2 span{display:block;margin:4px 0 0;font-size:13px;}}
+@media(max-width:580px){.propEditorControls .propFirmChoicesGrid{grid-template-columns:minmax(0,1fr);}.propEditorControls{padding:16px;}.propEditorTop{align-items:flex-start;}.propEditorTop .propEditorSave{gap:8px;max-width:48%;}.propEditorControls .propRow{flex-direction:column;gap:0;}.propEditorSectionHead{align-items:flex-start;}.propEditorTabs{gap:3px;}.propEditorTabs .btn{font-size:11px;padding:8px 10px;}.propIconLibrary{grid-template-columns:repeat(4,minmax(0,1fr));}.propEditorScope{font-size:11px;}}
+
+/* 富文本配置控件；均位于公司编辑器，不改变其他表单。 */
+.propInlineIcon{display:inline-flex;width:1.15em;height:1.15em;vertical-align:-.18em;align-items:center;justify-content:center;}
+.propInlineIcon>svg{display:block;width:100%;height:100%;}
+.propContentToolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:12px 0 9px;}
+.propContentToolbar>label{display:flex!important;align-items:center;gap:6px;margin:0!important;font-size:11px;}
+.propContentToolbar select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px;max-width:140px;}
+.propContentToolbar .btn{min-height:31px;}
+.propDesignSection{border-top:1px solid var(--border);padding-top:24px;margin-top:24px;}
+.propDesignColors{min-width:0;margin:16px 0;padding:14px;border:1px solid var(--border);border-radius:10px;}
+.propDesignColors legend{font-size:12px;font-weight:650;padding:0 6px;}
+.propDesignPreset{display:grid!important;grid-template-columns:auto minmax(120px,1fr);align-items:center;gap:12px;font-size:12px;}
+.propDesignSwatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:12px;margin:14px 0;}
+.propDesignSwatches label{display:grid!important;grid-template-columns:36px 1fr;gap:2px 8px;align-items:center;margin:0!important;font-size:12px;min-width:0;}
+.propDesignSwatches input[type="color"]{grid-row:span 2;width:36px;height:34px;padding:2px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--surface);}
+.propDesignSwatches output{font:10px var(--fontMono);color:var(--muted);}
+.propDesignColors>.propHint{font-size:11px;line-height:1.6;}
+.propUpdateDesign{margin-top:16px;}
+.propCalloutEditors>h4{font-size:13px;margin:20px 0 8px;}
+.propCalloutEditor{border:1px solid var(--border);border-radius:10px;margin:12px 0;background:var(--surface);}
+.propCalloutEditor>summary{padding:12px;cursor:pointer;font-size:12px;font-weight:650;}
+.propCalloutEditorBody{padding:0 14px 14px;}
+.propCalloutEditorBody code{overflow-wrap:anywhere;font-size:10px;}
+.propCalloutEditorBody .propDesignColors{background:var(--surface2);}
+.propCalloutEditorBody [data-action="prop-content-remove-callout"]{color:var(--neg);}
+.propUpdateDesign .propDesignColors{margin-bottom:14px;}
+.propContentToolbar :is(button,select):focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.propEditorPreview .propKeySentence,.propEditorPreview .propCallout{max-width:100%;}
+.propEditorPreviewReview[data-prop-copy-protected]{margin-bottom:18px;}
+.propCalloutEditor textarea,.propDesignSection textarea{white-space:pre-wrap;}
+.propUpdateDesign .fieldLabel{margin-top:10px;}
+.propDesignSection>.propCheck{margin-bottom:12px;}
+.propDesignColors .input{margin:0;}
+.propCalloutEditorBody .propContentToolbar{margin-top:16px;}
+.propContentToolbar[hidden]{display:none;}
+.propDesignSection:empty{display:none;}
+.propDesignSwatches span{font-weight:500;}
+.propDesignColors .btn{margin-top:4px;}
+@media(max-width:580px){.propDesignPreset{grid-template-columns:minmax(0,1fr);gap:5px;}.propDesignSwatches{grid-template-columns:1fr 1fr;}.propContentToolbar{gap:6px;}.propContentToolbar .btn{font-size:11px;}.propDesignColors{padding:10px;}.propCalloutEditorBody{padding:0 10px 10px;}}
+.propUpdatesPreviewControl{padding:14px;margin:0 0 18px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);}
+.propUpdatesPreviewControl>label{display:block;font-size:12px;font-weight:650;margin-bottom:8px;color:var(--text);}
+.propUpdatesPreviewControl select{max-width:240px;}
+.propUpdatesPreviewControl .propHint{margin:8px 0 0;}

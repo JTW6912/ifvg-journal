@@ -101,6 +101,7 @@ function propPriceHtml(p) {
    页面
    ============================================================ */
 function renderProp() {
+  if (propFirmEditor) return `<div id="propFirmEditorMount" data-editor-key="${esc(propFirmEditor.key)}"></div>`;
   const ro = propReadOnly();
   let html = propError ? `<div class="notice error" style="margin-bottom:16px;">${ICONS.alert}<span>${esc(propError)}</span></div>` : "";
   html += `<div class="propTop">
@@ -635,12 +636,47 @@ function propPlanCard2(g, bests, onFirmPage) {
 }
 
 /* ---------- 排行 ---------- */
+/* modern：推荐语是独立阅读区，只有公司身份和明确的按钮跳转，避免选字/展开误触。 */
+function propRecommendationCard(f, familyCount) {
+  const tier = propTierTag(f) || `<span class="propTier propTier-meh">${esc(T("prop.adm.noTier"))}</span>`;
+  const descId = "prop-rec-" + encodeURIComponent(f.id);
+  const expanded = propReviewExpanded.has(f.id);
+  const keySentence = propKeySentenceHtml(f);
+  return `<article class="propRecommendCard" data-prop-firm="${esc(f.id)}" aria-labelledby="${esc(descId)}-name">
+    <div class="propRecommendTop">
+    <header class="propRecommendHeader">
+      <div class="propRecommendIdentity">
+        <span class="propRecommendRank ${propRankOf(f) <= 3 ? "top" : ""}" data-rank="${esc(propRankOf(f))}">${esc(String(propRankOf(f)).padStart(2, "0"))}</span>
+        <button type="button" class="propRecommendBrand" data-action="prop-cat-firm" data-val="${esc(f.id)}">${propFirmLogo(f)}
+          <span class="propRecommendName"><strong id="${esc(descId)}-name">${esc(f.name)}</strong><span class="propRecommendNameMeta">${tier}<span class="propRecommendCount">${esc(T("prop.cat.familyCount", { n: familyCount }))}</span></span></span>
+        </button>
+      </div>
+      <button type="button" class="propRecommendCta" data-action="prop-cat-firm" data-val="${esc(f.id)}" aria-label="${esc(T("prop.cat.openFirm", { name: f.name }))}">${esc(T("prop.review.viewPlans"))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></button>
+    </header>
+    <div class="propRecommendContent">
+      <div class="propRecommendReview"><div class="propRecommendReading${keySentence ? " hasKey" : ""}">
+        ${keySentence ? `<div class="propRecommendKeyColumn"><span class="propRecommendLabel">${esc(T("prop.design.keyTitle"))}</span>${keySentence}</div>` : ""}
+        <div class="propRecommendTextColumn"><span class="propRecommendLabel">${esc(T("prop.adm.review"))}</span>
+          <div class="propReviewText propRichText${expanded ? " isExpanded" : ""}" id="${esc(descId)}-review" data-prop-review-id="${esc(f.id)}" data-prop-copy-protected>${propReviewHtml(f.review) || `<p class="propReviewEmpty">${esc(T("prop.cat.noReview"))}</p>`}</div>
+          <button type="button" class="propReviewToggle" data-action="prop-review-toggle" data-id="${esc(f.id)}" aria-expanded="${expanded}" aria-controls="${esc(descId)}-review" hidden>${esc(T(expanded ? "prop.review.collapse" : "prop.review.expand"))}</button>
+        </div></div></div>
+      ${propCouponHtml(f)}
+    </div>
+    </div>
+    <footer class="propRecommendFooter">
+      ${propFirmInfoHtml(f, true)}
+      ${propFirmUpdatesHtml(f, true)}
+    </footer>
+  </article>`;
+}
 function renderPropBoard() {
   const BOARD_TOP = 6;
+  const modern = currentLayout() === "modern";
   const firms = propFirms.filter((f) => !f.hidden).sort((a, b) => propRankOf(a) - propRankOf(b));
   const shown = propBoardAll ? firms : firms.slice(0, BOARD_TOP);
   const card = (f) => {
     const plans = propPlans.filter((p) => p.firm === f.id && p.status !== "legacy");
+    if (modern) return propRecommendationCard(f, propFamilies(f.id).length);
     const atSize = propCatalogSize ? plans.filter((p) => String(p.size) === propCatalogSize) : [];
     // 这家没有选中的规模时，拿最便宜的考试号（不拿 $500 这种迷你免考号，免得看着便宜得离谱）
     const fallback = plans.some((p) => p.type !== "instant") ? plans.filter((p) => p.type !== "instant") : plans;
@@ -650,15 +686,15 @@ function renderPropBoard() {
     return `<button class="propCard propBoardCard ${f.tier === "avoid" ? "dim" : ""}" data-action="prop-cat-firm" data-val="${esc(f.id)}">
       <div class="propBoardHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}
         <div class="propBoardName"><b>${esc(f.name)}</b>${propTierTag(f)}</div></div>
-      ${promo ? `<div class="propBoardPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>`
-        : f.review && f.review !== T("prop.tier." + f.tier) ? `<div class="propBoardReview">${esc(f.review)}</div>` : ""}
+      ${promo ? `<div class="propBoardPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(propReviewPlainText(f.promo.text))}</span>` : ""}</div>`
+        : f.review && f.review !== T("prop.tier." + f.tier) ? `<div class="propBoardReview">${esc(propReviewPlainText(f.review))}</div>` : ""}
       <div class="propBoardFoot">${cheapest ? `<span>${esc(T("prop.cat.from", { s: propSizeLabel(cheapest.size) || cheapest.series }))}</span><b>${propUsd(propCmpVals(cheapest).price)}</b>${propCmpVals(cheapest).monthly ? `<small>${esc(T("prop.cat.perMonth"))}</small>` : ""}` : `<span>${esc(T("prop.cat.noPrice"))}</span>`}
         <em>${esc(T("prop.cat.planCount", { n: plans.length }))}</em></div>
     </button>`;
   };
-  return `<div class="calendarPanel propPanel">
+  return `<div class="calendarPanel propPanel${modern ? " propRecommendPanel" : ""}">
     <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.boardTitle"))}</div><span class="propMuted">${esc(T("prop.cat.boardHint"))}</span></div>
-    <div class="propBoard">${shown.map(card).join("")}</div>
+    <div class="propBoard${modern ? " propBoardList" : ""}">${shown.map(card).join("")}</div>
     ${firms.length > BOARD_TOP ? `<button class="btn btn-sm propBoardMore" data-action="prop-board-all">${esc(T(propBoardAll ? "prop.cat.boardLess" : "prop.cat.boardAll", { n: firms.length }))}</button>` : ""}
   </div>`;
 }
@@ -721,13 +757,15 @@ function renderPropFirm(f, plans) {
   let html = `<div class="calendarPanel propPanel propFirm">
     <div class="propFirmHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)} ${propTierTag(f)}</b>
       <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}${f.source ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(T("prop.cat.sourcePage"))}</a>` : ""}</span></div>
-      ${f.review ? `<span class="propReview">${esc(f.review)}</span>` : ""}</div>
+      ${f.review && currentLayout() !== "modern" ? `<span class="propReview">${esc(propReviewPlainText(f.review))}</span>` : ""}</div>
+    ${(f.review || f.keySentence?.text) && currentLayout() === "modern" ? `<div class="propFirmRecommendation" data-prop-copy-protected><div class="propRecommendLabel">${esc(T("prop.adm.review"))}</div>${propKeySentenceHtml(f)}<div class="propRichText">${propReviewHtml(f.review)}</div></div>` : ""}
     ${propEditing() ? `<div class="propAdmFirmActs"><button class="btn btn-sm" data-action="prop-adm-firm" data-id="${esc(f.id)}">${ICONS.pencil} ${esc(T("prop.adm.editFirm"))}</button>
       <button class="btn btn-sm" data-action="prop-adm-batch" data-firm="${esc(f.id)}">${esc(T("prop.adm.batchShort"))}</button>
       <button class="btn btn-sm" data-action="prop-adm-new-plan" data-firm="${esc(f.id)}" data-family="">${ICONS.plus} ${esc(T("prop.adm.newPlan2"))}</button></div>` : ""}
-    ${promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(f.promo.text)}</span>` : ""}</div>` : ""}
-    ${Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
-    ${f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
+    ${currentLayout() === "modern" ? `<div class="propFirmCoupon">${propCouponHtml(f)}</div>` : promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(propReviewPlainText(f.promo.text))}</span>` : ""}</div>` : ""}
+    ${currentLayout() !== "modern" && Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
+    ${currentLayout() !== "modern" && f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
+  if (currentLayout() === "modern") html += propFirmInfoHtml(f, false) + propFirmUpdatesHtml(f, false);
   if (!plans.length) html += `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div>`;
   // 一个系列一段，段里是跟价格对比一样的卡片（同系列同规模的版本合成一张，用开关切）
   const families = [];
@@ -780,7 +818,7 @@ function propModalHtml() {
   else if (m.type === "detail") { ({ title, body, foot } = propDetail(m)); wide = "drawer"; }
   else if (m.type === "batch") ({ title, body, foot } = propBatchForm(m));
   else if (m.type === "balance") ({ title, body, foot } = propBalanceForm(m));
-  else if (m.type === "admFirm") ({ title, body, foot } = propAdmFirmForm(m));
+  else if (m.type === "admFirm") { ({ title, body, foot } = propAdmFirmForm(m)); wide = 760; }
   else if (m.type === "admPlan") { ({ title, body, foot } = propAdmPlanForm(m)); wide = 1180; }
   else if (m.type === "admBatch") { ({ title, body, foot } = propAdmBatchForm(m)); wide = true; }
   else if (m.type === "import") { ({ title, body, foot } = propImportForm(m)); wide = true; }
@@ -1474,6 +1512,7 @@ document.addEventListener("click", async (e) => {
     propCatalogFirm = el.dataset.val; propCatalogFirmSize = el.dataset.size || "";
     render(); window.scrollTo({ top: 0 });
   }
+  else if (a === "prop-firm-updates") { propOpenFirmUpdates(id); }
   else if (a === "prop-cat-firm-size") { propCatalogFirmSize = el.dataset.val; render(); }
   else if (a === "prop-cat-size") { propCatalogSize = el.dataset.val; render(); }
   else if (a === "prop-cat-pref") {
@@ -1485,6 +1524,8 @@ document.addEventListener("click", async (e) => {
   else if (a === "prop-card-pick") { if (id) { propCardPick = { ...propCardPick, [el.dataset.key]: id }; render(); } }
   else if (a === "prop-cat-sort") { propCatalogSort = el.dataset.val; render(); }
   else if (a === "prop-board-all") { propBoardAll = !propBoardAll; render(); }
+  else if (a === "prop-review-toggle") { propToggleReview(id); }
+  else if (a === "prop-notes-toggle") { propToggleReview(id, "notes"); }
   else if (a === "prop-cat-expand") {
     propExpandedFirms = propExpandedFirms.includes(id) ? propExpandedFirms.filter((x) => x !== id) : [...propExpandedFirms, id];
     render();
@@ -1609,9 +1650,11 @@ function propSetDraftField(d, f, v) {
 // 「改规则」那块折叠的开关记下来，弹窗重画后保持原样（toggle 事件不冒泡，用捕获）
 document.addEventListener("toggle", (e) => {
   const k = e.target && e.target.dataset && e.target.dataset.propDetails;
-  if (k && propModal) propModal[k] = e.target.open;
+  const owner = e.target.closest?.("#propFirmEditorMount") ? propFirmEditor : propModal;
+  if (k && owner) owner[k] = e.target.open;
 }, true);
 document.addEventListener("input", (e) => {
+  if (e.target.closest?.("#propFirmEditorMount")) return;
   const f = e.target.dataset && e.target.dataset.propField;
   if (!f || !propModal || !propModal.draft) return;
   propSetDraftField(propModal.draft, f, e.target.type === "checkbox" ? e.target.checked : e.target.value);
@@ -1642,10 +1685,15 @@ document.addEventListener("change", (e) => {
   propHandleChange(t);
 });
 function propHandleChange(t) {
+  if (t.closest?.("#propFirmEditorMount")) return;
   if (t.type === "date" && t.value && !propDateOk(t.value)) return;
   if (t.dataset && t.dataset.propCatSize !== undefined) { propCatalogSize = t.value; render(); return; }
   if (t.dataset && t.dataset.propEvent !== undefined) { propSaveEventDay(t.dataset.id, Number(t.dataset.propEvent), t.value); return; }
   if (!propModal || !t.dataset) return;
+  // 原生单选也接 change；只更新草稿，不因选择政策重建弹窗。
+  if (propModal.type === "admFirm" && propModal.draft && t.dataset.propField === "magicPolicy") {
+    propModal.draft.magicPolicy = propMagicPolicy({ magicPolicy: t.value }); return;
+  }
   if (t.dataset.propFile !== undefined && t.files && t.files[0]) {
     const file = t.files[0];
     file.text().then((text) => {

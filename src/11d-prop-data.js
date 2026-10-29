@@ -6,8 +6,15 @@
    {
      "firms": [
        { "id": "lucid", "name": "Lucid Trading", "website": "https://...", "logo": "https://.../lucid.png",
-         "source": "https://... 资料来源页", "review": "一句话评价", "platforms": ["Tradovate"],
+         "source": "https://... 资料来源页", "review": "推荐语：支持 **加粗**、==高亮==、换行与 - 列表", "platforms": ["Tradovate"],
+         "payoutMethods": ["Rise", "Bank transfer"], "kycRequirements": ["Passport", "Selfie verification"],
+         "paymentMethods": ["Visa", "PayPal"],                     // 四组多选都允许自定义文本；notes 是其它说明
+         "magicPolicy": "unknown" | "allowed" | "prohibited" | "self_hosted_only" | "temporary" | "fixed_region",
+         // 魔法（VPN / 代理）政策；可不填，不填 = 未确认。临时政策的期限和附加条件写 notes。
          "notes": "写给人看的说明",
+         "recentUpdates": [{ "id": "pu_...", "date": "2026-10-25", "type": "rules", "text": "**规则更新**：说明内容" }],
+         // 可不填；type = notice / rules / pricing / payout / platform，日期 YYYY-MM-DD，按日期倒序展示。
+         "updatesPreviewCount": 1,                              // 推荐排行显示1–5条，或 "all"；省略默认1，详情始终全部
          "faq": [{ "topic": "出金方式", "answer": "...", "status": "confirmed" | "unclear", "source": "https://..." }] }
      ],
      "plans": [
@@ -30,6 +37,8 @@
    规则字段只有三种值：数字 = 具体值；"none" = 没有这项要求；null / 不写 = 还不知道。
    「没有」和「不知道」必须分开——混在一起的话，界面上没法区分「无日亏限制」和「没查到」。
    同一条规则只存一份；DLL、一致性加购这类可选配置写进 options，不要把所有组合展开成一堆计划。
+   导出另含可选 optionIcons 数组（共享图标配置，格式见 docs/prop-firm-editor.md）。
+   导入时按键合并图标；省略 optionIcons 的旧目录保留现有共享配置。
 
    ---------- 记账口径 ----------
    金额一律美元、正数，方向看 kind：
@@ -42,6 +51,9 @@ const PROP_ACTIVE = ["eval", "passed", "funded"];
 const PROP_ENTRY_KINDS = ["purchase", "monthly", "reset", "activation", "payout", "refund", "other"];
 const PROP_COST_KINDS = ["purchase", "monthly", "reset", "activation", "other"];
 const PROP_DD_TYPES = ["eod", "intraday", "static"];
+const PROP_MAGIC_POLICIES = ["unknown", "allowed", "prohibited", "self_hosted_only", "temporary", "fixed_region"];
+/* 缺失或未知的目录值不能被解释成「允许」，也不直接拼进 UI 文案或 CSS 类。 */
+function propMagicPolicy(firm) { return firm && PROP_MAGIC_POLICIES.includes(firm.magicPolicy) ? firm.magicPolicy : "unknown"; }
 
 function propNewId(prefix) { return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function propMoney(v) { const n = Number(v); return isFinite(n) ? Math.round(n * 100) / 100 : 0; }
@@ -65,6 +77,10 @@ function propValidateCatalog(raw) {
     firmIds.add(id);
     if (!String(f.name || "").trim()) errors.push(where + ": " + T("prop.import.errNoName"));
     if (f.faq !== undefined && !Array.isArray(f.faq)) errors.push(where + ".faq: " + T("prop.import.errArray"));
+    if (f.magicPolicy !== undefined && f.magicPolicy !== null && f.magicPolicy !== "" && !PROP_MAGIC_POLICIES.includes(f.magicPolicy)) errors.push(where + ".magicPolicy: " + T("prop.magic.invalid"));
+    propValidateFirmUpdates(f.recentUpdates, f.updatesPreviewCount).forEach((error) => errors.push(where + ".recentUpdates: " + error));
+    propValidateFirmChoices(f).forEach((error) => errors.push(where + ": " + error));
+    propValidatePresentation(f).forEach((error) => errors.push(where + ": " + error));
     return { ...f, id, name: String(f.name || "").trim() };
   }).filter(Boolean);
 
@@ -105,7 +121,9 @@ function propValidateCatalog(raw) {
     if (p.eval !== undefined && p.type === "instant") warnings.push(T("prop.import.warnInstantEval", { id: id || where }));
     return { ...p, id, series: String(p.series || "").trim(), status: p.status || "current" };
   }).filter(Boolean);
-  return { errors, warnings, catalog: errors.length ? null : { firms, plans } };
+  const hasIcons = Object.prototype.hasOwnProperty.call(raw, "optionIcons");
+  if (hasIcons && !propValidateOptionIcons(raw.optionIcons)) errors.push(T("prop.icons.invalidConfig"));
+  return { errors, warnings, catalog: errors.length ? null : { firms, plans, ...(hasIcons ? { optionIcons: raw.optionIcons.map((r) => propIconRow(r.field, r.label, r.kind, r.value)) } : {}) } };
 }
 /* 新旧目录比一比：哪些计划是新加的、改过的、没了的。比的是整份计划，字段顺序不同也算一样 */
 function propStableJson(v) {
@@ -127,7 +145,7 @@ function propCatalogDiff(oldPlans, newPlans) {
 /* 库里的一行 → 跟导入格式一样的对象（导出 / 比较 / 快照都用这个形状） */
 function propPlanFromRow(r) { return { ...(r.data || {}), id: r.id, firm: r.firm_id, series: r.series, size: r.size, status: r.status }; }
 function propFirmFromRow(r) { return { ...(r.data || {}), id: r.id, name: r.name, website: r.website || "", logo: r.logo || "" }; }
-function propCatalogExport() { return { firms: propFirms, plans: propPlans }; }
+function propCatalogExport() { return { firms: propFirms, plans: propPlans, optionIcons: propOptionIconExport() }; }
 function propFindPlan(id) { return propPlans.find((p) => p.id === id) || null; }
 function propFindFirm(id) { return propFirms.find((f) => f.id === id) || null; }
 
@@ -326,14 +344,15 @@ async function loadPropData() {
   if (!sb || !session) return;
   const uid = viewingUserId || session.user.id;
   propError = null;
-  const [firms, plans, imp, accs, ents] = await Promise.all([
+  const [firms, plans, imp, accs, ents, icons] = await Promise.all([
     fetchAllRows(() => sb.from("prop_firms").select("*", { count: "exact" }).order("sort_order", { ascending: true }).order("id", { ascending: true })),
     fetchAllRows(() => sb.from("prop_plans").select("*", { count: "exact" }).order("sort_order", { ascending: true }).order("id", { ascending: true })),
     sb.from("prop_catalog_imports").select("imported_at, summary").order("imported_at", { ascending: false }).limit(1),
     fetchAllRows(() => sb.from("prop_accounts").select("*", { count: "exact" }).eq("user_id", uid).order("bought_on", { ascending: false }).order("id", { ascending: true })),
     fetchAllRows(() => sb.from("prop_entries").select("*", { count: "exact" }).eq("user_id", uid).order("day", { ascending: true }).order("id", { ascending: true })),
+    fetchAllRows(() => sb.from("prop_option_icons").select("*", { count: "exact" }).order("id", { ascending: true })),
   ]);
-  const err = [firms, plans, imp, accs, ents].map((r) => r.error).find(Boolean);
+  const err = [firms, plans, imp, accs, ents, icons].map((r) => r.error).find(Boolean);
   if (err) {
     console.error(err);
     propError = noteDbError(err) ? T("error.dbOutdated") : T("prop.loadFailed", { msg: err.message });
@@ -342,6 +361,7 @@ async function loadPropData() {
   propFirms = (firms.data || []).map(propFirmFromRow);
   propPlans = (plans.data || []).map(propPlanFromRow);
   propCatalogInfo = (imp.data && imp.data[0]) || null;
+  propOptionIcons = icons.data || [];
   propAccounts = (accs.data || []).map((a) => ({ ...a, events: Array.isArray(a.events) ? a.events : [] }));
   propEntries = ents.data || [];
   if (!viewingUserId) await propApplyRenewals();
@@ -428,9 +448,16 @@ async function propChangeStatus(acc, to, day, fee, feeKind) {
   return true;
 }
 async function propImportCatalog(catalog, summary) {
-  if (!sb || !session) return false;
-  const { error } = await sb.rpc("prop_import_catalog", { payload: catalog, summary });
-  if (error) { console.error(error); propError = noteDbError(error) ? T("error.dbOutdated") : T("prop.import.failed", { msg: error.message }); return false; }
-  await loadPropData();
-  return true;
+  if (!sb || !session || !propIsAdmin()) return false;
+  try {
+    const { error } = await sb.rpc("prop_import_catalog_with_icons", { payload: catalog, summary });
+    if (error) throw error;
+    await loadPropData();
+    return true;
+  } catch (error) {
+    const outdated = noteDbError(error) || error?.code === "PGRST202";
+    if (outdated) dbOutdated = true;
+    propError = outdated ? T("error.dbOutdated") : T("prop.import.failed", { msg: error?.message || String(error) });
+    return false;
+  }
 }

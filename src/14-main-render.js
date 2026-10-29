@@ -564,12 +564,15 @@ function patchAppShell(regions) {
   APP_REGIONS.forEach((id) => {
     const el = document.getElementById(id);
     const html = regions[id];
-    if (appRegionHtml[id] === html && !regionHasEditedControls(el)) return;
+    // 公司编辑器拥有自己的子渲染根；仅它负责输入/预览更新，背景重绘不能拆掉编辑DOM。
+    const firmEditorOwnsRegion = id === "tabBody" && tab === "prop" && propFirmEditor && document.getElementById("propFirmEditorMount");
+    if (appRegionHtml[id] === html && (firmEditorOwnsRegion || !regionHasEditedControls(el))) return;
     el.innerHTML = html;
     appRegionHtml[id] = html;
   });
 }
 function render() {
+  propCheckFirmEditorSession();
   const app = document.getElementById("app");
 
   if (authLoading) { app.innerHTML = `<div class="loading">${T("common.loading")}</div>`; return; }
@@ -669,6 +672,8 @@ function render() {
     + (dbOutdated && loadError !== T("error.dbOutdated") ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(T("error.dbOutdated"))}</span></div>` : "");
 
   patchAppShell({ appHeader: headerHtml, appBanner: bannerHtml, appNav: navHtml, appNotice: noticeHtml, tabBody: body });
+  propRenderFirmEditor();
+  propSyncReviewCards();   // 按实际高度显示推荐语的展开按钮；不重建阅读区
   // 切页签时给内容区挂一下 tabEnter，晴空皮肤用它做淡入（经典主题没有对应样式，等于没挂）。
   // 只在页签真的变了的时候挂：同一页里点个按钮也会重绘 tabBody，每次都淡入一遍会很晃
   if (lastRenderedTab !== tab) {
