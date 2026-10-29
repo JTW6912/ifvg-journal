@@ -14,6 +14,7 @@
   ],
   "extraction_triggers": [
     "Pure diagnosis/patch/diff helpers separated from DOM/transport",
+    "Extract pass-date evidence once for history diagnostics and dated reports; never duplicate the evaluation/instant or explicit-record precedence rules",
     "Dedicated history UI rather than embedding all code in 11e",
     "Legacy first-event coupling must not apply to arbitrary historical events after removal"
   ],
@@ -40,7 +41,8 @@
   ],
   "required_component_tests": [
     "Only selected purchase/history fields change; all ledger and unrelated account bytes preserved",
-    "No inference/automatic sorting/deduplication; instant and repeated attempts remain legitimate",
+    "No fabricated/persisted inference or automatic sorting/deduplication; D5 statistical implicit passes use actual funded dates; instant and same-day repeated attempts remain legitimate",
+    "Same-day purchase/failure/pass/funded/blown, eval-to-funded bypass, explicit malformed/valid pass precedence, range/cohort/company consistency, list provenance and zero mutation",
     "Deleting/editing first historical row never changes purchase/cash by index",
     "Draft cancel/restore/confirmation/deletion acknowledgement",
     "Conflict/read-only/busy/error/double-submit without lost draft or partial saved state",

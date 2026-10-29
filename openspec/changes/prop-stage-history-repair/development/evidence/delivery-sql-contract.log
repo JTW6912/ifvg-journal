@@ -1,0 +1,11 @@
+BEGIN
+SET
+CREATE TABLE
+CREATE TABLE
+INSERT 0 2
+INSERT 0 1
+DO
+ROLLBACK
+NOTICE:  PASS: local predicates/JSONB/NULL/RETURNING/protected fields/ledger invariance
+
+EXIT_CODE=0

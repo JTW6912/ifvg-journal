@@ -1,0 +1,7 @@
+
+> ifvg-journal@1.0.0 bundle
+> node bundle.js
+
+app.js bundled from 30 files.
+
+EXIT_CODE=0

@@ -1,0 +1,1294 @@
+
+> ifvg-journal@1.0.0 test
+> node --test "test/*.test.js"
+
+TAP version 13
+# Subtest: resultBucket：partial 算赢，三种 BE 各占一桶，大小写和空白不敏感
+ok 1 - resultBucket：partial 算赢，三种 BE 各占一桶，大小写和空白不敏感
+  ---
+  duration_ms: 1.195132
+  type: 'test'
+  ...
+# Subtest: computeStats：胜率分母只算 W/L，SQ 把 BE 转赢转输算进去
+ok 2 - computeStats：胜率分母只算 W/L，SQ 把 BE 转赢转输算进去
+  ---
+  duration_ms: 1.127065
+  type: 'test'
+  ...
+# Subtest: profitFactorOf：正 R 之和 ÷ |负 R 之和|，没有亏损时是 ∞，没填 R 的不计入样本
+ok 3 - profitFactorOf：正 R 之和 ÷ |负 R 之和|，没有亏损时是 ∞，没填 R 的不计入样本
+  ---
+  duration_ms: 0.325095
+  type: 'test'
+  ...
+# Subtest: maxDrawdownR：按日期累加成资金曲线，取峰到谷的最大跌幅；没填日期的排最后
+ok 4 - maxDrawdownR：按日期累加成资金曲线，取峰到谷的最大跌幅；没填日期的排最后
+  ---
+  duration_ms: 0.293999
+  type: 'test'
+  ...
+# Subtest: twoSidedP：几个已知分位点
+ok 5 - twoSidedP：几个已知分位点
+  ---
+  duration_ms: 0.414327
+  type: 'test'
+  ...
+# Subtest: twoProportionZ / welchT：方向正确，退化输入返回 null
+ok 6 - twoProportionZ / welchT：方向正确，退化输入返回 null
+  ---
+  duration_ms: 0.36294
+  type: 'test'
+  ...
+# Subtest: markFdrSignificant：Benjamini–Hochberg，只给过线的行打 strong
+ok 7 - markFdrSignificant：Benjamini–Hochberg，只给过线的行打 strong
+  ---
+  duration_ms: 0.923583
+  type: 'test'
+  ...
+# Subtest: breakdownRowStats：n 含 BE，胜率分母只算 W/L
+ok 8 - breakdownRowStats：n 含 BE，胜率分母只算 W/L
+  ---
+  duration_ms: 0.40212
+  type: 'test'
+  ...
+# {
+#   code: 'PGRST204',
+#   message: "Could not find the 'day_date' column of 'journal_reviews'"
+# }
+# Subtest: 超过 1000 行也能拿全（这是修复前会被静默截断的场景）
+ok 9 - 超过 1000 行也能拿全（这是修复前会被静默截断的场景）
+  ---
+  duration_ms: 4.935734
+  type: 'test'
+  ...
+# Subtest: 恰好 1000 行：不多发一个空请求
+ok 10 - 恰好 1000 行：不多发一个空请求
+  ---
+  duration_ms: 1.410449
+  type: 'test'
+  ...
+# Subtest: 服务端把 Max rows 调小（比页大小还小）：靠 count 继续翻，不会拿到第一页就停
+ok 11 - 服务端把 Max rows 调小（比页大小还小）：靠 count 继续翻，不会拿到第一页就停
+  ---
+  duration_ms: 0.921919
+  type: 'test'
+  ...
+# Subtest: 空表 / 小表
+ok 12 - 空表 / 小表
+  ---
+  duration_ms: 0.703102
+  type: 'test'
+  ...
+# Subtest: 没带回 count 时退回「这页不满就停」，也能拿全
+ok 13 - 没带回 count 时退回「这页不满就停」，也能拿全
+  ---
+  duration_ms: 1.705007
+  type: 'test'
+  ...
+# Subtest: 中途某一页报错：整体返回 error，不能把已经拿到的半截数据当成全部
+ok 14 - 中途某一页报错：整体返回 error，不能把已经拿到的半截数据当成全部
+  ---
+  duration_ms: 0.344673
+  type: 'test'
+  ...
+# Subtest: 每一页都用全新的 query（builder 不能复用）
+ok 15 - 每一页都用全新的 query（builder 不能复用）
+  ---
+  duration_ms: 0.739184
+  type: 'test'
+  ...
+# Subtest: isSchemaOutdatedError：缺表 / 缺列算「库过期」，权限、网络这类错误不算
+ok 16 - isSchemaOutdatedError：缺表 / 缺列算「库过期」，权限、网络这类错误不算
+  ---
+  duration_ms: 0.333381
+  type: 'test'
+  ...
+# Subtest: noteDbError：只有库过期错误才会点亮 dbOutdated
+ok 17 - noteDbError：只有库过期错误才会点亮 dbOutdated
+  ---
+  duration_ms: 16.040715
+  type: 'test'
+  ...
+# Subtest: 保存复盘：缺列时不再摘列重存，直接报「库过期」，本地列表不变
+ok 18 - 保存复盘：缺列时不再摘列重存，直接报「库过期」，本地列表不变
+  ---
+  duration_ms: 17.205945
+  type: 'test'
+  ...
+# Subtest: CRC32 跟标准值一致（zip 校验靠它）
+ok 19 - CRC32 跟标准值一致（zip 校验靠它）
+  ---
+  duration_ms: 40.389593
+  type: 'test'
+  ...
+# Subtest: Excel 日期 / 时间换算：1900 日期系统，时间是一天里的小数
+ok 20 - Excel 日期 / 时间换算：1900 日期系统，时间是一天里的小数
+  ---
+  duration_ms: 15.452061
+  type: 'test'
+  ...
+# Subtest: 单元格 XML：文本转义、剥掉 Excel 不认的控制字符、数字不加引号
+ok 21 - 单元格 XML：文本转义、剥掉 Excel 不认的控制字符、数字不加引号
+  ---
+  duration_ms: 16.589849
+  type: 'test'
+  ...
+# Subtest: 工作表名：去掉非法字符、截到 31 个字、重名加序号
+ok 22 - 工作表名：去掉非法字符、截到 31 个字、重名加序号
+  ---
+  duration_ms: 15.258276
+  type: 'test'
+  ...
+# Subtest: 文件名：去掉路径里不能有的字符；重名自动加序号
+ok 23 - 文件名：去掉路径里不能有的字符；重名自动加序号
+  ---
+  duration_ms: 13.296847
+  type: 'test'
+  ...
+# Subtest: 正文里的引用换成文字：交易带截图链接、页面写名字、上色变加粗、找不到的明说
+ok 24 - 正文里的引用换成文字：交易带截图链接、页面写名字、上色变加粗、找不到的明说
+  ---
+  duration_ms: 19.058504
+  type: 'test'
+  ...
+# Subtest: zip：文件头签名、UTF-8 文件名标记、内容原样、结尾目录记对了文件数
+ok 25 - zip：文件头签名、UTF-8 文件名标记、内容原样、结尾目录记对了文件数
+  ---
+  duration_ms: 15.029634
+  type: 'test'
+  ...
+# Subtest: 空筛选、没填值的条件：匹配全部
+ok 26 - 空筛选、没填值的条件：匹配全部
+  ---
+  duration_ms: 1.730316
+  type: 'test'
+  ...
+# Subtest: 顶层元素之间隐式 AND；单选值之间是 OR；negate 取反
+ok 27 - 顶层元素之间隐式 AND；单选值之间是 OR；negate 取反
+  ---
+  duration_ms: 0.404008
+  type: 'test'
+  ...
+# Subtest: multiselect：or 命中任一，and 要全含
+ok 28 - multiselect：or 命中任一，and 要全含
+  ---
+  duration_ms: 0.347696
+  type: 'test'
+  ...
+# Subtest: 数字字段是数值区间，不是字符串包含；单边区间成立
+ok 29 - 数字字段是数值区间，不是字符串包含；单边区间成立
+  ---
+  duration_ms: 0.274269
+  type: 'test'
+  ...
+# Subtest: 日期区间是闭区间
+ok 30 - 日期区间是闭区间
+  ---
+  duration_ms: 0.220438
+  type: 'test'
+  ...
+# Subtest: 分组：or / and / 非
+ok 31 - 分组：or / and / 非
+  ---
+  duration_ms: 0.426616
+  type: 'test'
+  ...
+# Subtest: 空分组必须中性，而且要忽略 negate（刚点出来的空分组不能把页面清空）
+ok 32 - 空分组必须中性，而且要忽略 negate（刚点出来的空分组不能把页面清空）
+  ---
+  duration_ms: 0.376547
+  type: 'test'
+  ...
+# Subtest: 路径寻址：能找到嵌套节点，指不到就返回 null
+ok 33 - 路径寻址：能找到嵌套节点，指不到就返回 null
+  ---
+  duration_ms: 0.537587
+  type: 'test'
+  ...
+# Subtest: 正文里的 HTML 一律被转义
+ok 34 - 正文里的 HTML 一律被转义
+  ---
+  duration_ms: 2.379673
+  type: 'test'
+  ...
+# Subtest: javascript: 链接不会变成 <a href>
+ok 35 - javascript: 链接不会变成 <a href>
+  ---
+  duration_ms: 1.075919
+  type: 'test'
+  ...
+# Subtest: http(s) 链接和图片正常渲染
+ok 36 - http(s) 链接和图片正常渲染
+  ---
+  duration_ms: 1.527961
+  type: 'test'
+  ...
+# Subtest: TradingView 快照页链接被翻译成图片地址
+ok 37 - TradingView 快照页链接被翻译成图片地址
+  ---
+  duration_ms: 0.322709
+  type: 'test'
+  ...
+# Subtest: 标题 / 列表 / 表格 / 代码块的基本结构
+ok 38 - 标题 / 列表 / 表格 / 代码块的基本结构
+  ---
+  duration_ms: 1.222969
+  type: 'test'
+  ...
+# Subtest: mdPlainExcerpt：去掉标记，超长截断加省略号，转义的星号保留
+ok 39 - mdPlainExcerpt：去掉标记，超长截断加省略号，转义的星号保留
+  ---
+  duration_ms: 2.194566
+  type: 'test'
+  ...
+# Subtest: extractTradeRefs：抽出 [[trade:id]]，去重，保持出现顺序
+ok 40 - extractTradeRefs：抽出 [[trade:id]]，去重，保持出现顺序
+  ---
+  duration_ms: 1.27216
+  type: 'test'
+  ...
+# Subtest: 截图字段：一行一个链接，老的单链接照旧
+ok 41 - 截图字段：一行一个链接，老的单链接照旧
+  ---
+  duration_ms: 0.532469
+  type: 'test'
+  ...
+# { message: 'denied' }
+# { message: 'nope' }
+# Subtest: 新交易：追加到末尾，_created_at 用服务端返回的值，并且只重绘、不重新拉库
+ok 42 - 新交易：追加到末尾，_created_at 用服务端返回的值，并且只重绘、不重新拉库
+  ---
+  duration_ms: 44.787454
+  type: 'test'
+  ...
+# Subtest: 改老交易：原位替换，顺序不变
+ok 43 - 改老交易：原位替换，顺序不变
+  ---
+  duration_ms: 13.505275
+  type: 'test'
+  ...
+# Subtest: 保存失败：弹窗提示，本地数据原样不动，不重绘
+ok 44 - 保存失败：弹窗提示，本地数据原样不动，不重绘
+  ---
+  duration_ms: 17.294647
+  type: 'test'
+  ...
+# Subtest: 保存途中用户切了回测/实盘：这一笔不能混进另一批
+ok 45 - 保存途中用户切了回测/实盘：这一笔不能混进另一批
+  ---
+  duration_ms: 15.359902
+  type: 'test'
+  ...
+# Subtest: 只读查看别人数据时不能写
+ok 46 - 只读查看别人数据时不能写
+  ---
+  duration_ms: 14.45401
+  type: 'test'
+  ...
+# Subtest: 删除成功：本地摘掉那一笔并重绘
+ok 47 - 删除成功：本地摘掉那一笔并重绘
+  ---
+  duration_ms: 15.10512
+  type: 'test'
+  ...
+# Subtest: 删除失败：不能在界面上假装删掉了，而是从库里重新拉一次回到真实状态
+ok 48 - 删除失败：不能在界面上假装删掉了，而是从库里重新拉一次回到真实状态
+  ---
+  duration_ms: 13.984737
+  type: 'test'
+  ...
+# Subtest: 归属选项：系统后面紧跟它的衍生策略，标签写成「系统 › 策略」
+ok 49 - 归属选项：系统后面紧跟它的衍生策略，标签写成「系统 › 策略」
+  ---
+  duration_ms: 38.131632
+  type: 'test'
+  ...
+# Subtest: 指向已删除页面的 __pb 按未归类读，__none 是确认过的「不属于任何模型」
+ok 50 - 指向已删除页面的 __pb 按未归类读，__none 是确认过的「不属于任何模型」
+  ---
+  duration_ms: 13.803313
+  type: 'test'
+  ...
+# Subtest: 系统页算上衍生策略的交易，策略页只算自己
+ok 51 - 系统页算上衍生策略的交易，策略页只算自己
+  ---
+  duration_ms: 17.769657
+  type: 'test'
+  ...
+# Subtest: 模型库成绩默认把所有交易都算进去（做没做都算）；执行情况按 taken 的值分组，没填的排最后
+ok 52 - 模型库成绩默认把所有交易都算进去（做没做都算）；执行情况按 taken 的值分组，没填的排最后
+  ---
+  duration_ms: 20.050029
+  type: 'test'
+  ...
+# Subtest: 往错题里加交易：放进「涉及的交易」那一节，紧贴着上一条列表项
+ok 53 - 往错题里加交易：放进「涉及的交易」那一节，紧贴着上一条列表项
+  ---
+  duration_ms: 14.327868
+  type: 'test'
+  ...
+# Subtest: 往错题里加交易：那一节还空着 / 根本没有那一节
+ok 54 - 往错题里加交易：那一节还空着 / 根本没有那一节
+  ---
+  duration_ms: 34.772065
+  type: 'test'
+  ...
+# Subtest: 从错题里拿掉交易：只删它那一行列表项；正文别处还提到时如实报告
+ok 55 - 从错题里拿掉交易：只删它那一行列表项；正文别处还提到时如实报告
+  ---
+  duration_ms: 15.957713
+  type: 'test'
+  ...
+# Subtest: 便利贴上那句话：优先「如何规避」，两种语言的标题都认
+ok 56 - 便利贴上那句话：优先「如何规避」，两种语言的标题都认
+  ---
+  duration_ms: 12.670553
+  type: 'test'
+  ...
+# Subtest: 改已关联交易那一行的那句话：只改胶囊后面，别的行不动；没有那一行就原样返回
+ok 57 - 改已关联交易那一行的那句话：只改胶囊后面，别的行不动；没有那一行就原样返回
+  ---
+  duration_ms: 13.207539
+  type: 'test'
+  ...
+# Subtest: 错题候选：策略自己的、它所属系统的、通用的，各归各的
+ok 58 - 错题候选：策略自己的、它所属系统的、通用的，各归各的
+  ---
+  duration_ms: 8.885409
+  type: 'test'
+  ...
+# Subtest: 归类建议：先看同一个模型标签以前归到哪，没有就按名字匹配
+ok 59 - 归类建议：先看同一个模型标签以前归到哪，没有就按名字匹配
+  ---
+  duration_ms: 8.762855
+  type: 'test'
+  ...
+# Subtest: 模型库归属是一个虚拟 select 字段：筛选能按策略筛，没建页面时不出现
+ok 60 - 模型库归属是一个虚拟 select 字段：筛选能按策略筛，没建页面时不出现
+  ---
+  duration_ms: 26.411622
+  type: 'test'
+  ...
+# Subtest: [[page:id]] 渲染成页面胶囊；找不到的标红，不静默消失；摘要里换成标题
+ok 61 - [[page:id]] 渲染成页面胶囊；找不到的标红，不静默消失；摘要里换成标题
+  ---
+  duration_ms: 12.269927
+  type: 'test'
+  ...
+# Subtest: 待验证跟错题一样是笔记：交易归不进去，按归属分候选，两种笔记互不混
+ok 62 - 待验证跟错题一样是笔记：交易归不进去，按归属分候选，两种笔记互不混
+  ---
+  duration_ms: 10.464681
+  type: 'test'
+  ...
+# Subtest: 待验证的状态：认不出的一律按观察中；status 只在待验证上写
+ok 63 - 待验证的状态：认不出的一律按观察中；status 只在待验证上写
+  ---
+  duration_ms: 9.91368
+  type: 'test'
+  ...
+# Subtest: 已否定的待验证照样当候选（继续验证），只是排到最后；有分支的问题不挪
+ok 64 - 已否定的待验证照样当候选（继续验证），只是排到最后；有分支的问题不挪
+  ---
+  duration_ms: 11.960531
+  type: 'test'
+  ...
+# Subtest: 待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」
+ok 65 - 待验证的模板和便利贴摘要：先看「结论」，没写退回「想验证什么」
+  ---
+  duration_ms: 13.042093
+  type: 'test'
+  ...
+# Subtest: 标签不是能归交易的页面，也不算笔记；指向已删除标签的 id 读的时候忽略
+ok 66 - 标签不是能归交易的页面，也不算笔记；指向已删除标签的 id 读的时候忽略
+  ---
+  duration_ms: 19.128962
+  type: 'test'
+  ...
+# Subtest: 有 vs 没有：「没有」是标签所在那一页（系统含衍生策略）里没打标签的，通用标签跟全部交易比
+ok 67 - 有 vs 没有：「没有」是标签所在那一页（系统含衍生策略）里没打标签的，通用标签跟全部交易比
+  ---
+  duration_ms: 17.56191
+  type: 'test'
+  ...
+# Subtest: 打 / 摘标签：顺手清掉失效的 id，摘空了整个键删掉
+ok 68 - 打 / 摘标签：顺手清掉失效的 id，摘空了整个键删掉
+  ---
+  duration_ms: 13.621051
+  type: 'test'
+  ...
+# Subtest: 模型库标签做成多选虚拟字段：选项带归属，取值是这笔打的标签
+ok 69 - 模型库标签做成多选虚拟字段：选项带归属，取值是这笔打的标签
+  ---
+  duration_ms: 9.074621
+  type: 'test'
+  ...
+# Subtest: 归类时的发现：写进页面「归类时的发现」一节，带日期和交易胶囊；没有这一节就在文末补
+ok 70 - 归类时的发现：写进页面「归类时的发现」一节，带日期和交易胶囊；没有这一节就在文末补
+  ---
+  duration_ms: 9.280571
+  type: 'test'
+  ...
+# Subtest: 归类记录：存在交易上，筛选按包含、记录页搜索都找得到
+ok 71 - 归类记录：存在交易上，筛选按包含、记录页搜索都找得到
+  ---
+  duration_ms: 12.629293
+  type: 'test'
+  ...
+# Subtest: 模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里
+ok 72 - 模型库成绩口径：按条件排除的单不进胜率和 R，但还留在页面的交易列表里
+  ---
+  duration_ms: 12.484456
+  type: 'test'
+  ...
+# Subtest: 错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的标题和级别不动；中英文模板都认
+ok 73 - 错题 ⇄ 待验证：只对调还是模板原样的标题，自己写的标题和级别不动；中英文模板都认
+  ---
+  duration_ms: 10.844374
+  type: 'test'
+  ...
+# Subtest: 关联按类型认：待验证只有支持 / 反驳，错题只有关联；类型不对的值读的时候忽略
+ok 74 - 关联按类型认：待验证只有支持 / 反驳，错题只有关联；类型不对的值读的时候忽略
+  ---
+  duration_ms: 10.508102
+  type: 'test'
+  ...
+# Subtest: 点关联按钮的顺序：待验证 无 → 支持 → 反驳 → 无，错题 无 ⇄ 关联，标签没有
+ok 75 - 点关联按钮的顺序：待验证 无 → 支持 → 反驳 → 无，错题 无 ⇄ 关联，标签没有
+  ---
+  duration_ms: 11.300354
+  type: 'test'
+  ...
+# Subtest: 改标记返回新表、不动原来的；两样都清空了整个条目删掉
+ok 76 - 改标记返回新表、不动原来的；两样都清空了整个条目删掉
+  ---
+  duration_ms: 13.614374
+  type: 'test'
+  ...
+# Subtest: 关联交易分组：新组从 0 开始、各组独立；第一组就是原来的 ev；删组连带清掉那组的标记
+ok 77 - 关联交易分组：新组从 0 开始、各组独立；第一组就是原来的 ev；删组连带清掉那组的标记
+  ---
+  duration_ms: 12.290144
+  type: 'test'
+  ...
+# Subtest: 可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出
+ok 78 - 可以下结论的提示：关联够多才出，一边倒给建议，五五开提示拆细，不是观察中就不出
+  ---
+  duration_ms: 59.617092
+  type: 'test'
+  ...
+# Subtest: 数据范围：没设条件什么都不影响；设了之后列表、模型库、未归类数都只看范围内的
+ok 79 - 数据范围：没设条件什么都不影响；设了之后列表、模型库、未归类数都只看范围内的
+  ---
+  duration_ms: 20.68196
+  type: 'test'
+  ...
+# Subtest: 「暂时看全部」：范围还在，只是先不生效
+ok 80 - 「暂时看全部」：范围还在，只是先不生效
+  ---
+  duration_ms: 8.179427
+  type: 'test'
+  ...
+# Subtest: 新交易自动填值：只认平铺的「选择字段 是 一个值」，分组 / 取反 / 多个值都不猜
+ok 81 - 新交易自动填值：只认平铺的「选择字段 是 一个值」，分组 / 取反 / 多个值都不猜
+  ---
+  duration_ms: 51.413031
+  type: 'test'
+  ...
+# Subtest: 分支：两层封顶，种类要一致；指向分支 / 不存在的 branch_of 按顶层读
+ok 82 - 分支：两层封顶，种类要一致；指向分支 / 不存在的 branch_of 按顶层读
+  ---
+  duration_ms: 8.593562
+  type: 'test'
+  ...
+# Subtest: 问题的交易：全部（去重）和还没分到分支的
+ok 83 - 问题的交易：全部（去重）和还没分到分支的
+  ---
+  duration_ms: 10.310358
+  type: 'test'
+  ...
+# Subtest: 重排：只动被拖的那一张，排到目标前 / 后，没变的行不写
+ok 84 - 重排：只动被拖的那一张，排到目标前 / 后，没变的行不写
+  ---
+  duration_ms: 8.109168
+  type: 'test'
+  ...
+# Subtest: 合并正文：交易行连同那句话搬过去，剩下的正文单开一节、标题降一级，空模板不搬
+ok 85 - 合并正文：交易行连同那句话搬过去，剩下的正文单开一节、标题降一级，空模板不搬
+  ---
+  duration_ms: 8.895973
+  type: 'test'
+  ...
+# Subtest: classic company renderer remains byte-identical in zh/en
+ok 86 - classic company renderer remains byte-identical in zh/en
+  ---
+  duration_ms: 70.038219
+  type: 'test'
+  ...
+# Subtest: modern seven values exactly match old renderer at the same scoped range
+ok 87 - modern seven values exactly match old renderer at the same scoped range
+  ---
+  duration_ms: 47.362104
+  type: 'test'
+  ...
+# Subtest: grouping, current counts, filtered single company and hidden empty behavior stay unchanged
+ok 88 - grouping, current counts, filtered single company and hidden empty behavior stay unchanged
+  ---
+  duration_ms: 18.094228
+  type: 'test'
+  ...
+# Subtest: sort copies rows, keeps unknown last and ties stable with invalid-key fallback
+ok 89 - sort copies rows, keeps unknown last and ties stable with invalid-key fallback
+  ---
+  duration_ms: 13.794415
+  type: 'test'
+  ...
+# Subtest: symmetric net geometry uses one finite common scale independent of sort
+ok 90 - symmetric net geometry uses one finite common scale independent of sort
+  ---
+  duration_ms: 17.394318
+  type: 'test'
+  ...
+# Subtest: actual stats retain pending/refund and dated failed-attempt semantics
+ok 91 - actual stats retain pending/refund and dated failed-attempt semantics
+  ---
+  duration_ms: 15.613664
+  type: 'test'
+  ...
+# Subtest: logos use safe local assets and never invent identity for mixed stored names
+ok 92 - logos use safe local assets and never invent identity for mixed stored names
+  ---
+  duration_ms: 13.306614
+  type: 'test'
+  ...
+# Subtest: company names and hints are escaped, nonfinite CSS cannot be emitted
+ok 93 - company names and hints are escaped, nonfinite CSS cannot be emitted
+  ---
+  duration_ms: 14.761639
+  type: 'test'
+  ...
+# Subtest: sort retains in-view redraw and resets at identity/layout/overview exit without touching drafts
+ok 94 - sort retains in-view redraw and resets at identity/layout/overview exit without touching drafts
+  ---
+  duration_ms: 14.782733
+  type: 'test'
+  ...
+# Subtest: local sorting rejects modal/loading/picker and invalid values without rendering or persistence
+ok 95 - local sorting rejects modal/loading/picker and invalid values without rendering or persistence
+  ---
+  duration_ms: 10.517491
+  type: 'test'
+  ...
+# Subtest: accepted local sort reuses DOM rows, retains scroll and stable ties across repeated choices
+ok 96 - accepted local sort reuses DOM rows, retains scroll and stable ties across repeated choices
+  ---
+  duration_ms: 17.355973
+  type: 'test'
+  ...
+# Subtest: company help reveals behind sticky column and closes when horizontally clipped
+ok 97 - company help reveals behind sticky column and closes when horizontally clipped
+  ---
+  duration_ms: 14.275993
+  type: 'test'
+  ...
+# Subtest: company help resolves translated plain text without hijacking overview or monthly fields
+ok 98 - company help resolves translated plain text without hijacking overview or monthly fields
+  ---
+  duration_ms: 11.730856
+  type: 'test'
+  ...
+# Subtest: all existing company and group filters preserve seven values across range changes
+ok 99 - all existing company and group filters preserve seven values across range changes
+  ---
+  duration_ms: 36.941508
+  type: 'test'
+  ...
+# Subtest: history UI: open/search/render is cached, scoped, date-independent and safe
+ok 100 - history UI: open/search/render is cached, scoped, date-independent and safe
+  ---
+  duration_ms: 47.549442
+  type: 'test'
+  ...
+# Subtest: history UI: malformed roots retained by normal serialization and history mutation blocked before write
+ok 101 - history UI: malformed roots retained by normal serialization and history mutation blocked before write
+  ---
+  duration_ms: 36.437284
+  type: 'test'
+  ...
+# Subtest: history UI: dirty parent blocks repair and legacy date changes without losing its draft
+ok 102 - history UI: dirty parent blocks repair and legacy date changes without losing its draft
+  ---
+  duration_ms: 16.946353
+  type: 'test'
+  ...
+# Subtest: history UI: legacy first and nonfirst dates enter isolated review, never purchase/ledger writers
+ok 103 - history UI: legacy first and nonfirst dates enter isolated review, never purchase/ledger writers
+  ---
+  duration_ms: 29.957146
+  type: 'test'
+  ...
+# Subtest: history UI: stable insertion/removal/restore stays draft-only, discard keeps or abandons
+ok 104 - history UI: stable insertion/removal/restore stays draft-only, discard keeps or abandons
+  ---
+  duration_ms: 20.01339
+  type: 'test'
+  ...
+# Subtest: history UI: deletion requires acknowledgement and busy guards close/back/repeated save
+ok 105 - history UI: deletion requires acknowledgement and busy guards close/back/repeated save
+  ---
+  duration_ms: 12.538674
+  type: 'test'
+  ...
+# Subtest: history UI: verified save recomputes and clean parent returns with fresh purchase date
+ok 106 - history UI: verified save recomputes and clean parent returns with fresh purchase date
+  ---
+  duration_ms: 13.068638
+  type: 'test'
+  ...
+# Subtest: history UI: conflict/reload keeps draft until explicit confirmed reload and late results cannot repaint
+ok 107 - history UI: conflict/reload keeps draft until explicit confirmed reload and late results cannot repaint
+  ---
+  duration_ms: 10.00375
+  type: 'test'
+  ...
+# Subtest: history UI: pending keyboard legacy event is carried into explicit editor
+ok 108 - history UI: pending keyboard legacy event is carried into explicit editor
+  ---
+  duration_ms: 12.234782
+  type: 'test'
+  ...
+# Subtest: history UI: normal purchase-date edit never guesses stage identity after first-record removal
+ok 109 - history UI: normal purchase-date edit never guesses stage identity after first-record removal
+  ---
+  duration_ms: 11.619357
+  type: 'test'
+  ...
+# Subtest: history UI: ordinary saves and renewal retain malformed raw root and normalized cache
+ok 110 - history UI: ordinary saves and renewal retain malformed raw root and normalized cache
+  ---
+  duration_ms: 15.21357
+  type: 'test'
+  ...
+# Subtest: history UI: delayed save/reload results after scope invalidation cannot restore disposed modal
+ok 111 - history UI: delayed save/reload results after scope invalidation cannot restore disposed modal
+  ---
+  duration_ms: 25.111214
+  type: 'test'
+  ...
+# Subtest: history UI: busy dialog with no enabled controls keeps keyboard focus on its heading
+ok 112 - history UI: busy dialog with no enabled controls keeps keyboard focus on its heading
+  ---
+  duration_ms: 18.440816
+  type: 'test'
+  ...
+# Subtest: history UI: Shift+Tab from the programmatically focused heading wraps inside the drawer
+ok 113 - history UI: Shift+Tab from the programmatically focused heading wraps inside the drawer
+  ---
+  duration_ms: 11.522807
+  type: 'test'
+  ...
+# Subtest: history UI: account moving outside the selected company/group disposes the stale editor
+ok 114 - history UI: account moving outside the selected company/group disposes the stale editor
+  ---
+  duration_ms: 10.284726
+  type: 'test'
+  ...
+# Subtest: history UI: saved first-record removal followed by explicit normal purchase edit leaves stage dates intact
+ok 115 - history UI: saved first-record removal followed by explicit normal purchase edit leaves stage dates intact
+  ---
+  duration_ms: 17.257989
+  type: 'test'
+  ...
+# Subtest: history UI: classic detail keeps its entry layout but legacy date edits still use safe review
+ok 116 - history UI: classic detail keeps its entry layout but legacy date edits still use safe review
+  ---
+  duration_ms: 13.909451
+  type: 'test'
+  ...
+# Subtest: history UI: readonly/busy/invalid root prevent mutations; all strings translate in both languages
+ok 117 - history UI: readonly/busy/invalid root prevent mutations; all strings translate in both languages
+  ---
+  duration_ms: 17.516834
+  type: 'test'
+  ...
+# Subtest: history: invalid root evidence survives normalization and cannot become empty history
+ok 118 - history: invalid root evidence survives normalization and cannot become empty history
+  ---
+  duration_ms: 43.693692
+  type: 'test'
+  ...
+# Subtest: history: real ISO days and known stages, including leap/boundary years
+ok 119 - history: real ISO days and known stages, including leap/boundary years
+  ---
+  duration_ms: 14.866097
+  type: 'test'
+  ...
+# Subtest: history: missing stages, instant exemption, attempts and external ledger errors
+ok 120 - history: missing stages, instant exemption, attempts and external ledger errors
+  ---
+  duration_ms: 18.987953
+  type: 'test'
+  ...
+# Subtest: history: suspicious chronology and repeats are reasons, not destructive normalization
+ok 121 - history: suspicious chronology and repeats are reasons, not destructive normalization
+  ---
+  duration_ms: 15.559265
+  type: 'test'
+  ...
+# Subtest: history: pending/all search uses full provided scope without mutating or financial-range filtering
+ok 122 - history: pending/all search uses full provided scope without mutating or financial-range filtering
+  ---
+  duration_ms: 15.671105
+  type: 'test'
+  ...
+# Subtest: history: stable identities, explicit insertion/removal, diff and unknown metadata preservation
+ok 123 - history: stable identities, explicit insertion/removal, diff and unknown metadata preservation
+  ---
+  duration_ms: 17.039093
+  type: 'test'
+  ...
+# Subtest: history: partial repair retains untouched malformed rows; edited rows must become valid
+ok 124 - history: partial repair retains untouched malformed rows; edited rows must become valid
+  ---
+  duration_ms: 15.643932
+  type: 'test'
+  ...
+# Subtest: history: reject reordered, missing/duplicate identities and changes to unknown metadata
+ok 125 - history: reject reordered, missing/duplicate identities and changes to unknown metadata
+  ---
+  duration_ms: 15.742976
+  type: 'test'
+  ...
+# Subtest: history: precise account-only update with original owner/version/date/history and verified cache merge
+ok 126 - history: precise account-only update with original owner/version/date/history and verified cache merge
+  ---
+  duration_ms: 11.564503
+  type: 'test'
+  ...
+# Subtest: history: null version and purchase day use IS NULL, never omitted compare guards
+ok 127 - history: null version and purchase day use IS NULL, never omitted compare guards
+  ---
+  duration_ms: 16.664115
+  type: 'test'
+  ...
+# Subtest: history: conflict, errors, malformed/multiple/unverified results retain cache and draft
+ok 128 - history: conflict, errors, malformed/multiple/unverified results retain cache and draft
+  ---
+  duration_ms: 101.327933
+  type: 'test'
+  ...
+# Subtest: history: no write without changes, deletion acknowledgement, owner, active session or valid baseline
+ok 129 - history: no write without changes, deletion acknowledgement, owner, active session or valid baseline
+  ---
+  duration_ms: 117.042515
+  type: 'test'
+  ...
+# Subtest: history: saved partial correction reports untouched remaining issues without altering ledger
+ok 130 - history: saved partial correction reports untouched remaining issues without altering ledger
+  ---
+  duration_ms: 15.236387
+  type: 'test'
+  ...
+# Subtest: history: late response after UI context invalidation cannot update cache
+ok 131 - history: late response after UI context invalidation cannot update cache
+  ---
+  duration_ms: 10.294328
+  type: 'test'
+  ...
+# Subtest: history: same session object with mutated owner cannot accept save or reload completion
+ok 132 - history: same session object with mutated owner cannot accept save or reload completion
+  ---
+  duration_ms: 22.848137
+  type: 'test'
+  ...
+# Subtest: history: reload cannot overwrite a same-scope cache update while its response is pending
+ok 133 - history: reload cannot overwrite a same-scope cache update while its response is pending
+  ---
+  duration_ms: 21.458182
+  type: 'test'
+  ...
+# Subtest: history: duplicate submission blocked and late response after session change cannot update cache
+ok 134 - history: duplicate submission blocked and late response after session change cannot update cache
+  ---
+  duration_ms: 9.280497
+  type: 'test'
+  ...
+# Subtest: linkage stages and conversion lists track different cohorts correctly
+ok 135 - linkage stages and conversion lists track different cohorts correctly
+  ---
+  duration_ms: 61.853543
+  type: 'test'
+  ...
+# Subtest: linkage uses inclusive actual dates, unique stages and chronological cutoff
+ok 136 - linkage uses inclusive actual dates, unique stages and chronological cutoff
+  ---
+  duration_ms: 16.726569
+  type: 'test'
+  ...
+# Subtest: linkage ignores pending/zero/negative payouts and foreign-account entries
+ok 137 - linkage ignores pending/zero/negative payouts and foreign-account entries
+  ---
+  duration_ms: 17.113553
+  type: 'test'
+  ...
+# Subtest: linkage counts evaluation bypasses on funded dates without inventing instant passes
+ok 138 - linkage counts evaluation bypasses on funded dates without inventing instant passes
+  ---
+  duration_ms: 17.291204
+  type: 'test'
+  ...
+# Subtest: linkage discloses invalid and missing history and never uses current status as a dated event
+ok 139 - linkage discloses invalid and missing history and never uses current status as a dated event
+  ---
+  duration_ms: 15.652284
+  type: 'test'
+  ...
+# Subtest: linkage auxiliary metrics count interval failed attempts and signed investment
+ok 140 - linkage auxiliary metrics count interval failed attempts and signed investment
+  ---
+  duration_ms: 18.306666
+  type: 'test'
+  ...
+# Subtest: linkage model does not mutate frozen inputs
+ok 141 - linkage model does not mutate frozen inputs
+  ---
+  duration_ms: 17.820494
+  type: 'test'
+  ...
+# Subtest: linkage month bounds clamp old selection into partial cross-year range
+ok 142 - linkage month bounds clamp old selection into partial cross-year range
+  ---
+  duration_ms: 16.576288
+  type: 'test'
+  ...
+# Subtest: exact current-status predicate does not confuse active and historical cohorts
+ok 143 - exact current-status predicate does not confuse active and historical cohorts
+  ---
+  duration_ms: 10.63159
+  type: 'test'
+  ...
+# Subtest: modern overview links lower cash flows and dates while classic retains its old funnel
+ok 144 - modern overview links lower cash flows and dates while classic retains its old funnel
+  ---
+  duration_ms: 51.066437
+  type: 'test'
+  ...
+# Subtest: linkage list rendering escapes names and partitions the same model rows
+ok 145 - linkage list rendering escapes names and partitions the same model rows
+  ---
+  duration_ms: 11.361389
+  type: 'test'
+  ...
+# Subtest: invalid ranges and dates stay explicit and do not fabricate financial totals
+ok 146 - invalid ranges and dates stay explicit and do not fabricate financial totals
+  ---
+  duration_ms: 10.715619
+  type: 'test'
+  ...
+# Subtest: firm summaries reconcile interval cash flow with the same period pass-rate
+ok 147 - firm summaries reconcile interval cash flow with the same period pass-rate
+  ---
+  duration_ms: 17.455725
+  type: 'test'
+  ...
+# Subtest: current-state navigation retains company/group, clears batch selection and protects other forms
+ok 148 - current-state navigation retains company/group, clears batch selection and protects other forms
+  ---
+  duration_ms: 14.341981
+  type: 'test'
+  ...
+# Subtest: stale scope/date/identity/layout/page clears only linkage-owned modal state
+ok 149 - stale scope/date/identity/layout/page clears only linkage-owned modal state
+  ---
+  duration_ms: 13.766429
+  type: 'test'
+  ...
+# Subtest: linked detail remains a labelled dialog and back protects an unsaved detail draft
+ok 150 - linked detail remains a labelled dialog and back protects an unsaved detail draft
+  ---
+  duration_ms: 14.454261
+  type: 'test'
+  ...
+# Subtest: stale linkage sheets clear their rendered DOM before authentication early returns
+ok 151 - stale linkage sheets clear their rendered DOM before authentication early returns
+  ---
+  duration_ms: 11.433118
+  type: 'test'
+  ...
+# Subtest: blown status or history discloses missing funding dates without inventing stage events
+ok 152 - blown status or history discloses missing funding dates without inventing stage events
+  ---
+  duration_ms: 12.979416
+  type: 'test'
+  ...
+# Subtest: nested entry, status and balance saves retain list origin without changing persistence
+ok 153 - nested entry, status and balance saves retain list origin without changing persistence
+  ---
+  duration_ms: 12.173603
+  type: 'test'
+  ...
+# Subtest: linked Back preserves its click through input blur without intercepting other actions
+ok 154 - linked Back preserves its click through input blur without intercepting other actions
+  ---
+  duration_ms: 19.31886
+  type: 'test'
+  ...
+# Subtest: classic monthly chart, summary and ledger stay byte-identical in both languages
+ok 155 - classic monthly chart, summary and ledger stay byte-identical in both languages
+  ---
+  duration_ms: 97.702909
+  type: 'test'
+  ...
+# Subtest: modern defaults to original bars with an accessible default-off toggle
+ok 156 - modern defaults to original bars with an accessible default-off toggle
+  ---
+  duration_ms: 41.351795
+  type: 'test'
+  ...
+# Subtest: recovery uses whole reporting range, not displayed year or ROI; cap stays 100%
+ok 157 - recovery uses whole reporting range, not displayed year or ROI; cap stays 100%
+  ---
+  duration_ms: 30.325906
+  type: 'test'
+  ...
+# Subtest: month header and native grouping/detail entries retain totals and escaping
+ok 158 - month header and native grouping/detail entries retain totals and escaping
+  ---
+  duration_ms: 34.044529
+  type: 'test'
+  ...
+# Subtest: all seven kinds have static SVGs and unknown kinds cannot inject markup
+ok 159 - all seven kinds have static SVGs and unknown kinds cannot inject markup
+  ---
+  duration_ms: 12.806329
+  type: 'test'
+  ...
+# Subtest: line eligibility excludes range gaps and unrecorded future months, not in-range zeros
+ok 160 - line eligibility excludes range gaps and unrecorded future months, not in-range zeros
+  ---
+  duration_ms: 17.442225
+  type: 'test'
+  ...
+# Subtest: overlay geometry emits exactly two series, no smoothing, no segment across a gap
+ok 161 - overlay geometry emits exactly two series, no smoothing, no segment across a gap
+  ---
+  duration_ms: 15.219748
+  type: 'test'
+  ...
+# Subtest: partial dates, refunds and pending remain derived from unchanged monthly helper
+ok 162 - partial dates, refunds and pending remain derived from unchanged monthly helper
+  ---
+  duration_ms: 20.666451
+  type: 'test'
+  ...
+# Subtest: monthly state persists only within the same modern overview and protects drafts
+ok 163 - monthly state persists only within the same modern overview and protects drafts
+  ---
+  duration_ms: 12.301002
+  type: 'test'
+  ...
+# Subtest: localized monthly additions have no missing keys and empty amounts do not invent lines
+ok 164 - localized monthly additions have no missing keys and empty amounts do not invent lines
+  ---
+  duration_ms: 40.697724
+  type: 'test'
+  ...
+# Subtest: redraw disconnects observers, cancels queued drawing and drops detached chart references
+ok 165 - redraw disconnects observers, cancels queued drawing and drops detached chart references
+  ---
+  duration_ms: 12.346512
+  type: 'test'
+  ...
+# Subtest: disabled year-arrow focus falls back to the selected month, never an open form
+ok 166 - disabled year-arrow focus falls back to the selected month, never an open form
+  ---
+  duration_ms: 11.887578
+  type: 'test'
+  ...
+# Subtest: very long amounts use a readable narrow-screen layout without shortening money
+ok 167 - very long amounts use a readable narrow-screen layout without shortening money
+  ---
+  duration_ms: 16.951231
+  type: 'test'
+  ...
+# Subtest: toggle does not write preferences, fetch data or mutate financial caches
+ok 168 - toggle does not write preferences, fetch data or mutate financial caches
+  ---
+  duration_ms: 10.031863
+  type: 'test'
+  ...
+# Subtest: monthly keyboard ignores modified keys before inspecting or activating a month
+ok 169 - monthly keyboard ignores modified keys before inspecting or activating a month
+  ---
+  duration_ms: 16.366215
+  type: 'test'
+  ...
+# Subtest: recovery tooltip uses textContent and common Escape/aria cleanup
+ok 170 - recovery tooltip uses textContent and common Escape/aria cleanup
+  ---
+  duration_ms: 10.815711
+  type: 'test'
+  ...
+# Subtest: overview dates validate calendar days without local-time rollover
+ok 171 - overview dates validate calendar days without local-time rollover
+  ---
+  duration_ms: 43.74202
+  type: 'test'
+  ...
+# Subtest: overview presets include today and use full prior calendar month
+ok 172 - overview presets include today and use full prior calendar month
+  ---
+  duration_ms: 15.041572
+  type: 'test'
+  ...
+# Subtest: overview uses inclusive dates, refunds and only received payouts
+ok 173 - overview uses inclusive dates, refunds and only received payouts
+  ---
+  duration_ms: 22.797384
+  type: 'test'
+  ...
+# Subtest: overview daily steps are sorted, merged and exact to a cent
+ok 174 - overview daily steps are sorted, merged and exact to a cent
+  ---
+  duration_ms: 15.200744
+  type: 'test'
+  ...
+# Subtest: overview does not mutate the actual VM input objects
+ok 175 - overview does not mutate the actual VM input objects
+  ---
+  duration_ms: 14.432036
+  type: 'test'
+  ...
+# Subtest: overview refunds can make investment negative, never fake ROI or clamp totals
+ok 176 - overview refunds can make investment negative, never fake ROI or clamp totals
+  ---
+  duration_ms: 14.849063
+  type: 'test'
+  ...
+# Subtest: overview empty and pending-only ranges have no fabricated trend
+ok 177 - overview empty and pending-only ranges have no fabricated trend
+  ---
+  duration_ms: 9.643586
+  type: 'test'
+  ...
+# Subtest: overview invalid financial dates cannot silently become a zero range
+ok 178 - overview invalid financial dates cannot silently become a zero range
+  ---
+  duration_ms: 16.722833
+  type: 'test'
+  ...
+# Subtest: overview all-time includes full loaded history and sparse long intervals
+ok 179 - overview all-time includes full loaded history and sparse long intervals
+  ---
+  duration_ms: 14.938688
+  type: 'test'
+  ...
+# Subtest: overview malformed amounts never turn into a zero balance
+ok 180 - overview malformed amounts never turn into a zero balance
+  ---
+  duration_ms: 13.169036
+  type: 'test'
+  ...
+# Subtest: overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+ok 181 - overview unsafe cent totals are unavailable, not rounded into apparent accuracy
+  ---
+  duration_ms: 13.434733
+  type: 'test'
+  ...
+# Subtest: classic metric strip remains byte-for-byte identical in both languages
+ok 182 - classic metric strip remains byte-for-byte identical in both languages
+  ---
+  duration_ms: 40.264932
+  type: 'test'
+  ...
+# Subtest: overview lifecycle resets identity/page/layout range and removes portals without touching forms
+ok 183 - overview lifecycle resets identity/page/layout range and removes portals without touching forms
+  ---
+  duration_ms: 13.275759
+  type: 'test'
+  ...
+# Subtest: overview keyboard only consumes active overlays and preserves applied range on Escape
+ok 184 - overview keyboard only consumes active overlays and preserves applied range on Escape
+  ---
+  duration_ms: 10.436517
+  type: 'test'
+  ...
+# Subtest: restored help focus suppresses reopening once, not the next hover
+ok 185 - restored help focus suppresses reopening once, not the next hover
+  ---
+  duration_ms: 12.966838
+  type: 'test'
+  ...
+# Subtest: modern renders a unified summary and six field-local explanations
+ok 186 - modern renders a unified summary and six field-local explanations
+  ---
+  duration_ms: 23.433088
+  type: 'test'
+  ...
+# Subtest: same-day purchase and failure are valid and count one failed attempt
+ok 187 - same-day purchase and failure are valid and count one failed attempt
+  ---
+  duration_ms: 50.260128
+  type: 'test'
+  ...
+# Subtest: same-day explicit pass, funding and blown retain every stage and current status
+ok 188 - same-day explicit pass, funding and blown retain every stage and current status
+  ---
+  duration_ms: 13.96557
+  type: 'test'
+  ...
+# Subtest: same-day eval to funded to blown supplies a statistical pass, not a missing stage
+ok 189 - same-day eval to funded to blown supplies a statistical pass, not a missing stage
+  ---
+  duration_ms: 14.751658
+  type: 'test'
+  ...
+# Subtest: same-day resets preserve repeated attempts without false duplicate warnings
+ok 190 - same-day resets preserve repeated attempts without false duplicate warnings
+  ---
+  duration_ms: 12.638208
+  type: 'test'
+  ...
+# Subtest: instant funding alone is not a pass in dated or classic statistics
+ok 191 - instant funding alone is not a pass in dated or classic statistics
+  ---
+  duration_ms: 10.901377
+  type: 'test'
+  ...
+# Subtest: explicit pass takes priority before filtering, not reassigned to the funded month
+ok 192 - explicit pass takes priority before filtering, not reassigned to the funded month
+  ---
+  duration_ms: 13.960154
+  type: 'test'
+  ...
+# Subtest: invalid explicit pass cannot be hidden by valid funding fallback
+ok 193 - invalid explicit pass cannot be hidden by valid funding fallback
+  ---
+  duration_ms: 11.244018
+  type: 'test'
+  ...
+# Subtest: no pass date from status, blown, payout, purchase or an invalid funding date
+ok 194 - no pass date from status, blown, payout, purchase or an invalid funding date
+  ---
+  duration_ms: 15.025908
+  type: 'test'
+  ...
+# Subtest: derived pass follows inclusive funded-day boundaries and cohort cutoff
+ok 195 - derived pass follows inclusive funded-day boundaries and cohort cutoff
+  ---
+  duration_ms: 11.902542
+  type: 'test'
+  ...
+# Subtest: multiple recorded funding dates remain range-selectable, account counts stay unique
+ok 196 - multiple recorded funding dates remain range-selectable, account counts stay unique
+  ---
+  duration_ms: 17.261557
+  type: 'test'
+  ...
+# Subtest: legacy default evaluation and diagnostic date bounds remain explicit
+ok 197 - legacy default evaluation and diagnostic date bounds remain explicit
+  ---
+  duration_ms: 14.367704
+  type: 'test'
+  ...
+# Subtest: derived lists identify the date source in both languages without altering the saved timeline
+ok 198 - derived lists identify the date source in both languages without altering the saved timeline
+  ---
+  duration_ms: 11.479433
+  type: 'test'
+  ...
+# Subtest: company statistics share derived passes while their cash values stay unchanged
+ok 199 - company statistics share derived passes while their cash values stay unchanged
+  ---
+  duration_ms: 29.038942
+  type: 'test'
+  ...
+# Subtest: diagnosis, derived statistics and drafts never backfill events or invoke a writer
+ok 200 - diagnosis, derived statistics and drafts never backfill events or invoke a writer
+  ---
+  duration_ms: 14.418868
+  type: 'test'
+  ...
+# Subtest: 口径：退款冲减投入，待到账的出金不算回报
+ok 201 - 口径：退款冲减投入，待到账的出金不算回报
+  ---
+  duration_ms: 45.541455
+  type: 'test'
+  ...
+# Subtest: 按月：按付款 / 到账那天归月，待到账的不算
+ok 202 - 按月：按付款 / 到账那天归月，待到账的不算
+  ---
+  duration_ms: 15.325517
+  type: 'test'
+  ...
+# Subtest: 漏斗：重置前那次失败也算进通过率的分母
+ok 203 - 漏斗：重置前那次失败也算进通过率的分母
+  ---
+  duration_ms: 13.769524
+  type: 'test'
+  ...
+# Subtest: 月付：按购买日逐月记，31 号买的小月记在月底；水位之前的不补
+ok 204 - 月付：按购买日逐月记，31 号买的小月记在月底；水位之前的不补
+  ---
+  duration_ms: 12.912161
+  type: 'test'
+  ...
+# Subtest: 目录校验：规则值只能是数字 / none / null，计划要挂在已有公司下
+ok 205 - 目录校验：规则值只能是数字 / none / null，计划要挂在已有公司下
+  ---
+  duration_ms: 9.686008
+  type: 'test'
+  ...
+# Subtest: 目录对比：字段顺序不同不算改动
+ok 206 - 目录对比：字段顺序不同不算改动
+  ---
+  duration_ms: 14.488206
+  type: 'test'
+  ...
+# Subtest: 添加账号：同系列同规模里按可选项挑计划，must 那一维必须对上
+ok 207 - 添加账号：同系列同规模里按可选项挑计划，must 那一维必须对上
+  ---
+  duration_ms: 10.975937
+  type: 'test'
+  ...
+# Subtest: 添加账号：规则输入框三种取值，改过的规则能认出来、套进快照不动原计划
+ok 208 - 添加账号：规则输入框三种取值，改过的规则能认出来、套进快照不动原计划
+  ---
+  duration_ms: 15.389305
+  type: 'test'
+  ...
+# Subtest: 余额：考核进度、静态 / 追踪回撤的爆仓线
+ok 209 - 余额：考核进度、静态 / 追踪回撤的爆仓线
+  ---
+  duration_ms: 14.560401
+  type: 'test'
+  ...
+# Subtest: 折叠状态按「级别 + 文字 + 第几个」存，重名标题能区分
+ok 210 - 折叠状态按「级别 + 文字 + 第几个」存，重名标题能区分
+  ---
+  duration_ms: 2.245288
+  type: 'test'
+  ...
+# Subtest: 前面插了内容、位置全变，照样认得出是哪几节
+ok 211 - 前面插了内容、位置全变，照样认得出是哪几节
+  ---
+  duration_ms: 0.559746
+  type: 'test'
+  ...
+# Subtest: 标题改了字、删了，或者存的东西格式不对，直接忽略
+ok 212 - 标题改了字、删了，或者存的东西格式不对，直接忽略
+  ---
+  duration_ms: 0.488051
+  type: 'test'
+  ...
+1..212
+# tests 212
+# suites 0
+# pass 212
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 680.568929
+
+EXIT_CODE=0

@@ -120,6 +120,7 @@ function propOverviewBeforeRender() {
   if (owner !== propOverviewOwner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
   propOverviewOwner = owner;
   propLinkageBeforeRender();
+  propHistoryBeforeRender();
   propMonthsBeforeRender(owner);
   propCompanyBeforeRender(owner);
 }

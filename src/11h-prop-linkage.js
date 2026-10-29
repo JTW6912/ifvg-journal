@@ -26,8 +26,7 @@ function propLinkageWarning(report) {
 function renderPropProgress(report) {
   const f = report.summary, edges = [2, 20, 38, 56, 74];
   return `<section class="propProgress" aria-label="${esc(T("prop.funnel.title"))}">
-    <header class="propProgressHead"><div><span class="propOverviewIcon">${propLinkageIcon("funnel")}</span><div><h2>${esc(T("prop.funnel.title"))}</h2><p>${esc(T("prop.linkage.inspect"))}</p></div></div><span class="propProgressRange">${esc(propOverviewRangeText(report.range))}</span></header>
-    ${propLinkageWarning(report)}
+    <header class="propProgressHead"><div><span class="propOverviewIcon">${propLinkageIcon("funnel")}</span><div><h2>${esc(T("prop.funnel.title"))}</h2><p>${esc(T("prop.linkage.inspect"))}</p></div></div><div class="propHistoryEntryTools"><span class="propProgressRange">${esc(propOverviewRangeText(report.range))}</span>${propHistoryEntryHtml()}</div></header>
     <div class="propProgressScroll" role="region" tabindex="0" aria-label="${esc(T("prop.linkage.scroll"))}" aria-describedby="propProgressShape"><div class="propProgressTrack">
       ${PROP_LINKAGE_STAGES.map((key, i) => {
         const rows = report.stages[key], edge = report.edges[i];
@@ -53,7 +52,9 @@ function propLinkageListContent(m) {
     ${rows.length ? rows.map(row => {
       const a = accountMap.get(row.id);
       const source = edge ? edge.from : m.key;
-      return `<button type="button" class="propLinkageAccount" data-action="prop-linkage-detail" data-id="${esc(row.id)}"><span class="propOverviewIcon">${propLinkageIcon("funded")}</span><span class="propLinkageAccountText"><strong>${esc(propAccountTitle(a))}</strong><small>${esc([a.firm_name, a.group_name].filter(Boolean).join(" · "))}</small><span>${propStatusPill(a.status)}<small>${esc(propLinkageStageLabel(source))} · ${esc(row.day)}</small>${edge ? `<small>${esc(propLinkageStageLabel(edge.to))} · ${esc(row.next || T("prop.linkage.notRecorded"))}</small>` : ""}</span></span>${propLinkageIcon("arrow")}</button>`;
+      const derivedPass = row.passSource === "funded" || row.nextPassSource === "funded";
+      const passNote = derivedPass ? `<small>${esc(T("prop.linkage.derivedPass"))}</small>` : "";
+      return `<button type="button" class="propLinkageAccount" data-action="prop-linkage-detail" data-id="${esc(row.id)}"><span class="propOverviewIcon">${propLinkageIcon("funded")}</span><span class="propLinkageAccountText"><strong>${esc(propAccountTitle(a))}</strong><small>${esc([a.firm_name, a.group_name].filter(Boolean).join(" · "))}</small><span>${propStatusPill(a.status)}<small>${esc(propLinkageStageLabel(source))} · ${esc(row.day)}</small>${edge ? `<small>${esc(propLinkageStageLabel(edge.to))} · ${esc(row.next || T("prop.linkage.notRecorded"))}</small>` : ""}${passNote}</span></span>${propLinkageIcon("arrow")}</button>`;
     }).join("") : `<div class="emptyState">${esc(T("prop.linkage.empty"))}</div>`}</div>`;
   return { title: esc(title), body, count: rows.length };
 }

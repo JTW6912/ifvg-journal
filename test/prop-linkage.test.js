@@ -61,14 +61,16 @@ test('linkage ignores pending/zero/negative payouts and foreign-account entries'
   assert.equal(invalid.stages.paid.length, 0); assert.equal(invalid.finance.available, false);
 });
 
-test('linkage retains all-time actual records without faking skipped passes', () => {
+test('linkage counts evaluation bypasses on funded dates without inventing instant passes', () => {
   const { call } = setup();
   const a = { ...account('instant', '2026-09-01', [event('funded', '2026-09-01')], 'funded'), plan_snapshot: { type: 'instant' } };
   const b = account('direct', '2026-09-02', [event('funded', '2026-10-01')], 'funded');
   const r = call('propLinkageReport', [a, b], [], { preset: 'all' }, TODAY);
-  assert.equal(r.stages.bought.length, 2); assert.equal(r.stages.passed.length, 0); assert.equal(r.stages.funded.length, 2);
-  assert.equal(r.summary.passRate, null); assert.equal(r.edges[1].rate, null);
-  assert.ok(r.incompleteIds.includes('direct')); assert.ok(!r.incompleteIds.includes('instant'));
+  assert.equal(r.stages.bought.length, 2); assert.equal(r.stages.passed.length, 1); assert.equal(r.stages.funded.length, 2);
+  assert.deepEqual(r.stages.passed, [{ id: 'direct', day: '2026-10-01', passSource: 'funded' }]);
+  assert.equal(r.summary.passRate, 100); assert.equal(r.edges[1].rate, 100);
+  assert.deepEqual(r.incompleteIds, []);
+  assert.deepEqual(b.events, [event('funded', '2026-10-01')]);
 });
 
 test('linkage discloses invalid and missing history and never uses current status as a dated event', () => {

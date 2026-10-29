@@ -226,17 +226,27 @@ function propSum(entries) {
   return { spent, received, pending: propMoney(pending), refund: propMoney(refund), net, roi: spent > 0 ? (net / spent) * 100 : null };
 }
 /* 账号到过某个状态没有（看时间线，不只看现在）：考核过了又爆仓的账号，「通过」这一步还是算数的 */
-function propReached(acc, status) { return acc.status === status || (acc.events || []).some((e) => e.to === status); }
+function propReached(acc, status) { return acc.status === status || (acc.events || []).some((e) => e?.to === status); }
 function propIsActive(acc) { return PROP_ACTIVE.includes(acc.status); }
+/* 已记录的通过优先；考核型省略 passed 时，只按有效 funded 日期派生统计证据。
+   不从当前状态、爆仓或流水猜日期，不补写 events；显式但损坏的 passed 仍须核对。
+   缺省计划类型沿用 evaluation；消费者可传入自己的日期有效范围。 */
+function propPassEvidence(acc, isDay = day => propOverviewDay(day) !== null) {
+  const events = Array.isArray(acc.events) ? acc.events : [];
+  const explicit = events.filter(e => e?.to === "passed");
+  const candidates = explicit.length ? explicit : acc.plan_snapshot?.type === "instant" ? [] : events.filter(e => e?.to === "funded");
+  const days = [...new Set(candidates.filter(e => isDay(e.day)).map(e => e.day))].sort();
+  return { days, source: explicit.length ? "passed" : days.length ? "funded" : null };
+}
 /* 漏斗：买了几个 → 通过 → 资金账号 → 出过金。
    通过率按「考核次数」算，只算有结果的：通过的账号各算一次，时间线上每一次「考核失败」也算一次
    （挂了重置再考，那次失败照样算数）；还在考的不算进分母 */
 function propFunnel(accounts, entries) {
   const total = accounts.length;
-  const passed = accounts.filter((a) => propReached(a, "passed") || propReached(a, "funded")).length;
+  const passed = accounts.filter((a) => propReached(a, "passed") || (a.plan_snapshot?.type !== "instant" && propReached(a, "funded"))).length;
   const funded = accounts.filter((a) => propReached(a, "funded")).length;
   const paid = accounts.filter((a) => propEntriesOf(a.id, entries).some((e) => e.kind === "payout" && !e.pending && propMoney(e.amount) > 0)).length;
-  const fails = accounts.reduce((n, a) => n + Math.max((a.events || []).filter((e) => e.to === "failed").length, a.status === "failed" ? 1 : 0), 0);
+  const fails = accounts.reduce((n, a) => n + Math.max((a.events || []).filter((e) => e?.to === "failed").length, a.status === "failed" ? 1 : 0), 0);
   const decided = passed + fails;
   const spent = propSum(entries.filter((e) => accounts.some((a) => a.id === e.account_id))).spent;
   return { total, passed, funded, paid, decided, passRate: decided ? (passed / decided) * 100 : null, costPerFunded: funded ? propMoney(spent / funded) : null };
@@ -371,7 +381,7 @@ function propOverviewBarModel(sum) {
     income: percent(refundMode ? sum.received : Math.max(0, sum.net)) };
 }
 
-/* ---------- 总览联动：财务范围与实际发生的进展；不改经典 propFunnel ---------- */
+/* ---------- 总览联动：财务范围与有日期证据的进展 ---------- */
 const PROP_LINKAGE_STAGES = ["bought", "passed", "funded", "paid"];
 function propLinkageIncludes(day, range) {
   return !!range && propOverviewDay(day) !== null && (range.preset === "all" || (day >= range.from && day <= range.to));
@@ -391,9 +401,9 @@ function propAccountMatchesStatus(account, filter) {
   if (filter === "ended") return !propIsActive(account);
   return PROP_STATUSES.includes(filter) && account.status === filter;
 }
-/* Rows own IDs/dates, not persistent account copies. Both counts and drill-downs
-   consume these same rows. A known missing event is disclosed, never dated from
-   current status or a later stage. Direct/instant funding does not invent a pass. */
+/* Rows own IDs/dates, not persistent account copies. Counts and drill-downs share
+   these rows. Evaluation-only skipped passes use recorded funding dates with
+   provenance; instant funding and current status never supply a pass date. */
 function propLinkageReport(accounts, entries, choice, today) {
   const range = propOverviewResolveRange(choice, today);
   const unique = [...new Map(accounts.filter(a => a && a.id).map(a => [a.id, a])).values()];
@@ -404,7 +414,7 @@ function propLinkageReport(accounts, entries, choice, today) {
   const byAccount = new Map(unique.map(a => [a.id, []]));
   ownedEntries.forEach(e => byAccount.get(e.account_id).push(e));
   const stages = Object.fromEntries(PROP_LINKAGE_STAGES.map(k => [k, []]));
-  const histories = new Map(), incomplete = new Set();
+  const histories = new Map(), inferredPasses = new Set(), incomplete = new Set();
   let fails = 0;
   for (const a of unique) {
     const dates = { bought: [], passed: [], funded: [], paid: [] };
@@ -421,6 +431,9 @@ function propLinkageReport(accounts, entries, choice, today) {
         else if (propLinkageIncludes(ev.day, range)) fails++;
       } else add(ev.to, ev.day);
     }
+    const pass = propPassEvidence(a);
+    dates.passed = pass.days;
+    if (pass.source === "funded") inferredPasses.add(a.id);
     for (const e of byAccount.get(a.id)) {
       if (e.kind === "payout" && !e.pending && Number(e.amount) > 0 && Number.isFinite(Number(e.amount))) add("paid", e.day);
     }
@@ -432,13 +445,16 @@ function propLinkageReport(accounts, entries, choice, today) {
     for (const key of PROP_LINKAGE_STAGES) {
       dates[key] = [...new Set(dates[key])].sort();
       const day = dates[key].find(d => propLinkageIncludes(d, range));
-      if (day) stages[key].push({ id: a.id, day });
+      if (day) stages[key].push({ id: a.id, day, ...(key === "passed" && pass.source === "funded" ? { passSource: "funded" } : {}) });
     }
     histories.set(a.id, dates);
   }
   const edges = PROP_LINKAGE_STAGES.slice(0, -1).map((from, i) => {
     const to = PROP_LINKAGE_STAGES[i + 1];
-    const rows = stages[from].map(row => ({ ...row, next: histories.get(row.id)[to].find(day => day >= row.day && (range.preset === "all" || day <= range.to)) || null }));
+    const rows = stages[from].map(row => {
+      const next = histories.get(row.id)[to].find(day => day >= row.day && (range.preset === "all" || day <= range.to)) || null;
+      return { ...row, next, ...(to === "passed" && next && inferredPasses.has(row.id) ? { nextPassSource: "funded" } : {}) };
+    });
     const converted = rows.filter(row => row.next), unconverted = rows.filter(row => !row.next);
     return { from, to, rows, converted, unconverted, rate: rows.length ? converted.length / rows.length * 100 : null };
   });
@@ -530,7 +546,7 @@ async function loadPropData() {
   propFirms = (firms.data || []).map(propFirmFromRow);
   propPlans = (plans.data || []).map(propPlanFromRow);
   propCatalogInfo = (imp.data && imp.data[0]) || null;
-  propAccounts = (accs.data || []).map((a) => ({ ...a, events: Array.isArray(a.events) ? a.events : [] }));
+  propAccounts = (accs.data || []).map(propHistoryAccountFromRow);
   propEntries = ents.data || [];
   if (!viewingUserId) await propApplyRenewals();
 }
@@ -553,7 +569,7 @@ function propAccountRow(a) {
     id: a.id, user_id: session.user.id,
     firm_id: a.firm_id || null, firm_name: a.firm_name || "", plan_id: a.plan_id || null, plan_name: a.plan_name || "",
     size: a.size ? Number(a.size) : null, nickname: a.nickname || "", group_name: a.group_name || "",
-    status: PROP_STATUSES.includes(a.status) ? a.status : "eval", events: a.events || [],
+    status: PROP_STATUSES.includes(a.status) ? a.status : "eval", events: a._historyInvalidRoot ? a._historyRawEvents : a.events || [],
     bought_on: a.bought_on || todayStr(), billing: a.billing === "monthly" ? "monthly" : "one_time",
     monthly_fee: a.monthly_fee === null || a.monthly_fee === undefined || a.monthly_fee === "" ? null : propMoney(a.monthly_fee),
     renewing: !!a.renewing, renewed_through: a.renewed_through || null,
@@ -566,12 +582,17 @@ function propAccountRow(a) {
 }
 async function propSaveAccount(a) {
   if (viewingUserId || !sb || !session) return false;
+  const cached = propAccounts.find(x => x.id === a.id);
+  // An unrelated save may preserve a malformed root, never erase or rewrite it.
+  if ((a._historyInvalidRoot || cached?._historyInvalidRoot) && (!a._historyInvalidRoot || !Array.isArray(a.events) || a.events.length)) {
+    propError = T("prop.history.error.invalidRoot"); return false;
+  }
   const row = propAccountRow(a);
   const { error } = await sb.from("prop_accounts").upsert(row);
   if (error) { console.error(error); propError = noteDbError(error) ? T("error.dbOutdated") : T("prop.saveFailed", { msg: error.message }); return false; }
   const i = propAccounts.findIndex((x) => x.id === row.id);
-  if (i >= 0) propAccounts[i] = { ...propAccounts[i], ...row };
-  else propAccounts.unshift({ ...row, created_at: new Date().toISOString() });
+  if (i >= 0) propAccounts[i] = propHistoryAccountFromRow({ ...propAccounts[i], ...row });
+  else propAccounts.unshift(propHistoryAccountFromRow({ ...row, created_at: new Date().toISOString() }));
   return true;
 }
 async function propDeleteAccount(id) {

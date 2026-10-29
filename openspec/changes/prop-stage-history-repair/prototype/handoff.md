@@ -79,6 +79,10 @@ Current-status/renewal/balance/plan changes; any cash row mutation (including da
 
 A1–A8 from `acceptance.json`: immutable diagnosis/patch and malformed inputs; instant/repeated attempts; zero/current/partial facts; purchase-only/events-only payload and protected-field assertions; owner/id/null-version/history compare; zero/multiple/unverified rows; errors, conflict, duplicate submit and stale async completion; first-event deletion/edit with no purchase/cash alias; dirty parent preservation; initial/remaining issue counts; existing statistics unchanged except allowed historical derivations; classic legacy display and adjacent overview/month/company regressions; theme/locale/mobile/focus/escape/safe-text tests. All inputs are synthetic and all mutations mocked. The prototype's 10 model tests, 24 UI assertions and 560-case matrix are reference coverage, not production acceptance.
 
+## Post-approval D5 clarification
+
+Owner subsequently approved the domain rule in `../rule-clarification.md`: same-day stages/retries are legitimate, and evaluation-only funding can supply an explicitly disclosed statistical pass date when no passed event was recorded. No event is inserted. This supplements R2/R6, A3/A7 and the existing task IDs, without changing the approved revision-2 visual artifact hashes. Existing prototype counts/diagnoses are **not** evidence for D5. Development must add fresh synthetic rule/renderer checks; no source submission or real-data testing is authorized by this clarification.
+
 ## Open Risks
 
 - Existing events have no mandatory stable id or type/order constraint. Preserve original objects and use local draft keys; no accidental property loss.

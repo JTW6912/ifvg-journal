@@ -790,11 +790,12 @@ function propRenderModal() {
     }
   }
 }
-function propCloseModal() { const origin = propLinkageOrigin(propModal); propModal = null; propRenderModal(); render(); propLinkageReturnFocus(origin); }
+function propCloseModal() { if (propHistoryClose()) return; const origin = propLinkageOrigin(propModal); propModal = null; propRenderModal(); render(); propLinkageReturnFocus(origin); }
 function propModalHtml() {
   const m = propModal;
   if (!m) return "";
   if (m.type === "overview-list") return propLinkageModalHtml(m);
+  if (m.type === "history") return propHistoryModalHtml(m);
   let title = "", body = "", foot = "", wide = false;
   if (m.type === "account") { ({ title, body, foot } = propAccountForm(m)); wide = 1080; }
   else if (m.type === "entry") ({ title, body, foot } = propEntryForm(m));
@@ -1217,11 +1218,12 @@ function propDetail(m) {
   body += propBalanceBlock(acc);
   if (acc.renewing) body += `<div class="propHint" style="margin-bottom:10px;">${esc(T("prop.acc.renewingLine", { v: propUsd(propMoney(acc.monthly_fee)), d: propNextRenewal(acc) }))}</div>`;
 
-  // 时间线：日期直接改（第一步就是购买日，改它等于改购买日期，购买那笔账一起挪）
+  // Historical dates enter an explicit draft/review; array position is not purchase identity.
   const events = acc.events || [];
+  if (events.length || currentLayout() === "modern") body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}${currentLayout() === "modern" && !ro ? ` <button type="button" id="propHistoryDetailEntry" class="btn btn-sm" data-action="prop-history-open" data-id="${esc(acc.id)}">${esc(T("prop.history.edit"))}</button>` : ""}</div>`;
   if (events.length) {
-    body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}</div><div class="propTimeline propTimelineEdit">${events.map((ev, i) =>
-      `<div>${ro ? `<span>${esc(ev.day)}</span>` : `<input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="${esc(ev.day)}" data-prop-event="${i}" data-id="${esc(acc.id)}" title="${esc(T("prop.acc.eventDateHint"))}">`}${propStatusPill(ev.to)}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
+    body += `<div class="propTimeline propTimelineEdit">${events.map((ev, i) =>
+      `<div>${ro ? `<span>${esc(ev?.day || "—")}</span>` : `<input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="${esc(ev?.day || "")}" data-prop-event="${i}" data-id="${esc(acc.id)}" ${propDetailDirty(acc, m.draft) ? "disabled" : ""} title="${esc(T(propDetailDirty(acc, m.draft) ? "prop.linkage.unsaved" : "prop.history.edit"))}">`}${PROP_STATUSES.includes(ev?.to) ? propStatusPill(ev.to) : `<span>${esc(T("prop.history.unknown"))}</span>`}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
   }
 
   body += `<div class="propMiniLabel">${esc(T("prop.acc.entries"))}</div>`;
@@ -1266,12 +1268,11 @@ function propInfoForm(m, acc) {
     <button class="btn btn-primary btn-sm" data-action="prop-save-edit" ${dirty && !m.busy ? "" : "disabled"}>${esc(T(m.busy ? "common.saving" : "common.save"))}</button></div></div>`;
   return html;
 }
-/* 改购买日期：时间线第一步、购买当天记的那几笔（购买 / 一起付的激活费）跟着挪 */
+/* 显式改购买日期仍移动购买/同日激活流水；历史事件没有购买身份，绝不按位置推断。 */
 function propMoveBoughtOn(acc, next, day) {
   const old = acc.bought_on;
   if (!day || day === old) return [];
   next.bought_on = day;
-  next.events = (next.events || acc.events || []).map((ev, i) => (i === 0 && ev.day === old ? { ...ev, day } : ev));
   return propEntriesOf(acc.id).filter((e) => e.day === old && (e.kind === "purchase" || e.kind === "activation")).map((e) => ({ ...e, day }));
 }
 async function propSaveEdit() {
@@ -1297,16 +1298,12 @@ async function propSaveEdit() {
   propError = null; m.error = null; m.draft = null;
   propRenderModal(); render();
 }
-/* 时间线上改某一步的日期，直接存 */
+/* Legacy date controls now create a reviewable draft, never save by array position. */
 async function propSaveEventDay(accId, i, day) {
-  const acc = propAccounts.find((a) => a.id === accId);
-  if (!acc || !propDateOk(day) || !(acc.events || [])[i]) return;
-  const next = { ...acc, events: acc.events.map((ev, k) => (k === i ? { ...ev, day } : ev)) };
-  const moved = i === 0 ? propMoveBoughtOn(acc, next, day) : [];
-  let ok = await propSaveAccount(next);
-  if (ok && moved.length) ok = await propSaveEntries(moved);
-  if (propModal && propModal.type === "detail") { propModal.draft = null; if (!ok) propModal.error = propError; }
-  propRenderModal(); render();
+  if (propModal?.type !== "detail" || propModal.id !== accId || propModal.busy || !propHistoryCanWrite() || !propHistoryDay(day)) return;
+  const acc = propHistoryAccount(accId);
+  if (!acc || !Number.isInteger(i) || i < 0 || i >= acc.events.length) return;
+  propHistoryOpen(accId, { index: i, day });
 }
 
 /* ---------- 删除（可撤销） ----------
@@ -1524,7 +1521,7 @@ document.addEventListener("click", async (e) => {
   /* ---------- 弹窗开关 ---------- */
   else if (a === "prop-dismiss-overlay") { if (e.target === el && !(m && m.busy)) propCloseModal(); }
   else if (a === "prop-close-modal") { if (!(m && m.busy)) propCloseModal(); }
-  else if (a === "prop-modal-back") { propModal = m && m.back ? m.back : null; propRenderModal(); if (propModal?.linkageBack) document.querySelector('[data-action="prop-linkage-back"]')?.focus({ preventScroll: true }); }
+  else if (a === "prop-modal-back") { if (m?.type === "history") { propHistoryBack(); return; } if (m?.busy) return; propModal = m && m.back ? m.back : null; propRenderModal(); if (propModal?.linkageBack) document.querySelector('[data-action="prop-linkage-back"]')?.focus({ preventScroll: true }); }
   else if (a === "prop-new-account") { propModal = { type: "account", draft: propNewAccountDraft(null) }; propRenderModal(); }
   else if (a === "prop-buy-plan") { propModal = { type: "account", draft: propNewAccountDraft(id) }; propRenderModal(); }
   else if (a === "prop-save-account") { await propSaveNewAccount(); }
