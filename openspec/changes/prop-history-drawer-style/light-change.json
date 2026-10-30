@@ -1,0 +1,73 @@
+{
+  "schema": "specnav.lightChange.v2",
+  "change_id": "prop-history-drawer-style",
+  "lane": "light",
+  "intent": "Polish CSS width, padding and button styling for the existing history drawer to match the account detail drawer",
+  "created_at": "2026-10-30T03:18:35.884Z",
+  "triage": {
+    "reason": "intent and paths both match the light lane",
+    "confidence": "high",
+    "escalation_threshold": 10,
+    "escalation_triggers": [
+      "touches auth, permissions, billing, security, database, API routes, deployment, package manifests, or SpecNav internals",
+      "adds a new user-facing workflow, page, module, data flow, or cross-component behavior",
+      "touches more than three intended paths or more than ten production files after edits",
+      "requires product decisions that are not already expressible in one acceptance assertion"
+    ]
+  },
+  "entry": {
+    "status": "ready",
+    "editable_paths": [
+      "theme-modern.css"
+    ]
+  },
+  "acceptance": [
+    {
+      "id": "LIGHT-001",
+      "statement": "In modern layout, the history list/editor/review/confirmation uses the same 640px-or-viewport drawer width, header/body/footer spacing, title scale and button appearance as account detail. Narrow screens retain usable controls and a wrapping timeline without horizontal scrolling; classic styling, interaction and persistence are unchanged.",
+      "verify_via": "static",
+      "status": "passing",
+      "evidence_ref": "review.md"
+    },
+    {
+      "id": "LIGHT-002",
+      "statement": "Use only CSS to match the outer account timeline date font (12px), status font (11px), date height (27px), capsule padding and colors. Retain clear insertion/removal, visible focus, valid/invalid/disabled/removed states, record order, existing interactions and classic appearance. Compact timeline targets are at least 24px, with 44px targets for coarse pointers; mobile footer controls remain 44px.",
+      "verify_via": "static",
+      "status": "passing",
+      "evidence_ref": "review.md"
+    },
+    {
+      "id": "LIGHT-003",
+      "statement": "Use CSS grid to pair existing connectors and stages across multiple rows without HTML or JavaScript changes. No timeline horizontal overflow at 320/390/1024/1440 widths; added, removed and long translated text wraps visibly without clipping, preserving record order and all draft controls.",
+      "verify_via": "static",
+      "status": "passing",
+      "evidence_ref": "review.md"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "text": "Align modern history drawer CSS with existing account detail, then check desktop/mobile, theme/locale, draft/review/confirmation and unchanged classic behavior using synthetic data.",
+      "done": true
+    },
+    {
+      "id": "T2",
+      "text": "Refine timeline typography and control sizing following the owner's two screenshots, then validate appearance, layout, keyboard, draft-only insert/remove/restore and existing regressions using synthetic data.",
+      "done": true
+    },
+    {
+      "id": "T3",
+      "text": "Replace the prior larger scrolling timeline style with outer-detail sizing and wrapping grid rows using only CSS; verify normal, long, removed, inserted and readonly/busy states, themes, locales and keyboard/pointer draft actions offline.",
+      "done": true
+    }
+  ],
+  "user_test": {
+    "status": "approved",
+    "case": "Owner visual review of the compact multiline history timeline and aligned drawer/buttons. This does not assert live persistence testing.",
+    "user_decision": "可以请同步链接supabase ，然后进行代码提交。Recorded for this CSS revision on 2026-10-30; authorizes connected local stylesheet sync and local commit, not remote push or unrelated feature acceptance."
+  },
+  "verification_domains": [
+    "static",
+    "unit"
+  ]
+}

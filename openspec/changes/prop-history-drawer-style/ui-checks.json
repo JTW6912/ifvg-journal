@@ -1,0 +1,187 @@
+{
+  "css_sha256": "1000093c9ec041a8c443870237e5e1e7a059b0d4b8bb7dd4a2cb7b9977082233",
+  "method": "Extracted from isolated synthetic browser runs; no live account data or physical-device certification.",
+  "matrix": [
+    {
+      "blocked": [],
+      "cases": 224,
+      "coarse": false,
+      "dataUnchanged": true,
+      "external": [],
+      "problems": [],
+      "requests": 0,
+      "viewport": [
+        1440,
+        1000
+      ]
+    },
+    {
+      "blocked": [],
+      "cases": 224,
+      "coarse": false,
+      "dataUnchanged": true,
+      "external": [],
+      "problems": [],
+      "requests": 0,
+      "viewport": [
+        1024,
+        900
+      ]
+    },
+    {
+      "blocked": [],
+      "cases": 224,
+      "coarse": false,
+      "dataUnchanged": true,
+      "external": [],
+      "problems": [],
+      "requests": 0,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "blocked": [],
+      "cases": 224,
+      "coarse": false,
+      "dataUnchanged": true,
+      "external": [],
+      "problems": [],
+      "requests": 0,
+      "viewport": [
+        320,
+        812
+      ]
+    }
+  ],
+  "total_matrix_cases": 896,
+  "coarse_pointer_style_branch": {
+    "cases": 8,
+    "dataUnchanged": true,
+    "method": "Isolated CSSOM activation of authored coarse-pointer media rule; not a physical-touch test",
+    "problems": [],
+    "requests": 0,
+    "restored": true,
+    "results": [
+      {
+        "locale": "zh",
+        "mode": "edit",
+        "problems": []
+      },
+      {
+        "locale": "zh",
+        "mode": "removed",
+        "problems": []
+      },
+      {
+        "locale": "zh",
+        "mode": "inserted",
+        "problems": []
+      },
+      {
+        "locale": "zh",
+        "mode": "long",
+        "problems": []
+      },
+      {
+        "locale": "en",
+        "mode": "edit",
+        "problems": []
+      },
+      {
+        "locale": "en",
+        "mode": "removed",
+        "problems": []
+      },
+      {
+        "locale": "en",
+        "mode": "inserted",
+        "problems": []
+      },
+      {
+        "locale": "en",
+        "mode": "long",
+        "problems": []
+      }
+    ],
+    "viewport": [
+      393,
+      852
+    ]
+  },
+  "classic": {
+    "classicUnchanged": {
+      "dark": true,
+      "light": true
+    },
+    "rows": 3
+  },
+  "draft_only_interactions": {
+    "steps": [
+      {
+        "focus": "propHistoryRemove-original-0",
+        "noOverflow": true,
+        "removed": true,
+        "restorable": "恢复本条历史",
+        "step": "native remove",
+        "unchanged": true
+      },
+      {
+        "clean": true,
+        "focus": "propHistoryRemove-original-0",
+        "step": "native restore"
+      },
+      {
+        "disabled": true,
+        "focus": "propHistoryDate-new-1",
+        "insertAt2": true,
+        "noOverflow": true,
+        "rows": 4,
+        "step": "native insert in second row"
+      },
+      {
+        "canRestore": "恢复本条历史",
+        "noOverflow": true,
+        "removed": true,
+        "step": "native mark empty added row",
+        "wrapped": true
+      },
+      {
+        "focused": true,
+        "outline": "solid",
+        "outlineWidth": "2px",
+        "requests": 0,
+        "step": "native keyboard selection after wrapping",
+        "stored": "funded",
+        "value": "failed"
+      },
+      {
+        "confirm": "close",
+        "rows": 4,
+        "step": "Escape dirty draft"
+      },
+      {
+        "blocked": [],
+        "mode": "edit",
+        "requests": 0,
+        "rows": 4,
+        "step": "Keep draft",
+        "unchanged": true
+      }
+    ],
+    "summary": {
+      "blocked": [],
+      "mode": "edit",
+      "requests": 0,
+      "rows": 4,
+      "step": "Keep draft",
+      "unchanged": true
+    }
+  },
+  "limitations": [
+    "Responsive checks used browser viewport emulation.",
+    "Device preset reported pointer:coarse=false; the authored coarse media rule was checked separately via temporary isolated CSSOM activation.",
+    "The implementation contains CSS changes only; no real persistence was exercised."
+  ]
+}

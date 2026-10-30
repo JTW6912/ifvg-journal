@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-10-30T07:03:55.884401+00:00",
+  "source_base": "28b8112cb2b2069614d53dd3fd978dd1489c0fc7",
+  "production_paths": [
+    "theme-modern.css"
+  ],
+  "css_sha256": "1000093c9ec041a8c443870237e5e1e7a059b0d4b8bb7dd4a2cb7b9977082233",
+  "commands": [
+    {
+      "command": "npm test",
+      "exit_code": 0,
+      "tests": {
+        "tests": 326,
+        "pass": 326,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "command": "npm run bundle",
+      "exit_code": 0
+    },
+    {
+      "command": "node --check app.js",
+      "exit_code": 0
+    },
+    {
+      "command": "node --check i18n.js",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "business_data_tests_performed": false,
+  "database_migrations_executed": false
+}

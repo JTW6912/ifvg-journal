@@ -1322,3 +1322,53 @@
   .propHistoryModal input.propHistoryEventDate{min-height:44px;font-size:16px;}.propHistoryRemove{width:44px;height:44px;min-width:44px;}.propHistorySearch input{min-height:44px;}
   .propHistoryDiff>div{gap:8px;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);}.propHistoryIssue{flex-direction:column;gap:3px;}.propHistoryAck{min-height:44px;}
 }
+
+/* Match the existing modern account-detail drawer; keep the classic safety seam unchanged. */
+[data-layout="modern"] .propModal.propHistoryModal{width:100%;max-width:640px!important;border-radius:20px;font:inherit;}
+[data-layout="modern"] .propHistoryModal .modalHead{padding:18px 24px;align-items:center;}
+[data-layout="modern"] .propHistoryModal .modalHead h2{font:600 16px var(--fontDisplay);letter-spacing:-.2px;}
+[data-layout="modern"] .propHistoryModal .modalBody{padding:20px 24px;}
+[data-layout="modern"] .propHistoryModal .modalFoot{padding:14px 24px;gap:10px;}
+/* Retain the contrast helper's solid-color reference beneath the shared button gradient. */
+[data-layout="modern"] .propHistoryModal .btn-primary{border-color:transparent;background:linear-gradient(135deg,var(--accent) 0%,var(--accentHover) 100%);background-color:var(--accent);}
+/* The editor mirrors .propTimelineEdit; CSS grid keeps each connector beside its stage. */
+[data-layout="modern"] .propHistoryModal :where(h3){font:600 15px/1.5 var(--fontUI);margin:24px 0 8px;}
+[data-layout="modern"] .propHistoryPurchase+h3{font:400 12px/1.5 var(--fontUI);color:var(--mutedDark);margin:20px 0 6px;}
+[data-layout="modern"] .propHistoryModal :where(.propHistoryScope){font-size:12px;line-height:1.6;margin:6px 0 10px;}
+[data-layout="modern"] .propHistoryTimelineScroll{overflow:visible;padding:4px 2px 8px;}
+[data-layout="modern"] .propHistoryTimeline{display:grid;grid-template-columns:24px minmax(0,1fr) 24px minmax(0,1fr);width:100%;min-width:0;gap:10px 6px;align-items:start;}
+[data-layout="modern"] .propHistoryStep{min-width:0;width:max-content;max-width:100%;gap:4px;}
+[data-layout="modern"] :where(.propHistoryEvent){min-width:0;gap:6px;padding:4px 6px 4px 4px;border-radius:var(--r10);font:400 12px var(--fontUI);color:var(--muted);}
+[data-layout="modern"] .propHistoryModal input.propHistoryEventDate{flex:0 0 110px;width:110px;min-width:0;min-height:27px;height:27px;padding:3px 6px;border-radius:10px;font:400 12px var(--fontUI);letter-spacing:normal;}
+[data-layout="modern"] .propHistoryStage{min-width:0;min-height:27px;max-width:100%;flex:0 1 auto;}
+[data-layout="modern"] .propHistoryStage .propSt{font:500 11px var(--fontUI);padding:2px 8px;border-radius:var(--r12);white-space:normal;overflow-wrap:anywhere;color:var(--history-state,var(--muted));}
+[data-layout="modern"] :where(.propHistoryRemove){width:24px;height:24px;min-width:24px;font:400 15px/1 var(--fontUI);}
+[data-layout="modern"] :where(.propHistoryRemove svg){width:12px;height:12px;}
+[data-layout="modern"] :where(.propHistoryInsert){position:relative;align-self:start;width:24px;min-width:24px;min-height:24px;height:24px;margin-top:6px;border:0;background:transparent;color:var(--mutedDark);font:400 12px/1 var(--fontUI);}
+[data-layout="modern"] .propHistoryInsert>span{font:400 16px/1 var(--fontUI);}
+[data-layout="modern"] .propHistoryInsert>small{position:static;font:400 10px/1 var(--fontUI);}
+[data-layout="modern"] :where(.propHistoryInsert:not(:disabled):hover,.propHistoryInsert:not(:disabled):focus-visible){color:var(--accent);background:var(--surface2);}
+[data-layout="modern"] :where(.propHistoryRemove:not(:disabled):hover,.propHistoryRemove:not(:disabled):focus-visible){color:var(--history-danger);background:var(--surface);}
+[data-layout="modern"] .propHistoryEvent.is-removed{border-radius:var(--r10);}
+[data-layout="modern"] .propHistoryEvent.is-removed>div{flex:1;min-width:0;max-width:100%;padding:2px 4px;}
+[data-layout="modern"] .propHistoryEvent.is-removed :is(s,small){font-size:11px;line-height:1.5;overflow-wrap:anywhere;}
+[data-layout="modern"] .propHistoryEvent.is-removed .propHistoryRemove{color:var(--text);}
+[data-layout="modern"] .propHistoryStep>small{max-width:100%;font-size:11px;line-height:1.5;padding:0 4px;overflow-wrap:anywhere;}
+[data-layout="modern"] .propHistoryTimeline :where(button,input,select):focus-visible{outline-offset:1px;}
+@media(max-width:640px){
+  [data-layout="modern"] .propHistoryTimeline{grid-template-columns:24px minmax(0,1fr);}
+}
+@media(pointer:coarse){
+  [data-layout="modern"] .propHistoryTimeline{grid-template-columns:44px minmax(0,1fr);}
+  [data-layout="modern"] :where(.propHistoryEvent){flex-wrap:wrap;}
+  [data-layout="modern"] .propHistoryModal input.propHistoryEventDate{min-height:44px;height:44px;}
+  [data-layout="modern"] .propHistoryStage{min-height:44px;}
+  [data-layout="modern"] .propHistoryRemove{width:44px;min-width:44px;height:44px;}
+  [data-layout="modern"] .propHistoryInsert{width:44px;min-width:44px;height:44px;min-height:44px;margin-top:5px;}
+}
+@media(max-width:640px){
+  [data-layout="modern"] .propHistoryModal .modalFoot{justify-content:space-between;}
+  [data-layout="modern"] .propHistoryFootNote{order:-1;flex-basis:100%;max-width:none;font-size:12px;}
+  [data-layout="modern"] .propHistoryIdentity{display:grid;grid-template-columns:38px minmax(0,1fr);}
+  [data-layout="modern"] .propHistoryIdentity>span:last-child{grid-column:2;margin-left:0;}
+}
