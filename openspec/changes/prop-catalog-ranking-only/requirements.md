@@ -14,7 +14,7 @@ Modern 公司计划首页只显示现有推荐排行；所有未隐藏公司默�
 - R5: 空目录、全部隐藏、管理员维护入口、双语主题和响应式沿用现有行为；不修改缓存目录或持久化数据。
 
 ## Out of scope
-不删除价格对比函数，不改计划数据/推荐顺序/隐藏字段，不改状态、流水、数据库或依赖，不推送。只授权本次10份规范本地基线提交；实现代码暂不提交。用户另授权同步已验证资源到本地Supabase应用供本人查看，不授权代理进行真实写入测试。
+不删除价格对比函数，不改计划数据/推荐顺序/隐藏字段，不改状态、流水、数据库或依赖。初始授权仅含规范基线和本地资源同步；用户后续明确要求“帮我推送代码吧”，已授权将本次排行及Glass兼容实现、测试和精简记录提交并推送prop-test，详见development/git-delivery.md。不得推送master、执行迁移或进行真实写入测试。
 
 ## UI design impact
 仅移除首页下半区并解除排行截断；复用现有modern卡片与布局，无新配色、字号或文案。light/dark、7配色、zh/en照旧。默认语言沿用账号/本地/浏览器偏好回退en。
@@ -30,6 +30,11 @@ Modern 公司计划首页只显示现有推荐排行；所有未隐藏公司默�
 
 ## Decisions and approval
 用户明确要求只保留推荐排行并默认全展示；2026-10-30回复“允许，并且连接到 Supabase”批准本地规范基线与同步预览。不要求新的视觉设计，采用现有已展示卡片组成。使用component-seam对照验证复用边界，而非重新设计页面。
+
+## Glass compatibility clarification (2026-10-30)
+After merging master at 9228f59, the owner reported that Glass loses the developed Prop overview and catalog and explicitly requested the same modern functionality under Glass. R6: modern here means the existing modern DOM structure, including the Glass material (`data-layout=modern` plus `data-glass`). Reuse `isModernLayout()` for structural rendering and interaction guards across the overview, month chart, company table, catalog/detail and existing administrator UI. Do not normalize `currentLayout()` in appearance persistence or in existing context-identity keys. Classic and ordinary modern behavior remain unchanged.
+
+This is a compatibility extension to existing components, not a new design or financial/data-flow change. Additive tasks 2.1–2.3 are covered by `glass-compatibility.md`; preserve all baseline tasks and frozen A1–A4 identities. Original file-count estimates above describe the initial catalog-only slice; the explicit expanded scope is in scope.json. The compatibility request initially authorized implementation only. Later explicit requests authorized connected local-resource sync and this test-branch delivery; neither authorizes live business writes or formal acceptance approval.
 
 ## Unresolved gaps
 None.

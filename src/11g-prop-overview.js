@@ -92,7 +92,7 @@ function renderPropOverviewPanel(accounts, entries, snapshot = propOverviewSnaps
 /* Portal controller: no page DOM is patched outside the main renderer. */
 const propOverviewUI = { panel: null, tip: null, active: null, hovered: null, pending: null, dismissed: null, overTip: false, pinned: false, openTimer: 0, closeTimer: 0, restore: null };
 function propOverviewCanInteract() {
-  return currentLayout() === "modern" && tab === "prop" && propView === "overview" && !authLoading && !!session && currentProfile?.active !== false && !propModal && !editingTrade && !editingReview && !profileModalOpen && !lightboxUrl && !exportCenterOpen && !dataScopeModalOpen;
+  return isModernLayout() && tab === "prop" && propView === "overview" && !authLoading && !!session && currentProfile?.active !== false && !propModal && !editingTrade && !editingReview && !profileModalOpen && !lightboxUrl && !exportCenterOpen && !dataScopeModalOpen;
 }
 function propOverviewClosePicker(restore = true) {
   propOverviewPicker = null;
@@ -117,7 +117,7 @@ function propOverviewBeforeRender() {
   propOverviewUI.restore = propOverviewPicker || focus?.id === "propOverviewRangeTrigger" ? "range" : propOverviewHelpField(focus);
   propOverviewCleanup();
   const owner = session?.user?.id ? JSON.stringify([session.user.id, viewingUserId || ""]) : null;
-  if (owner !== propOverviewOwner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
+  if (owner !== propOverviewOwner || !owner || !isModernLayout() || tab !== "prop" || propView !== "overview") propOverviewRange = { preset: "all", from: null, to: null };
   propOverviewOwner = owner;
   propLinkageBeforeRender();
   propHistoryBeforeRender();

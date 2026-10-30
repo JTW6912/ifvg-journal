@@ -66,11 +66,11 @@ function propReviewEditorHtml(value) {
     <div class="propReviewToolbar" role="group" aria-label="${esc(T("prop.review.formatTools"))}">
       ${["bold", "highlight", "list"].map((kind) => `<button type="button" class="btn btn-sm" data-action="prop-adm-review-format" data-format="${kind}">${esc(T("prop.review." + kind))}</button>`).join("")}
     </div>
-    ${currentLayout() === "modern" ? propContentToolbarHtml("propFirmReview", { key: !!propFirmEditor }) : ""}
+    ${isModernLayout() ? propContentToolbarHtml("propFirmReview", { key: !!propFirmEditor }) : ""}
     <textarea class="input propReviewInput" id="propFirmReview" data-prop-field="review" rows="6" aria-describedby="propFirmReviewHint">${esc(text)}</textarea>
     <div class="propHint" id="propFirmReviewHint">${esc(T("prop.review.editHint"))}</div>
     <div class="propReviewPreview"><div class="propReviewPreviewLabel">${esc(T("prop.review.preview"))}</div>
-      <div class="propRichText" id="propFirmReviewPreview" tabindex="0" role="region" aria-label="${esc(T("prop.review.preview"))}"${currentLayout() === "modern" ? " data-prop-copy-protected" : ""}>${propReviewHtml(text) || `<p class="propReviewEmpty">${esc(T("prop.cat.noReview"))}</p>`}</div>
+      <div class="propRichText" id="propFirmReviewPreview" tabindex="0" role="region" aria-label="${esc(T("prop.review.preview"))}"${isModernLayout() ? " data-prop-copy-protected" : ""}>${propReviewHtml(text) || `<p class="propReviewEmpty">${esc(T("prop.cat.noReview"))}</p>`}</div>
     </div>
   </div>`;
 }

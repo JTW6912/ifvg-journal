@@ -74,7 +74,7 @@ function propLinkageDetailBack(m, id) {
 }
 function propLinkageBeforeRender() {
   const origin = propLinkageOrigin(propModal);
-  if (origin && (origin.context !== propLinkageContext() || !session || authLoading || currentProfile?.active === false || tab !== "prop" || propView !== "overview" || currentLayout() !== "modern")) {
+  if (origin && (origin.context !== propLinkageContext() || !session || authLoading || currentProfile?.active === false || tab !== "prop" || propView !== "overview" || !isModernLayout())) {
     propModal = null;
     // render() may return early during authentication. Clear the owned sheet now;
     // the normal non-forced modal seam preserves any other already-open form.

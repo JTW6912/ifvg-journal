@@ -1,0 +1,58 @@
+{
+  "base": "9228f59f8ef69a8c2189cbe5d3d45b6292f82019",
+  "catalog_commit": "9c77e4d873c7e4492861405808d377a83033f1cb",
+  "source_sha256": {
+    "src/11j-prop-firms.js": "32f1c6520ba599a722da56d86a01c65db60dd95059807f646c0f3f96594320e7",
+    "src/11g-prop-overview.js": "d516eaef7e7ccd392f83516ad7958034651fba16416ad3b0351fccaa915d2776",
+    "src/11h-prop-linkage.js": "7fba55fb42f3f1838efa4be15b177946df6b209267271391ccc41bad167e57a9",
+    "src/11f-prop-admin.js": "d82b3cd69479a22b120cb26aa1678b0fb809f9e8ed129f55a42fcaf3d846b419",
+    "src/11i-prop-months.js": "b3b6e1f7cc0c2c0e3c9831630ad6ee95c807c6ea4d9548e5f0f10d128d5ff346",
+    "src/11e-prop-view.js": "932d00243442cfc41e8d4fab0d10f1c222aaec917a73fcb4f96a771d8b3cfd12",
+    "src/11i-prop-firm-info.js": "bbce0ca9f4f10a1623641df897325880ab0632ca3afbeb986e475cbf6f1bbe8a",
+    "src/11g-prop-recommendation.js": "8bdf1f555c707c7400d5f634e6dad17a316916ebada4249db5f1b21b3e0e0772"
+  },
+  "test_sha256": {
+    "test/prop-board.test.js": "6bf157759d2c213fa0611211633874c136752db42ec93de882b28342333cf41d",
+    "test/prop-catalog-ranking.test.js": "066c65b32cf169010e244b058ef8e064cb79acbc5dac42c446449872d5f5e680",
+    "test/prop-glass.test.js": "01c0f0c188b12a5298a1c363d95b80ff1dc53393a0168e46ac94ca8e4f1e314b"
+  },
+  "app_sha256": "92f7235702500a6885712445d6bc6d009850e06c021b7d5ff4b2aba0f81a46dc",
+  "matches_connected_resource": true,
+  "commands": [
+    {
+      "command": "node --test test/prop-glass.test.js",
+      "exit_code": 0,
+      "tests": 15,
+      "pass": 15,
+      "fail": 0
+    },
+    {
+      "command": "npm test",
+      "exit_code": 0,
+      "tests": 352,
+      "pass": 352,
+      "fail": 0
+    },
+    {
+      "command": "npm run bundle",
+      "exit_code": 0
+    },
+    {
+      "command": "node --check app.js",
+      "exit_code": 0
+    },
+    {
+      "command": "node --check i18n.js",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  ],
+  "recorded_offline_browser_cases": 336,
+  "recorded_offline_browser_failures": 0,
+  "browser_reexecuted_during_delivery": false,
+  "formal_acceptance": false,
+  "live_business_tests": false
+}

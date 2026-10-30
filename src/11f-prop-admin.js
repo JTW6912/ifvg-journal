@@ -299,7 +299,7 @@ document.addEventListener("click", async (e) => {
     else { propFirms = propFirms.map((x) => (x.id === id ? f : x)); render(); }
   }
   else if (a === "prop-adm-firm") {
-    if (currentLayout() === "modern") { propOpenFirmEditor(id, el.dataset.section); return; }
+    if (isModernLayout()) { propOpenFirmEditor(id, el.dataset.section); return; }
     const f = id ? propFindFirm(id) : null;
     propModal = { type: "admFirm", id, isNew: !f, draft: propAdmFirmDraft(f), updatesOpen: el.dataset.section === "updates" }; propRenderModal();
     if (propModal.updatesOpen) propScrollFirmUpdatesEditor();

@@ -35,3 +35,6 @@ Synthetic 0/1/6/8/12 companies, hidden/order, stale fold flag, classic/detail ha
 
 ## Open Risks
 All firms make a longer page by design; hidden firms must remain hidden to ordinary browsing. Admin board continues hidden-company management. Offline browser and runtime checks follow implementation. User authorized local connected-page resource sync only; formal production review/acceptance remains pending. Product decisions are explicit and complete.
+
+## Glass compatibility extension — 2026-10-30
+The owner explicitly requested that Glass retain their developed modern overview and catalog. This approves reuse of the existing modern component structure under the Glass material, not a new visual design or production acceptance. The same component-seam entry now documents the `currentLayout` identity versus `isModernLayout` structural boundary. Additional scope and G1–G4 tests are in glass-compatibility.md and acceptance.md; no data model/API/CSS change or new component is required. Keep classic/ordinary modern output, exact layout identity and existing dirty/busy/permission guards. This extension authorizes local implementation only, not a commit, push or live write.

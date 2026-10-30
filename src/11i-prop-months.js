@@ -71,7 +71,7 @@ function propMonthsSeries(points) {
 
 const propMonthsUI = { owner: null, chart: null, observer: null, frame: 0, restore: null, scroll: 0, align: false };
 function propMonthsViewActive() {
-  return currentLayout() === "modern" && tab === "prop" && propView === "overview" && !!session && !authLoading && currentProfile?.active !== false;
+  return isModernLayout() && tab === "prop" && propView === "overview" && !!session && !authLoading && currentProfile?.active !== false;
 }
 function propMonthsDetach() {
   const ui = propMonthsUI;
@@ -85,7 +85,7 @@ function propMonthsBeforeRender(owner) {
   ui.restore = control && ["prop-month", "prop-year", "prop-month-lines"].includes(control.dataset.action) ? { action: control.dataset.action, value: control.dataset.m || control.dataset.d || "" } : null;
   ui.scroll = panel?.querySelector(".propMonthsScroll")?.scrollLeft || 0;
   propMonthsDetach();
-  if (owner !== ui.owner || !owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") {
+  if (owner !== ui.owner || !owner || !isModernLayout() || tab !== "prop" || propView !== "overview") {
     propMonthLines = false; ui.restore = null; ui.scroll = 0;
   }
   ui.owner = owner;

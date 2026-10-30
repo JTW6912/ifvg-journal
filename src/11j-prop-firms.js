@@ -70,7 +70,7 @@ function propCompanyBeforeRender(owner) {
   const ui = propCompanyUI;
   ui.scroll = document.getElementById("propCompanyScroll")?.scrollLeft || 0;
   ui.restore = ["propCompanySort", "propCompanyScroll"].includes(document.activeElement?.id) ? document.activeElement.id : null;
-  if (!owner || owner !== ui.owner || currentLayout() !== "modern" || tab !== "prop" || propView !== "overview") {
+  if (!owner || owner !== ui.owner || !isModernLayout() || tab !== "prop" || propView !== "overview") {
     propCompanySort = "net"; ui.scroll = 0; ui.restore = null;
   }
   ui.owner = owner;

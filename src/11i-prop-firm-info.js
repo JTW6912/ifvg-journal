@@ -49,7 +49,7 @@ function propFirmChoiceOptionsHtml(field, m) {
   const selected = propFirmChoiceValues(m.draft[field]);
   const rows = m.page ? propEditorIconRows(m) : propOptionIcons;
   return propFirmChoiceOptions(field, m.draft, m.choiceExtras).map((value, i) => {
-    const label = `<label class="propChoiceOption" for="propChoiceOption-${field}-${i}"><input type="checkbox" id="propChoiceOption-${field}-${i}" data-prop-firm-choice="${field}" value="${esc(value)}" ${selected.includes(value) ? "checked" : ""}><span class="propChoiceTag">${currentLayout() === "modern" ? propChoiceIconHtml(field, value, rows) : ""}${esc(propFirmChoiceLabel(field, value))}</span></label>`;
+    const label = `<label class="propChoiceOption" for="propChoiceOption-${field}-${i}"><input type="checkbox" id="propChoiceOption-${field}-${i}" data-prop-firm-choice="${field}" value="${esc(value)}" ${selected.includes(value) ? "checked" : ""}><span class="propChoiceTag">${isModernLayout() ? propChoiceIconHtml(field, value, rows) : ""}${esc(propFirmChoiceLabel(field, value))}</span></label>`;
     return m.page ? `<div class="propChoiceRow" data-prop-option-label="${esc(value)}">${label}<button type="button" class="propChoiceIconEdit" data-action="prop-editor-icon-edit" data-field="${field}" data-value="${esc(value)}" aria-label="${esc(T("prop.icons.editFor", { name: propFirmChoiceLabel(field, value) }))}" title="${esc(T("prop.icons.title"))}">${ICONS.pencil}</button></div>` : label;
   }).join("");
 }
@@ -128,7 +128,7 @@ document.addEventListener("keydown", (e) => {
 function propFirmInfoHtml(firm, compact, iconRows = propOptionIcons) {
   const tags = (field) => {
     const values = propFirmChoiceValues(firm[field]);
-    return values.length ? `<div class="propRecommendTags">${values.map((v) => `<span class="propRecommendTag propChoiceTag">${currentLayout() === "modern" ? propChoiceIconHtml(field, v, iconRows) : ""}${esc(propFirmChoiceLabel(field, v))}</span>`).join("")}</div>` : `<span class="propFirmInfoEmpty">${esc(T("prop.firmInfo.unknown"))}</span>`;
+    return values.length ? `<div class="propRecommendTags">${values.map((v) => `<span class="propRecommendTag propChoiceTag">${isModernLayout() ? propChoiceIconHtml(field, v, iconRows) : ""}${esc(propFirmChoiceLabel(field, v))}</span>`).join("")}</div>` : `<span class="propFirmInfoEmpty">${esc(T("prop.firmInfo.unknown"))}</span>`;
   };
   const item = (field, value) => `<div class="propFirmFact" data-prop-info-field="${field}"><dt>${esc(T("prop.firmInfo." + field))}</dt><dd>${value}</dd></div>`;
   const policy = propMagicPolicy(firm), notes = String(firm.notes || "");

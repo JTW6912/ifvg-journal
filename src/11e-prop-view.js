@@ -147,7 +147,7 @@ function propEmpty(msgKey) {
 function renderPropOverview() {
   if (!propAccounts.length) return propEmpty("prop.empty.accounts");
   const { accounts, entries } = propScoped();
-  const modern = currentLayout() === "modern";
+  const modern = isModernLayout();
   const report = modern ? propLinkageReport(accounts, entries, propOverviewRange, todayStr()) : null;
   const s = modern ? report.finance.sum : propSum(entries);
   let html = propFilterChips();
@@ -203,7 +203,7 @@ function renderPropMonths(accounts, entries, range = null) {
     ? `<b class="pos">${esc(T("prop.mo.paidBack"))}</b><span>${esc(T("prop.mo.netProfit", { v: propUsd(all.net) }))}</span>`
     : `<b>${esc(T("prop.mo.backPct", { p: Math.round(pct * 100) }))}</b><span>${esc(T("prop.mo.toGo", { v: propUsd(all.spent - all.received) }))}</span>`;
   const bounded = range && range.preset !== "all";
-  const modern = currentLayout() === "modern";
+  const modern = isModernLayout();
   const lineMask = modern ? propMonthsLineMask(months, propYear, range, todayStr()) : [];
   const hasCash = months.some((m, i) => lineMask[i] && (m.spent !== 0 || m.received !== 0));
   let html = `<div class="calendarPanel propPanel${range ? " propLinkedMonths" : ""}${modern ? " propMonths" + (propMonthLines ? " propMonthsLinesOn" : "") : ""}"${modern ? ` id="propMonthsPanel" data-period="${propYear}-${propMonth}"` : ""}>
@@ -235,7 +235,7 @@ function renderPropMonthDetail(accounts, entries, range = null) {
   const list = entries.filter((e) => propEntryMonth(e) === key);
   const m = propMonthly(list, propYear)[propMonth - 1];
   const title = new Date(propYear, propMonth - 1, 1).toLocaleString(localeTag(), { year: "numeric", month: "long" });
-  let html = currentLayout() === "modern" ? `<div class="propMonthDetail">${renderPropMonthsHeading(title, m, range)}` : `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
+  let html = isModernLayout() ? `<div class="propMonthDetail">${renderPropMonthsHeading(title, m, range)}` : `<div class="propMonthDetail">${range && range.preset !== "all" ? `<small class="propLinkedPeriod">${esc(propLinkageSlice(range, propYear, propMonth))}</small>` : ""}<div class="propMonthHead"><b>${esc(title)}</b>
     <span>${esc(T("prop.month.spent"))} <b>${propUsd(m.spent)}</b></span><span>${esc(T("prop.month.received"))} <b>${propUsd(m.received)}</b></span>
     <span>${esc(T("prop.month.net"))} <b class="${propTone(m.net)}">${propUsd(m.net, true)}</b></span></div>`;
   if (!list.length) return html + `<div class="propMuted">${esc(T("prop.month.empty"))}</div></div>`;
@@ -258,7 +258,7 @@ function renderPropMonthDetail(accounts, entries, range = null) {
       const firm = (g.acc.firm_id && propFindFirm(g.acc.firm_id)) || { name: g.acc.firm_name || "?" };
       const one = g.items.length === 1;
       const head = `${propFirmLogo(firm, true)}<span class="propLedName"><b>${esc(one ? propAccountTitle(g.items[0].acc) : g.base)}</b>${one ? "" : `<em>× ${g.items.length}</em>`}</span>
-        <span class="propLedKind propLedKind-${esc(g.kind)}">${currentLayout() === "modern" ? propMonthsIcon(g.kind) : PROP_KIND_ICON[g.kind] || "•"} ${esc(T("prop.kind." + g.kind))}${g.pending ? " · " + esc(T("prop.entry.pending")) : ""}</span>
+        <span class="propLedKind propLedKind-${esc(g.kind)}">${isModernLayout() ? propMonthsIcon(g.kind) : PROP_KIND_ICON[g.kind] || "•"} ${esc(T("prop.kind." + g.kind))}${g.pending ? " · " + esc(T("prop.entry.pending")) : ""}</span>
         <span class="propLedAmt ${g.pending ? "propMuted" : propTone(sum)}">${propUsd(sum, true)}</span>`;
       if (one) html += `<button class="propLedRow" data-action="prop-open-detail" data-id="${esc(g.items[0].e.account_id)}">${head}</button>`;
       else html += `<details class="propLedRow propLedGroup"><summary>${head}</summary><div class="propLedSub">${g.items.map(({ e, acc }) =>
@@ -282,7 +282,7 @@ function renderPropByFirm(accounts, entries, range = null, allEntries = entries)
     const ids = new Set(accs.map((a) => a.id));
     return { name, n: accs.length, open: accs.some(propIsActive), s: propSum(entries.filter((e) => ids.has(e.account_id))), f: range ? propLinkageReport(accs, allEntries, range, todayStr()).summary : propFunnel(accs, entries) };
   }).sort((a, b) => b.s.net - a.s.net);
-  if (currentLayout() === "modern") return renderPropCompanyTable(rows, accounts, range);
+  if (isModernLayout()) return renderPropCompanyTable(rows, accounts, range);
   return `<div class="calendarPanel propPanel"><div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.firm.title"))}</div>${range ? `<small class="propLinkedPeriod">${esc(propOverviewRangeText(range))}</small>` : ""}</div>
     <div class="tableScroll"><table class="adminTable propTable"><thead><tr><th>${esc(T("prop.col.firm"))}</th><th class="num">${esc(T(range ? "prop.linkage.currentCount" : "prop.col.accounts"))}</th><th class="num">${esc(T("prop.col.passRate"))}</th><th class="num">${esc(T(range && range.preset !== "all" ? "prop.overview.spentRange" : "prop.stat.spent"))}</th><th class="num">${esc(T("prop.stat.received"))}</th><th class="num">${esc(T("prop.stat.net"))}</th><th class="num">ROI</th></tr></thead><tbody>
     ${rows.map((r) => `<tr><td>${esc(r.name)}</td><td class="num">${r.n}</td><td class="num">${r.f.passRate === null ? "—" : r.f.passRate.toFixed(0) + "%"}</td><td class="num">${propUsd(r.s.spent)}</td><td class="num">${propUsd(r.s.received)}</td><td class="num ${propTone(r.s.net)}">${propUsd(r.s.net, true)}</td>
@@ -300,7 +300,7 @@ function renderPropAccounts() {
   const { accounts } = propScoped();
   const counts = { active: accounts.filter(propIsActive).length, ended: accounts.filter((a) => !propIsActive(a)).length, all: accounts.length };
   // Exact statuses are modern navigation filters; classic keeps its aggregate controls.
-  const exact = currentLayout() === "modern" && PROP_STATUSES.includes(propStatusFilter);
+  const exact = isModernLayout() && PROP_STATUSES.includes(propStatusFilter);
   const statusFilter = exact || ["active", "ended", "all"].includes(propStatusFilter) ? propStatusFilter : "active";
   const list = accounts.filter(a => propAccountMatchesStatus(a, statusFilter));
   let html = `<div class="propFilters propAccFilters"><div class="chipGroup">${["active", "ended", "all"].map((k) =>
@@ -459,7 +459,7 @@ async function propSaveBalance() {
 }
 
 /* ---------- 公司计划 ----------
-   没选公司时：modern 只展示完整推荐排行；classic 保留排行 + 跨公司价格对比（默认 50K）。
+   没选公司时：modern/glass 只展示完整推荐排行；classic 保留排行 + 跨公司价格对比（默认 50K）。
    公司详情与价格对比实现保留；点排行里的公司进入详情看全部计划卡片。 */
 function renderPropCatalog() {
   const admin = currentProfile && currentProfile.role === "admin" && !viewingUserId;
@@ -470,7 +470,7 @@ function renderPropCatalog() {
   let firm = propCatalogFirm && propFindFirm(propCatalogFirm);
   if (firm && firm.hidden && !propEditing()) firm = null;
   if (propEditing()) html += `<div class="notice propAdmNotice">${ICONS.pencil}<span>${esc(T("prop.adm.modeHint"))}</span></div>`;
-  if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + (currentLayout() === "modern" ? "" : renderPropCompare());
+  if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + (isModernLayout() ? "" : renderPropCompare());
 
   const visible = propPlans.filter((p) => p.firm === firm.id && (propShowLegacy || p.status !== "legacy"));
   const sizes = [...new Set(visible.map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
@@ -691,7 +691,7 @@ function propRecommendationCard(f, familyCount) {
 }
 function renderPropBoard() {
   const BOARD_TOP = 6;
-  const modern = currentLayout() === "modern";
+  const modern = isModernLayout();
   const firms = propFirms.filter((f) => !f.hidden).sort((a, b) => propRankOf(a) - propRankOf(b));
   const shown = modern || propBoardAll ? firms : firms.slice(0, BOARD_TOP);
   const card = (f) => {
@@ -777,15 +777,15 @@ function renderPropFirm(f, plans) {
   let html = `<div class="calendarPanel propPanel propFirm">
     <div class="propFirmHead"><span class="propRank ${propRankOf(f) <= 3 ? "top" : ""}">${propRankOf(f)}</span>${propFirmLogo(f)}<div class="propFirmName"><b>${esc(f.name)} ${propTierTag(f)}</b>
       <span>${esc(T("prop.cat.planCount", { n: plans.length }))}${f.website ? ` · <a href="${esc(f.website)}" target="_blank" rel="noopener">${esc(T("prop.cat.website"))}</a>` : ""}${f.source ? ` · <a href="${esc(f.source)}" target="_blank" rel="noopener">${esc(T("prop.cat.sourcePage"))}</a>` : ""}</span></div>
-      ${f.review && currentLayout() !== "modern" ? `<span class="propReview">${esc(propReviewPlainText(f.review))}</span>` : ""}</div>
-    ${(f.review || f.keySentence?.text) && currentLayout() === "modern" ? `<div class="propFirmRecommendation" data-prop-copy-protected><div class="propRecommendLabel">${esc(T("prop.adm.review"))}</div>${propKeySentenceHtml(f)}<div class="propRichText">${propReviewHtml(f.review)}</div></div>` : ""}
+      ${f.review && !isModernLayout() ? `<span class="propReview">${esc(propReviewPlainText(f.review))}</span>` : ""}</div>
+    ${(f.review || f.keySentence?.text) && isModernLayout() ? `<div class="propFirmRecommendation" data-prop-copy-protected><div class="propRecommendLabel">${esc(T("prop.adm.review"))}</div>${propKeySentenceHtml(f)}<div class="propRichText">${propReviewHtml(f.review)}</div></div>` : ""}
     ${propEditing() ? `<div class="propAdmFirmActs"><button class="btn btn-sm" data-action="prop-adm-firm" data-id="${esc(f.id)}">${ICONS.pencil} ${esc(T("prop.adm.editFirm"))}</button>
       <button class="btn btn-sm" data-action="prop-adm-batch" data-firm="${esc(f.id)}">${esc(T("prop.adm.batchShort"))}</button>
       <button class="btn btn-sm" data-action="prop-adm-new-plan" data-firm="${esc(f.id)}" data-family="">${ICONS.plus} ${esc(T("prop.adm.newPlan2"))}</button></div>` : ""}
-    ${currentLayout() === "modern" ? `<div class="propFirmCoupon">${propCouponHtml(f)}</div>` : promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(propReviewPlainText(f.promo.text))}</span>` : ""}</div>` : ""}
-    ${currentLayout() !== "modern" && Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
-    ${currentLayout() !== "modern" && f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
-  if (currentLayout() === "modern") html += propFirmInfoHtml(f, false) + propFirmUpdatesHtml(f, false);
+    ${isModernLayout() ? `<div class="propFirmCoupon">${propCouponHtml(f)}</div>` : promo ? `<div class="propBoardPromo propFirmPromo">${f.promo.discount ? `<b>${esc(T("prop.cat.off", { v: f.promo.discount }))}</b>` : ""}${f.promo.text ? `<span>${esc(propReviewPlainText(f.promo.text))}</span>` : ""}</div>` : ""}
+    ${!isModernLayout() && Array.isArray(f.platforms) && f.platforms.length ? `<div class="propMuted">${esc(T("prop.cat.platforms", { v: listJoin(f.platforms) }))}</div>` : ""}
+    ${!isModernLayout() && f.notes ? `<details class="propMore propFirmNotes"><summary>${esc(T("prop.pc.firmNotes"))}</summary><div class="propNotes">${esc(f.notes)}</div></details>` : ""}`;
+  if (isModernLayout()) html += propFirmInfoHtml(f, false) + propFirmUpdatesHtml(f, false);
   if (!plans.length) html += `<div class="propMuted">${esc(T("prop.empty.filtered"))}</div>`;
   // 一个系列一段，段里是跟价格对比一样的卡片（同系列同规模的版本合成一张，用开关切）
   const families = [];
@@ -1258,7 +1258,7 @@ function propDetail(m) {
 
   // Historical dates enter an explicit draft/review; array position is not purchase identity.
   const events = acc.events || [];
-  if (events.length || currentLayout() === "modern") body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}${currentLayout() === "modern" && !ro ? ` <button type="button" id="propHistoryDetailEntry" class="btn btn-sm" data-action="prop-history-open" data-id="${esc(acc.id)}">${esc(T("prop.history.edit"))}</button>` : ""}</div>`;
+  if (events.length || isModernLayout()) body += `<div class="propMiniLabel">${esc(T("prop.acc.timeline"))}${isModernLayout() && !ro ? ` <button type="button" id="propHistoryDetailEntry" class="btn btn-sm" data-action="prop-history-open" data-id="${esc(acc.id)}">${esc(T("prop.history.edit"))}</button>` : ""}</div>`;
   if (events.length) {
     body += `<div class="propTimeline propTimelineEdit">${events.map((ev, i) =>
       `<div>${ro ? `<span>${esc(ev?.day || "—")}</span>` : `<input type="date" min="1990-01-01" max="2099-12-31" class="input propEvDate" value="${esc(ev?.day || "")}" data-prop-event="${i}" data-id="${esc(acc.id)}" ${propDetailDirty(acc, m.draft) ? "disabled" : ""} title="${esc(T(propDetailDirty(acc, m.draft) ? "prop.linkage.unsaved" : "prop.history.edit"))}">`}${PROP_STATUSES.includes(ev?.to) ? propStatusPill(ev.to) : `<span>${esc(T("prop.history.unknown"))}</span>`}</div>`).join(`<span class="propEvArrow">›</span>`)}</div>`;
