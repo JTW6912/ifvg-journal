@@ -459,8 +459,8 @@ async function propSaveBalance() {
 }
 
 /* ---------- 公司计划 ----------
-   没选公司时：上面是排行（目录里公司的先后顺序 = 排名），下面是跨公司的价格对比表（默认 50K）；
-   点排行里的公司或表里的一行，进那家公司的页面看全部计划卡片 */
+   没选公司时：modern 只展示完整推荐排行；classic 保留排行 + 跨公司价格对比（默认 50K）。
+   公司详情与价格对比实现保留；点排行里的公司进入详情看全部计划卡片。 */
 function renderPropCatalog() {
   const admin = currentProfile && currentProfile.role === "admin" && !viewingUserId;
   const info = propCatalogInfo ? T("prop.cat.updated", { d: localDateStr(propCatalogInfo.imported_at), f: propFirms.length, p: propPlans.length }) : "";
@@ -470,7 +470,7 @@ function renderPropCatalog() {
   let firm = propCatalogFirm && propFindFirm(propCatalogFirm);
   if (firm && firm.hidden && !propEditing()) firm = null;
   if (propEditing()) html += `<div class="notice propAdmNotice">${ICONS.pencil}<span>${esc(T("prop.adm.modeHint"))}</span></div>`;
-  if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + renderPropCompare();
+  if (!firm) return html + (propEditing() ? renderPropBoardAdmin() : renderPropBoard()) + (currentLayout() === "modern" ? "" : renderPropCompare());
 
   const visible = propPlans.filter((p) => p.firm === firm.id && (propShowLegacy || p.status !== "legacy"));
   const sizes = [...new Set(visible.map((p) => p.size).filter(Boolean))].sort((a, b) => a - b);
@@ -693,7 +693,7 @@ function renderPropBoard() {
   const BOARD_TOP = 6;
   const modern = currentLayout() === "modern";
   const firms = propFirms.filter((f) => !f.hidden).sort((a, b) => propRankOf(a) - propRankOf(b));
-  const shown = propBoardAll ? firms : firms.slice(0, BOARD_TOP);
+  const shown = modern || propBoardAll ? firms : firms.slice(0, BOARD_TOP);
   const card = (f) => {
     const plans = propPlans.filter((p) => p.firm === f.id && p.status !== "legacy");
     if (modern) return propRecommendationCard(f, propFamilies(f.id).length);
@@ -715,7 +715,7 @@ function renderPropBoard() {
   return `<div class="calendarPanel propPanel${modern ? " propRecommendPanel" : ""}">
     <div class="propPanelHead"><div class="sectionLabel propLabel">${esc(T("prop.cat.boardTitle"))}</div><span class="propMuted">${esc(T("prop.cat.boardHint"))}</span></div>
     <div class="propBoard${modern ? " propBoardList" : ""}">${shown.map(card).join("")}</div>
-    ${firms.length > BOARD_TOP ? `<button class="btn btn-sm propBoardMore" data-action="prop-board-all">${esc(T(propBoardAll ? "prop.cat.boardLess" : "prop.cat.boardAll", { n: firms.length }))}</button>` : ""}
+    ${!modern && firms.length > BOARD_TOP ? `<button class="btn btn-sm propBoardMore" data-action="prop-board-all">${esc(T(propBoardAll ? "prop.cat.boardLess" : "prop.cat.boardAll", { n: firms.length }))}</button>` : ""}
   </div>`;
 }
 

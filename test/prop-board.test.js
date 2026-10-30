@@ -32,16 +32,25 @@ test("modern 推荐长卡同时展示身份、评级、推荐语、优惠说明�
   for (const id of [heading, body]) assert.ok(html.includes(`id="${id}"`), `missing accessible target ${id}`);
 });
 
-test("推荐列表按排名排序、过滤隐藏公司，展开全部不改变数据顺序", () => {
+test("推荐列表默认完整展示、过滤隐藏公司，旧展开状态不改变排名或数据", () => {
   const firms = Array.from({ length: 8 }, (_, i) => ({ ...firm, id: `firm-${i}`, rank: 8 - i }));
   firms.push({ ...firm, id: "hidden", rank: 0, hidden: true });
   const ctx = setup(firms);
   const before = ctx.run("JSON.stringify(propFirms)");
   const ids = (html) => [...html.matchAll(/data-prop-firm="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(ids(ctx.run("renderPropBoard()")), ["firm-7", "firm-6", "firm-5", "firm-4", "firm-3", "firm-2"]);
+  assert.deepEqual(ids(ctx.run("renderPropBoard()")), ["firm-7", "firm-6", "firm-5", "firm-4", "firm-3", "firm-2", "firm-1", "firm-0"]);
+  assert.doesNotMatch(ctx.run("renderPropBoard()"), /data-action="prop-board-all"/);
   ctx.run("propBoardAll = true;");
   assert.deepEqual(ids(ctx.run("renderPropBoard()")), ["firm-7", "firm-6", "firm-5", "firm-4", "firm-3", "firm-2", "firm-1", "firm-0"]);
   assert.equal(ctx.run("JSON.stringify(propFirms)"), before);
+
+  const classic = setup(firms, false);
+  const classicIds = (html) => [...html.matchAll(/class="propCard propBoardCard[^"]*" data-action="prop-cat-firm" data-val="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(classicIds(classic.run("renderPropBoard()")), ["firm-7", "firm-6", "firm-5", "firm-4", "firm-3", "firm-2"]);
+  assert.match(classic.run("renderPropBoard()"), /data-action="prop-board-all"/);
+  classic.run("propBoardAll = true;");
+  assert.deepEqual(classicIds(classic.run("renderPropBoard()")), ["firm-7", "firm-6", "firm-5", "firm-4", "firm-3", "firm-2", "firm-1", "firm-0"]);
+  assert.equal(classic.run("JSON.stringify(propFirms)"), before);
 });
 
 test("目录信息缺失时明确显示待补充，不把未知优惠当作已确认无优惠", () => {
