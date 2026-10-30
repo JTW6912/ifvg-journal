@@ -662,3 +662,171 @@
   [data-layout="modern"] .navBrand{padding:4px 0;}
   [data-layout="modern"] .navBrandChev{display:none;}
 }
+
+/* ============================================================
+   Liquid Glass —— 苹果 iOS 26 / macOS 26 的玻璃材质（“玻璃”布局：新版结构 + 挂 data-glass，用户在账户菜单里手动选）
+   规则照苹果的规范来：玻璃只用在“浮在内容上面的那一层”——侧边栏、顶栏按钮、分段控件、菜单、浮动条、
+   提示条；内容卡片保持实色。一块玻璃由五层叠成：
+     1. 折射：边缘把背后的内容弯过来（src/04b-liquid-glass.js 算位移贴图，经 --lgRefract 接进 backdrop-filter；
+        只有 Chromium 支持，Safari / Firefox 没有这一层，其余照常）
+     2. 极轻的磨砂 + 提饱和：玻璃本身几乎透明，背后的颜色反而更鲜艳
+     3. 高光边：左上一道亮边、右下一道弱一点的反光、贴着边的一圈内发光
+     4. 阴影：把玻璃从内容上“托”起来
+     5. 交互：按下时玻璃鼓起来再弹回（弹簧曲线），指针在上面移动时有一团跟着走的光；选中的那一片会“流”到新位置
+   ============================================================ */
+:root[data-layout="modern"][data-glass]{
+  --lgTint:color-mix(in srgb,var(--surface) 34%,transparent);
+  --lgTintThick:color-mix(in srgb,var(--surface) 74%,transparent);
+  --lgSheen:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.012) 46%,rgba(255,255,255,0));
+  --lgHi:rgba(255,255,255,.36);
+  --lgLo:rgba(255,255,255,.13);
+  --lgEdge:rgba(255,255,255,.07);
+  --lgGlow:rgba(255,255,255,.045);
+  --lgLight:rgba(255,255,255,.13);
+  --lgShadow:0 10px 30px rgba(0,0,0,.30),0 2px 6px rgba(0,0,0,.20);
+  --lgShadowSm:0 4px 14px rgba(0,0,0,.24),0 1px 3px rgba(0,0,0,.18);
+  --lgFilter:blur(2px) saturate(1.8) brightness(1.04);
+  --lgFilterThick:blur(24px) saturate(1.9);
+  --lgRim:inset 1px 1px 0 -.5px var(--lgHi),inset -1px -1px 0 -.5px var(--lgLo),inset 0 0 0 1px var(--lgEdge),inset 0 0 16px var(--lgGlow);
+  /* 弹簧：冲过头一点再回来，接近 SwiftUI 的 .bouncy */
+  --lgSpring:linear(0,.009,.035 2.1%,.141 4.4%,.723 12.9%,.938 16.7%,1.017 20.3%,1.043 24.1%,1.035 28.2%,1.007 36.3%,.997 41.9%,1.001 58%,1);
+}
+:root[data-layout="modern"][data-glass][data-theme="light"]{
+  --lgTint:color-mix(in srgb,var(--surface) 46%,transparent);
+  --lgTintThick:color-mix(in srgb,var(--surface) 80%,transparent);
+  --lgSheen:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.12) 46%,rgba(255,255,255,0));
+  --lgHi:rgba(255,255,255,.98);
+  --lgLo:rgba(255,255,255,.7);
+  --lgEdge:rgba(15,23,42,.07);
+  --lgGlow:rgba(255,255,255,.5);
+  --lgLight:rgba(255,255,255,.55);
+  --lgShadow:0 10px 28px rgba(15,23,42,.12),0 1px 4px rgba(15,23,42,.08);
+  --lgShadowSm:0 3px 12px rgba(15,23,42,.10),0 1px 3px rgba(15,23,42,.07);
+  --lgFilter:blur(2px) saturate(1.8) brightness(1.06);
+}
+
+/* ---------- 基础材质：薄玻璃（控件、导航）和厚玻璃（菜单、浮层，要读字所以磨砂多一些） ---------- */
+[data-layout="modern"][data-glass] .nav,
+[data-layout="modern"][data-glass] #appHeader .headerActions .modeToggle,
+[data-layout="modern"][data-glass] #appHeader .headerActions .themeToggle,
+[data-layout="modern"][data-glass] #appHeader .headerActions .btn:not(.btn-primary),
+[data-layout="modern"][data-glass] .analyticsSticky,
+[data-layout="modern"][data-glass] .propCompareBar,
+[data-layout="modern"][data-glass] .propEditorTop,
+[data-layout="modern"][data-glass] .lgSurface{
+  border-color:transparent;background:var(--lgSheen),var(--lgTint);box-shadow:var(--lgRim),var(--lgShadowSm);
+  -webkit-backdrop-filter:var(--lgFilter);backdrop-filter:var(--lgRefract,) var(--lgFilter);}
+[data-layout="modern"][data-glass] .exportMenu,
+[data-layout="modern"][data-glass] .acctPop,
+[data-layout="modern"][data-glass] .reviewBubble,[data-layout="modern"][data-glass] .reviewPop,[data-layout="modern"][data-glass] .slashMenu,
+[data-layout="modern"][data-glass] .propOverviewPicker,[data-layout="modern"][data-glass] .propOverviewTooltip,
+[data-layout="modern"][data-glass] .reviewToast,[data-layout="modern"][data-glass] .propToast{
+  border-color:transparent;background:var(--lgSheen),var(--lgTintThick);box-shadow:var(--lgRim),var(--lgShadow);
+  -webkit-backdrop-filter:var(--lgFilterThick);backdrop-filter:var(--lgRefract,) var(--lgFilterThick);}
+[data-layout="modern"][data-glass] .exportMenu{border-radius:18px;}
+[data-layout="modern"][data-glass] .propToast{color:var(--text);border-radius:999px;padding-left:20px;}
+[data-layout="modern"][data-glass] .propToast .btn{color:var(--accent);border-color:transparent;border-radius:999px;background:color-mix(in srgb,var(--text) 8%,transparent);box-shadow:var(--lgRim);}
+/* 粘在顶上/底下的条：内容从它下面滚过去，玻璃边缘的折射在这里最明显。条上有字，磨砂比按钮多一点，免得和下面的字打架 */
+[data-layout="modern"][data-glass] :is(.analyticsSticky,.propCompareBar,.propEditorTop){background:var(--lgSheen),color-mix(in srgb,var(--surface) 52%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(1.8);backdrop-filter:var(--lgRefract,) blur(10px) saturate(1.8);}
+[data-layout="modern"][data-glass] .analyticsSticky{top:10px;border-radius:18px;}
+[data-layout="modern"][data-glass] .propEditorTop{top:10px;border-radius:22px;}
+[data-layout="modern"][data-glass] .propCompareBar{border-radius:999px;padding:8px 8px 8px 20px;box-shadow:var(--lgRim),var(--lgShadow);}
+
+/* 弹窗是大面积读写区，用接近不透明的厚玻璃：保留高光边和质感，不让背后的东西干扰阅读。
+   不给 .modal 加 backdrop-filter——它会让弹窗里 position:fixed 的浮层改成相对弹窗定位 */
+[data-layout="modern"][data-glass] .modal{border-color:transparent;border-radius:26px;
+  background:var(--lgSheen),color-mix(in srgb,var(--surface) 94%,transparent);box-shadow:var(--lgRim),var(--shadowModal);}
+[data-layout="modern"][data-glass] .modalFoot{background:color-mix(in srgb,var(--surface2) 55%,transparent);border-radius:0 0 26px 26px;}
+
+/* ---------- 侧边栏：一整块浮起来的玻璃，离窗口四边留一点空 ---------- */
+@media(min-width:900px){
+  [data-layout="modern"][data-glass] #appNav{top:10px;height:calc(100vh - 20px);margin:10px 0 10px 10px;border-radius:28px;border:none;
+    box-shadow:var(--lgRim),var(--lgShadow);}
+  [data-layout="modern"][data-glass] .navFoot{border-color:transparent;background:var(--lgSheen),color-mix(in srgb,var(--accent) 7%,var(--lgTint));
+    box-shadow:var(--lgRim);border-radius:20px;}
+}
+
+/* ---------- 选中的那一片：自己也是一块（着色的）玻璃，画在 ::before 上，
+   切换时 JS 让它从上一个位置“流”过来（见 src/04b-liquid-glass.js 的 lgMorph） ---------- */
+[data-layout="modern"][data-glass] #appNav .tab,
+[data-layout="modern"][data-glass] .modeToggle .modeBtn,
+[data-layout="modern"][data-glass] .viewToggle .viewBtn{position:relative;isolation:isolate;}
+[data-layout="modern"][data-glass] #appNav .tab.active,
+[data-layout="modern"][data-glass] .modeToggle .modeBtn.active,
+[data-layout="modern"][data-glass] .viewToggle .viewBtn.active{background:transparent;box-shadow:none;}
+[data-layout="modern"][data-glass] #appNav .tab.active::before,
+[data-layout="modern"][data-glass] .modeToggle .modeBtn.active::before,
+[data-layout="modern"][data-glass] .viewToggle .viewBtn.active::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;transform-origin:0 50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 55%,rgba(255,255,255,0)),color-mix(in srgb,var(--text) 9%,transparent);
+  box-shadow:var(--lgRim),0 2px 8px rgba(0,0,0,.18);}
+[data-layout="modern"][data-glass][data-theme="light"] .modeToggle .modeBtn.active::before,
+[data-layout="modern"][data-glass][data-theme="light"] .viewToggle .viewBtn.active::before{background:var(--lgSheen),rgba(255,255,255,.88);box-shadow:var(--lgRim),0 2px 8px rgba(15,23,42,.10);}
+/* 侧边栏当前页：主题色着色玻璃（苹果的 prominent 样式），比分段控件的白片更醒目 */
+[data-layout="modern"][data-glass] #appNav .tab.active{color:var(--onAccent);}
+[data-layout="modern"][data-glass] #appNav .tab.active::before{
+  background:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,.04) 52%,rgba(255,255,255,0)),color-mix(in srgb,var(--accent) 90%,transparent);
+  box-shadow:inset 1px 1px 0 -.5px rgba(255,255,255,.75),inset -1px -1px 0 -.5px rgba(255,255,255,.35),inset 0 0 12px rgba(255,255,255,.18),
+    0 6px 18px color-mix(in srgb,var(--accent) 34%,transparent);}
+[data-layout="modern"][data-glass] #appNav .tab:not(.active):hover{background:color-mix(in srgb,var(--text) 6%,transparent);}
+[data-layout="modern"][data-glass] .modeToggle,[data-layout="modern"][data-glass] .viewToggle{border-radius:999px;padding:3px;}
+[data-layout="modern"][data-glass] .modeToggle .modeBtn,[data-layout="modern"][data-glass] .viewToggle .viewBtn{border-radius:999px;}
+[data-layout="modern"][data-glass] .modeToggle:not(#appHeader .modeToggle),[data-layout="modern"][data-glass] .viewToggle{border-color:transparent;
+  background:color-mix(in srgb,var(--text) 5%,transparent);box-shadow:inset 0 0 0 1px var(--lgEdge),inset 0 1px 3px rgba(0,0,0,.12);}
+
+/* ---------- 顶栏按钮：胶囊玻璃；主按钮是主题色着色玻璃 ---------- */
+[data-layout="modern"][data-glass] #appHeader .headerActions :is(.btn,.themeToggle){border-radius:999px;}
+[data-layout="modern"][data-glass] #appHeader .headerActions .themeToggle{width:38px;height:38px;color:var(--text);}
+[data-layout="modern"][data-glass] #appHeader .headerActions .btn{min-height:38px;padding-left:16px;padding-right:16px;}
+[data-layout="modern"][data-glass] #appHeader .headerActions .btn-primary{border-color:transparent;color:var(--onAccent);
+  background:linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.05) 50%,rgba(255,255,255,0)),color-mix(in srgb,var(--accent) 88%,transparent);
+  box-shadow:inset 1px 1px 0 -.5px rgba(255,255,255,.8),inset -1px -1px 0 -.5px rgba(255,255,255,.4),inset 0 0 14px rgba(255,255,255,.2),
+    0 8px 22px color-mix(in srgb,var(--accent) 32%,transparent),0 2px 5px rgba(0,0,0,.18);
+  -webkit-backdrop-filter:var(--lgFilter);backdrop-filter:var(--lgRefract,) var(--lgFilter);}
+[data-layout="modern"][data-glass] #appHeader .headerActions .btn-primary:hover{filter:none;}
+
+/* ---------- 交互：按下鼓起再弹回 + 指针光 ---------- */
+[data-layout="modern"][data-glass] #appHeader .headerActions :is(.btn,.themeToggle),
+[data-layout="modern"][data-glass] .propCouponLink,
+[data-layout="modern"][data-glass] .lgInteractive{transition:transform .5s var(--lgSpring),box-shadow .2s,background-color .2s,color .15s;}
+[data-layout="modern"][data-glass] #appHeader .headerActions :is(.btn,.themeToggle):active,
+[data-layout="modern"][data-glass] .propCouponLink:active,
+[data-layout="modern"][data-glass] .lgInteractive:active{transform:scale(1.07);transition-duration:.18s,.2s,.2s,.15s;}
+[data-layout="modern"][data-glass] .modeToggle .modeBtn:active,[data-layout="modern"][data-glass] .viewToggle .viewBtn:active{transform:scale(.96);}
+@media(hover:hover){
+  [data-layout="modern"][data-glass] #appHeader .headerActions :is(.btn:not(.btn-primary),.themeToggle):hover,
+  [data-layout="modern"][data-glass] .lgInteractive:hover{border-color:transparent;
+    background:radial-gradient(90px circle at var(--lgX,50%) var(--lgY,0%),var(--lgLight),transparent 70%),var(--lgSheen),var(--lgTint);
+    box-shadow:var(--lgRim),var(--lgShadow);}
+  [data-layout="modern"][data-glass] #appHeader .headerActions .btn-primary:hover{
+    background:radial-gradient(90px circle at var(--lgX,50%) var(--lgY,0%),rgba(255,255,255,.34),transparent 70%),
+      linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.05) 50%,rgba(255,255,255,0)),color-mix(in srgb,var(--accent) 92%,transparent);}
+  [data-layout="modern"][data-glass] #appNav .tab:not(.active):hover{
+    background:radial-gradient(80px circle at var(--lgX,50%) var(--lgY,50%),color-mix(in srgb,var(--text) 9%,transparent),transparent 75%),color-mix(in srgb,var(--text) 4%,transparent);}
+}
+
+/* ---------- Prop 的着色玻璃内容块（重点句、优惠券、提示框、更新） ----------
+   Prop 页目前只在 prop-test 分支上；合过去之后这些选择器直接生效。公司卡片是内容层，在玻璃布局里回到实色 */
+[data-layout="modern"][data-glass] .propRecommendCard{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none;}
+[data-layout="modern"][data-glass] .propCoupon::after{content:none;}
+[data-layout="modern"][data-glass] .propGlassSurface{--propTintA:12%;--propTintB:4%;border-radius:14px;}
+[data-layout="modern"][data-glass][data-theme="light"] .propGlassSurface{--propTintA:22%;--propTintB:8%;}
+[data-layout="modern"][data-glass] .propGlassSurface{border-color:transparent;
+  background:var(--lgSheen),linear-gradient(135deg,color-mix(in srgb,var(--propTint) var(--propTintA),transparent),color-mix(in srgb,var(--propTint) var(--propTintB),transparent)),var(--lgTint);
+  box-shadow:inset 1px 1px 0 -.5px color-mix(in srgb,var(--propEdge) 45%,var(--lgHi)),inset -1px -1px 0 -.5px color-mix(in srgb,var(--propEdge) 35%,var(--lgLo)),
+    inset 0 0 0 1px color-mix(in srgb,var(--propEdge) 22%,transparent),inset 0 0 18px color-mix(in srgb,var(--propTint) 10%,transparent),var(--lgShadowSm);
+  -webkit-backdrop-filter:var(--lgFilter);backdrop-filter:var(--lgRefract,) var(--lgFilter);}
+[data-layout="modern"][data-glass] .propCoupon{border-radius:20px;}
+[data-layout="modern"][data-glass] :where(.propCouponLink){border-color:transparent;border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.04) 50%,rgba(255,255,255,0)),color-mix(in srgb,var(--propBtn) 90%,transparent);
+  box-shadow:inset 1px 1px 0 -.5px rgba(255,255,255,.75),inset -1px -1px 0 -.5px rgba(255,255,255,.35),inset 0 0 12px rgba(255,255,255,.16),0 6px 16px color-mix(in srgb,var(--propBtn) 30%,transparent);}
+[data-layout="modern"][data-glass] .propCoupon :where(.propCouponCode){border-radius:12px;background:color-mix(in srgb,var(--surface) 55%,transparent);}
+
+/* ---------- 无障碍：系统开了“降低透明度”就换成不透明的实色材质；“减弱动态效果”就不弹 ---------- */
+@media(prefers-reduced-transparency:reduce){
+  [data-layout="modern"][data-glass]{--lgTint:var(--surface);--lgTintThick:var(--surface);}
+  [data-layout="modern"][data-glass] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;}
+}
+@media(prefers-reduced-motion:reduce){
+  [data-layout="modern"][data-glass] :is(#appHeader .headerActions :is(.btn,.themeToggle),.propCouponLink,.lgInteractive):active{transform:none;}
+}

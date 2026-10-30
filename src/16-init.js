@@ -113,6 +113,7 @@ async function bootstrapAuth() {
   } catch (e) {}
   loadAppearance();
   applyLangAttr();
+  initLiquidGlass();
   await bootstrapAuth();
   render();
 })();

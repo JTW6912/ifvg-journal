@@ -27,7 +27,7 @@ function renderMonthBar() {
   html += `<div class="monthBarCell ${ytdTone}" style="cursor:default;">
     <div class="monthBarLabel">YTD</div>
     ${ytdCount > 0 ? `<div class="monthBarValue">${ytdHasR ? fmtNum(ytdR) + "R" : ""}</div>` : ""}
-  </div></div>${currentLayout() === "modern" ? renderYearHeatmap(calendarYear) : ""}</div>`;
+  </div></div>${isModernLayout() ? renderYearHeatmap(calendarYear) : ""}</div>`;
   return html;
 }
 /* 全年每日热力图（GitHub 贡献图那种）：一列一周、一行一个星期几，颜色深浅 = 当天 R 的绝对值。

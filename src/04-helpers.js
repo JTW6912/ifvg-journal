@@ -195,18 +195,28 @@ function hasFieldValue(t, f) {
 
 /* ============================================================
    外观：布局 × 配色 × 日/夜，三条独立的轴，存在本机 localStorage
-   - 布局 classic = 原来的顶部页签（不挂属性）；modern = 侧边栏新版（theme-modern.css，挂 data-layout="modern"）。
+   - 布局 classic = 原来的顶部页签（不挂属性）；modern = 侧边栏新版（theme-modern.css，挂 data-layout="modern"）；
+     glass = 新版 + 苹果 Liquid Glass 材质：页面结构和新版完全一样（照样挂 data-layout="modern"），另挂 data-glass 打开玻璃
+     （theme-modern.css 末尾的 Liquid Glass 区块 + src/04b-liquid-glass.js 的边缘折射）。
+     判断“是不是侧边栏那套结构”用 isModernLayout()，新版和玻璃都算
      从没选过的人默认新版；选过经典的人存了 "classic"，一直按经典来
    - 配色 gold = 原来的黑金（不挂属性）；其余见 palettes.css（挂 data-palette）
    index.html 头部有一段内联脚本在首帧前就按同样的规则挂好，避免先闪一下默认样式
    ============================================================ */
-const LAYOUTS = ["classic", "modern"];
+const LAYOUTS = ["classic", "modern", "glass"];
 const PALETTES = ["gold", "sky", "violet", "rose", "sunset", "ocean", "graphite"];
-function currentLayout() { return document.documentElement.dataset.layout || "classic"; }
+function currentLayout() {
+  const d = document.documentElement.dataset;
+  return d.layout === "modern" && "glass" in d ? "glass" : d.layout || "classic";
+}
+function isModernLayout() { return document.documentElement.dataset.layout === "modern"; }
 function currentPalette() { return document.documentElement.dataset.palette || "gold"; }
 function applyLayout(v) {
-  if (v && v !== "classic" && LAYOUTS.includes(v)) document.documentElement.dataset.layout = v;
-  else delete document.documentElement.dataset.layout;
+  const d = document.documentElement.dataset;
+  if (v && v !== "classic" && LAYOUTS.includes(v)) d.layout = "modern";
+  else delete d.layout;
+  if (v === "glass") d.glass = "";
+  else delete d.glass;
 }
 function applyPalette(v) {
   if (v && v !== "gold" && PALETTES.includes(v)) document.documentElement.dataset.palette = v;
