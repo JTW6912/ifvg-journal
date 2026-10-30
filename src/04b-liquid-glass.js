@@ -9,12 +9,12 @@
    ============================================================ */
 // 和 theme-modern.css 里带 --lgRefract 的选择器保持一致：只给“浮在内容上面的那一层”（导航、工具栏、菜单、浮动条）
 const LG_SELECTOR = [
-  "#appNav", "#appHeader .headerActions .modeToggle", "#appHeader .headerActions .themeToggle", "#appHeader .headerActions .btn",
+  "#appNav", "#appHeader .headerActions .modeToggle", "#appHeader .headerTools", "#appHeader .headerActions .btn-primary",
   ".exportMenu.open", ".acctPop", ".reviewBubble", ".reviewPop", ".slashMenu", ".propOverviewPicker", ".propToast",
   ".analyticsSticky", ".propCompareBar", ".propEditorTop", ".propGlassSurface", ".lgSurface",
 ].join(",");
 const LG_MAX_AREA = 700 * 900; // 再大的面板就不折射了（算贴图太慢、边缘也看不出来），只保留 CSS 玻璃
-const lg = { svg: null, filters: new Map(), tracked: new Set(), sized: new WeakSet(), ready: new Set(), pending: new Map(), ro: null, raf: 0, profile: null, morph: null };
+const lg = { svg: null, filters: new Map(), tracked: new Set(), sized: new WeakSet(), ready: new Set(), pending: new Map(), ro: null, raf: 0, profile: null, morph: null, floatAt: 0 };
 
 function lgRefractionSupported() {
   const brands = navigator.userAgentData && navigator.userAgentData.brands;
@@ -147,8 +147,10 @@ function lgScan() {
 
 function lgSchedule() { if (!lg.raf) lg.raf = requestAnimationFrame(lgScan); }
 
-// 选中片“流”过去：点侧边栏 / 分段控件时记下当前选中片的位置；重新渲染出新的选中片后，让它的 ::before
-// 从旧位置滑过来，半路顺着移动方向拉长、另一个方向收窄，像一滴液体被拖过去，最后弹簧落定。
+// 选中片“流”过去：点侧边栏 / 分段控件时记下当前选中片的位置；重新渲染出新的选中片后，在组里垫一块“影子”玻璃，
+// 从旧位置滑到新位置——半路顺着移动方向拉长、另一个方向收窄，像一滴液体被拖过去，最后弹簧落定，再换回真正的选中片。
+// 影子垫在组的最底层（z-index:-1），所以途经的每个页签文字都浮在它上面；半路影子变淡（像 iOS 26 拖动时选中块变成一块透镜），
+// 经过的文字不会被底色吃掉；目标页签的文字颜色也跟着从普通色渐变到选中色
 const LG_MORPH_GROUP = "#appNav, .modeToggle, .viewToggle";
 const LG_MORPH_ITEM = "#appNav .tab, .modeToggle .modeBtn, .viewToggle .viewBtn";
 function lgMorphStart(e) {
@@ -172,20 +174,49 @@ function lgMorphFinish() {
   const r = to.getBoundingClientRect(), dx = m.rect.left - r.left, dy = m.rect.top - r.top;
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return; // 还没重新渲染，等下一次
   lg.morph = null;
+  const g = group.getBoundingClientRect();
+  const ghost = document.createElement("span");
+  ghost.className = "lgGhost";
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.style.cssText = `left:${r.left - g.left - group.clientLeft + group.scrollLeft}px;top:${r.top - g.top - group.clientTop + group.scrollTop}px;width:${r.width}px;height:${r.height}px;border-radius:${getComputedStyle(to).borderTopLeftRadius}`;
+  group.appendChild(ghost);
+  to.classList.add("lgArriving");
   const sx = m.rect.width / r.width, sy = m.rect.height / r.height, vertical = Math.abs(dy) > Math.abs(dx);
   const mid = vertical ? `scale(${((sx + 1) / 2) * 0.9},${((sy + 1) / 2) * 1.18})` : `scale(${((sx + 1) / 2) * 1.14},${((sy + 1) / 2) * 0.9})`;
+  const idle = [...group.querySelectorAll(LG_MORPH_ITEM)].find((el) => el !== to && el.closest(LG_MORPH_GROUP) === group);
+  const done = () => { ghost.remove(); to.classList.remove("lgArriving"); };
   try {
-    to.animate([
-      { transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` },
-      { transform: `translate(${dx * 0.4}px,${dy * 0.4}px) ${mid}`, offset: 0.4 },
-      { transform: "none" },
-    ], { duration: 560, easing: getComputedStyle(document.documentElement).getPropertyValue("--lgSpring").trim() || "ease-out", pseudoElement: "::before" });
-  } catch (err) {} // 不支持伪元素动画 / linear() 的浏览器直接跳到新位置
+    const spring = getComputedStyle(document.documentElement).getPropertyValue("--lgSpring").trim() || "ease-out";
+    ghost.animate([
+      { transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})`, opacity: 1 },
+      { transform: `translate(${dx * 0.4}px,${dy * 0.4}px) ${mid}`, opacity: 0.45, offset: 0.4 },
+      { transform: "none", opacity: 1 },
+    ], { duration: 560, easing: spring }).finished.then(done, done);
+    if (idle) to.animate([{ color: getComputedStyle(idle).color }, { color: getComputedStyle(to).color }], { duration: 260, easing: "ease-in" });
+  } catch (err) { done(); } // 不支持 linear() 的浏览器直接跳到新位置
+}
+
+// 宽屏的玻璃布局往下滚时，顶栏按钮组停在右上角浮着，内容从它下面滚过去（边缘折射就在这里看得最清楚）；
+// 页面大标题收成左上角一行小字，顶上一条渐隐带把滚上来的内容压暗一点。
+// 切换点取“按钮组刚好滚到浮动位置”的那一刻，所以按钮看起来只是停住了，没有跳一下
+function lgOnScroll() {
+  const d = document.documentElement.dataset, hdr = document.getElementById("appHeader");
+  const actions = hdr && hdr.querySelector(".headerActions");
+  const floating = "lgScrolled" in d;
+  if (currentLayout() !== "glass" || innerWidth < 900 || !actions) {
+    if (floating) { delete d.lgScrolled; if (hdr) hdr.style.minHeight = ""; }
+    return;
+  }
+  if (!floating) lg.floatAt = actions.getBoundingClientRect().top + scrollY - 12;
+  const on = scrollY > lg.floatAt;
+  if (on === floating) return;
+  if (on) { hdr.style.minHeight = hdr.offsetHeight + "px"; d.lgScrolled = ""; } // 按钮组离开文档流后顶栏高度不变，下面的内容不跳
+  else { delete d.lgScrolled; hdr.style.minHeight = ""; }
 }
 
 // 指针光：鼠标在玻璃控件上移动时，记下相对位置给 CSS 画一团跟着走的柔光（苹果叫 illumination）
 function lgPointer(e) {
-  const el = e.target.closest && e.target.closest("[data-glass] :is(.lgInteractive, #appHeader .headerActions :is(.btn,.themeToggle,.modeBtn), #appNav .tab)");
+  const el = e.target.closest && e.target.closest("[data-glass] :is(.lgInteractive, #appHeader .headerActions :is(.btn,.themeToggle,.modeBtn), #appNav .tab, #tabBody .btn, .overlay .btn)");
   if (!el) return;
   const r = el.getBoundingClientRect();
   el.style.setProperty("--lgX", `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
@@ -194,6 +225,9 @@ function lgPointer(e) {
 
 function initLiquidGlass() {
   document.addEventListener("pointermove", lgPointer, { passive: true });
+  window.addEventListener("scroll", lgOnScroll, { passive: true });
+  window.addEventListener("resize", lgOnScroll, { passive: true });
+  new MutationObserver(lgOnScroll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-layout", "data-glass"] });
   if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
     document.addEventListener("pointerdown", lgMorphStart, true);
     document.addEventListener("click", () => requestAnimationFrame(lgMorphFinish));
