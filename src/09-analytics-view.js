@@ -648,7 +648,7 @@ function renderAnalytics() {
     </div></div>`;
   }
 
-  let html = prefsNotice + panel + renderAnalyticsSticky(stats) + (currentLayout() === "modern" ? renderAnalyticsHero(stats) : "") + `<div id="anaOverview" class="statRow">
+  let html = prefsNotice + panel + renderAnalyticsSticky(stats) + (isModernLayout() ? renderAnalyticsHero(stats) : "") + `<div id="anaOverview" class="statRow">
     <div class="statBox"><div class="statLabel">${T("analytics.countTrades")}</div><div class="statValue">${stats.total}</div></div>
     <div class="statBox"><div class="statLabel">${T("grid.winRate")}</div><div class="statValue" style="color:var(--accent)">${fmtPct(stats.wr)}</div><div class="statSub">W${stats.w} · L${stats.l}</div></div>
     <div class="statBox"><div class="statLabel">${T("analytics.setupQuality")}</div><div class="statValue">${fmtPct(stats.sq)}</div></div>

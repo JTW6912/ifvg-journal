@@ -623,6 +623,7 @@ function render() {
         <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
         <div class="pageGreeting">${esc(greetingText(displayName))}</div>
         <div class="pageTitle">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
+        <div class="pageTitleMini" aria-hidden="true">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
         <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""} ${dataScopePillHtml()}</div>
       </div>
       <div class="headerActions">
@@ -630,10 +631,10 @@ function render() {
           <button class="modeBtn ${recordMode === "backtest" ? "active" : ""}" data-action="set-record-mode" data-mode="backtest">${T("mode.backtest")}</button>
           <button class="modeBtn ${recordMode === "live" ? "active" : ""}" data-action="set-record-mode" data-mode="live">${T("mode.live")}</button>
         </div>
+        <div class="headerTools">
         <button class="themeToggle" data-action="toggle-theme" title="${esc(T("header.toggleTheme"))}">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
-        <button class="btn" data-action="open-export-center">${ICONS.download} ${T("header.export")}</button>
-        ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
-        <div style="position:relative;">
+        <button class="btn" data-action="open-export-center" title="${esc(T("header.export"))}">${ICONS.download} ${T("header.export")}</button>
+        <div class="acctWrap" style="position:relative;">
           <button class="themeToggle" data-action="toggle-user-menu" title="${esc(T("header.account"))}">${ICONS.user}</button>
           <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:252px;">
             <div style="padding:9px 12px;font-size:11.5px;color:var(--mutedDark);border-bottom:1px solid var(--border);">
@@ -656,6 +657,8 @@ function render() {
             <button data-action="logout">${T("auth.logout")}</button>
           </div>
         </div>
+        </div>
+        ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade" title="${esc(T("common.newTrade"))}">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
       </div>
   `;
   const bannerHtml = viewingUserId ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--accentSoft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;">
@@ -665,7 +668,7 @@ function render() {
   // navBrand / navFoot 只在侧边栏布局（晴空皮肤）里显示，经典主题下 display:none
   // 点品牌这块（头像）弹出账号切换浮层，见 07b-accounts.js
   const navBrandHtml = `<button class="navBrand${acctPopOpen ? " open" : ""}" data-action="toggle-acct-pop" title="${esc(T("account.switch"))}"><span class="navLogo">${LOGO_MARK}</span><span class="navBrandText"><span><b>IFVG</b> Journal</span><small>${esc(displayName || session.user.email)}</small></span><span class="navBrandChev">${ICONS.chevDown}</span></button>`;
-  const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${dataScopePillHtml()}${currentLayout() === "modern" ? navSparkHtml() : ""}
+  const navFootHtml = `<div class="navFoot"><div class="navFootLabel">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken</div>${dataScopePillHtml()}${isModernLayout() ? navSparkHtml() : ""}
     <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
   // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
   const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", prop: "nav.groupProp", changelog: "nav.groupSystem" };

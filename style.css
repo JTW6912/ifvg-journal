@@ -161,7 +161,12 @@ div.authCard.acctAuthCard{margin-bottom:14px;padding:8px;}
 .tab.active .tabLabel::before{content:"[ ";}
 .tab.active .tabLabel::after{content:" ]";}
 /* 侧边栏品牌、分组标题、底部统计，页面大标题和问候：只有新版布局（theme-modern.css）用，经典布局不显示 */
-.navBrand,.navFoot,.pageTitle,.navGroup,.pageGreeting{display:none;}
+.navBrand,.navFoot,.pageTitle,.navGroup,.pageGreeting,.pageTitleMini{display:none;}
+/* 顶栏里主题 / 导出 / 账户包在 .headerTools 里（玻璃布局把它们合成一块玻璃）。其他布局里这层不存在（display:contents），
+   用 order 排回原来的顺序：模式切换、主题、导出、新建交易、账户 */
+.headerTools{display:contents;}
+.headerTools>.acctWrap{order:2;}
+.headerActions>.btn-primary{order:1;}
 .sectionLabel{font-size:12px;letter-spacing:.8px;color:var(--mutedDark);font-family:var(--fontMono);
   margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
 .filterBar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:18px;}

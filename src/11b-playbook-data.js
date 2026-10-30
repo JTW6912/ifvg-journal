@@ -365,10 +365,11 @@ const PB_TRADE_LINE_RE = (id) => new RegExp("^\\s*[-*+]\\s+(?:\\[[ xX]\\]\\s+)?\
    两样是独立的，同一笔可以既收藏又关联：
      fav  收藏：有意思的单子，留着回头看（系统 / 策略页上对应的是交易身上的 __pb_star）
      ev   关联：真正决定这条笔记结论的那几笔。待验证分「支持 / 反驳」这个想法；错题只有一种「关联」（确实是这个错）；
+          系统 / 策略页也分「支持 / 反驳」（这个模型成不成立），一样能开好几组；
           标签没有这一项（标签页本身就是「有 / 没有」的对比）
    成绩、便利贴上的「关联」那行、「可以下结论了」的提示都只看 ev。
    标记跟着「这条笔记里有没有这笔」走：笔记里已经没有的交易，标记读的时候忽略（pbMarkedIds 过一遍成员） */
-const PB_EV_STATES = { verify: ["pro", "con"], mistake: ["key"], tag: [] };
+const PB_EV_STATES = { verify: ["pro", "con"], mistake: ["key"], system: ["pro", "con"], strategy: ["pro", "con"], tag: [] };
 function pbMarksOf(p) {
   const m = p && p.trade_marks;
   return m && typeof m === "object" && !Array.isArray(m) ? m : {};
