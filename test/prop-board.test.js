@@ -123,6 +123,8 @@ test("玻璃卡片悬停不对内容使用缩放、旋转、位移或滤镜", ()
   const hoverRules = [...css.matchAll(/[^{}]*propRecommendCard[^{}]*:hover[^{}]*\{([^{}]*)\}/g)];
   assert.ok(hoverRules.length > 0);
   for (const rule of hoverRules) assert.doesNotMatch(rule[1], /(?:^|[;\s])(?:transform|translate|rotate|scale|filter|opacity)\s*:/);
-  assert.match(css, /backdrop-filter:blur\(16px\)/);
+  // 公司卡片是内容层，保持实色；玻璃（含折射）只给浮在上面的内容块和控件
+  for (const rule of css.matchAll(/[^{}]*\.propRecommendCard\{([^{}]*)\}/g)) assert.doesNotMatch(rule[1], /backdrop-filter/);
+  assert.match(css, /\.propGlassSurface\{[^{}]*backdrop-filter:var\(--lgRefract,\)/);
   assert.match(css, /prefers-reduced-motion:reduce/);
 });
