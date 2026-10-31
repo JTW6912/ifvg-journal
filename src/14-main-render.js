@@ -572,7 +572,30 @@ function patchAppShell(regions) {
     appRegionHtml[id] = html;
   });
 }
+// Same account controls in classic's header and the modern/Glass sidebar portal.
+function appAccountMenuHtml() {
+  const isAdmin = currentProfile && currentProfile.role === "admin";
+  return `<div style="padding:9px 12px;font-size:11.5px;color:var(--mutedDark);border-bottom:1px solid var(--border);">
+              ${esc(session.user.email)} ${isAdmin ? "· admin" : ""}
+            </div>
+            <div class="menuLabel">${T("header.layout")}</div>
+            <div class="menuSeg">${LAYOUTS.map((k) => `<button class="${currentLayout() === k ? "on" : ""}" data-action="set-layout" data-layout="${k}">${T("layout." + k)}</button>`).join("")}</div>
+            <div class="menuLabel">${T("header.palette")} · <span class="menuLabelVal">${T("palette." + currentPalette())}</span></div>
+            <div class="paletteRow">${PALETTES.map((k) => `<button class="paletteDot sw-${k}${currentPalette() === k ? " on" : ""}" data-action="set-palette" data-palette="${k}" title="${esc(T("palette." + k))}" aria-label="${esc(T("palette." + k))}"></button>`).join("")}</div>
+            <div class="menuLabel">${T("calColor.title")}</div>
+            <div class="menuPnl">${["pos", "neg"].map((k) => `<label class="menuPnlPick"><input type="color" data-cal-color="${k}" value="${effectiveCalColor(k)}"><span>${esc(T(k === "pos" ? "calColor.gain" : "calColor.loss"))}</span></label>`).join("")}
+              <button data-action="reset-cal-colors"${customCalColor("pos") || customCalColor("neg") ? "" : " disabled"}>${esc(T("calColor.resetShort"))}</button></div>
+            <div class="menuSep"></div>
+            ${viewingUserId ? "" : `<button data-action="open-data-scope">${esc(T("scope.menu"))}${dataScopeActive() ? ` <span class="menuLabelVal">· ${esc(T(dataScopeBypass ? "scope.paused" : "scope.on"))}</span>` : ""}</button>`}
+            <button data-action="open-profile-modal">${T("header.profile")}</button>
+            <div class="menuSep"></div>
+            <div class="menuLabel">${T("account.switch")}</div>
+            <div class="acctList">${accountRowsHtml({ othersOnly: true })}</div>
+            <button data-action="add-account">${T("account.add")}</button>
+            <button data-action="logout">${T("auth.logout")}</button>`;
+}
 function render() {
+  appSidebarBeforeRender();
   propCheckFirmEditorSession();
   propOverviewBeforeRender();
   const app = document.getElementById("app");
@@ -619,12 +642,13 @@ function render() {
   document.title = displayName ? T("header.titleWithName", { name: displayName }) : "IFVG Trade Journal";
 
   const headerHtml = `
-      <div>
+      <div${isModernLayout() ? ' class="appSidebarHeading"' : ''}>${isModernLayout() ? appSidebarMobileTriggerHtml() + '<div class="appSidebarHeadingText">' : ''}
         <div class="brand">${displayName ? T("header.titleWithName", { name: `<span class="accent">${esc(displayName)}</span>` }) : `<span class="accent">IFVG</span> Trade Journal`}</div>
         <div class="pageGreeting">${esc(greetingText(displayName))}</div>
         <div class="pageTitle">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
         <div class="pageTitleMini" aria-hidden="true">${esc((TABS.find((tb) => tb.id === tab) || TABS[0]).label)}</div>
         <div class="subline">${recordMode === "backtest" ? T("mode.backtest") : T("mode.live")} · taken ${hs.n} · WR ${fmtPct(hs.wr)} ${hs.hasR ? "· EV " + fmtNum(hs.ev, 3) : ""} ${dataScopePillHtml()}</div>
+      ${isModernLayout() ? '</div>' : ''}
       </div>
       <div class="headerActions">
         <div class="modeToggle">
@@ -634,29 +658,10 @@ function render() {
         <div class="headerTools">
         <button class="themeToggle" data-action="toggle-theme" title="${esc(T("header.toggleTheme"))}">${document.documentElement.dataset.theme === "light" ? ICONS.moon : ICONS.sun}</button>
         <button class="btn" data-action="open-export-center" title="${esc(T("header.export"))}">${ICONS.download} ${T("header.export")}</button>
-        <div class="acctWrap" style="position:relative;">
+        ${!isModernLayout() ? `<div class="acctWrap" style="position:relative;">
           <button class="themeToggle" data-action="toggle-user-menu" title="${esc(T("header.account"))}">${ICONS.user}</button>
-          <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:252px;">
-            <div style="padding:9px 12px;font-size:11.5px;color:var(--mutedDark);border-bottom:1px solid var(--border);">
-              ${esc(session.user.email)} ${isAdmin ? "· admin" : ""}
-            </div>
-            <div class="menuLabel">${T("header.layout")}</div>
-            <div class="menuSeg">${LAYOUTS.map((k) => `<button class="${currentLayout() === k ? "on" : ""}" data-action="set-layout" data-layout="${k}">${T("layout." + k)}</button>`).join("")}</div>
-            <div class="menuLabel">${T("header.palette")} · <span class="menuLabelVal">${T("palette." + currentPalette())}</span></div>
-            <div class="paletteRow">${PALETTES.map((k) => `<button class="paletteDot sw-${k}${currentPalette() === k ? " on" : ""}" data-action="set-palette" data-palette="${k}" title="${esc(T("palette." + k))}" aria-label="${esc(T("palette." + k))}"></button>`).join("")}</div>
-            <div class="menuLabel">${T("calColor.title")}</div>
-            <div class="menuPnl">${["pos", "neg"].map((k) => `<label class="menuPnlPick"><input type="color" data-cal-color="${k}" value="${effectiveCalColor(k)}"><span>${esc(T(k === "pos" ? "calColor.gain" : "calColor.loss"))}</span></label>`).join("")}
-              <button data-action="reset-cal-colors"${customCalColor("pos") || customCalColor("neg") ? "" : " disabled"}>${esc(T("calColor.resetShort"))}</button></div>
-            <div class="menuSep"></div>
-            ${viewingUserId ? "" : `<button data-action="open-data-scope">${esc(T("scope.menu"))}${dataScopeActive() ? ` <span class="menuLabelVal">· ${esc(T(dataScopeBypass ? "scope.paused" : "scope.on"))}</span>` : ""}</button>`}
-            <button data-action="open-profile-modal">${T("header.profile")}</button>
-            <div class="menuSep"></div>
-            <div class="menuLabel">${T("account.switch")}</div>
-            <div class="acctList">${accountRowsHtml({ othersOnly: true })}</div>
-            <button data-action="add-account">${T("account.add")}</button>
-            <button data-action="logout">${T("auth.logout")}</button>
-          </div>
-        </div>
+          <div class="exportMenu ${userMenuOpen ? "open" : ""}" style="min-width:252px;">${appAccountMenuHtml()}</div>
+        </div>` : ""}
         </div>
         ${!viewingUserId ? `<button class="btn btn-primary" data-action="new-trade" title="${esc(T("common.newTrade"))}">${ICONS.plus} ${T("common.newTrade")}</button>` : ""}
       </div>
@@ -672,7 +677,7 @@ function render() {
     <div class="navFootStats"><div><b>${hs.n}</b><span>${esc(T("nav.trades"))}</span></div><div><b>${fmtPct(hs.wr)}</b><span>WR</span></div>${hs.hasR ? `<div><b>${fmtNum(hs.ev, 2)}</b><span>EV</span></div>` : ""}</div></div>`;
   // 侧边栏分组标题：只有新版布局显示（经典主题 display:none），插在每组第一个页签前面
   const NAV_GROUPS = { grid: "nav.groupTrade", reviews: "nav.groupNotes", prop: "nav.groupProp", changelog: "nav.groupSystem" };
-  const navHtml = navBrandHtml + TABS.map((tb) => (NAV_GROUPS[tb.id] ? `<div class="navGroup">${esc(T(NAV_GROUPS[tb.id]))}</div>` : "") + `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}" title="${esc(tb.label)}">${tb.icon} <span class="tabLabel">${esc(tb.label)}</span></button>`).join("") + navFootHtml;
+  const navHtml = isModernLayout() ? appSidebarNavHtml(TABS, navFootHtml) : navBrandHtml + TABS.map((tb) => (NAV_GROUPS[tb.id] ? `<div class="navGroup">${esc(T(NAV_GROUPS[tb.id]))}</div>` : "") + `<button class="tab ${tab === tb.id ? "active" : ""}" data-action="switch-tab" data-tab="${tb.id}" title="${esc(tb.label)}">${tb.icon} <span class="tabLabel">${esc(tb.label)}</span></button>`).join("") + navFootHtml;
   const noticeHtml = (loadError ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(loadError)}</span></div>` : "")
     + (dbOutdated && loadError !== T("error.dbOutdated") ? `<div class="notice error" style="margin-bottom:20px;">${ICONS.alert}<span>${esc(T("error.dbOutdated"))}</span></div>` : "");
 
@@ -692,5 +697,6 @@ function render() {
   renderExportCenter();
   renderAcctPop();
   propOverviewAfterRender();
+  appSidebarAfterRender();
 }
 

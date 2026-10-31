@@ -153,10 +153,12 @@ function lgSchedule() { if (!lg.raf) lg.raf = requestAnimationFrame(lgScan); }
 // 经过的文字不会被底色吃掉；目标页签的文字颜色也跟着从普通色渐变到选中色
 const LG_MORPH_GROUP = "#appNav, .modeToggle, .viewToggle";
 const LG_MORPH_ITEM = "#appNav .tab, .modeToggle .modeBtn, .viewToggle .viewBtn";
+// Desktop rail and mobile Dock share a root; hidden duplicates are not animation targets.
+function lgVisibleActive(group) { return group && [...group.querySelectorAll('.active')].find(el => el.getClientRects().length); }
 function lgMorphStart(e) {
   const item = e.target.closest && e.target.closest(LG_MORPH_ITEM);
   if (!item || currentLayout() !== "glass") return;
-  const group = item.closest(LG_MORPH_GROUP), from = group && group.querySelector(".active");
+  const group = item.closest(LG_MORPH_GROUP), from = lgVisibleActive(group);
   if (!from || from === item) return;
   lg.morph = { group: group.id ? "#" + group.id : "." + [...group.classList].join("."), rect: from.getBoundingClientRect(), t: performance.now() };
 }
@@ -169,7 +171,7 @@ function lgMorphFinish() {
     const r = g.getBoundingClientRect();
     return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
   });
-  const to = group && group.querySelector(".active");
+  const to = lgVisibleActive(group);
   if (!to) return;
   const r = to.getBoundingClientRect(), dx = m.rect.left - r.left, dy = m.rect.top - r.top;
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return; // 还没重新渲染，等下一次

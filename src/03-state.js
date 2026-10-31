@@ -181,6 +181,15 @@ let adminUsers = null;
 let adminUsersSortBy = "created_at";
 let adminUsersSortDir = "desc";
 let userMenuOpen = false;
+// Sidebar preferences are device-local. Mobile overlays and private summaries are never persisted.
+const appSidebar = {
+  preference: appSidebarPreference(appSidebarReadPref('journal_sidebar')),
+  summaryOpen: appSidebarReadPref('journal_sidebar_summary') !== 'closed',
+  mobileOpen: false, owner: null, model: null, mobileHTML: '', accountHTML: '',
+  navScroll: 0, navFocus: null,
+  generation: 0,
+  inert: new Map(), overflow: null, returnLaunch: null, tooltip: null, tooltipTrigger: null, tipTimer: null,
+};
 let profileModalOpen = false;
 let profileError = "";
 let profileSuccess = "";

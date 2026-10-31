@@ -578,7 +578,10 @@ document.addEventListener("click", async (e) => {
       await doLogin(email, password, remember);
     }
   }
-  else if (action === "toggle-user-menu") { userMenuOpen = !userMenuOpen; render(); }
+  else if (action === "toggle-user-menu") {
+    userMenuOpen = !userMenuOpen;
+    if (isModernLayout()) { appSidebarSyncDom(); appSidebarRenderAccount(); } else render();
+  }
   /* ---------- 多账号（07b-accounts） ---------- */
   else if (action === "toggle-acct-pop") { acctPopOpen = !acctPopOpen; userMenuOpen = false; render(); }
   else if (action === "switch-account") {
