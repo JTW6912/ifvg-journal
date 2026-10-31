@@ -1558,6 +1558,9 @@
   [data-layout="modern"][data-glass][data-lg-scrolled] #appHeader .headerActions{position:fixed;top:12px;right:clamp(20px,3vw,40px);z-index:40;}
   [data-layout="modern"][data-glass] #appHeader::after{content:"";position:fixed;top:0;left:var(--sideW,244px);right:0;height:72px;z-index:35;
     pointer-events:none;opacity:0;transition:opacity .25s;
+    /* Feather the left edge through the content gutter; a hard cut exposes a seam beside the Glass rail. */
+    -webkit-mask-image:linear-gradient(to right,transparent,#000 clamp(20px,3vw,40px));
+    mask-image:linear-gradient(to right,transparent,#000 clamp(20px,3vw,40px));
     background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 90%,transparent),color-mix(in srgb,var(--bg) 62%,transparent) 55%,color-mix(in srgb,var(--bg) 0%,transparent));}
   [data-layout="modern"][data-glass][data-lg-scrolled] #appHeader::after{opacity:1;}
   [data-layout="modern"][data-glass][data-lg-scrolled] .pageTitleMini{display:block;position:fixed;top:12px;left:calc(var(--sideW,244px) + clamp(20px,3vw,40px));
